@@ -86,4 +86,41 @@ const { title = 'La Casa de Dios', description = 'Iglesia Cristiana - Bienvenido
 	.animate-slide-in-right {
 		animation: slideInRight 0.6s ease-out;
 	}
+
+	/* Breadcrumbs mejorados */
+	.breadcrumbs > ul > li + li:before {
+		content: "";
+		margin-left: 0.5rem;
+		margin-right: 0.75rem;
+		display: block;
+		height: 0.375rem;
+		width: 0.375rem;
+		transform: rotate(45deg);
+		opacity: 0.4;
+		border-top: 1px solid;
+		border-right: 1px solid;
+	}
 </style>
+
+<script is:inline>
+	// Smooth scroll para enlaces internos
+	document.addEventListener('DOMContentLoaded', function() {
+		// Manejar clics en enlaces con hash
+		document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+			anchor.addEventListener('click', function (e) {
+				const href = this.getAttribute('href');
+				if (href && href !== '#') {
+					e.preventDefault();
+					const target = document.querySelector(href);
+					if (target) {
+						const offsetTop = target.offsetTop - 80; // Offset para el navbar fijo
+						window.scrollTo({
+							top: offsetTop,
+							behavior: 'smooth'
+						});
+					}
+				}
+			});
+		});
+	});
+</script>

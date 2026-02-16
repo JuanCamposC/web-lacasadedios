@@ -4,7 +4,13 @@ const pathname = Astro.url.pathname;
 const navLinks = [
   { href: '/', label: 'Inicio' },
   { href: '/sobre-nosotros', label: 'Nosotros' },
-  { href: '/#templos', label: 'Templos' },
+];
+
+const templos = [
+  { href: '/templos/santiago-centro', label: 'Santiago Centro'},
+  { href: '/templos/san-miguel', label: 'San Miguel'},
+  { href: '/templos/limache', label: 'Limache'},
+  { href: '/templos/coya', label: 'Coya'},
 ];
 ---
 
@@ -27,6 +33,23 @@ const navLinks = [
             </a>
           </li>
         ))}
+        <li>
+          <details>
+            <summary class="transition-all duration-200">Templos</summary>
+            <ul class="p-2">
+              {templos.map((templo) => (
+                <li>
+                  <a 
+                    href={templo.href}
+                    class={`transition-all duration-200 ${pathname === templo.href ? 'active font-semibold bg-primary text-primary-content' : ''}`}
+                  >
+                    {templo.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </li>
       </ul>
     </div>
     <a href="/" class="btn btn-ghost normal-case text-lg md:text-xl gap-2 hover:bg-transparent">
@@ -49,6 +72,23 @@ const navLinks = [
           </a>
         </li>
       ))}
+      <li>
+        <details>
+          <summary class="transition-all duration-200 font-medium">Templos</summary>
+          <ul class="p-2 bg-base-100 shadow-xl rounded-box w-56 border border-base-300 z-[100]">
+            {templos.map((templo) => (
+              <li>
+                <a 
+                  href={templo.href}
+                  class={`transition-all duration-200 ${pathname === templo.href ? 'active bg-primary text-primary-content' : ''}`}
+                >
+                  {templo.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      </li>
     </ul>
   </div>
   
@@ -65,24 +105,35 @@ const navLinks = [
   </div>
 </div>
 
-<script>
-  // Tema toggle
-  const themeToggle = document.getElementById('theme-toggle') as HTMLInputElement;
-  const html = document.documentElement;
-  
-  // Cargar tema guardado
-  const savedTheme = localStorage.getItem('theme') || 'church';
-  html.setAttribute('data-theme', savedTheme);
-  if (savedTheme === 'dark') {
-    themeToggle.checked = true;
+<script is:inline>
+  // Tema toggle - Script inline para que funcione en todas las páginas
+  function initTheme() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const html = document.documentElement;
+    
+    // Cargar tema guardado
+    const savedTheme = localStorage.getItem('theme') || 'church';
+    html.setAttribute('data-theme', savedTheme);
+    if (savedTheme === 'dark' && themeToggle) {
+      themeToggle.checked = true;
+    }
+    
+    // Cambiar tema
+    if (themeToggle) {
+      themeToggle.addEventListener('change', () => {
+        const newTheme = themeToggle.checked ? 'dark' : 'church';
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+      });
+    }
   }
   
-  // Cambiar tema
-  themeToggle?.addEventListener('change', () => {
-    const newTheme = themeToggle.checked ? 'dark' : 'church';
-    html.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-  });
+  // Ejecutar al cargar la página
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTheme);
+  } else {
+    initTheme();
+  }
 </script>
 
 <style>
@@ -103,5 +154,42 @@ const navLinks = [
   
   .navbar-start a:hover svg {
     transform: rotate(5deg) scale(1.1);
+  }
+
+  /* Estilos para el submenú de templos */
+  details summary {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* Ocultar la flecha derecha de DaisyUI */
+  details summary::after {
+    display: none !important;
+  }
+
+  details[open] summary::before {
+    transform: rotate(180deg);
+  }
+
+  details[open] summary {
+    background-color: hsl(var(--p) / 0.1);
+  }
+
+  details ul {
+    margin-top: 0.5rem;
+  }
+
+  details ul li a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  details ul li a span {
+    font-size: 1.2rem;
   }
 </style>
