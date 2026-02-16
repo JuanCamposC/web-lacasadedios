@@ -1,0 +1,412 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navigation from '../components/Navigation.astro';
+---
+
+<Layout title="Sobre Nosotros - La Casa de Dios" description="Conoce más sobre nuestra iglesia, visión, misión y valores">
+	<Navigation />
+	
+	<!-- Hero Section -->
+	<section class="hero min-h-[50vh] bg-gradient-to-br from-primary/20 via-base-100 to-secondary/20">
+		<div class="hero-content text-center">
+			<div class="max-w-4xl animate-fade-in-up">
+				<div class="badge badge-primary badge-lg mb-4 gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+					</svg>
+					Nuestra Historia
+				</div>
+				<h1 class="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+					Sobre Nosotros
+				</h1>
+				<p class="text-xl md:text-2xl opacity-80 max-w-2xl mx-auto">
+					Una comunidad de fe comprometida con glorificar a Dios y servir a nuestra comunidad
+				</p>
+				<p class="text-sm md:text-base mt-4 italic opacity-60">
+					"Porque donde dos o tres se reúnen en mi nombre, allí estoy yo en medio de ellos" - Mateo 18:20
+				</p>
+			</div>
+		</div>
+	</section>
+
+	<!-- Visión y Misión -->
+	<section class="py-20 bg-base-100">
+		<div class="container mx-auto px-4 max-w-7xl">
+			<div class="grid md:grid-cols-2 gap-8">
+				<!-- Visión -->
+				<div class="card bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl hover:shadow-2xl transition-all duration-300 animate-fade-in-up">
+					<div class="card-body">
+						<div class="flex items-center gap-4 mb-4">
+							<div class="bg-primary text-primary-content p-4 rounded-full">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+								</svg>
+							</div>
+							<h2 class="card-title text-3xl">Nuestra Visión</h2>
+						</div>
+						<p class="text-lg leading-relaxed">
+							Ser una iglesia que transforma vidas a través del poder del Evangelio de Jesucristo,
+							alcanzando a nuestra comunidad y más allá con el amor de Dios. Anhelamos ser un faro
+							de esperanza y un centro de adoración donde cada persona pueda encontrar su propósito
+							en Cristo y crecer en su fe.
+						</p>
+					</div>
+				</div>
+
+				<!-- Misión -->
+				<div class="card bg-gradient-to-br from-secondary/10 to-secondary/5 shadow-xl hover:shadow-2xl transition-all duration-300 animate-fade-in-up" style="animation-delay: 0.1s;">
+					<div class="card-body">
+						<div class="flex items-center gap-4 mb-4">
+							<div class="bg-secondary text-secondary-content p-4 rounded-full">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+								</svg>
+							</div>
+							<h2 class="card-title text-3xl">Nuestra Misión</h2>
+						</div>
+						<p class="text-lg leading-relaxed">
+							Glorificar a Dios mediante la adoración, proclamar el Evangelio de Jesucristo,
+							discipular a los creyentes en la Palabra de Dios, servir a nuestra comunidad con
+							amor y compasión, y equipar a cada miembro para el servicio cristiano. Nos
+							comprometemos a ser una familia de fe que refleja el amor de Cristo en cada acción.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Valores -->
+	<section class="py-20 bg-gradient-to-b from-base-100 to-base-200">
+		<div class="container mx-auto px-4 max-w-7xl">
+			<div class="text-center mb-16 animate-fade-in-up">
+				<div class="badge badge-accent badge-lg mb-4">Nuestros Principios</div>
+				<h2 class="text-4xl md:text-5xl font-bold mb-4">Nuestros Valores</h2>
+				<p class="text-xl opacity-70 max-w-2xl mx-auto">
+					Los valores que guían cada aspecto de nuestra vida como iglesia
+				</p>
+			</div>
+
+			<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+				<!-- Fe -->
+				<div class="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up">
+					<div class="card-body items-center text-center">
+						<div class="text-5xl mb-4">✝️</div>
+						<h3 class="card-title text-2xl">Fe</h3>
+						<p class="text-base opacity-80">
+							Confiamos plenamente en la Palabra de Dios como nuestra guía absoluta
+						</p>
+					</div>
+				</div>
+
+				<!-- Amor -->
+				<div class="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up" style="animation-delay: 0.1s;">
+					<div class="card-body items-center text-center">
+						<div class="text-5xl mb-4">❤️</div>
+						<h3 class="card-title text-2xl">Amor</h3>
+						<p class="text-base opacity-80">
+							Amamos a Dios sobre todas las cosas y a nuestro prójimo como a nosotros mismos
+						</p>
+					</div>
+				</div>
+
+				<!-- Santidad -->
+				<div class="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up" style="animation-delay: 0.2s;">
+					<div class="card-body items-center text-center">
+						<div class="text-5xl mb-4">✨</div>
+						<h3 class="card-title text-2xl">Santidad</h3>
+						<p class="text-base opacity-80">
+							Vivimos vidas apartadas para Dios, reflejando su carácter
+						</p>
+					</div>
+				</div>
+
+				<!-- Unidad -->
+				<div class="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up" style="animation-delay: 0.3s;">
+					<div class="card-body items-center text-center">
+						<div class="text-5xl mb-4">🤝</div>
+						<h3 class="card-title text-2xl">Unidad</h3>
+						<p class="text-base opacity-80">
+							Cultivamos la comunión fraterna y la unidad del cuerpo de Cristo
+						</p>
+					</div>
+				</div>
+
+				<!-- Servicio -->
+				<div class="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up" style="animation-delay: 0.4s;">
+					<div class="card-body items-center text-center">
+						<div class="text-5xl mb-4">🙏</div>
+						<h3 class="card-title text-2xl">Servicio</h3>
+						<p class="text-base opacity-80">
+							Servimos con humildad siguiendo el ejemplo de Jesús
+						</p>
+					</div>
+				</div>
+
+				<!-- Excelencia -->
+				<div class="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up" style="animation-delay: 0.5s;">
+					<div class="card-body items-center text-center">
+						<div class="text-5xl mb-4">⭐</div>
+						<h3 class="card-title text-2xl">Excelencia</h3>
+						<p class="text-base opacity-80">
+							Hacemos todo con excelencia para la gloria de Dios
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Liderazgo -->
+	<section class="py-20 bg-base-100">
+		<div class="container mx-auto px-4 max-w-7xl">
+			<div class="text-center mb-16 animate-fade-in-up">
+				<div class="badge badge-primary badge-lg mb-4">Nuestro Equipo</div>
+				<h2 class="text-4xl md:text-5xl font-bold mb-4">Estructura de Liderazgo</h2>
+				<p class="text-xl opacity-70 max-w-2xl mx-auto">
+					Sirviendo con dedicación y amor al pueblo de Dios
+				</p>
+			</div>
+
+			<div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+				<div class="card bg-gradient-to-br from-primary/10 to-base-100 shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in-up">
+					<div class="card-body items-center text-center">
+						<div class="avatar placeholder mb-4">
+							<div class="bg-primary text-primary-content rounded-full w-20">
+								<span class="text-3xl">👨‍⚖️</span>
+							</div>
+						</div>
+						<h3 class="card-title text-xl">Pastor General</h3>
+						<p class="font-semibold text-primary">Rev. Pedro Martínez</p>
+						<p class="text-sm opacity-70">
+							Líder espiritual de la congregación, responsable de la enseñanza y dirección general
+						</p>
+					</div>
+				</div>
+
+				<div class="card bg-gradient-to-br from-secondary/10 to-base-100 shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in-up" style="animation-delay: 0.1s;">
+					<div class="card-body items-center text-center">
+						<div class="avatar placeholder mb-4">
+							<div class="bg-secondary text-secondary-content rounded-full w-20">
+								<span class="text-3xl">🧑‍🤝‍🧑</span>
+							</div>
+						</div>
+						<h3 class="card-title text-xl">Consejo de Ancianos</h3>
+						<p class="font-semibold text-secondary">5 Ancianos</p>
+						<p class="text-sm opacity-70">
+							Proveen supervisión espiritual y consejería pastoral
+						</p>
+					</div>
+				</div>
+
+				<div class="card bg-gradient-to-br from-accent/10 to-base-100 shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in-up" style="animation-delay: 0.2s;">
+					<div class="card-body items-center text-center">
+						<div class="avatar placeholder mb-4">
+							<div class="bg-accent text-accent-content rounded-full w-20">
+								<span class="text-3xl">🤲</span>
+							</div>
+						</div>
+						<h3 class="card-title text-xl">Diáconos</h3>
+						<p class="font-semibold text-accent">8 Diáconos activos</p>
+						<p class="text-sm opacity-70">
+							Sirven en las necesidades prácticas de la iglesia y la comunidad
+						</p>
+					</div>
+				</div>
+
+				<div class="card bg-gradient-to-br from-primary/10 to-base-100 shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in-up" style="animation-delay: 0.3s;">
+					<div class="card-body items-center text-center">
+						<div class="avatar placeholder mb-4">
+							<div class="bg-neutral text-neutral-content rounded-full w-20">
+								<span class="text-3xl">🌟</span>
+							</div>
+						</div>
+						<h3 class="card-title text-xl">Líderes de Ministerio</h3>
+						<p class="font-semibold">Varios departamentos</p>
+						<p class="text-sm opacity-70">
+							Coordinan ministerios: jóvenes, niños, música, evangelismo
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Declaración de Fe -->
+	<section class="py-20 bg-gradient-to-b from-base-200 to-base-100">
+		<div class="container mx-auto px-4 max-w-7xl">
+			<div class="text-center mb-16 animate-fade-in-up">
+				<div class="badge badge-secondary badge-lg mb-4">Nuestras Creencias</div>
+				<h2 class="text-4xl md:text-5xl font-bold mb-4">Declaración de Fe</h2>
+				<p class="text-xl opacity-70 max-w-2xl mx-auto">
+					Los fundamentos doctrinales que guían nuestra fe
+				</p>
+			</div>
+
+			<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+				<div class="card bg-base-100 shadow-lg border-l-4 border-primary hover:shadow-xl transition-all animate-fade-in-up">
+					<div class="card-body">
+						<h3 class="card-title text-xl flex items-center gap-2">
+							<span class="text-2xl">📜</span>
+							La Biblia
+						</h3>
+						<p class="opacity-80">
+							Creemos que la Biblia es la Palabra inspirada e infalible de Dios, nuestra única regla de fe y conducta.
+						</p>
+					</div>
+				</div>
+
+				<div class="card bg-base-100 shadow-lg border-l-4 border-secondary hover:shadow-xl transition-all animate-fade-in-up" style="animation-delay: 0.1s;">
+					<div class="card-body">
+						<h3 class="card-title text-xl flex items-center gap-2">
+							<span class="text-2xl">🌟</span>
+							Dios
+						</h3>
+						<p class="opacity-80">
+							Creemos en un solo Dios eternamente existente en tres personas: Padre, Hijo y Espíritu Santo.
+						</p>
+					</div>
+				</div>
+
+				<div class="card bg-base-100 shadow-lg border-l-4 border-accent hover:shadow-xl transition-all animate-fade-in-up" style="animation-delay: 0.2s;">
+					<div class="card-body">
+						<h3 class="card-title text-xl flex items-center gap-2">
+							<span class="text-2xl">✝️</span>
+							Jesucristo
+						</h3>
+						<p class="opacity-80">
+							Creemos en la deidad de nuestro Señor Jesucristo, su nacimiento virginal, su vida sin pecado, 
+							sus milagros, su muerte expiatoria, su resurrección corporal y su segunda venida.
+						</p>
+					</div>
+				</div>
+
+				<div class="card bg-base-100 shadow-lg border-l-4 border-primary hover:shadow-xl transition-all animate-fade-in-up" style="animation-delay: 0.3s;">
+					<div class="card-body">
+						<h3 class="card-title text-xl flex items-center gap-2">
+							<span class="text-2xl">🕊️</span>
+							El Espíritu Santo
+						</h3>
+						<p class="opacity-80">
+							Creemos en la persona y obra del Espíritu Santo, quien convence de pecado, regenera, 
+							mora en el creyente y lo capacita para vivir una vida santa.
+						</p>
+					</div>
+				</div>
+
+				<div class="card bg-base-100 shadow-lg border-l-4 border-secondary hover:shadow-xl transition-all animate-fade-in-up" style="animation-delay: 0.4s;">
+					<div class="card-body">
+						<h3 class="card-title text-xl flex items-center gap-2">
+							<span class="text-2xl">💝</span>
+							La Salvación
+						</h3>
+						<p class="opacity-80">
+							Creemos que la salvación es un regalo de Dios por gracia mediante la fe en Jesucristo, 
+							no por obras, para que nadie se gloríe.
+						</p>
+					</div>
+				</div>
+
+				<div class="card bg-base-100 shadow-lg border-l-4 border-accent hover:shadow-xl transition-all animate-fade-in-up" style="animation-delay: 0.5s;">
+					<div class="card-body">
+						<h3 class="card-title text-xl flex items-center gap-2">
+							<span class="text-2xl">⛪</span>
+							La Iglesia
+						</h3>
+						<p class="opacity-80">
+							Creemos en la iglesia universal, el cuerpo de Cristo, compuesta por todos los verdaderos 
+							creyentes en Jesucristo.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Sacramentos -->
+	<section class="py-20 bg-base-100">
+		<div class="container mx-auto px-4 max-w-7xl">
+			<div class="text-center mb-16 animate-fade-in-up">
+				<div class="badge badge-accent badge-lg mb-4">Ordenanzas</div>
+				<h2 class="text-4xl md:text-5xl font-bold mb-4">Sacramentos</h2>
+				<p class="text-xl opacity-70 max-w-2xl mx-auto">
+					Las ordenanzas que Cristo estableció para su iglesia
+				</p>
+			</div>
+
+			<div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+				<!-- Bautismo -->
+				<div class="card bg-gradient-to-br from-primary/5 to-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 animate-fade-in-up">
+					<div class="card-body">
+						<div class="flex items-center gap-4 mb-4">
+							<div class="bg-primary/20 p-4 rounded-full">
+								<span class="text-5xl">💧</span>
+							</div>
+							<h3 class="card-title text-2xl">El Bautismo</h3>
+						</div>
+						<p class="text-lg leading-relaxed opacity-80">
+							Practicamos el bautismo por inmersión como testimonio público de fe en Jesucristo.
+							Es un acto de obediencia que simboliza la muerte al pecado y el nacimiento a una nueva
+							vida en Cristo. El bautismo es para creyentes que han hecho una profesión consciente
+							de fe en Jesús como su Salvador personal.
+						</p>
+						<div class="card-actions justify-end mt-4">
+							<a href="/#templos" class="btn btn-primary btn-sm">Más información</a>
+						</div>
+					</div>
+				</div>
+
+				<!-- Santa Cena -->
+				<div class="card bg-gradient-to-br from-secondary/5 to-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 animate-fade-in-up" style="animation-delay: 0.1s;">
+					<div class="card-body">
+						<div class="flex items-center gap-4 mb-4">
+							<div class="bg-secondary/20 p-4 rounded-full">
+								<span class="text-5xl">🍞</span>
+							</div>
+							<h3 class="card-title text-2xl">La Santa Cena</h3>
+						</div>
+						<p class="text-lg leading-relaxed opacity-80">
+							Celebramos la Santa Cena regularmente como memorial de la muerte de Cristo y proclamación
+							de su segunda venida. El pan representa su cuerpo partido por nosotros, y la copa
+							representa su sangre derramada para el perdón de pecados. Es un tiempo de reflexión,
+							renovación y comunión con Cristo y los hermanos.
+						</p>
+						<div class="card-actions justify-end mt-4">
+							<a href="/#templos" class="btn btn-secondary btn-sm">Más información</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- CTA Final -->
+	<section class="py-20 bg-gradient-to-br from-primary/20 via-secondary/10 to-accent/20">
+		<div class="container mx-auto px-4 max-w-4xl text-center animate-fade-in-up">
+			<h2 class="text-4xl md:text-5xl font-bold mb-6">
+				¿Quieres conocernos mejor?
+			</h2>
+			<p class="text-xl opacity-80 mb-8 max-w-2xl mx-auto">
+				Te invitamos a visitarnos y ser parte de nuestra familia. Estamos seguros de que Dios tiene 
+				un propósito maravilloso para tu vida.
+			</p>
+			<div class="flex flex-wrap gap-4 justify-center">
+				<a href="/#templos" class="btn btn-primary btn-lg gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+					</svg>
+					Visítanos
+				</a>
+				<a href="/" class="btn btn-outline btn-lg gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+					</svg>
+					Volver al inicio
+				</a>
+			</div>
+		</div>
+	</section>
+
+</Layout>

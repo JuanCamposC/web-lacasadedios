@@ -1,0 +1,70 @@
+---
+// Footer.astro
+---
+<footer class="bg-neutral text-neutral-content">
+  <div class="container mx-auto px-4 py-12">
+    <!-- Grid principal responsivo -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+      
+      <!-- Logo y descripción -->
+      <div class="flex flex-col items-center md:items-start">
+        <div class="flex items-center gap-3 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span class="font-bold text-xl">La Casa de Dios</span>
+        </div>
+      </div>
+
+      <!-- Enlaces de navegación -->
+      <div class="text-center md:text-left">
+        <h3 class="font-bold text-lg mb-4">Navegación</h3>
+        <nav class="flex flex-col gap-2">
+          <a href="/" class="link link-hover opacity-80 hover:opacity-100 transition-opacity">Inicio</a>
+          <a href="/sobre-nosotros" class="link link-hover opacity-80 hover:opacity-100 transition-opacity">Nosotros</a>
+          <a href="/#templos" class="link link-hover opacity-80 hover:opacity-100 transition-opacity">Templos</a>
+        </nav>
+      </div>
+
+      <!-- Información de contacto -->
+      <div class="text-center md:text-left">
+        <h3 class="font-bold text-lg mb-4">Contacto</h3>
+        <div class="flex flex-col gap-2 text-sm opacity-80">
+          <p>📧 info@lacasadedios.cl</p>
+          <p>📞 +56 9 XXXX XXXX</p>
+          <p>📍 Múltiples ubicaciones</p>
+        </div>
+      </div>
+
+      <!-- Redes sociales -->
+      <div class="text-center md:text-left">
+        <h3 class="font-bold text-lg mb-4">Síguenos</h3>
+        <div class="flex gap-4 justify-center md:justify-start">
+          <a href="https://instagram.com/jovenescasadedios._" target="_blank" rel="noopener noreferrer" 
+             class="transition-all duration-300 hover:scale-110 hover:text-pink-400" aria-label="Instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+          </a>
+          <a href="https://www.youtube.com/@casadediosconociendolapalabrad" target="_blank" rel="noopener noreferrer" 
+             class="transition-all duration-300 hover:scale-110 hover:text-red-500" aria-label="YouTube">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="divider my-4"></div>
+
+    <!-- Copyright y versículo -->
+    <div class="text-center space-y-2">
+      <p class="text-sm opacity-70">© {new Date().getFullYear()} La Casa de Dios.</p>
+      <p class="text-xs opacity-50 max-w-2xl mx-auto italic">
+        "Porque donde están dos o tres congregados en mi nombre, allí estoy yo en medio de ellos." - Mateo 18:20
+      </p>
+    </div>
+  </div>
+</footer>
