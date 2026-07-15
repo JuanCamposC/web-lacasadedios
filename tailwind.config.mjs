@@ -42,25 +42,25 @@ export default {
     themes: [
       {
         church: {
-          "primary": "#2563eb", // Azul más sobrio
+          "primary": "#1e3a8a", // Azul profundo, sobrio y solemne
           "primary-content": "#ffffff",
-          "secondary": "#64748b", // Gris azulado
+          "secondary": "#51607a", // Azul pizarra
           "secondary-content": "#ffffff",
-          "accent": "#d97706", // Dorado/naranja cálido
-          "accent-content": "#ffffff",
-          "neutral": "#1e293b", // Azul oscuro
-          "neutral-content": "#ffffff",
-          "base-100": "#ffffff",
-          "base-200": "#f8fafc",
-          "base-300": "#e2e8f0",
-          "base-content": "#1e293b",
-          "info": "#0ea5e9",
+          "accent": "#c19a3e", // Dorado cálido y elegante
+          "accent-content": "#1c1917", // Texto oscuro sobre dorado (contraste AA)
+          "neutral": "#1b2436", // Azul noche
+          "neutral-content": "#e7e5e0",
+          "base-100": "#fffdf9", // Blanco cálido (marfil)
+          "base-200": "#f6f2ea", // Crema suave
+          "base-300": "#e7e0d2", // Arena
+          "base-content": "#1f2937",
+          "info": "#2b6cb0",
           "info-content": "#ffffff",
-          "success": "#22c55e",
+          "success": "#3f7d54",
           "success-content": "#ffffff",
-          "warning": "#f59e0b",
-          "warning-content": "#ffffff",
-          "error": "#ef4444",
+          "warning": "#c19a3e",
+          "warning-content": "#1c1917",
+          "error": "#b04a3f",
           "error-content": "#ffffff",
         },
       },

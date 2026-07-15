@@ -1,46 +1,72 @@
-# Astro Starter Kit: Basics
+# La Casa de Dios — Sitio web
 
-```sh
-npm create astro@latest -- --template basics
-```
+Sitio institucional de la iglesia **La Casa de Dios**, con información de sus
+templos (Santiago Centro, San Miguel, Limache y Coya), horarios de cultos,
+declaración de fe y redes sociales.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Construido con **Astro 5**, **Tailwind CSS 3** y **DaisyUI** (tema `church`).
 
-## 🚀 Project Structure
+## 🧞 Comandos
 
-Inside of your Astro project, you'll see the following folders and files:
+| Comando           | Acción                                       |
+| :---------------- | :------------------------------------------- |
+| `npm install`     | Instala dependencias                         |
+| `npm run dev`     | Servidor local en `localhost:4321`           |
+| `npm run build`   | Compila el sitio a `./dist/`                 |
+| `npm run preview` | Previsualiza el build antes de desplegar     |
+
+## 📁 Estructura
 
 ```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+src/
+├── components/
+│   ├── Navigation.astro     # Navbar + toggle de tema (a11y)
+│   ├── Footer.astro
+│   └── TemploPage.astro     # Plantilla compartida de cada templo
+├── data/
+│   └── templos.ts           # ★ Fuente única de datos de los templos
+├── layouts/
+│   └── Layout.astro         # SEO (OG/Twitter/canonical/JSON-LD) + fuentes
+└── pages/
+    ├── index.astro
+    ├── sobre-nosotros.astro
+    └── templos/
+        ├── santiago-centro.astro   # wrappers de 3 líneas → <TemploPage slug="…" />
+        ├── san-miguel.astro
+        ├── limache.astro
+        └── coya.astro
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## ✏️ Cómo editar el contenido
 
-## 🧞 Commands
+Casi todo el contenido de los templos (direcciones, horarios, mapas, pastores)
+vive en **[`src/data/templos.ts`](src/data/templos.ts)**. Edita ahí y las
+páginas se actualizan solas.
 
-All commands are run from the root of the project, from a terminal:
+> **Pendiente de datos reales:** los campos `phone` y `email` de cada templo
+> están vacíos a propósito (los valores previos eran placeholders como
+> `+56 9 1234 5678`). Al completarlos en `templos.ts`, la tarjeta de contacto
+> los muestra automáticamente; si están vacíos, se ofrece contacto por Instagram.
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+## 🔎 SEO
 
-## 👀 Want to learn more?
+- Metadatos Open Graph / Twitter, `canonical` y `theme-color` en `Layout.astro`.
+- **JSON-LD** `Church` con las 4 ubicaciones (y uno específico por templo).
+- `sitemap-index.xml` generado con `@astrojs/sitemap` y `public/robots.txt`.
+- **Pendiente (opcional):** añadir una imagen social en `public/og-image.png`
+  (1200×630) y pasarla vía la prop `image` del `Layout` para previsualizaciones
+  enriquecidas al compartir el enlace.
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+## 🌐 Despliegue
+
+Desplegado en Vercel. Configura la variable de entorno **`SITE_URL`** con el
+dominio real para que `canonical`, `sitemap` y `robots` usen la URL correcta:
+
+```
+SITE_URL=https://web-lacasadedios.vercel.app
+```
+
+## 📱 Redes
+
+- Instagram: [@jovenescasadedios._](https://instagram.com/jovenescasadedios._)
+- YouTube: [Conociendo la Palabra](https://www.youtube.com/@casadediosconociendolapalabrad)

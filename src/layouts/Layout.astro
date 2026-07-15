@@ -1,27 +1,88 @@
 ---
 import Navigation from '../components/Navigation.astro';
 import Footer from '../components/Footer.astro';
+import { templos } from '../data/templos';
 
 interface Props {
 	title?: string;
 	description?: string;
+	image?: string;
 }
 
-const { title = 'La Casa de Dios', description = 'Iglesia Cristiana - Bienvenidos a La Casa de Dios' } = Astro.props;
+const {
+	title = 'La Casa de Dios · Iglesia Cristiana',
+	description = 'La Casa de Dios es una comunidad de fe cristiana con templos en Santiago, San Miguel, Limache y Coya. Conoce nuestros horarios, ubicaciones y declaración de fe.',
+	image,
+} = Astro.props;
+
+const canonical = Astro.site
+	? new URL(Astro.url.pathname, Astro.site).href
+	: Astro.url.href;
+const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined;
+
+// Datos estructurados de la organización (todas las páginas).
+const orgJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'Church',
+	name: 'La Casa de Dios',
+	description,
+	url: Astro.site?.toString() ?? canonical,
+	sameAs: [
+		'https://instagram.com/jovenescasadedios._',
+		'https://www.youtube.com/@casadediosconociendolapalabrad',
+	],
+	location: templos.map((t) => ({
+		'@type': 'Place',
+		name: t.name,
+		address: {
+			'@type': 'PostalAddress',
+			streetAddress: t.address,
+			addressLocality: t.city,
+			addressRegion: t.region,
+			addressCountry: 'CL',
+		},
+		geo: { '@type': 'GeoCoordinates', latitude: t.coords.lat, longitude: t.coords.lng },
+	})),
+};
 ---
 
 <!doctype html>
 <html lang="es" data-theme="church">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
+		<meta name="theme-color" content="#1e3a8a" />
+		<meta name="generator" content={Astro.generator} />
+
+		<!-- Open Graph -->
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="La Casa de Dios" />
+		<meta property="og:locale" content="es_CL" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		{ogImage && <meta property="og:image" content={ogImage} />}
+
+		<!-- Twitter -->
+		<meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		{ogImage && <meta name="twitter:image" content={ogImage} />}
+
+		<!-- Fuentes -->
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-		<meta name="generator" content={Astro.generator} />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+
+		<script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} is:inline />
+
 		<title>{title}</title>
 	</head>
 	<body class="min-h-screen">
@@ -39,55 +100,34 @@ const { title = 'La Casa de Dios', description = 'Iglesia Cristiana - Bienvenido
 		scroll-behavior: smooth;
 	}
 
+	/* Títulos con serif elegante para un tono solemne */
+	.font-display {
+		font-family: 'Cormorant Garamond', 'Georgia', serif;
+		letter-spacing: 0.01em;
+	}
+
 	body {
 		transition: background-color 0.3s ease, color 0.3s ease;
 	}
 
-	/* Animaciones personalizadas */
 	@keyframes float {
-		0%, 100% {
-			transform: translateY(0px);
-		}
-		50% {
-			transform: translateY(-20px);
-		}
-	}
-
-	@keyframes slideInLeft {
-		from {
-			opacity: 0;
-			transform: translateX(-50px);
-		}
-		to {
-			opacity: 1;
-			transform: translateX(0);
-		}
-	}
-
-	@keyframes slideInRight {
-		from {
-			opacity: 0;
-			transform: translateX(50px);
-		}
-		to {
-			opacity: 1;
-			transform: translateX(0);
-		}
+		0%, 100% { transform: translateY(0px); }
+		50% { transform: translateY(-20px); }
 	}
 
 	.animate-float {
 		animation: float 6s ease-in-out infinite;
 	}
 
-	.animate-slide-in-left {
-		animation: slideInLeft 0.6s ease-out;
+	@media (prefers-reduced-motion: reduce) {
+		html { scroll-behavior: auto; }
+		.animate-float,
+		.animate-fade-in,
+		.animate-fade-in-up,
+		.animate-slide-in-right { animation: none; }
 	}
 
-	.animate-slide-in-right {
-		animation: slideInRight 0.6s ease-out;
-	}
-
-	/* Breadcrumbs mejorados */
+	/* Breadcrumbs */
 	.breadcrumbs > ul > li + li:before {
 		content: "";
 		margin-left: 0.5rem;
@@ -103,21 +143,17 @@ const { title = 'La Casa de Dios', description = 'Iglesia Cristiana - Bienvenido
 </style>
 
 <script is:inline>
-	// Smooth scroll para enlaces internos
-	document.addEventListener('DOMContentLoaded', function() {
-		// Manejar clics en enlaces con hash
-		document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+	// Smooth scroll para enlaces internos con desfase por el navbar fijo
+	document.addEventListener('DOMContentLoaded', function () {
+		document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
 			anchor.addEventListener('click', function (e) {
 				const href = this.getAttribute('href');
 				if (href && href !== '#') {
-					e.preventDefault();
 					const target = document.querySelector(href);
 					if (target) {
-						const offsetTop = target.offsetTop - 80; // Offset para el navbar fijo
-						window.scrollTo({
-							top: offsetTop,
-							behavior: 'smooth'
-						});
+						e.preventDefault();
+						const offsetTop = target.getBoundingClientRect().top + window.scrollY - 80;
+						window.scrollTo({ top: offsetTop, behavior: 'smooth' });
 					}
 				}
 			});

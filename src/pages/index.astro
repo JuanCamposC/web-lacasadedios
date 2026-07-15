@@ -1,94 +1,101 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { templos } from '../data/templos';
+
+const toneRing = {
+	primary: 'bg-primary/10 group-hover:bg-primary/20',
+	secondary: 'bg-secondary/10 group-hover:bg-secondary/20',
+	accent: 'bg-accent/10 group-hover:bg-accent/20',
+} as const;
+
+const toneBtn = {
+	primary: 'btn-primary',
+	secondary: 'btn-secondary',
+	accent: 'btn-accent',
+} as const;
+
+// Un tono por templo para variar el color de las tarjetas.
+const cardTones = ['primary', 'secondary', 'accent', 'primary'] as const;
 ---
 
-<Layout title="La Casa de Dios - Inicio" description="Bienvenidos a La Casa de Dios, una iglesia cristiana comprometida con la fe y la comunidad">
-	<!-- Hero Section -->
-	<div class="hero min-h-[90vh] relative overflow-hidden hero-bg">
-		<!-- Animated dots background -->
-		<div class="absolute inset-0 z-0" id="dots-background"></div>
-		
-		<!-- Overlay for better star visibility -->
-		<div class="absolute inset-0 bg-gradient-to-b from-amber-900/5 via-transparent to-amber-900/10 z-[1] overlay-light"></div>
-		<div class="absolute inset-0 bg-gradient-to-b from-neutral/20 via-neutral/10 to-neutral/30 z-[1] overlay-dark"></div>
-		
+<Layout>
+	<!-- Hero -->
+	<section class="hero min-h-[90vh] relative overflow-hidden hero-bg">
+		<div class="absolute inset-0 z-0" id="stars"></div>
+		<div class="absolute inset-0 z-[1] bg-gradient-to-b from-transparent via-transparent to-base-100"></div>
+
 		<div class="hero-content text-center z-10 relative">
 			<div class="max-w-4xl px-4">
-				<div class="mb-8 animate-fade-in-up">
-					<h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-						<span class="block text-base-content">BIENVENIDOS A</span>
-						<span class="block text-accent text-6xl md:text-8xl mt-2">La Casa de Dios</span>
+				<div class="mb-6 animate-fade-in-up">
+					<p class="text-sm md:text-base uppercase tracking-[0.3em] text-accent font-medium mb-4">
+						Iglesia Cristiana
+					</p>
+					<h1 class="font-display text-5xl md:text-8xl font-bold leading-tight">
+						<span class="block text-base-content/70 text-3xl md:text-4xl font-medium">Bienvenidos a</span>
+						<span class="block text-primary mt-2">La Casa de Dios</span>
 					</h1>
 				</div>
-				
-				<div class="divider divider-accent max-w-xs mx-auto opacity-50"></div>
-				
-				<p class="text-xl md:text-2xl mb-8 text-base-content/80 font-light italic animate-slide-in-right max-w-2xl mx-auto" style="animation-delay: 0.2s;">
+
+				<div class="divider divider-accent max-w-xs mx-auto opacity-60"></div>
+
+				<p class="text-xl md:text-2xl mb-6 text-base-content/80 font-light italic max-w-2xl mx-auto animate-slide-in-right" style="animation-delay: 0.2s;">
 					"Porque donde dos o tres se reúnen en mi nombre, allí estoy yo en medio de ellos"
 				</p>
-				<p class="text-lg mb-10 text-base-content/70 animate-fade-in max-w-3xl mx-auto" style="animation-delay: 0.3s;">
-					Una comunidad de fe comprometida con la enseñanza de la Palabra de Dios,
-					el servicio y la formación de discípulos de Cristo.
+				<p class="text-base md:text-lg mb-10 text-base-content/70 max-w-3xl mx-auto animate-fade-in" style="animation-delay: 0.3s;">
+					La Palabra de Dios es el fundamento de todo lo que hacemos. Buscamos vivir y
+					compartir Su verdad, crecer en la fe y servir con amor.
 				</p>
-				
+
 				<div class="flex flex-wrap gap-4 justify-center animate-fade-in-up" style="animation-delay: 0.4s;">
-					<a href="/sobre-nosotros" class="btn btn-accent btn-lg gap-2">
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-						</svg>
-						Conócenos
-					</a>
 					<a href="#templos" class="btn btn-primary btn-lg gap-2">
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-						</svg>
-						Nuestros Templos
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+						Nuestros templos
+					</a>
+					<a href="/sobre-nosotros" class="btn btn-outline btn-lg gap-2">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+						Conócenos
 					</a>
 				</div>
 			</div>
 		</div>
-	</div>
+	</section>
 
-	<!-- Info Cards Section -->
+	<!-- Info -->
 	<section class="py-20 px-4 bg-base-100">
 		<div class="container mx-auto max-w-7xl">
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-				<!-- Templos Card -->
 				<div class="card bg-base-100 shadow-xl border border-base-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
 					<div class="card-body text-center">
 						<div class="flex justify-center mb-4">
 							<div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-								</svg>
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
 							</div>
 						</div>
-						<h2 class="card-title justify-center text-2xl mb-3">Templos</h2>
+						<h2 class="card-title justify-center text-2xl mb-3 font-display">Nuestros templos</h2>
 						<p class="text-base-content/70 mb-6">
-							Aquí encontrarás más información sobre nuestros templos, incluyendo su dirección, datos de contacto y mucho más.
+							Cuatro comunidades en Santiago, San Miguel, Limache y Coya. Encuentra
+							direcciones, horarios de cultos y cómo llegar.
 						</p>
 						<div class="card-actions justify-center">
-							<a href="#templos" class="btn btn-primary">SABER MÁS</a>
+							<a href="#templos" class="btn btn-primary">Ver templos</a>
 						</div>
 					</div>
 				</div>
 
-				<!-- Nosotros Card -->
 				<div class="card bg-base-100 shadow-xl border border-base-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
 					<div class="card-body text-center">
 						<div class="flex justify-center mb-4">
-							<div class="w-20 h-20 rounded-full bg-secondary/10 flex items-center justify-center">
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-								</svg>
+							<div class="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
 							</div>
 						</div>
-						<h2 class="card-title justify-center text-2xl mb-3">Nosotros</h2>
+						<h2 class="card-title justify-center text-2xl mb-3 font-display">Sobre nosotros</h2>
 						<p class="text-base-content/70 mb-6">
-							La Palabra de Dios es el fundamento de todo lo que hacemos. Buscamos vivir y compartir su verdad, crecer en la fe y servir con amor.
+							Conoce nuestra visión, misión, valores y declaración de fe. Una familia
+							comprometida con la enseñanza de la Palabra.
 						</p>
 						<div class="card-actions justify-center">
-							<a href="/sobre-nosotros" class="btn btn-secondary">SABER MÁS</a>
+							<a href="/sobre-nosotros" class="btn btn-accent">Saber más</a>
 						</div>
 					</div>
 				</div>
@@ -96,142 +103,73 @@ import Layout from '../layouts/Layout.astro';
 		</div>
 	</section>
 
-	<!-- Templos Section -->
+	<!-- Templos -->
 	<section id="templos" class="py-20 px-4 bg-base-200">
 		<div class="container mx-auto max-w-7xl">
 			<div class="text-center mb-16">
-				<h2 class="text-4xl md:text-5xl font-bold mb-4">Nuestros Templos</h2>
+				<h2 class="font-display text-4xl md:text-5xl font-bold mb-4">Nuestros templos</h2>
 				<div class="divider divider-primary max-w-xs mx-auto"></div>
-				<p class="text-xl text-base-content/70 max-w-2xl mx-auto">Encuentra el templo más cercano a ti y únete a nuestra familia de fe</p>
+				<p class="text-xl text-base-content/70 max-w-2xl mx-auto">
+					Encuentra el templo más cercano y únete a nuestra familia de fe
+				</p>
 			</div>
-			
+
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-				<!-- San Miguel -->
-				<a href="/templos/san-miguel" class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group border border-base-300">
-					<figure class="px-10 pt-10">
-						<div class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-							<span class="text-5xl">🏛️</span>
+				{templos.map((t, i) => (
+					<a href={`/templos/${t.slug}`} class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group border border-base-300">
+						<figure class="px-10 pt-10">
+							<div class={`w-24 h-24 rounded-full flex items-center justify-center transition-colors ${toneRing[cardTones[i]]}`}>
+								<span class="text-5xl">{t.emoji}</span>
+							</div>
+						</figure>
+						<div class="card-body items-center text-center">
+							<h3 class="card-title text-2xl">{t.short}</h3>
+							<p class="text-base-content/70">{t.tagline}</p>
+							<p class="text-xs text-base-content/50 mt-1">{t.region}</p>
+							<div class="card-actions mt-4">
+								<span class={`btn btn-sm btn-outline ${toneBtn[cardTones[i]]} gap-2`}>
+									Ver más
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+								</span>
+							</div>
 						</div>
-					</figure>
-					<div class="card-body items-center text-center">
-						<h3 class="card-title text-2xl">San Miguel</h3>
-						<p class="text-base-content/70">Únete a nuestra comunidad en San Miguel</p>
-						<div class="card-actions mt-4">
-							<button class="btn btn-sm btn-outline btn-primary gap-2">
-								Ver más
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-								</svg>
-							</button>
-						</div>
-					</div>
-				</a>
-
-				<!-- Santiago Centro -->
-				<a href="/templos/santiago-centro" class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group border border-base-300">
-					<figure class="px-10 pt-10">
-						<div class="w-24 h-24 rounded-full bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
-							<span class="text-5xl">🌆</span>
-						</div>
-					</figure>
-					<div class="card-body items-center text-center">
-						<h3 class="card-title text-2xl">Santiago Centro</h3>
-						<p class="text-base-content/70">En el corazón de Santiago</p>
-						<div class="card-actions mt-4">
-							<button class="btn btn-sm btn-outline btn-secondary gap-2">
-								Ver más
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-								</svg>
-							</button>
-						</div>
-					</div>
-				</a>
-
-				<!-- Limache -->
-				<a href="/templos/limache" class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group border border-base-300">
-					<figure class="px-10 pt-10">
-						<div class="w-24 h-24 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
-							<span class="text-5xl">🏘️</span>
-						</div>
-					</figure>
-					<div class="card-body items-center text-center">
-						<h3 class="card-title text-2xl">Limache</h3>
-						<p class="text-base-content/70">Sirviendo a la comunidad de Limache</p>
-						<div class="card-actions mt-4">
-							<button class="btn btn-sm btn-outline btn-accent gap-2">
-								Ver más
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-								</svg>
-							</button>
-						</div>
-					</div>
-				</a>
-
-				<!-- Coya -->
-				<a href="/templos/coya" class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group border border-base-300">
-					<figure class="px-10 pt-10">
-						<div class="w-24 h-24 rounded-full bg-success/10 flex items-center justify-center group-hover:bg-success/20 transition-colors">
-							<span class="text-5xl">⛰️</span>
-						</div>
-					</figure>
-					<div class="card-body items-center text-center">
-						<h3 class="card-title text-2xl">Coya</h3>
-						<p class="text-base-content/70">Una familia en Coya</p>
-						<div class="card-actions mt-4">
-							<button class="btn btn-sm btn-outline btn-success gap-2">
-								Ver más
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-								</svg>
-							</button>
-						</div>
-					</div>
-				</a>
+					</a>
+				))}
 			</div>
 		</div>
 	</section>
 
-	<!-- Social Section -->
+	<!-- Redes -->
 	<section class="py-20 px-4 bg-base-100">
 		<div class="container mx-auto max-w-6xl">
 			<div class="text-center mb-16">
-				<h2 class="text-4xl md:text-5xl font-bold mb-4">Síguenos en nuestras redes</h2>
+				<h2 class="font-display text-4xl md:text-5xl font-bold mb-4">Síguenos</h2>
 				<div class="divider divider-primary max-w-xs mx-auto"></div>
-				<p class="text-xl text-base-content/70">Conéctate con lo que Dios está haciendo a través de nuestras plataformas digitales</p>
+				<p class="text-xl text-base-content/70">
+					Conéctate con lo que Dios está haciendo a través de nuestras plataformas
+				</p>
 			</div>
-			
+
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-				<!-- Instagram Card -->
 				<div class="card bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 text-white shadow-2xl">
 					<div class="card-body items-center text-center">
 						<div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-4 backdrop-blur-sm">
-							<svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-								<path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-							</svg>
+							<svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
 						</div>
 						<h3 class="card-title text-3xl mb-2">Instagram</h3>
 						<p class="mb-4">En @jovenescasadedios._ podrás ver actividades e información de nuestras reuniones.</p>
-						<a href="https://instagram.com/jovenescasadedios._" target="_blank" rel="noopener noreferrer" class="btn btn-outline border-white text-white hover:bg-white hover:text-purple-600">
-							Ver Instagram
-						</a>
+						<a href="https://instagram.com/jovenescasadedios._" target="_blank" rel="noopener noreferrer" class="btn btn-outline border-white text-white hover:bg-white hover:text-purple-600">Ver Instagram</a>
 					</div>
 				</div>
 
-				<!-- YouTube Card -->
 				<div class="card bg-gradient-to-br from-red-600 to-red-800 text-white shadow-2xl">
 					<div class="card-body items-center text-center">
 						<div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-4 backdrop-blur-sm">
-							<svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-								<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-							</svg>
+							<svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
 						</div>
 						<h3 class="card-title text-3xl mb-2">YouTube</h3>
-						<p class="mb-4">Encuentra palabra de Dios con más de 600 videos en nuestro canal de YouTube.</p>
-						<a href="https://www.youtube.com/@casadediosconociendolapalabrad" target="_blank" rel="noopener noreferrer" class="btn btn-outline border-white text-white hover:bg-white hover:text-red-600">
-							Ver Canal
-						</a>
+						<p class="mb-4">Encuentra la Palabra de Dios con cientos de videos en "Conociendo la Palabra".</p>
+						<a href="https://www.youtube.com/@casadediosconociendolapalabrad" target="_blank" rel="noopener noreferrer" class="btn btn-outline border-white text-white hover:bg-white hover:text-red-600">Ver canal</a>
 					</div>
 				</div>
 			</div>
@@ -240,169 +178,48 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <style>
-	#dots-background {
-		background: transparent;
-	}
-
-	/* Hero background - crema for light theme, gradient for dark theme */
+	/* Hero cálido y solemne (marfil → azul suave → dorado tenue) */
 	.hero-bg {
-		background: linear-gradient(135deg, oklch(var(--n) / 0.8) 0%, oklch(var(--p) / 0.6) 50%, oklch(var(--a) / 0.7) 100%);
+		background:
+			radial-gradient(ellipse 70% 55% at 50% 0%, oklch(var(--p) / 0.10) 0%, transparent 60%),
+			linear-gradient(160deg, #fffdf9 0%, #f2f5fb 45%, #f7efd9 100%);
+	}
+</style>
+
+<style is:global>
+	.star {
+		position: absolute;
+		border-radius: 9999px;
+		background: radial-gradient(circle, #c19a3e 0%, rgba(193, 154, 62, 0.35) 45%, transparent 70%);
+		box-shadow: 0 0 6px rgba(193, 154, 62, 0.55);
+		animation: twinkle 3s ease-in-out infinite;
 	}
 
-	[data-theme="church"] .hero-bg {
-		background: linear-gradient(135deg, #ff0000 0%, #ff0000 50%, #ff0000 100%);
+	@keyframes twinkle {
+		0%, 100% { opacity: var(--star-opacity, 0.35); transform: scale(1); }
+		50% { opacity: 1; transform: scale(1.5); }
 	}
 
-	/* Overlays visibility */
-	.overlay-light {
-		display: none;
-	}
-
-	.overlay-dark {
-		display: block;
-	}
-
-	[data-theme="church"] .overlay-light {
-		display: block;
-	}
-
-	[data-theme="church"] .overlay-dark {
-		display: none;
+	@media (prefers-reduced-motion: reduce) {
+		.star { animation: none; }
 	}
 </style>
 
 <script>
-	// Create starry sky effect with random twinkling
-	const dotsContainer = document.getElementById('dots-background');
-	
-	if (dotsContainer) {
-		// Create multiple stars with random properties
-		for (let i = 0; i < 80; i++) {
-			const star = document.createElement('div');
-			star.className = 'absolute rounded-full star-twinkle';
-			
-			// Random size between 1-4px for variety
+	const container = document.getElementById('stars');
+	if (container) {
+		for (let i = 0; i < 60; i++) {
+			const star = document.createElement('span');
+			star.className = 'star';
 			const size = Math.random() * 3 + 1;
 			star.style.width = `${size}px`;
 			star.style.height = `${size}px`;
-			
-			// Completely random position across the hero
 			star.style.left = `${Math.random() * 100}%`;
-			star.style.top = `${Math.random() * 100}%`;
-			
-			// Random animation delay for disorder
+			star.style.top = `${Math.random() * 70}%`;
 			star.style.animationDelay = `${Math.random() * 5}s`;
-			
-			// Random animation duration for variety (1.5s to 4s)
 			star.style.animationDuration = `${Math.random() * 2.5 + 1.5}s`;
-			
-			// Random opacity for depth
 			star.style.setProperty('--star-opacity', (Math.random() * 0.5 + 0.3).toString());
-			
-			dotsContainer.appendChild(star);
+			container.appendChild(star);
 		}
 	}
 </script>
-
-<style is:global>
-	@keyframes twinkle {
-		0% {
-			opacity: var(--star-opacity, 0.3);
-			transform: scale(1);
-		}
-		25% {
-			opacity: 0.2;
-			transform: scale(0.8);
-		}
-		50% {
-			opacity: 1;
-			transform: scale(1.5);
-			filter: brightness(1.8);
-		}
-		75% {
-			opacity: 0.3;
-			transform: scale(0.9);
-		}
-		100% {
-			opacity: var(--star-opacity, 0.3);
-			transform: scale(1);
-		}
-	}
-
-	.star-twinkle {
-		animation: twinkle 3s ease-in-out infinite;
-		background: radial-gradient(circle, currentColor 0%, transparent 70%);
-		color: oklch(var(--a) / 1);
-		box-shadow: 0 0 8px currentColor, 0 0 12px currentColor;
-		filter: brightness(1.3);
-	}
-
-	[data-theme="dark"] .star-twinkle {
-		color: oklch(var(--a) / 1);
-		box-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 25px currentColor;
-		filter: brightness(1.4);
-	}
-
-	[data-theme="church"] .star-twinkle {
-		color: #d97706;
-		background: radial-gradient(circle, #f59e0b 0%, rgba(245, 158, 11, 0.4) 40%, transparent 70%);
-		box-shadow: 0 0 6px rgba(217, 119, 6, 0.8), 0 0 12px rgba(245, 158, 11, 0.6), 0 0 18px rgba(245, 158, 11, 0.4);
-		filter: brightness(1.5) saturate(1.3);
-	}
-
-	@keyframes twinkle {
-		0% {
-			opacity: var(--star-opacity, 0.3);
-			transform: scale(1);
-		}
-		25% {
-			opacity: 0.2;
-			transform: scale(0.8);
-		}
-		50% {
-			opacity: 1;
-			transform: scale(1.5);
-			filter: brightness(2.2) saturate(1.4);
-		}
-		75% {
-			opacity: 0.3;
-			transform: scale(0.9);
-		}
-		100% {
-			opacity: var(--star-opacity, 0.3);
-			transform: scale(1);
-		}
-	}
-
-	[data-theme="church"] .star-twinkle {
-		animation: twinkle-light 3s ease-in-out infinite;
-	}
-
-	@keyframes twinkle-light {
-		0% {
-			opacity: 0.5;
-			transform: scale(1);
-			filter: brightness(1.3) saturate(1.2);
-		}
-		25% {
-			opacity: 0.3;
-			transform: scale(0.8);
-			filter: brightness(1.1) saturate(1);
-		}
-		50% {
-			opacity: 1;
-			transform: scale(1.8);
-			filter: brightness(2.5) saturate(1.6) drop-shadow(0 0 8px #f59e0b);
-		}
-		75% {
-			opacity: 0.4;
-			transform: scale(0.9);
-			filter: brightness(1.2) saturate(1.1);
-		}
-		100% {
-			opacity: 0.5;
-			transform: scale(1);
-			filter: brightness(1.3) saturate(1.2);
-		}
-	}
-</style>
