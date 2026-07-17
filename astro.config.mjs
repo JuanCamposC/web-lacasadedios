@@ -1,8 +1,9 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
+import icon from 'astro-icon';
+import tailwindcss from '@tailwindcss/vite';
 
 // URL de producción (sobrescribible con la variable de entorno SITE_URL en Vercel).
 const site = process.env.SITE_URL || 'https://web-lacasadedios.vercel.app';
@@ -14,5 +15,8 @@ export default defineConfig({
   // videos) se sirven bajo demanda con `export const prerender = false`.
   output: 'static',
   adapter: vercel(),
-  integrations: [tailwind(), sitemap()],
+  integrations: [sitemap(), icon()],
+  vite: {
+    plugins: [tailwindcss()],
+  },
 });

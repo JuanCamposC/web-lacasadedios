@@ -10,6 +10,7 @@ import '@fontsource/poppins/400.css';
 import '@fontsource/poppins/500.css';
 import '@fontsource/poppins/600.css';
 import '@fontsource/poppins/700.css';
+import '../styles/global.css';
 
 interface Props {
 	title?: string;
@@ -106,70 +107,6 @@ const orgJsonLd = {
 		<Footer />
 	</body>
 </html>
-
-<style is:global>
-	html {
-		font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-		scroll-behavior: smooth;
-	}
-
-	/* Sistema tipográfico coherente:
-	   · Serif (Playfair Display) para TODOS los títulos → combina con el logo
-	   · Poppins (sans) para cuerpo, botones y UI */
-	h1, h2, h3, h4,
-	.card-title,
-	.font-display {
-		font-family: 'Playfair Display Variable', 'Georgia', 'Times New Roman', serif;
-		letter-spacing: 0.005em;
-	}
-
-	/* Logo: negro sobre fondos claros; se invierte a blanco en modo oscuro */
-	.site-logo {
-		transition: filter 0.3s ease;
-	}
-	[data-theme='churchdark'] .site-logo {
-		filter: invert(1) brightness(1.8);
-	}
-	/* El footer siempre tiene fondo oscuro → logo siempre en blanco */
-	.footer-logo {
-		filter: invert(1) brightness(1.8);
-	}
-
-	body {
-		transition: background-color 0.3s ease, color 0.3s ease;
-	}
-
-	@keyframes float {
-		0%, 100% { transform: translateY(0px); }
-		50% { transform: translateY(-20px); }
-	}
-
-	.animate-float {
-		animation: float 6s ease-in-out infinite;
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		html { scroll-behavior: auto; }
-		.animate-float,
-		.animate-fade-in,
-		.animate-fade-in-up,
-		.animate-slide-in-right { animation: none; }
-	}
-
-	/* Breadcrumbs */
-	.breadcrumbs > ul > li + li:before {
-		content: "";
-		margin-left: 0.5rem;
-		margin-right: 0.75rem;
-		display: block;
-		height: 0.375rem;
-		width: 0.375rem;
-		transform: rotate(45deg);
-		opacity: 0.4;
-		border-top: 1px solid;
-		border-right: 1px solid;
-	}
-</style>
 
 <script is:inline>
 	// Smooth scroll para enlaces internos con desfase por el navbar fijo
