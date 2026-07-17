@@ -15,6 +15,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       titleField: 'title',
       subtitleField: 'location',
       orderBy: { column: 'event_date', ascending: false },
+      notify: { type: 'evento', urlBase: '/eventos' },
       fields: [
         { name: 'title', label: 'Título', type: 'text', required: true },
         { name: 'event_date', label: 'Fecha y hora', type: 'datetime-local', required: true },

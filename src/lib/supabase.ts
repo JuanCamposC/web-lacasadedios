@@ -66,6 +66,12 @@ export interface VideoItem {
   sort_order: number;
 }
 
+export interface SiteSettings {
+  live_enabled: boolean;
+  live_url: string | null;
+  live_title: string | null;
+}
+
 /** Extrae el ID de un video de YouTube desde varias formas de URL. */
 export function youtubeId(url: string): string | null {
   if (!url) return null;

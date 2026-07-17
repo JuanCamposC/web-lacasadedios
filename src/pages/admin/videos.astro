@@ -15,6 +15,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       titleField: 'title',
       subtitleField: 'youtube_url',
       orderBy: { column: 'sort_order', ascending: true },
+      notify: { type: 'video', urlBase: '/videos' },
       fields: [
         { name: 'title', label: 'Título', type: 'text', required: true },
         { name: 'youtube_url', label: 'Link de YouTube', type: 'url', required: true, help: 'Pega la URL del video (youtube.com/watch?v=… o youtu.be/…).' },

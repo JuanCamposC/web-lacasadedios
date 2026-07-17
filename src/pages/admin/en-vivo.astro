@@ -1,0 +1,79 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { Icon } from 'astro-icon/components';
+
+const supabase = Astro.locals.supabase;
+if (!supabase) return Astro.redirect('/admin/login');
+
+const { data } = await supabase
+  .from('settings')
+  .select('live_enabled, live_url, live_title')
+  .eq('id', 1)
+  .maybeSingle();
+const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
+---
+
+<AdminLayout title="En vivo" active="en-vivo">
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold">Transmisión en vivo</h1>
+    <p class="mt-1 opacity-70">Habilita el "En vivo" y pega el enlace de la transmisión de YouTube. Cuando esté activo, aparecerá un botón flotante en el sitio y en <a href="/en-vivo" class="link link-primary">/en-vivo</a>.</p>
+  </div>
+
+  <div class="max-w-xl rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
+    <form id="live-form" class="space-y-5">
+      <label class="flex cursor-pointer items-center justify-between gap-4 rounded-xl bg-base-200 p-4">
+        <span>
+          <span class="flex items-center gap-2 font-semibold"><Icon name="lucide:radio" class="h-5 w-5 text-red-500" /> En vivo ahora</span>
+          <span class="text-sm opacity-60">Activa esto cuando estén transmitiendo.</span>
+        </span>
+        <input type="checkbox" name="live_enabled" class="toggle toggle-primary" checked={s.live_enabled} />
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium">Enlace de YouTube (transmisión)</span>
+        <input type="url" name="live_url" value={s.live_url ?? ''} placeholder="https://www.youtube.com/watch?v=..." class="input input-bordered w-full" />
+        <span class="mt-1 block text-xs opacity-60">Pega la URL del video en vivo (watch?v=… o youtu.be/…).</span>
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium">Título (opcional)</span>
+        <input type="text" name="live_title" value={s.live_title ?? ''} placeholder="Culto dominical" class="input input-bordered w-full" />
+      </label>
+
+      <p id="live-msg" class="hidden text-sm"></p>
+      <button type="submit" id="live-save" class="btn btn-primary gap-2"><Icon name="lucide:save" class="h-5 w-5" /> Guardar</button>
+    </form>
+  </div>
+
+  <script>
+    import { createBrowserSupabase } from '../../lib/supabase';
+    const supabase = createBrowserSupabase();
+    const form = document.getElementById('live-form') as HTMLFormElement;
+    const msg = document.getElementById('live-msg')!;
+    const btn = document.getElementById('live-save') as HTMLButtonElement;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+      msg.className = 'hidden text-sm';
+      const fd = new FormData(form);
+      const payload = {
+        live_enabled: (form.querySelector('[name="live_enabled"]') as HTMLInputElement).checked,
+        live_url: String(fd.get('live_url') || '').trim() || null,
+        live_title: String(fd.get('live_title') || '').trim() || null,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from('settings').update(payload).eq('id', 1);
+      btn.disabled = false;
+      if (error) {
+        msg.textContent = 'Error al guardar: ' + error.message;
+        msg.className = 'text-sm text-error';
+      } else {
+        msg.textContent = 'Guardado correctamente.';
+        msg.className = 'text-sm text-success';
+      }
+    });
+  </script>
+</AdminLayout>

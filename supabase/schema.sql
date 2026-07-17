@@ -90,6 +90,24 @@ create policy "auth read subscribers" on public.subscribers for select
 create policy "auth delete subscribers" on public.subscribers for delete
   using (auth.role() = 'authenticated');
 
+-- ── Ajustes del sitio: "En vivo" (fila única) ────────────────────────────────
+create table if not exists public.settings (
+  id           int primary key default 1,
+  live_enabled boolean not null default false,
+  live_url     text,
+  live_title   text,
+  updated_at   timestamptz not null default now(),
+  constraint settings_single_row check (id = 1)
+);
+insert into public.settings (id) values (1) on conflict (id) do nothing;
+
+alter table public.settings enable row level security;
+-- Lectura pública (para mostrar el estado "En vivo" en el sitio)
+create policy "public read settings" on public.settings for select using (true);
+-- Solo el mantenedor autenticado puede cambiarlo
+create policy "auth update settings" on public.settings for update
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
 -- ── Datos de ejemplo (opcional; borra si no los quieres) ─────────────────────
 insert into public.events (title, event_date, location, description) values
   ('Culto de Aniversario', now() + interval '14 days', 'Templo San Miguel', 'Celebración especial de aniversario de la congregación.')

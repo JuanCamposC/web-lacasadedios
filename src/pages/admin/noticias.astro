@@ -15,6 +15,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       titleField: 'title',
       subtitleField: 'excerpt',
       orderBy: { column: 'published_at', ascending: false },
+      notify: { type: 'noticia', urlBase: '/noticias' },
       fields: [
         { name: 'title', label: 'Título', type: 'text', required: true },
         { name: 'excerpt', label: 'Resumen breve', type: 'text', help: 'Una o dos líneas para la tarjeta.' },

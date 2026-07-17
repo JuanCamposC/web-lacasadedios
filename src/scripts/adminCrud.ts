@@ -15,6 +15,8 @@ export type CrudConfig = {
   orderBy: { column: string; ascending: boolean };
   titleField: string;
   subtitleField?: string;
+  /** si se define, ofrece notificar a suscriptores al crear contenido publicado */
+  notify?: { type: string; urlBase: string };
 };
 
 function esc(s: unknown): string {
@@ -72,6 +74,7 @@ export function setupCrud(config: CrudConfig) {
           <form id="crud-form" class="space-y-4">
             <input type="hidden" name="id" />
             ${fieldHtml}
+            ${config.notify ? `<label class="flex cursor-pointer items-center gap-2 rounded-lg bg-base-200 p-3"><input type="checkbox" name="__notify" checked class="checkbox checkbox-primary checkbox-sm" /><span class="text-sm">Notificar a suscriptores <span class="opacity-60">(al crear, si está publicado)</span></span></label>` : ''}
             <div class="flex gap-2 pt-1">
               <button type="submit" class="btn btn-primary" id="crud-save">Guardar</button>
               <button type="button" class="btn btn-ghost hidden" id="crud-cancel">Cancelar</button>
@@ -217,6 +220,29 @@ export function setupCrud(config: CrudConfig) {
         : await supabase.from(config.table).insert(payload);
 
       if (res.error) throw res.error;
+
+      // Notificar a suscriptores al CREAR contenido publicado
+      if (!id && config.notify && payload.published) {
+        const notifyEl = form.querySelector('[name="__notify"]') as HTMLInputElement | null;
+        if (notifyEl?.checked) {
+          try {
+            const r = await fetch('/api/notify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: config.notify.type,
+                title: payload[config.titleField],
+                url: location.origin + config.notify.urlBase,
+              }),
+            }).then((x) => x.json());
+            if (r.ok) toast(`Notificados ${r.sent} suscriptor(es)`);
+            else if (r.reason === 'no_email_provider') toast('Guardado. Falta configurar el correo para notificar.', 'error');
+          } catch {
+            /* notificación silenciosa si falla */
+          }
+        }
+      }
+
       toast('Guardado correctamente');
       resetForm();
       load();

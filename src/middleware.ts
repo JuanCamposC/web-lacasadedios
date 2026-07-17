@@ -3,7 +3,7 @@ import { createServerSupabase, supabaseConfigured } from './lib/supabase';
 
 // Rutas servidas bajo demanda que usan Supabase. Las demás páginas son
 // estáticas y NO deben tocar el cliente (evita leer headers en prerender).
-const SSR_PREFIXES = ['/admin', '/eventos', '/noticias', '/videos'];
+const SSR_PREFIXES = ['/admin', '/eventos', '/noticias', '/videos', '/en-vivo', '/api'];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname;

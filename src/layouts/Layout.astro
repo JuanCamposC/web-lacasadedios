@@ -105,11 +105,29 @@ const orgJsonLd = {
 			<slot />
 		</main>
 		<Footer />
+
+		<a id="live-pill" href="/en-vivo" class="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500">
+			<span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-white"></span> En vivo
+		</a>
 	</body>
 </html>
 
 <script>
 	import '../scripts/reveal';
+	import { createBrowserSupabase } from '../lib/supabase';
+
+	(async () => {
+		const pill = document.getElementById('live-pill');
+		if (!pill) return;
+		try {
+			const supabase = createBrowserSupabase();
+			const { data } = await supabase.from('settings').select('live_enabled').eq('id', 1).maybeSingle();
+			if (data && data.live_enabled) {
+				pill.classList.remove('hidden');
+				pill.classList.add('inline-flex');
+			}
+		} catch {}
+	})();
 </script>
 
 <script is:inline>

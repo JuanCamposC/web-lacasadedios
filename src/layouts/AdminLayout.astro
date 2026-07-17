@@ -9,7 +9,7 @@ import '../styles/global.css';
 
 interface Props {
   title?: string;
-  active?: 'inicio' | 'eventos' | 'noticias' | 'videos' | 'suscriptores';
+  active?: 'inicio' | 'eventos' | 'noticias' | 'videos' | 'suscriptores' | 'en-vivo';
 }
 const { title = 'Panel', active } = Astro.props;
 const user = Astro.locals.user;
@@ -19,6 +19,7 @@ const links = [
   { href: '/admin/eventos', label: 'Eventos', key: 'eventos', icon: 'lucide:calendar' },
   { href: '/admin/noticias', label: 'Noticias', key: 'noticias', icon: 'lucide:newspaper' },
   { href: '/admin/videos', label: 'Videos', key: 'videos', icon: 'lucide:youtube' },
+  { href: '/admin/en-vivo', label: 'En vivo', key: 'en-vivo', icon: 'lucide:radio' },
   { href: '/admin/suscriptores', label: 'Suscriptores', key: 'suscriptores', icon: 'lucide:mail' },
 ];
 ---
