@@ -1,0 +1,77 @@
+---
+export const prerender = false;
+---
+
+<!doctype html>
+<html lang="es" data-theme="church">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Ingresar · Admin — La Casa de Dios</title>
+  </head>
+  <body class="min-h-screen bg-base-200 flex items-center justify-center p-4">
+    <div class="card bg-base-100 shadow-xl w-full max-w-sm border border-base-300">
+      <div class="card-body">
+        <img src="/logo.png" alt="La Casa de Dios" class="h-10 w-auto mx-auto mb-2" />
+        <h1 class="text-2xl font-bold text-center mb-4">Panel de administración</h1>
+
+        <form id="login-form" class="space-y-3">
+          <label class="block">
+            <span class="text-sm font-medium">Correo</span>
+            <input type="email" name="email" required autocomplete="email"
+              class="input input-bordered w-full mt-1" />
+          </label>
+          <label class="block">
+            <span class="text-sm font-medium">Contraseña</span>
+            <input type="password" name="password" required autocomplete="current-password"
+              class="input input-bordered w-full mt-1" />
+          </label>
+
+          <p id="error" class="text-sm text-error hidden"></p>
+
+          <button type="submit" id="submit" class="btn btn-primary w-full">Ingresar</button>
+        </form>
+
+        <a href="/" class="link link-hover text-sm text-center opacity-70 mt-2">← Volver al sitio</a>
+      </div>
+    </div>
+
+    <script>
+      import { createBrowserSupabase } from '../../lib/supabase';
+
+      const form = document.getElementById('login-form') as HTMLFormElement;
+      const errorEl = document.getElementById('error') as HTMLParagraphElement;
+      const submit = document.getElementById('submit') as HTMLButtonElement;
+      const supabase = createBrowserSupabase();
+
+      // Si ya hay sesión, ir al panel.
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) window.location.href = '/admin';
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorEl.classList.add('hidden');
+        submit.disabled = true;
+        submit.textContent = 'Ingresando…';
+
+        const fd = new FormData(form);
+        const { error } = await supabase.auth.signInWithPassword({
+          email: String(fd.get('email')),
+          password: String(fd.get('password')),
+        });
+
+        if (error) {
+          errorEl.textContent = 'Correo o contraseña incorrectos.';
+          errorEl.classList.remove('hidden');
+          submit.disabled = false;
+          submit.textContent = 'Ingresar';
+          return;
+        }
+        window.location.href = '/admin';
+      });
+    </script>
+  </body>
+</html>

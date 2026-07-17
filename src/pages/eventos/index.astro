@@ -1,0 +1,94 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import type { EventItem } from '../../lib/supabase';
+
+const supabase = Astro.locals.supabase;
+let events: EventItem[] = [];
+if (supabase) {
+  const { data } = await supabase
+    .from('events')
+    .select('*')
+    .eq('published', true)
+    .order('event_date', { ascending: true });
+  events = data ?? [];
+}
+
+const now = Date.now();
+const upcoming = events.filter((e) => new Date(e.event_date).getTime() >= now);
+const past = events
+  .filter((e) => new Date(e.event_date).getTime() < now)
+  .reverse();
+
+const fmtDate = (d: string) =>
+  new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
+const fmtTime = (d: string) =>
+  new Intl.DateTimeFormat('es-CL', { hour: '2-digit', minute: '2-digit' }).format(new Date(d));
+---
+
+<Layout
+  title="Eventos · La Casa de Dios"
+  description="Próximos eventos y actividades de La Casa de Dios: cultos especiales, encuentros y celebraciones."
+>
+  <section class="hero min-h-[36vh] bg-gradient-to-br from-primary/10 via-base-100 to-accent/10">
+    <div class="hero-content text-center">
+      <div class="max-w-3xl">
+        <div class="badge badge-primary badge-lg mb-4">Agenda</div>
+        <h1 class="font-display text-5xl md:text-6xl font-bold text-primary mb-4">Eventos</h1>
+        <p class="text-lg opacity-80">Actividades, cultos especiales y encuentros de nuestra comunidad</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 px-4 bg-base-100">
+    <div class="container mx-auto max-w-5xl">
+      {upcoming.length === 0 && past.length === 0 && (
+        <p class="text-center text-lg opacity-70 py-16">
+          Pronto publicaremos nuestros próximos eventos. ¡Vuelve a visitarnos!
+        </p>
+      )}
+
+      {upcoming.length > 0 && (
+        <>
+          <h2 class="font-display text-3xl font-bold mb-8">Próximos eventos</h2>
+          <div class="grid md:grid-cols-2 gap-6 mb-16">
+            {upcoming.map((e) => (
+              <article class="card bg-base-100 shadow-lg border border-base-300 overflow-hidden hover:shadow-xl transition-all">
+                {e.image_url && (
+                  <figure class="h-48"><img src={e.image_url} alt={e.title} class="w-full h-full object-cover" loading="lazy" /></figure>
+                )}
+                <div class="card-body">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <div class="badge badge-primary gap-1">📅 {fmtDate(e.event_date)}</div>
+                    <div class="badge badge-ghost">🕒 {fmtTime(e.event_date)}</div>
+                  </div>
+                  <h3 class="card-title text-2xl mt-2">{e.title}</h3>
+                  {e.location && <p class="text-sm text-accent font-medium">📍 {e.location}</p>}
+                  {e.description && <p class="opacity-80 mt-1">{e.description}</p>}
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
+
+      {past.length > 0 && (
+        <>
+          <h2 class="font-display text-2xl font-bold mb-6 opacity-70">Eventos anteriores</h2>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {past.map((e) => (
+              <div class="card bg-base-200/60 border border-base-300">
+                <div class="card-body p-5">
+                  <div class="text-xs opacity-60">{fmtDate(e.event_date)}</div>
+                  <h3 class="card-title text-lg">{e.title}</h3>
+                  {e.location && <p class="text-sm opacity-70">📍 {e.location}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  </section>
+</Layout>

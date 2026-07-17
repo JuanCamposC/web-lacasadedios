@@ -1,0 +1,28 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Eventos" active="eventos">
+  <h1 class="text-2xl font-bold mb-6">Eventos</h1>
+  <div id="crud-root"></div>
+
+  <script>
+    import { setupCrud } from '../../scripts/adminCrud';
+    setupCrud({
+      table: 'events',
+      singular: 'evento',
+      titleField: 'title',
+      subtitleField: 'location',
+      orderBy: { column: 'event_date', ascending: false },
+      fields: [
+        { name: 'title', label: 'Título', type: 'text', required: true },
+        { name: 'event_date', label: 'Fecha y hora', type: 'datetime-local', required: true },
+        { name: 'location', label: 'Lugar', type: 'text' },
+        { name: 'description', label: 'Descripción', type: 'textarea' },
+        { name: 'image_url', label: 'Imagen (opcional)', type: 'image' },
+        { name: 'published', label: 'Publicado', type: 'checkbox' },
+      ],
+    });
+  </script>
+</AdminLayout>

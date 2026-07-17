@@ -1,10 +1,11 @@
 # La Casa de Dios — Sitio web
 
-Sitio institucional de la iglesia **La Casa de Dios**, con información de sus
-templos (Santiago Centro, San Miguel, Limache y Coya), horarios de cultos,
-declaración de fe y redes sociales.
+Sitio institucional de la iglesia **La Casa de Dios**: templos (Santiago Centro,
+San Miguel, Limache y Coya), horarios, declaración de fe, y secciones de
+**eventos, noticias y videos** gestionables desde un panel con login.
 
-Construido con **Astro 5**, **Tailwind CSS 3** y **DaisyUI** (tema `church`).
+Construido con **Astro 5** (SSR en Vercel), **Tailwind CSS 3**, **DaisyUI** (temas
+`church` claro y `churchdark` oscuro) y **Supabase** (base de datos + auth + storage).
 
 ## 🧞 Comandos
 
@@ -12,59 +13,66 @@ Construido con **Astro 5**, **Tailwind CSS 3** y **DaisyUI** (tema `church`).
 | :---------------- | :------------------------------------------- |
 | `npm install`     | Instala dependencias                         |
 | `npm run dev`     | Servidor local en `localhost:4321`           |
-| `npm run build`   | Compila el sitio a `./dist/`                 |
-| `npm run preview` | Previsualiza el build antes de desplegar     |
+| `npm run build`   | Compila el sitio                             |
 
 ## 📁 Estructura
 
 ```text
 src/
-├── components/
-│   ├── Navigation.astro     # Navbar + toggle de tema (a11y)
-│   ├── Footer.astro
-│   └── TemploPage.astro     # Plantilla compartida de cada templo
-├── data/
-│   └── templos.ts           # ★ Fuente única de datos de los templos
-├── layouts/
-│   └── Layout.astro         # SEO (OG/Twitter/canonical/JSON-LD) + fuentes
+├── components/       Navigation, Footer, TemploPage
+├── data/templos.ts   ★ Datos de los templos y contacto (CONTACT)
+├── layouts/          Layout (público) y AdminLayout (panel)
+├── lib/supabase.ts   Clientes Supabase (browser/server) + tipos
+├── middleware.ts     Protege /admin y expone el cliente en rutas SSR
+├── scripts/adminCrud.ts   Lógica CRUD reutilizable del panel
 └── pages/
-    ├── index.astro
-    ├── sobre-nosotros.astro
-    └── templos/
-        ├── santiago-centro.astro   # wrappers de 3 líneas → <TemploPage slug="…" />
-        ├── san-miguel.astro
-        ├── limache.astro
-        └── coya.astro
+    ├── index / sobre-nosotros / templos/*   (estáticas)
+    ├── eventos / noticias / videos          (SSR, leen de Supabase)
+    └── admin/  login, index, eventos, noticias, videos  (SSR, protegidas)
 ```
 
-## ✏️ Cómo editar el contenido
+## ✏️ Contenido
 
-Casi todo el contenido de los templos (direcciones, horarios, mapas, pastores)
-vive en **[`src/data/templos.ts`](src/data/templos.ts)**. Edita ahí y las
-páginas se actualizan solas.
+- **Templos** (direcciones, horarios, pastores, contacto): [`src/data/templos.ts`](src/data/templos.ts).
+- **Eventos, noticias y videos**: desde el **panel `/admin`** (ver abajo).
 
-> **Pendiente de datos reales:** los campos `phone` y `email` de cada templo
-> están vacíos a propósito (los valores previos eran placeholders como
-> `+56 9 1234 5678`). Al completarlos en `templos.ts`, la tarjeta de contacto
-> los muestra automáticamente; si están vacíos, se ofrece contacto por Instagram.
+## 🔐 Panel de administración
+
+1. Entra a **`/admin`** → te pedirá iniciar sesión (`/admin/login`).
+2. Con tu usuario de Supabase puedes crear/editar/borrar **eventos, noticias y
+   videos**, y subir imágenes. Los cambios aparecen al instante en el sitio.
+
+Los usuarios se crean en Supabase (*Authentication → Users*). El registro público
+está desactivado: solo entra quien tú autorices.
+
+## ⚙️ Configuración (Supabase)
+
+1. Crea un proyecto en [supabase.com](https://supabase.com).
+2. Ejecuta [`supabase/schema.sql`](supabase/schema.sql) en el *SQL Editor*
+   (crea tablas, RLS y el bucket de imágenes).
+3. Copia [`.env.example`](.env.example) a `.env` y completa:
+
+```
+PUBLIC_SUPABASE_URL=https://<tu-proyecto>.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...   # o la anon key (pública)
+SITE_URL=https://web-lacasadedios.vercel.app
+```
+
+> No se usa la `service_role` / clave secreta: toda la escritura pasa por la
+> sesión autenticada + las políticas RLS.
+
+## 🌐 Despliegue (Vercel)
+
+El sitio usa el adapter `@astrojs/vercel` (SSR). En Vercel → *Settings →
+Environment Variables* añade las mismas 3 variables (`PUBLIC_SUPABASE_URL`,
+`PUBLIC_SUPABASE_ANON_KEY`, `SITE_URL`) y vuelve a desplegar.
 
 ## 🔎 SEO
 
-- Metadatos Open Graph / Twitter, `canonical` y `theme-color` en `Layout.astro`.
-- **JSON-LD** `Church` con las 4 ubicaciones (y uno específico por templo).
-- `sitemap-index.xml` generado con `@astrojs/sitemap` y `public/robots.txt`.
-- **Pendiente (opcional):** añadir una imagen social en `public/og-image.png`
-  (1200×630) y pasarla vía la prop `image` del `Layout` para previsualizaciones
-  enriquecidas al compartir el enlace.
-
-## 🌐 Despliegue
-
-Desplegado en Vercel. Configura la variable de entorno **`SITE_URL`** con el
-dominio real para que `canonical`, `sitemap` y `robots` usen la URL correcta:
-
-```
-SITE_URL=https://web-lacasadedios.vercel.app
-```
+- Open Graph / Twitter, `canonical`, `theme-color` y **JSON-LD** `Church` con las
+  4 ubicaciones y el contacto.
+- `sitemap-index.xml` (`@astrojs/sitemap`) + `public/robots.txt`.
+- Pendiente opcional: imagen social en `public/og-image.png` (1200×630).
 
 ## 📱 Redes
 

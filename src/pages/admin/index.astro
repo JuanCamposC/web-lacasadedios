@@ -1,0 +1,36 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const supabase = Astro.locals.supabase;
+const [ev, nw, vd] = await Promise.all([
+  supabase.from('events').select('id', { count: 'exact', head: true }),
+  supabase.from('news').select('id', { count: 'exact', head: true }),
+  supabase.from('videos').select('id', { count: 'exact', head: true }),
+]);
+
+const cards = [
+  { href: '/admin/eventos', label: 'Eventos', icon: '📅', count: ev.count ?? 0 },
+  { href: '/admin/noticias', label: 'Noticias', icon: '📰', count: nw.count ?? 0 },
+  { href: '/admin/videos', label: 'Videos', icon: '🎥', count: vd.count ?? 0 },
+];
+---
+
+<AdminLayout title="Inicio" active="inicio">
+  <h1 class="text-3xl font-bold mb-2">Panel de administración</h1>
+  <p class="opacity-70 mb-8">Gestiona el contenido del sitio de La Casa de Dios.</p>
+
+  <div class="grid sm:grid-cols-3 gap-6">
+    {cards.map((c) => (
+      <a href={c.href} class="card bg-base-100 shadow hover:shadow-lg border border-base-300 transition-all hover:-translate-y-1">
+        <div class="card-body items-center text-center">
+          <div class="text-4xl mb-2">{c.icon}</div>
+          <h2 class="card-title">{c.label}</h2>
+          <p class="text-3xl font-bold text-primary">{c.count}</p>
+          <span class="btn btn-primary btn-sm mt-2">Gestionar</span>
+        </div>
+      </a>
+    ))}
+  </div>
+</AdminLayout>

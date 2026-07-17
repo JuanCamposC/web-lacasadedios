@@ -1,0 +1,61 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import type { NewsItem } from '../../lib/supabase';
+
+const supabase = Astro.locals.supabase;
+let news: NewsItem[] = [];
+if (supabase) {
+  const { data } = await supabase
+    .from('news')
+    .select('*')
+    .eq('published', true)
+    .order('published_at', { ascending: false });
+  news = data ?? [];
+}
+
+const fmtDate = (d: string) =>
+  new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
+---
+
+<Layout
+  title="Noticias · La Casa de Dios"
+  description="Últimas noticias y novedades de La Casa de Dios."
+>
+  <section class="hero min-h-[36vh] bg-gradient-to-br from-accent/10 via-base-100 to-primary/10">
+    <div class="hero-content text-center">
+      <div class="max-w-3xl">
+        <div class="badge badge-accent badge-lg mb-4">Novedades</div>
+        <h1 class="font-display text-5xl md:text-6xl font-bold text-primary mb-4">Noticias</h1>
+        <p class="text-lg opacity-80">Mantente al día con lo que Dios está haciendo en nuestra comunidad</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 px-4 bg-base-100">
+    <div class="container mx-auto max-w-5xl">
+      {news.length === 0 && (
+        <p class="text-center text-lg opacity-70 py-16">
+          Aún no hay noticias publicadas. ¡Vuelve pronto!
+        </p>
+      )}
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {news.map((n) => (
+          <article class="card bg-base-100 shadow-lg border border-base-300 overflow-hidden hover:shadow-xl transition-all">
+            {n.image_url && (
+              <figure class="h-44"><img src={n.image_url} alt={n.title} class="w-full h-full object-cover" loading="lazy" /></figure>
+            )}
+            <div class="card-body">
+              <div class="text-xs opacity-60">{fmtDate(n.published_at)}</div>
+              <h2 class="card-title text-xl">{n.title}</h2>
+              {n.excerpt && <p class="opacity-80 text-sm">{n.excerpt}</p>}
+              {n.body && !n.excerpt && <p class="opacity-80 text-sm line-clamp-4">{n.body}</p>}
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>

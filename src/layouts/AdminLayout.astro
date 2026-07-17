@@ -1,0 +1,76 @@
+---
+import '@fontsource-variable/playfair-display';
+import '@fontsource/poppins/400.css';
+import '@fontsource/poppins/500.css';
+import '@fontsource/poppins/600.css';
+
+interface Props {
+  title?: string;
+  active?: 'inicio' | 'eventos' | 'noticias' | 'videos';
+}
+const { title = 'Panel', active } = Astro.props;
+const user = Astro.locals.user;
+
+const links = [
+  { href: '/admin', label: 'Inicio', key: 'inicio' },
+  { href: '/admin/eventos', label: 'Eventos', key: 'eventos' },
+  { href: '/admin/noticias', label: 'Noticias', key: 'noticias' },
+  { href: '/admin/videos', label: 'Videos', key: 'videos' },
+];
+---
+
+<!doctype html>
+<html lang="es" data-theme="church">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} · Admin — La Casa de Dios</title>
+    <style is:global>
+      h1, h2, h3, .card-title { font-family: 'Playfair Display Variable', Georgia, serif; }
+      html { font-family: 'Poppins', system-ui, sans-serif; }
+    </style>
+  </head>
+  <body class="min-h-screen bg-base-200">
+    <header class="navbar bg-base-100 shadow-sm border-b border-base-300 px-4">
+      <div class="flex-1">
+        <a href="/admin" class="btn btn-ghost text-lg font-bold text-primary">La Casa de Dios · Admin</a>
+      </div>
+      <div class="flex-none gap-2 items-center">
+        {user && <span class="hidden sm:inline text-sm opacity-70">{user.email}</span>}
+        <a href="/" class="btn btn-ghost btn-sm">Ver sitio</a>
+        <button id="logout-btn" class="btn btn-outline btn-sm">Salir</button>
+      </div>
+    </header>
+
+    {active && (
+      <nav class="bg-base-100 border-b border-base-300 px-4">
+        <div class="max-w-5xl mx-auto flex gap-1 overflow-x-auto">
+          {links.map((l) => (
+            <a
+              href={l.href}
+              class={`px-4 py-3 text-sm whitespace-nowrap border-b-2 transition-colors ${active === l.key ? 'border-primary text-primary font-semibold' : 'border-transparent opacity-70 hover:opacity-100'}`}
+            >
+              {l.label}
+            </a>
+          ))}
+        </div>
+      </nav>
+    )}
+
+    <main class="max-w-5xl mx-auto p-4 md:p-8">
+      <slot />
+    </main>
+
+    <script>
+      import { createBrowserSupabase } from '../lib/supabase';
+      const btn = document.getElementById('logout-btn');
+      btn?.addEventListener('click', async () => {
+        const supabase = createBrowserSupabase();
+        await supabase.auth.signOut();
+        window.location.href = '/admin/login';
+      });
+    </script>
+  </body>
+</html>
