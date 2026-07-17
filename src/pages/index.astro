@@ -8,9 +8,9 @@ import { templos } from '../data/templos';
 import { IMG } from '../assets/images';
 
 const templeImg = {
-	'santiago-centro': IMG.nave,
-	'san-miguel': IMG.cruzCielo,
-	'limache': IMG.heroVitral,
+	'santiago-centro': IMG.auditorio,
+	'san-miguel': IMG.congregacion,
+	'limache': IMG.adoracion,
 	'coya': IMG.comunidad,
 } as const;
 ---
@@ -20,8 +20,8 @@ const templeImg = {
 	<section class="relative -mt-16 flex min-h-screen items-center justify-center overflow-hidden">
 		<div class="absolute inset-0">
 			<Image
-				src={IMG.heroVitral}
-				alt="Interior de un templo"
+				src={IMG.heroWorship}
+				alt="Reunión de adoración"
 				widths={[768, 1280, 1920]}
 				sizes="100vw"
 				loading="eager"
@@ -70,7 +70,7 @@ const templeImg = {
 			<div class="grid gap-5 md:grid-cols-3 md:grid-rows-2">
 				<!-- Tile grande con imagen -->
 				<Reveal class="group relative col-span-1 overflow-hidden rounded-3xl md:col-span-2 md:row-span-2 min-h-[22rem]">
-					<Image src={IMG.cruzCielo} alt="Cruz sobre el cielo" widths={[600, 1000]} sizes="(max-width:768px) 100vw, 66vw" class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+					<Image src={IMG.congregacion} alt="Congregación en adoración" widths={[600, 1000]} sizes="(max-width:768px) 100vw, 66vw" class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
 					<div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20"></div>
 					<div class="relative flex h-full flex-col justify-end p-8 text-white">
 						<span class="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-accent">Sobre nosotros</span>
