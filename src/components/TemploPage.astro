@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { getTemplo, getSiblings } from '../data/templos';
+import { getTemplo, getSiblings, CONTACT } from '../data/templos';
 
 interface Props {
   slug: string;
@@ -140,20 +140,10 @@ const jsonLd = {
               <h3 class="text-lg font-bold">{templo.leader.name}</h3>
               <p class="text-xs opacity-70">{templo.leader.role}</p>
             </div>
-            {(templo.leader.phone || templo.leader.email) ? (
-              <div class="space-y-1 text-sm text-center">
-                {templo.leader.phone && (
-                  <p>📞 <a href={`tel:${templo.leader.phone.replace(/\s/g, '')}`} class="link">{templo.leader.phone}</a></p>
-                )}
-                {templo.leader.email && (
-                  <p>✉️ <a href={`mailto:${templo.leader.email}`} class="link">{templo.leader.email}</a></p>
-                )}
-              </div>
-            ) : (
-              <p class="text-sm text-center opacity-70">
-                Escríbenos por <a href="https://instagram.com/jovenescasadedios._" target="_blank" rel="noopener noreferrer" class="link link-primary">Instagram</a> para más información.
-              </p>
-            )}
+            <div class="space-y-1 text-sm text-center">
+              <p>📞 <a href={`tel:${CONTACT.phoneHref}`} class="link">{CONTACT.phone}</a></p>
+              <p>✉️ <a href={`mailto:${CONTACT.email}`} class="link break-all">{CONTACT.email}</a></p>
+            </div>
           </div>
         </div>
       </div>

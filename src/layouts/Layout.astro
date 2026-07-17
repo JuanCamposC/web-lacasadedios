@@ -1,7 +1,15 @@
 ---
 import Navigation from '../components/Navigation.astro';
 import Footer from '../components/Footer.astro';
-import { templos } from '../data/templos';
+import { templos, CONTACT } from '../data/templos';
+
+// Fuentes auto-hospedadas (sin depender del CDN de Google Fonts)
+import '@fontsource-variable/playfair-display';
+import '@fontsource/poppins/300.css';
+import '@fontsource/poppins/400.css';
+import '@fontsource/poppins/500.css';
+import '@fontsource/poppins/600.css';
+import '@fontsource/poppins/700.css';
 
 interface Props {
 	title?: string;
@@ -27,6 +35,8 @@ const orgJsonLd = {
 	name: 'La Casa de Dios',
 	description,
 	url: Astro.site?.toString() ?? canonical,
+	email: CONTACT.email,
+	telephone: CONTACT.phone,
 	sameAs: [
 		'https://instagram.com/jovenescasadedios._',
 		'https://www.youtube.com/@casadediosconociendolapalabrad',
@@ -84,14 +94,6 @@ const orgJsonLd = {
 		<meta name="twitter:description" content={description} />
 		{ogImage && <meta name="twitter:image" content={ogImage} />}
 
-		<!-- Fuentes -->
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
-			rel="stylesheet"
-		/>
-
 		<script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} is:inline />
 
 		<title>{title}</title>
@@ -111,10 +113,14 @@ const orgJsonLd = {
 		scroll-behavior: smooth;
 	}
 
-	/* Títulos con serif elegante para un tono solemne */
+	/* Sistema tipográfico coherente:
+	   · Serif (Playfair Display) para TODOS los títulos → combina con el logo
+	   · Poppins (sans) para cuerpo, botones y UI */
+	h1, h2, h3, h4,
+	.card-title,
 	.font-display {
-		font-family: 'Cormorant Garamond', 'Georgia', serif;
-		letter-spacing: 0.01em;
+		font-family: 'Playfair Display Variable', 'Georgia', 'Times New Roman', serif;
+		letter-spacing: 0.005em;
 	}
 
 	/* Logo: negro sobre fondos claros; se invierte a blanco en modo oscuro */

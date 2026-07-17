@@ -1,11 +1,17 @@
 /**
  * Datos de los templos de La Casa de Dios.
  * Fuente: información real del proyecto y de lacasadedios.cl.
- *
- * NOTA: los campos `phone` y `email` se dejan vacíos a propósito — los valores
- * anteriores eran placeholders (ej. "+56 9 1234 5678"). Complétalos con los
- * datos reales de cada templo cuando estén disponibles.
  */
+
+/**
+ * Contacto general de la iglesia (mismo para todos los templos).
+ * El teléfono es un número de ejemplo para esta maqueta; reemplázalo por el real.
+ */
+export const CONTACT = {
+  phone: '+56 9 1234 5678',
+  phoneHref: '+56912345678',
+  email: 'contacto@lacasadedios.cl',
+};
 
 export interface ServiceDay {
   day: string;
