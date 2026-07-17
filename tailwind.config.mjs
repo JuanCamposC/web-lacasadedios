@@ -41,33 +41,59 @@ export default {
   daisyui: {
     themes: [
       {
+        // Tema claro — suave a la vista (blanco cálido, texto pizarra), azul de
+        // marca + dorado como acento.
         church: {
-          "primary": "#1e3a8a", // Azul profundo, sobrio y solemne
+          "primary": "#1e40af", // Azul de marca
           "primary-content": "#ffffff",
           "secondary": "#51607a", // Azul pizarra
           "secondary-content": "#ffffff",
-          "accent": "#c19a3e", // Dorado cálido y elegante
-          "accent-content": "#1c1917", // Texto oscuro sobre dorado (contraste AA)
-          "neutral": "#1b2436", // Azul noche
+          "accent": "#b5892f", // Dorado cálido
+          "accent-content": "#ffffff",
+          "neutral": "#1b2436", // Azul noche (footer)
           "neutral-content": "#e7e5e0",
-          "base-100": "#fffdf9", // Blanco cálido (marfil)
-          "base-200": "#f6f2ea", // Crema suave
-          "base-300": "#e7e0d2", // Arena
-          "base-content": "#1f2937",
+          "base-100": "#fdfcfa", // Blanco cálido, sin brillo agresivo
+          "base-200": "#f4f1ea", // Crema muy suave
+          "base-300": "#e6e1d6", // Arena
+          "base-content": "#1f2733", // Pizarra oscuro (no negro puro)
           "info": "#2b6cb0",
           "info-content": "#ffffff",
           "success": "#3f7d54",
           "success-content": "#ffffff",
-          "warning": "#c19a3e",
-          "warning-content": "#1c1917",
+          "warning": "#b5892f",
+          "warning-content": "#ffffff",
           "error": "#b04a3f",
           "error-content": "#ffffff",
         },
       },
-      "light",
-      "dark",
+      {
+        // Tema oscuro — navy coherente con el claro (mismo azul/dorado), no el
+        // gris genérico de DaisyUI.
+        churchdark: {
+          "primary": "#7aa2ff", // Azul claro para contraste sobre navy
+          "primary-content": "#0b1220",
+          "secondary": "#93a6c4",
+          "secondary-content": "#0b1220",
+          "accent": "#d8b45f", // Dorado luminoso
+          "accent-content": "#1a1608",
+          "neutral": "#0b1220",
+          "neutral-content": "#e7e9ee",
+          "base-100": "#0f1523", // Navy profundo (no negro)
+          "base-200": "#161d2e",
+          "base-300": "#222b3d",
+          "base-content": "#e6e9f0",
+          "info": "#6fb0e6",
+          "info-content": "#0b1220",
+          "success": "#6bbf85",
+          "success-content": "#0b1220",
+          "warning": "#d8b45f",
+          "warning-content": "#1a1608",
+          "error": "#e08079",
+          "error-content": "#0b1220",
+        },
+      },
     ],
-    darkTheme: "dark",
+    darkTheme: "churchdark",
     base: true,
     styled: true,
     utils: true,

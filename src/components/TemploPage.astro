@@ -60,7 +60,10 @@ const jsonLd = {
           {templo.name}
         </h1>
         <p class="text-xl md:text-2xl opacity-80">{templo.address}</p>
-        <div class={`badge badge-${templo.regionTone} badge-lg mt-4`}>{templo.region}</div>
+        <div class="mt-4 flex flex-wrap gap-2 justify-center">
+          {templo.matriz && <div class="badge badge-accent badge-lg gap-1">✦ Iglesia Matriz</div>}
+          <div class={`badge badge-${templo.regionTone} badge-lg`}>{templo.region}</div>
+        </div>
       </div>
     </div>
   </section>

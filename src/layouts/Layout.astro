@@ -51,6 +51,17 @@ const orgJsonLd = {
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script is:inline>
+			// Aplica el tema guardado antes de pintar (evita parpadeo).
+			(function () {
+				try {
+					var t = localStorage.getItem('theme');
+					if (t === 'dark') t = 'churchdark';
+					if (t !== 'church' && t !== 'churchdark') t = 'church';
+					document.documentElement.setAttribute('data-theme', t);
+				} catch (e) {}
+			})();
+		</script>
 		<meta name="description" content={description} />
 		<link rel="canonical" href={canonical} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -104,6 +115,18 @@ const orgJsonLd = {
 	.font-display {
 		font-family: 'Cormorant Garamond', 'Georgia', serif;
 		letter-spacing: 0.01em;
+	}
+
+	/* Logo: negro sobre fondos claros; se invierte a blanco en modo oscuro */
+	.site-logo {
+		transition: filter 0.3s ease;
+	}
+	[data-theme='churchdark'] .site-logo {
+		filter: invert(1) brightness(1.8);
+	}
+	/* El footer siempre tiene fondo oscuro → logo siempre en blanco */
+	.footer-logo {
+		filter: invert(1) brightness(1.8);
 	}
 
 	body {

@@ -20,33 +20,26 @@ const cardTones = ['primary', 'secondary', 'accent', 'primary'] as const;
 
 <Layout>
 	<!-- Hero -->
-	<section class="hero min-h-[90vh] relative overflow-hidden hero-bg">
-		<div class="absolute inset-0 z-0" id="stars"></div>
-		<div class="absolute inset-0 z-[1] bg-gradient-to-b from-transparent via-transparent to-base-100"></div>
-
+	<section class="hero min-h-[88vh] relative overflow-hidden hero-bg">
 		<div class="hero-content text-center z-10 relative">
-			<div class="max-w-4xl px-4">
-				<div class="mb-6 animate-fade-in-up">
-					<p class="text-sm md:text-base uppercase tracking-[0.3em] text-accent font-medium mb-4">
-						Iglesia Cristiana
-					</p>
-					<h1 class="font-display text-5xl md:text-8xl font-bold leading-tight">
-						<span class="block text-base-content/70 text-3xl md:text-4xl font-medium">Bienvenidos a</span>
-						<span class="block text-primary mt-2">La Casa de Dios</span>
-					</h1>
-				</div>
+			<div class="max-w-3xl px-4 animate-fade-in-up">
+				<p class="text-sm md:text-base uppercase tracking-[0.3em] text-accent font-medium mb-5">
+					Bienvenidos a
+				</p>
+
+				<img src="/logo.png" alt="La Casa de Dios" class="site-logo mx-auto h-24 md:h-32 w-auto mb-6" width="605" height="204" />
 
 				<div class="divider divider-accent max-w-xs mx-auto opacity-60"></div>
 
-				<p class="text-xl md:text-2xl mb-6 text-base-content/80 font-light italic max-w-2xl mx-auto animate-slide-in-right" style="animation-delay: 0.2s;">
+				<p class="text-xl md:text-2xl mb-6 text-base-content/80 font-light italic max-w-2xl mx-auto">
 					"Porque donde dos o tres se reúnen en mi nombre, allí estoy yo en medio de ellos"
 				</p>
-				<p class="text-base md:text-lg mb-10 text-base-content/70 max-w-3xl mx-auto animate-fade-in" style="animation-delay: 0.3s;">
+				<p class="text-base md:text-lg mb-10 text-base-content/70 max-w-2xl mx-auto">
 					La Palabra de Dios es el fundamento de todo lo que hacemos. Buscamos vivir y
 					compartir Su verdad, crecer en la fe y servir con amor.
 				</p>
 
-				<div class="flex flex-wrap gap-4 justify-center animate-fade-in-up" style="animation-delay: 0.4s;">
+				<div class="flex flex-wrap gap-4 justify-center">
 					<a href="#templos" class="btn btn-primary btn-lg gap-2">
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
 						Nuestros templos
@@ -178,48 +171,10 @@ const cardTones = ['primary', 'secondary', 'accent', 'primary'] as const;
 </Layout>
 
 <style>
-	/* Hero cálido y solemne (marfil → azul suave → dorado tenue) */
+	/* Fondo del hero adaptable al tema (claro y oscuro) usando tokens DaisyUI */
 	.hero-bg {
 		background:
-			radial-gradient(ellipse 70% 55% at 50% 0%, oklch(var(--p) / 0.10) 0%, transparent 60%),
-			linear-gradient(160deg, #fffdf9 0%, #f2f5fb 45%, #f7efd9 100%);
+			radial-gradient(ellipse 75% 55% at 50% -5%, oklch(var(--p) / 0.12) 0%, transparent 62%),
+			linear-gradient(180deg, oklch(var(--b1)) 0%, oklch(var(--b2)) 100%);
 	}
 </style>
-
-<style is:global>
-	.star {
-		position: absolute;
-		border-radius: 9999px;
-		background: radial-gradient(circle, #c19a3e 0%, rgba(193, 154, 62, 0.35) 45%, transparent 70%);
-		box-shadow: 0 0 6px rgba(193, 154, 62, 0.55);
-		animation: twinkle 3s ease-in-out infinite;
-	}
-
-	@keyframes twinkle {
-		0%, 100% { opacity: var(--star-opacity, 0.35); transform: scale(1); }
-		50% { opacity: 1; transform: scale(1.5); }
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.star { animation: none; }
-	}
-</style>
-
-<script>
-	const container = document.getElementById('stars');
-	if (container) {
-		for (let i = 0; i < 60; i++) {
-			const star = document.createElement('span');
-			star.className = 'star';
-			const size = Math.random() * 3 + 1;
-			star.style.width = `${size}px`;
-			star.style.height = `${size}px`;
-			star.style.left = `${Math.random() * 100}%`;
-			star.style.top = `${Math.random() * 70}%`;
-			star.style.animationDelay = `${Math.random() * 5}s`;
-			star.style.animationDuration = `${Math.random() * 2.5 + 1.5}s`;
-			star.style.setProperty('--star-opacity', (Math.random() * 0.5 + 0.3).toString());
-			container.appendChild(star);
-		}
-	}
-</script>

@@ -35,6 +35,8 @@ export interface Templo {
   regionTone: 'primary' | 'secondary' | 'accent';
   /** gradiente del hero con tokens del tema */
   heroGradient: string;
+  /** true si es la iglesia matriz de la congregación */
+  matriz?: boolean;
   mapEmbed: string;
   mapLink: string;
   coords: { lat: number; lng: number };
@@ -70,7 +72,8 @@ export const templos: Templo[] = [
     name: 'Templo San Miguel',
     short: 'San Miguel',
     emoji: '🏛️',
-    tagline: 'Únete a nuestra comunidad en San Miguel',
+    tagline: 'Iglesia Matriz — Únete a nuestra comunidad',
+    matriz: true,
     address: 'Santa Ester #623, San Miguel',
     city: 'Comuna de San Miguel',
     region: 'Región Metropolitana',
@@ -132,7 +135,7 @@ export const templos: Templo[] = [
       { day: 'Lunes', tone: 'secondary', services: ['20:00 · Estudio Bíblico'] },
       { day: 'Miércoles', tone: 'accent', services: ['20:00 · Culto General'] },
     ],
-    leader: { name: 'Hermano Juan Enrique Plaza', role: 'Obrero a cargo' },
+    leader: { name: 'Hermano Juan Enrique Plaza Morales', role: 'Obrero a cargo' },
   },
 ];
 
