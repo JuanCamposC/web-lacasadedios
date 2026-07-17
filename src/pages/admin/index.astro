@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import { Icon } from 'astro-icon/components';
 
 const supabase = Astro.locals.supabase;
 if (!supabase) return Astro.redirect('/admin/login');
@@ -13,26 +14,46 @@ const [ev, nw, vd] = await Promise.all([
 ]);
 
 const cards = [
-  { href: '/admin/eventos', label: 'Eventos', icon: '📅', count: ev.count ?? 0 },
-  { href: '/admin/noticias', label: 'Noticias', icon: '📰', count: nw.count ?? 0 },
-  { href: '/admin/videos', label: 'Videos', icon: '🎥', count: vd.count ?? 0 },
+  { href: '/admin/eventos', label: 'Eventos', icon: 'lucide:calendar', count: ev.count ?? 0, tone: 'primary' },
+  { href: '/admin/noticias', label: 'Noticias', icon: 'lucide:newspaper', count: nw.count ?? 0, tone: 'accent' },
+  { href: '/admin/videos', label: 'Videos', icon: 'lucide:youtube', count: vd.count ?? 0, tone: 'secondary' },
 ];
+const toneBg: Record<string, string> = {
+  primary: 'bg-primary/10 text-primary',
+  accent: 'bg-accent/10 text-accent',
+  secondary: 'bg-secondary/10 text-secondary',
+};
 ---
 
 <AdminLayout title="Inicio" active="inicio">
-  <h1 class="text-3xl font-bold mb-2">Panel de administración</h1>
-  <p class="opacity-70 mb-8">Gestiona el contenido del sitio de La Casa de Dios.</p>
+  <div data-reveal class="mb-8">
+    <h1 class="text-3xl font-bold">Panel de administración</h1>
+    <p class="mt-1 opacity-70">Gestiona el contenido del sitio de La Casa de Dios.</p>
+  </div>
 
-  <div class="grid sm:grid-cols-3 gap-6">
-    {cards.map((c) => (
-      <a href={c.href} class="card bg-base-100 shadow hover:shadow-lg border border-base-300 transition-all hover:-translate-y-1">
-        <div class="card-body items-center text-center">
-          <div class="text-4xl mb-2">{c.icon}</div>
-          <h2 class="card-title">{c.label}</h2>
-          <p class="text-3xl font-bold text-primary">{c.count}</p>
-          <span class="btn btn-primary btn-sm mt-2">Gestionar</span>
+  <div class="grid gap-6 sm:grid-cols-3">
+    {cards.map((c, i) => (
+      <a href={c.href} data-reveal data-reveal-delay={i * 80} class="group rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+        <div class="flex items-center justify-between">
+          <span class={`flex h-12 w-12 items-center justify-center rounded-2xl ${toneBg[c.tone]}`}>
+            <Icon name={c.icon} class="h-6 w-6" />
+          </span>
+          <Icon name="lucide:arrow-up-right" class="h-5 w-5 text-base-content/30 transition group-hover:text-primary" />
+        </div>
+        <div class="mt-4">
+          <span data-count={c.count} class="font-display text-4xl font-bold text-primary">0</span>
+          <h2 class="card-title mt-1 text-xl">{c.label}</h2>
         </div>
       </a>
     ))}
+  </div>
+
+  <div data-reveal class="mt-8 rounded-2xl border border-base-300 bg-base-100 p-6">
+    <h2 class="mb-3 flex items-center gap-2 font-display text-xl font-bold"><Icon name="lucide:info" class="h-5 w-5 text-accent" /> Consejos</h2>
+    <ul class="space-y-2 text-sm text-base-content/75">
+      <li class="flex items-start gap-2"><Icon name="lucide:check" class="mt-0.5 h-4 w-4 text-success" /> Marca "Publicado" para que el contenido aparezca en el sitio; desmárcalo para guardarlo como borrador.</li>
+      <li class="flex items-start gap-2"><Icon name="lucide:check" class="mt-0.5 h-4 w-4 text-success" /> En videos, pega la URL de YouTube (watch, youtu.be o shorts).</li>
+      <li class="flex items-start gap-2"><Icon name="lucide:check" class="mt-0.5 h-4 w-4 text-success" /> Las imágenes se suben automáticamente al crear o editar.</li>
+    </ul>
   </div>
 </AdminLayout>

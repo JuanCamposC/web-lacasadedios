@@ -4,8 +4,11 @@ Sitio institucional de la iglesia **La Casa de Dios**: templos (Santiago Centro,
 San Miguel, Limache y Coya), horarios, declaración de fe, y secciones de
 **eventos, noticias y videos** gestionables desde un panel con login.
 
-Construido con **Astro 5** (SSR en Vercel), **Tailwind CSS 3**, **DaisyUI** (temas
-`church` claro y `churchdark` oscuro) y **Supabase** (base de datos + auth + storage).
+Construido con **Astro 7** (SSR en Vercel), **Tailwind CSS 4** + **DaisyUI 5** (temas
+`church` claro y `churchdark` oscuro), **astro-icon** (Lucide) y **Supabase** (base de
+datos + auth + storage). Diseño cinematográfico: heros con foto, movimiento en scroll
+(`src/scripts/reveal.ts`) e imágenes optimizadas con `<Image>`. Las fotos son de stock
+temporal (ver `src/assets/img/CREDITS.md`), reemplazables por fotografía real.
 
 ## 🧞 Comandos
 

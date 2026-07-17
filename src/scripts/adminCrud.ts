@@ -30,6 +30,16 @@ function toLocalInput(iso: string): string {
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
 
+function toast(message: string, type: 'success' | 'error' = 'success') {
+  const c = document.getElementById('toast');
+  if (!c) return;
+  const el = document.createElement('div');
+  el.className = `alert ${type === 'error' ? 'alert-error' : 'alert-success'} shadow-lg`;
+  el.textContent = message;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
 export function setupCrud(config: CrudConfig) {
   const supabase = createBrowserSupabase();
   const root = document.getElementById('crud-root');
@@ -42,37 +52,35 @@ export function setupCrud(config: CrudConfig) {
   const fieldHtml = config.fields
     .map((f) => {
       const req = f.required ? 'required' : '';
-      const help = f.help ? `<span class="text-xs opacity-60">${esc(f.help)}</span>` : '';
+      const help = f.help ? `<span class="mt-1 block text-xs opacity-60">${esc(f.help)}</span>` : '';
+      const labelSpan = `<span class="mb-1 block text-sm font-medium">${esc(f.label)}</span>`;
       if (f.type === 'textarea')
-        return `<label class="block"><span class="text-sm font-medium">${esc(f.label)}</span><textarea name="${f.name}" ${req} rows="4" class="textarea textarea-bordered w-full mt-1"></textarea>${help}</label>`;
+        return `<label class="block">${labelSpan}<textarea name="${f.name}" ${req} rows="4" class="textarea textarea-bordered w-full"></textarea>${help}</label>`;
       if (f.type === 'checkbox')
-        return `<label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="${f.name}" checked class="checkbox checkbox-primary" /><span class="text-sm font-medium">${esc(f.label)}</span></label>`;
+        return `<label class="flex cursor-pointer items-center gap-2"><input type="checkbox" name="${f.name}" checked class="checkbox checkbox-primary" /><span class="text-sm font-medium">${esc(f.label)}</span></label>`;
       if (f.type === 'image')
-        return `<label class="block"><span class="text-sm font-medium">${esc(f.label)}</span><input type="file" name="${f.name}" accept="image/*" class="file-input file-input-bordered w-full mt-1" /><div data-preview="${f.name}" class="mt-2"></div>${help}</label>`;
-      return `<label class="block"><span class="text-sm font-medium">${esc(f.label)}</span><input type="${f.type}" name="${f.name}" ${req} class="input input-bordered w-full mt-1" />${help}</label>`;
+        return `<label class="block">${labelSpan}<input type="file" name="${f.name}" accept="image/*" class="file-input file-input-bordered w-full" /><div data-preview="${f.name}" class="mt-2"></div>${help}</label>`;
+      return `<label class="block">${labelSpan}<input type="${f.type}" name="${f.name}" ${req} class="input input-bordered w-full" />${help}</label>`;
     })
     .join('');
 
   root.innerHTML = `
-    <div class="grid lg:grid-cols-2 gap-8">
-      <div>
-        <div class="card bg-base-100 shadow border border-base-300">
-          <div class="card-body">
-            <h2 class="card-title" id="form-title">Nuevo ${esc(config.singular)}</h2>
-            <form id="crud-form" class="space-y-3">
-              <input type="hidden" name="id" />
-              ${fieldHtml}
-              <p class="text-sm text-error hidden" id="crud-error"></p>
-              <div class="flex gap-2 pt-2">
-                <button type="submit" class="btn btn-primary" id="crud-save">Guardar</button>
-                <button type="button" class="btn btn-ghost hidden" id="crud-cancel">Cancelar</button>
-              </div>
-            </form>
-          </div>
+    <div class="grid gap-8 lg:grid-cols-2">
+      <div class="lg:sticky lg:top-32 lg:self-start">
+        <div class="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
+          <h2 class="mb-4 font-display text-xl font-bold" id="form-title">Nuevo ${esc(config.singular)}</h2>
+          <form id="crud-form" class="space-y-4">
+            <input type="hidden" name="id" />
+            ${fieldHtml}
+            <div class="flex gap-2 pt-1">
+              <button type="submit" class="btn btn-primary" id="crud-save">Guardar</button>
+              <button type="button" class="btn btn-ghost hidden" id="crud-cancel">Cancelar</button>
+            </div>
+          </form>
         </div>
       </div>
       <div>
-        <h2 class="font-semibold mb-3 opacity-70">Publicados y borradores</h2>
+        <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider opacity-60">Publicados y borradores</h2>
         <div id="crud-list" class="space-y-3"><span class="loading loading-spinner"></span></div>
       </div>
     </div>
@@ -80,7 +88,6 @@ export function setupCrud(config: CrudConfig) {
 
   const form = document.getElementById('crud-form') as HTMLFormElement;
   const listEl = document.getElementById('crud-list')!;
-  const errorEl = document.getElementById('crud-error')!;
   const saveBtn = document.getElementById('crud-save') as HTMLButtonElement;
   const cancelBtn = document.getElementById('crud-cancel') as HTMLButtonElement;
   const formTitle = document.getElementById('form-title')!;
@@ -92,7 +99,6 @@ export function setupCrud(config: CrudConfig) {
     (form.querySelector('[name="id"]') as HTMLInputElement).value = '';
     formTitle.textContent = `Nuevo ${config.singular}`;
     cancelBtn.classList.add('hidden');
-    errorEl.classList.add('hidden');
     config.fields.forEach((f) => {
       if (f.type === 'checkbox') (form.querySelector(`[name="${f.name}"]`) as HTMLInputElement).checked = true;
       if (f.type === 'image') {
@@ -108,30 +114,28 @@ export function setupCrud(config: CrudConfig) {
       .select('*')
       .order(config.orderBy.column, { ascending: config.orderBy.ascending });
     if (error) {
-      listEl.innerHTML = `<p class="text-error text-sm">Error al cargar: ${esc(error.message)}</p>`;
+      listEl.innerHTML = `<p class="text-sm text-error">Error al cargar: ${esc(error.message)}</p>`;
       return;
     }
     if (!data || data.length === 0) {
-      listEl.innerHTML = `<p class="opacity-60 text-sm">Aún no hay registros.</p>`;
+      listEl.innerHTML = `<div class="rounded-xl border border-dashed border-base-300 p-6 text-center text-sm opacity-60">Aún no hay registros. Crea el primero con el formulario.</div>`;
       return;
     }
     listEl.innerHTML = data
       .map((row: any) => {
         const sub = config.subtitleField ? esc(row[config.subtitleField]) : '';
         const pub = row.published
-          ? '<span class="badge badge-success badge-sm">Publicado</span>'
+          ? '<span class="badge badge-success badge-sm gap-1">Publicado</span>'
           : '<span class="badge badge-ghost badge-sm">Borrador</span>';
-        return `<div class="card bg-base-100 border border-base-300">
-          <div class="card-body p-4 flex-row items-center justify-between gap-3">
-            <div class="min-w-0">
-              <div class="font-medium truncate">${esc(row[config.titleField])}</div>
-              <div class="text-xs opacity-60 truncate">${sub}</div>
-              <div class="mt-1">${pub}</div>
-            </div>
-            <div class="flex gap-1 shrink-0">
-              <button class="btn btn-ghost btn-xs" data-edit="${row.id}">Editar</button>
-              <button class="btn btn-ghost btn-xs text-error" data-del="${row.id}">Borrar</button>
-            </div>
+        return `<div class="flex items-center justify-between gap-3 rounded-xl border border-base-300 bg-base-100 p-4">
+          <div class="min-w-0">
+            <div class="truncate font-medium">${esc(row[config.titleField])}</div>
+            ${sub ? `<div class="truncate text-xs opacity-60">${sub}</div>` : ''}
+            <div class="mt-1">${pub}</div>
+          </div>
+          <div class="flex shrink-0 gap-1">
+            <button class="btn btn-ghost btn-xs" data-edit="${row.id}">Editar</button>
+            <button class="btn btn-ghost btn-xs text-error" data-del="${row.id}">Borrar</button>
           </div>
         </div>`;
       })
@@ -161,7 +165,7 @@ export function setupCrud(config: CrudConfig) {
       else if (f.type === 'datetime-local') (el as HTMLInputElement).value = val ? toLocalInput(val) : '';
       else if (f.type === 'image') {
         const prev = root!.querySelector(`[data-preview="${f.name}"]`);
-        if (prev) prev.innerHTML = val ? `<img src="${esc(val)}" class="h-20 rounded" /><span class="text-xs opacity-60 block">Sube una nueva imagen para reemplazarla</span>` : '';
+        if (prev) prev.innerHTML = val ? `<img src="${esc(val)}" class="h-20 rounded-lg" /><span class="mt-1 block text-xs opacity-60">Sube una nueva imagen para reemplazarla</span>` : '';
       } else (el as HTMLInputElement).value = val ?? '';
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -178,13 +182,15 @@ export function setupCrud(config: CrudConfig) {
   async function remove(id: string) {
     if (!confirm('¿Borrar este registro? Esta acción no se puede deshacer.')) return;
     const { error } = await supabase.from(config.table).delete().eq('id', id);
-    if (error) alert('Error al borrar: ' + error.message);
-    else load();
+    if (error) toast('Error al borrar: ' + error.message, 'error');
+    else {
+      toast('Registro borrado');
+      load();
+    }
   }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    errorEl.classList.add('hidden');
     saveBtn.disabled = true;
     saveBtn.textContent = 'Guardando…';
     try {
@@ -211,11 +217,11 @@ export function setupCrud(config: CrudConfig) {
         : await supabase.from(config.table).insert(payload);
 
       if (res.error) throw res.error;
+      toast('Guardado correctamente');
       resetForm();
       load();
     } catch (err: any) {
-      errorEl.textContent = 'Error al guardar: ' + (err?.message ?? err);
-      errorEl.classList.remove('hidden');
+      toast('Error al guardar: ' + (err?.message ?? err), 'error');
     } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = 'Guardar';

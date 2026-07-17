@@ -1,4 +1,5 @@
 ---
+import { Icon } from 'astro-icon/components';
 import '@fontsource-variable/playfair-display';
 import '@fontsource/poppins/400.css';
 import '@fontsource/poppins/500.css';
@@ -13,10 +14,10 @@ const { title = 'Panel', active } = Astro.props;
 const user = Astro.locals.user;
 
 const links = [
-  { href: '/admin', label: 'Inicio', key: 'inicio' },
-  { href: '/admin/eventos', label: 'Eventos', key: 'eventos' },
-  { href: '/admin/noticias', label: 'Noticias', key: 'noticias' },
-  { href: '/admin/videos', label: 'Videos', key: 'videos' },
+  { href: '/admin', label: 'Inicio', key: 'inicio', icon: 'lucide:layout-dashboard' },
+  { href: '/admin/eventos', label: 'Eventos', key: 'eventos', icon: 'lucide:calendar' },
+  { href: '/admin/noticias', label: 'Noticias', key: 'noticias', icon: 'lucide:newspaper' },
+  { href: '/admin/videos', label: 'Videos', key: 'videos', icon: 'lucide:youtube' },
 ];
 ---
 
@@ -28,44 +29,43 @@ const links = [
     <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title} · Admin — La Casa de Dios</title>
-    <style is:global>
-      h1, h2, h3, .card-title { font-family: 'Playfair Display Variable', Georgia, serif; }
-      html { font-family: 'Poppins', system-ui, sans-serif; }
-    </style>
   </head>
   <body class="min-h-screen bg-base-200">
-    <header class="navbar bg-base-100 shadow-sm border-b border-base-300 px-4">
-      <div class="flex-1">
-        <a href="/admin" class="btn btn-ghost text-lg font-bold text-primary">La Casa de Dios · Admin</a>
+    <header class="sticky top-0 z-40 border-b border-base-300 bg-base-100/90 backdrop-blur">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <a href="/admin" class="flex items-center gap-2">
+          <img src="/logo.png" alt="La Casa de Dios" class="site-logo h-7 w-auto" />
+          <span class="hidden rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary sm:inline">Admin</span>
+        </a>
+        <div class="flex items-center gap-2">
+          {user && <span class="hidden text-sm opacity-60 md:inline">{user.email}</span>}
+          <a href="/" class="btn btn-ghost btn-sm gap-1"><Icon name="lucide:external-link" class="h-4 w-4" /> Ver sitio</a>
+          <button id="logout-btn" class="btn btn-outline btn-sm gap-1"><Icon name="lucide:log-out" class="h-4 w-4" /> Salir</button>
+        </div>
       </div>
-      <div class="flex-none gap-2 items-center">
-        {user && <span class="hidden sm:inline text-sm opacity-70">{user.email}</span>}
-        <a href="/" class="btn btn-ghost btn-sm">Ver sitio</a>
-        <button id="logout-btn" class="btn btn-outline btn-sm">Salir</button>
-      </div>
+
+      {active && (
+        <nav class="border-t border-base-300">
+          <div class="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 py-2">
+            {links.map((l) => (
+              <a href={l.href} class={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${active === l.key ? 'bg-primary text-primary-content' : 'text-base-content/70 hover:bg-base-200'}`}>
+                <Icon name={l.icon} class="h-4 w-4" /> {l.label}
+              </a>
+            ))}
+          </div>
+        </nav>
+      )}
     </header>
 
-    {active && (
-      <nav class="bg-base-100 border-b border-base-300 px-4">
-        <div class="max-w-5xl mx-auto flex gap-1 overflow-x-auto">
-          {links.map((l) => (
-            <a
-              href={l.href}
-              class={`px-4 py-3 text-sm whitespace-nowrap border-b-2 transition-colors ${active === l.key ? 'border-primary text-primary font-semibold' : 'border-transparent opacity-70 hover:opacity-100'}`}
-            >
-              {l.label}
-            </a>
-          ))}
-        </div>
-      </nav>
-    )}
-
-    <main class="max-w-5xl mx-auto p-4 md:p-8">
+    <main class="mx-auto max-w-6xl p-4 md:p-8">
       <slot />
     </main>
 
+    <div id="toast" class="toast toast-end z-50"></div>
+
     <script>
       import { createBrowserSupabase } from '../lib/supabase';
+      import '../scripts/reveal';
       const btn = document.getElementById('logout-btn');
       btn?.addEventListener('click', async () => {
         const supabase = createBrowserSupabase();

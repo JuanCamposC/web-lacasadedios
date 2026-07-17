@@ -1,6 +1,9 @@
 ---
 export const prerender = false;
+import { Image } from 'astro:assets';
+import { Icon } from 'astro-icon/components';
 import { supabaseConfigured } from '../../lib/supabase';
+import { IMG } from '../../assets/images';
 import '@fontsource-variable/playfair-display';
 import '@fontsource/poppins/400.css';
 import '@fontsource/poppins/500.css';
@@ -9,7 +12,7 @@ import '../../styles/global.css';
 ---
 
 <!doctype html>
-<html lang="es" data-theme="church">
+<html lang="es" data-theme="churchdark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -17,38 +20,49 @@ import '../../styles/global.css';
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Ingresar · Admin — La Casa de Dios</title>
   </head>
-  <body class="min-h-screen bg-base-200 flex items-center justify-center p-4">
-    <div class="card bg-base-100 shadow-xl w-full max-w-sm border border-base-300">
-      <div class="card-body">
-        <img src="/logo.png" alt="La Casa de Dios" class="h-10 w-auto mx-auto mb-2" />
-        <h1 class="text-2xl font-bold text-center mb-4">Panel de administración</h1>
+  <body class="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
+    <div class="absolute inset-0">
+      <Image src={IMG.heroWorship} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" />
+      <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/90"></div>
+    </div>
 
-        {!supabaseConfigured && (
-          <div class="alert alert-warning text-sm mb-2">
-            Configuración pendiente: falta definir las variables de Supabase en el
-            servidor. El inicio de sesión no funcionará hasta configurarlas.
+    <div class="relative z-10 w-full max-w-sm rounded-3xl border border-white/15 bg-white/10 p-8 shadow-2xl backdrop-blur-md">
+      <img src="/logo.png" alt="La Casa de Dios" class="mx-auto mb-2 h-10 w-auto [filter:brightness(0)_invert(1)]" />
+      <h1 class="text-center text-xl font-bold text-white">Panel de administración</h1>
+      <p class="mb-6 mt-1 text-center text-sm text-white/60">Ingresa para gestionar el contenido</p>
+
+      {!supabaseConfigured && (
+        <div class="mb-4 rounded-lg border border-yellow-400/40 bg-yellow-400/10 p-3 text-sm text-yellow-200">
+          Configuración pendiente: faltan las variables de Supabase en el servidor.
+        </div>
+      )}
+
+      <form id="login-form" class="space-y-4">
+        <label class="block">
+          <span class="mb-1 block text-xs font-medium uppercase tracking-wider text-white/70">Correo</span>
+          <div class="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 focus-within:border-white/50">
+            <Icon name="lucide:mail" class="h-4 w-4 text-white/50" />
+            <input type="email" name="email" required autocomplete="email" class="w-full bg-transparent py-2.5 text-white placeholder-white/40 outline-none" placeholder="tucorreo@ejemplo.cl" />
           </div>
-        )}
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-xs font-medium uppercase tracking-wider text-white/70">Contraseña</span>
+          <div class="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 focus-within:border-white/50">
+            <Icon name="lucide:lock" class="h-4 w-4 text-white/50" />
+            <input type="password" name="password" required autocomplete="current-password" class="w-full bg-transparent py-2.5 text-white placeholder-white/40 outline-none" placeholder="••••••••" />
+          </div>
+        </label>
 
-        <form id="login-form" class="space-y-3">
-          <label class="block">
-            <span class="text-sm font-medium">Correo</span>
-            <input type="email" name="email" required autocomplete="email"
-              class="input input-bordered w-full mt-1" />
-          </label>
-          <label class="block">
-            <span class="text-sm font-medium">Contraseña</span>
-            <input type="password" name="password" required autocomplete="current-password"
-              class="input input-bordered w-full mt-1" />
-          </label>
+        <p id="error" class="hidden text-sm text-red-300"></p>
 
-          <p id="error" class="text-sm text-error hidden"></p>
+        <button type="submit" id="submit" class="btn btn-primary w-full gap-2">
+          <Icon name="lucide:log-in" class="h-5 w-5" /> Ingresar
+        </button>
+      </form>
 
-          <button type="submit" id="submit" class="btn btn-primary w-full">Ingresar</button>
-        </form>
-
-        <a href="/" class="link link-hover text-sm text-center opacity-70 mt-2">← Volver al sitio</a>
-      </div>
+      <a href="/" class="mt-4 flex items-center justify-center gap-1 text-sm text-white/60 hover:text-white">
+        <Icon name="lucide:arrow-left" class="h-4 w-4" /> Volver al sitio
+      </a>
     </div>
 
     <script>
@@ -59,7 +73,6 @@ import '../../styles/global.css';
       const submit = document.getElementById('submit') as HTMLButtonElement;
       const supabase = createBrowserSupabase();
 
-      // Si ya hay sesión, ir al panel.
       supabase.auth.getSession().then(({ data }) => {
         if (data.session) window.location.href = '/admin';
       });
