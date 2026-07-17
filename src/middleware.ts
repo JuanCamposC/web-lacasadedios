@@ -7,18 +7,24 @@ const SSR_PREFIXES = ['/admin', '/eventos', '/noticias', '/videos'];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname;
-  const needsSupabase =
-    supabaseConfigured &&
-    SSR_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
+  const isSSR = SSR_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
+  if (!isSSR) return next();
 
-  if (!needsSupabase) return next();
+  const isProtectedAdmin = path.startsWith('/admin') && path !== '/admin/login';
+
+  // Sin configuración de Supabase: no intentes usarlo (evita 500). El admin
+  // se manda al login, que mostrará el aviso de configuración pendiente.
+  if (!supabaseConfigured) {
+    if (isProtectedAdmin) return context.redirect('/admin/login');
+    return next();
+  }
 
   const supabase = createServerSupabase(context.cookies, context.request);
   context.locals.supabase = supabase;
   context.locals.user = null;
 
   // Protege el panel (excepto la página de login).
-  if (path.startsWith('/admin') && path !== '/admin/login') {
+  if (isProtectedAdmin) {
     const {
       data: { user },
     } = await supabase.auth.getUser();

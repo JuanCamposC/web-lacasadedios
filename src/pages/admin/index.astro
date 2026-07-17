@@ -4,6 +4,8 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
 const supabase = Astro.locals.supabase;
+if (!supabase) return Astro.redirect('/admin/login');
+
 const [ev, nw, vd] = await Promise.all([
   supabase.from('events').select('id', { count: 'exact', head: true }),
   supabase.from('news').select('id', { count: 'exact', head: true }),

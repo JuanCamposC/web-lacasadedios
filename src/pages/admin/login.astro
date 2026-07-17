@@ -1,5 +1,6 @@
 ---
 export const prerender = false;
+import { supabaseConfigured } from '../../lib/supabase';
 ---
 
 <!doctype html>
@@ -16,6 +17,13 @@ export const prerender = false;
       <div class="card-body">
         <img src="/logo.png" alt="La Casa de Dios" class="h-10 w-auto mx-auto mb-2" />
         <h1 class="text-2xl font-bold text-center mb-4">Panel de administración</h1>
+
+        {!supabaseConfigured && (
+          <div class="alert alert-warning text-sm mb-2">
+            Configuración pendiente: falta definir las variables de Supabase en el
+            servidor. El inicio de sesión no funcionará hasta configurarlas.
+          </div>
+        )}
 
         <form id="login-form" class="space-y-3">
           <label class="block">
