@@ -1,0 +1,14 @@
+---
+// Envoltorio que revela su contenido al entrar al viewport (ver scripts/reveal.ts).
+interface Props {
+  delay?: number;
+  class?: string;
+  as?: keyof HTMLElementTagNameMap;
+}
+const { delay, class: className = '', as = 'div' } = Astro.props;
+const Tag = as as any;
+---
+
+<Tag data-reveal data-reveal-delay={delay} class={className}>
+  <slot />
+</Tag>

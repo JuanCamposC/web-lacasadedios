@@ -139,3 +139,64 @@ body {
   border-top: 1px solid;
   border-right: 1px solid;
 }
+
+/* ── Rediseño cinematográfico ────────────────────────────────────────────── */
+
+/* Reveal en scroll (activado por src/scripts/reveal.ts) */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Banda oscura cinematográfica (independiente del tema claro/oscuro) */
+.section-dark {
+  background-color: #0b1220;
+  color: #e6e9f0;
+}
+.section-dark :is(h1, h2, h3, h4) {
+  color: #ffffff;
+}
+
+/* Ken Burns: zoom lento para heros con foto */
+@keyframes kenburns {
+  from { transform: scale(1.04); }
+  to { transform: scale(1.16); }
+}
+.animate-kenburns {
+  animation: kenburns 22s ease-out both;
+}
+
+/* Punto pulsante "En vivo" */
+@keyframes pulsedot {
+  0% { box-shadow: 0 0 0 0 rgba(224, 66, 66, 0.55); }
+  70% { box-shadow: 0 0 0 9px rgba(224, 66, 66, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(224, 66, 66, 0); }
+}
+.pulse-dot {
+  animation: pulsedot 1.8s ease-out infinite;
+}
+
+/* Gradiente animado para fondos sin foto */
+@keyframes gradientpan {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientpan 14s ease infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] { opacity: 1 !important; transform: none !important; transition: none; }
+  .animate-kenburns,
+  .pulse-dot,
+  .animate-gradient { animation: none; }
+}
