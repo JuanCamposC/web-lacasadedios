@@ -1,21 +1,26 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import Reveal from '../components/Reveal.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import { Icon } from 'astro-icon/components';
+import { IMG } from '../assets/images';
 
 // Contenido tomado de lacasadedios.cl/nosotros
 
 const valores = [
-	{ icon: '❤️', title: 'Amor', text: 'Reflejamos el amor de Dios en nuestras acciones diarias.' },
-	{ icon: '🤝', title: 'Servicio', text: 'Servimos con dedicación, excelencia y disposición.' },
-	{ icon: '🤲', title: 'Unidad', text: 'Crecemos juntos en armonía, comunión y propósito.' },
-	{ icon: '🙌', title: 'Compromiso', text: 'Nos entregamos fielmente a la obra de Dios.' },
-	{ icon: '📣', title: 'Evangelismo', text: 'Compartimos el mensaje de salvación con convicción y alegría.' },
+	{ icon: 'lucide:heart', title: 'Amor', text: 'Reflejamos el amor de Dios en nuestras acciones diarias.' },
+	{ icon: 'lucide:heart-handshake', title: 'Servicio', text: 'Servimos con dedicación, excelencia y disposición.' },
+	{ icon: 'lucide:users', title: 'Unidad', text: 'Crecemos juntos en armonía, comunión y propósito.' },
+	{ icon: 'lucide:handshake', title: 'Compromiso', text: 'Nos entregamos fielmente a la obra de Dios.' },
+	{ icon: 'lucide:megaphone', title: 'Evangelismo', text: 'Compartimos el mensaje de salvación con convicción y alegría.' },
 ];
 
 const liderazgo = [
-	{ icon: '👤', title: 'Pastores', text: 'Guían la iglesia y su crecimiento espiritual por la Palabra de Dios.' },
-	{ icon: '🕊️', title: 'Ancianos', text: 'Brindan apoyo en la enseñanza y la consejería.' },
-	{ icon: '🤲', title: 'Diáconos', text: 'Sirven en la administración, apoyo logístico y enseñanza.' },
-	{ icon: '🌟', title: 'Colaboradores', text: 'Apoyan en adoración, enseñanza y servicio general.' },
+	{ icon: 'lucide:user-round', title: 'Pastores', text: 'Guían la iglesia y su crecimiento espiritual por la Palabra de Dios.' },
+	{ icon: 'lucide:shield-check', title: 'Ancianos', text: 'Brindan apoyo en la enseñanza y la consejería.' },
+	{ icon: 'lucide:hand-helping', title: 'Diáconos', text: 'Sirven en la administración, apoyo logístico y enseñanza.' },
+	{ icon: 'lucide:sparkles', title: 'Colaboradores', text: 'Apoyan en adoración, enseñanza y servicio general.' },
 ];
 
 const personas = [
@@ -34,137 +39,113 @@ const personas = [
 ];
 
 const credo = [
-	{ icon: '🌟', title: 'Dios Padre', ref: '1ª Corintios 8:6a', text: 'Creemos en Dios Padre, de quien proceden todas las cosas.' },
-	{ icon: '✝️', title: 'Jesucristo como Señor', ref: '1ª Corintios 8:6b', text: 'Creemos en Jesucristo como Señor, por quien son todas las cosas.' },
-	{ icon: '📜', title: 'La Biblia', ref: '', text: 'La Biblia es la máxima autoridad en nuestra fe y práctica.' },
+	{ icon: 'lucide:sun', title: 'Dios Padre', ref: '1ª Corintios 8:6a', text: 'Creemos en Dios Padre, de quien proceden todas las cosas.' },
+	{ icon: 'lucide:crown', title: 'Jesucristo como Señor', ref: '1ª Corintios 8:6b', text: 'Creemos en Jesucristo como Señor, por quien son todas las cosas.' },
+	{ icon: 'lucide:book-open', title: 'La Biblia', ref: '', text: 'La Biblia es la máxima autoridad en nuestra fe y práctica.' },
 ];
 
 const sacramentos = [
-	{ icon: '💧', title: 'El Bautismo', text: 'Como declaración pública de fe en Jesucristo.' },
-	{ icon: '🍞', title: 'La Santa Cena', text: 'Participación en memoria del sacrificio de Cristo.' },
+	{ icon: 'lucide:droplets', title: 'El Bautismo', text: 'Como declaración pública de fe en Jesucristo.' },
+	{ icon: 'lucide:wheat', title: 'La Santa Cena', text: 'Participación en memoria del sacrificio de Cristo.' },
 ];
+
+const initials = (name: string) =>
+	name.replace(/^(Pastor|Pastora|Hermano|Hermana|Rev\.?)\s+/i, '').split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 ---
 
 <Layout
 	title="Nosotros · La Casa de Dios"
 	description="Conoce la misión, visión, valores, liderazgo y declaración de fe de La Casa de Dios."
 >
-	<!-- Hero -->
-	<section class="hero min-h-[42vh] bg-gradient-to-br from-primary/10 via-base-100 to-accent/10">
-		<div class="hero-content text-center">
-			<div class="max-w-4xl animate-fade-in-up">
-				<div class="badge badge-accent badge-lg mb-4">La Casa de Dios</div>
-				<h1 class="font-display text-5xl md:text-7xl font-bold mb-6 text-primary">Nosotros</h1>
-				<p class="text-xl md:text-2xl opacity-80 max-w-2xl mx-auto">
-					La Palabra de Dios es el fundamento de todo lo que hacemos.
-				</p>
-			</div>
-		</div>
-	</section>
+	<PageHero image={IMG.congregacion} alt="Congregación en adoración" eyebrow="La Casa de Dios" title="Nosotros" subtitle="La Palabra de Dios es el fundamento de todo lo que hacemos." />
 
 	<!-- Misión y Visión -->
-	<section class="py-20 bg-base-100">
-		<div class="container mx-auto px-4 max-w-6xl">
-			<div class="grid md:grid-cols-2 gap-8">
-				<div class="card bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl hover:shadow-2xl transition-all duration-300">
-					<div class="card-body">
-						<div class="flex items-center gap-4 mb-4">
-							<div class="bg-primary text-primary-content p-4 rounded-full">
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-							</div>
-							<h2 class="card-title text-3xl font-display">Misión</h2>
+	<section class="bg-base-100 px-4 py-24">
+		<div class="container mx-auto max-w-6xl">
+			<div class="grid gap-6 md:grid-cols-2">
+				<Reveal>
+					<div class="h-full rounded-3xl border border-base-300 bg-gradient-to-br from-primary/10 to-base-100 p-8">
+						<div class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+							<Icon name="lucide:target" class="h-6 w-6" />
 						</div>
-						<p class="text-lg leading-relaxed opacity-80">
-							Predicar el evangelio, discipular creyentes y servir a otros con amor y excelencia.
-						</p>
+						<h2 class="card-title text-3xl">Misión</h2>
+						<p class="mt-3 text-lg leading-relaxed text-base-content/80">Predicar el evangelio, discipular creyentes y servir a otros con amor y excelencia.</p>
 					</div>
-				</div>
-
-				<div class="card bg-gradient-to-br from-accent/10 to-accent/5 shadow-xl hover:shadow-2xl transition-all duration-300">
-					<div class="card-body">
-						<div class="flex items-center gap-4 mb-4">
-							<div class="bg-accent text-accent-content p-4 rounded-full">
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-							</div>
-							<h2 class="card-title text-3xl font-display">Visión</h2>
+				</Reveal>
+				<Reveal delay={100}>
+					<div class="h-full rounded-3xl border border-base-300 bg-gradient-to-br from-accent/10 to-base-100 p-8">
+						<div class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/15 text-accent">
+							<Icon name="lucide:eye" class="h-6 w-6" />
 						</div>
-						<p class="text-lg leading-relaxed opacity-80">
-							Ser una iglesia vibrante que transforma vidas con el amor y la Palabra de Dios, extendiendo su Reino.
-						</p>
+						<h2 class="card-title text-3xl">Visión</h2>
+						<p class="mt-3 text-lg leading-relaxed text-base-content/80">Ser una iglesia vibrante que transforma vidas con el amor y la Palabra de Dios, extendiendo su Reino.</p>
 					</div>
-				</div>
+				</Reveal>
 			</div>
 		</div>
 	</section>
 
 	<!-- Valores -->
-	<section class="py-20 bg-gradient-to-b from-base-100 to-base-200">
-		<div class="container mx-auto px-4 max-w-7xl">
-			<div class="text-center mb-16">
-				<div class="badge badge-accent badge-lg mb-4">Nuestros principios</div>
-				<h2 class="font-display text-4xl md:text-5xl font-bold mb-4">Valores</h2>
-			</div>
-
-			<div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
-				{valores.map((v) => (
-					<div class="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-						<div class="card-body items-center text-center p-6">
-							<div class="text-4xl mb-3">{v.icon}</div>
-							<h3 class="card-title text-xl">{v.title}</h3>
-							<p class="text-sm opacity-80">{v.text}</p>
+	<section class="bg-base-200 px-4 py-24">
+		<div class="container mx-auto max-w-6xl">
+			<SectionHeading eyebrow="Nuestros principios" title="Valores" />
+			<div class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+				{valores.map((v, i) => (
+					<Reveal delay={(i % 5) * 70}>
+						<div class="group h-full rounded-2xl border border-base-300 bg-base-100 p-6 text-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg">
+							<div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-content">
+								<Icon name={v.icon} class="h-7 w-7" />
+							</div>
+							<h3 class="card-title justify-center text-xl">{v.title}</h3>
+							<p class="mt-1 text-sm text-base-content/70">{v.text}</p>
 						</div>
-					</div>
+					</Reveal>
 				))}
 			</div>
 		</div>
 	</section>
 
 	<!-- Estructura de liderazgo -->
-	<section class="py-20 bg-base-100">
-		<div class="container mx-auto px-4 max-w-7xl">
-			<div class="text-center mb-16">
-				<div class="badge badge-primary badge-lg mb-4">Cómo servimos</div>
-				<h2 class="font-display text-4xl md:text-5xl font-bold mb-4">Estructura de liderazgo</h2>
-			</div>
-
-			<div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-				{liderazgo.map((l) => (
-					<div class="card bg-gradient-to-br from-primary/5 to-base-100 shadow-lg border border-base-300 hover:shadow-xl transition-all duration-300">
-						<div class="card-body items-center text-center">
-							<div class="text-4xl mb-2">{l.icon}</div>
-							<h3 class="card-title text-xl">{l.title}</h3>
-							<p class="text-sm opacity-80">{l.text}</p>
+	<section class="bg-base-100 px-4 py-24">
+		<div class="container mx-auto max-w-6xl">
+			<SectionHeading eyebrow="Cómo servimos" title="Estructura de liderazgo" tone="primary" />
+			<div class="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+				{liderazgo.map((l, i) => (
+					<Reveal delay={(i % 4) * 80}>
+						<div class="h-full rounded-2xl border border-base-300 bg-base-100 p-7 text-center shadow-sm">
+							<div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+								<Icon name={l.icon} class="h-7 w-7" />
+							</div>
+							<h3 class="card-title justify-center text-xl">{l.title}</h3>
+							<p class="mt-1 text-sm text-base-content/70">{l.text}</p>
 						</div>
-					</div>
+					</Reveal>
 				))}
 			</div>
 		</div>
 	</section>
 
-	<!-- Pastores, ancianos y obreros -->
-	<section class="py-20 bg-gradient-to-b from-base-100 to-base-200">
-		<div class="container mx-auto px-4 max-w-7xl">
-			<div class="text-center mb-16">
-				<div class="badge badge-accent badge-lg mb-4">Nuestro equipo</div>
-				<h2 class="font-display text-4xl md:text-5xl font-bold mb-4">Pastores y líderes</h2>
-				<p class="text-xl opacity-70 max-w-2xl mx-auto">Quienes sirven al pueblo de Dios en cada templo</p>
-			</div>
-
-			<div class="space-y-12">
+	<!-- Pastores y líderes -->
+	<section class="bg-base-200 px-4 py-24">
+		<div class="container mx-auto max-w-6xl">
+			<SectionHeading eyebrow="Nuestro equipo" title="Pastores y líderes" subtitle="Quienes sirven al pueblo de Dios en cada templo." />
+			<div class="mt-14 space-y-12">
 				{personas.map((grupo) => (
 					<div>
-						<h3 class="font-display text-2xl font-bold text-primary mb-6 text-center">{grupo.group}</h3>
-						<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-							{grupo.people.map((p) => (
-								<a href={`/templos/${p.slug}`} class="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-base-300">
-									<div class="card-body items-center text-center">
-										<div class="avatar avatar-placeholder mb-2">
-											<div class="bg-primary text-primary-content rounded-full w-20"><span class="text-3xl">👤</span></div>
+						<h3 class="mb-6 text-center font-display text-2xl font-bold text-primary">{grupo.group}</h3>
+						<div class="mx-auto grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
+							{grupo.people.map((p, i) => (
+								<Reveal delay={(i % 3) * 80}>
+									<a href={`/templos/${p.slug}`} class="flex h-full items-center gap-4 rounded-2xl border border-base-300 bg-base-100 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+										<div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary font-display text-lg font-bold text-primary-content">
+											{initials(p.name)}
 										</div>
-										<h4 class="card-title text-lg">{p.name}</h4>
-										<p class="text-sm text-accent font-semibold">{p.place}</p>
-									</div>
-								</a>
+										<div>
+											<h4 class="font-bold leading-tight">{p.name}</h4>
+											<p class="text-sm text-accent">{p.place}</p>
+										</div>
+									</a>
+								</Reveal>
 							))}
 						</div>
 					</div>
@@ -173,64 +154,58 @@ const sacramentos = [
 		</div>
 	</section>
 
-	<!-- Declaración de fe -->
-	<section class="py-20 bg-base-100">
-		<div class="container mx-auto px-4 max-w-6xl">
-			<div class="text-center mb-16">
-				<div class="badge badge-secondary badge-lg mb-4">Nuestras creencias</div>
-				<h2 class="font-display text-4xl md:text-5xl font-bold mb-4">Declaración de fe</h2>
-			</div>
-
-			<div class="grid md:grid-cols-3 gap-6">
-				{credo.map((c) => (
-					<div class="card bg-gradient-to-br from-primary/5 to-base-100 shadow-lg border-t-4 border-primary hover:shadow-xl transition-all">
-						<div class="card-body">
-							<div class="text-3xl mb-2">{c.icon}</div>
-							<h3 class="card-title text-xl">{c.title}</h3>
-							{c.ref && <div class="badge badge-outline badge-sm">{c.ref}</div>}
-							<p class="opacity-80 mt-2">{c.text}</p>
+	<!-- Declaración de fe (banda oscura) -->
+	<section class="section-dark px-4 py-24">
+		<div class="container mx-auto max-w-6xl">
+			<SectionHeading eyebrow="Nuestras creencias" title="Declaración de fe" invert tone="accent" />
+			<div class="mt-14 grid gap-6 md:grid-cols-3">
+				{credo.map((c, i) => (
+					<Reveal delay={(i % 3) * 90}>
+						<div class="h-full rounded-2xl border border-white/10 bg-white/5 p-7 backdrop-blur-sm">
+							<div class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/20 text-accent">
+								<Icon name={c.icon} class="h-6 w-6" />
+							</div>
+							<h3 class="text-xl font-bold text-white">{c.title}</h3>
+							{c.ref && <span class="mt-1 inline-block rounded-full border border-white/20 px-2 py-0.5 text-xs text-white/70">{c.ref}</span>}
+							<p class="mt-2 text-white/75">{c.text}</p>
 						</div>
-					</div>
+					</Reveal>
 				))}
 			</div>
 		</div>
 	</section>
 
 	<!-- Sacramentos -->
-	<section class="py-20 bg-gradient-to-b from-base-100 to-base-200">
-		<div class="container mx-auto px-4 max-w-5xl">
-			<div class="text-center mb-16">
-				<div class="badge badge-accent badge-lg mb-4">Ordenanzas</div>
-				<h2 class="font-display text-4xl md:text-5xl font-bold mb-4">Sacramentos</h2>
-			</div>
-
-			<div class="grid md:grid-cols-2 gap-8">
-				{sacramentos.map((s) => (
-					<div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300">
-						<div class="card-body">
-							<div class="flex items-center gap-4 mb-2">
-								<div class="bg-primary/10 p-4 rounded-full"><span class="text-4xl">{s.icon}</span></div>
-								<h3 class="card-title text-2xl">{s.title}</h3>
+	<section class="bg-base-100 px-4 py-24">
+		<div class="container mx-auto max-w-5xl">
+			<SectionHeading eyebrow="Ordenanzas" title="Sacramentos" />
+			<div class="mt-14 grid gap-6 md:grid-cols-2">
+				{sacramentos.map((s, i) => (
+					<Reveal delay={(i % 2) * 90}>
+						<div class="flex h-full items-start gap-5 rounded-3xl border border-base-300 bg-base-100 p-8 shadow-sm">
+							<div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+								<Icon name={s.icon} class="h-7 w-7" />
 							</div>
-							<p class="text-lg opacity-80">{s.text}</p>
+							<div>
+								<h3 class="card-title text-2xl">{s.title}</h3>
+								<p class="mt-1 text-base-content/80">{s.text}</p>
+							</div>
 						</div>
-					</div>
+					</Reveal>
 				))}
 			</div>
 		</div>
 	</section>
 
 	<!-- CTA -->
-	<section class="py-20 bg-gradient-to-br from-primary/10 via-accent/10 to-primary/10">
-		<div class="container mx-auto px-4 max-w-4xl text-center">
-			<h2 class="font-display text-4xl md:text-5xl font-bold mb-6">¿Quieres conocernos mejor?</h2>
-			<p class="text-xl opacity-80 mb-8 max-w-2xl mx-auto">
-				Te invitamos a visitarnos y ser parte de nuestra familia de fe.
-			</p>
-			<div class="flex flex-wrap gap-4 justify-center">
-				<a href="/#templos" class="btn btn-primary btn-lg">Visita un templo</a>
-				<a href="/" class="btn btn-outline btn-lg">Volver al inicio</a>
+	<section class="section-dark border-t border-white/10 px-4 py-20 text-center">
+		<Reveal>
+			<h2 class="font-display text-3xl font-bold text-white md:text-4xl">¿Quieres conocernos mejor?</h2>
+			<p class="mx-auto mt-3 max-w-2xl text-white/70">Te invitamos a visitarnos y ser parte de nuestra familia de fe.</p>
+			<div class="mt-8 flex flex-wrap justify-center gap-4">
+				<a href="/#templos" class="btn btn-primary gap-2"><Icon name="lucide:church" class="h-5 w-5" /> Visita un templo</a>
+				<a href="/" class="btn gap-2 border-white/60 bg-transparent text-white hover:bg-white hover:text-neutral">Volver al inicio</a>
 			</div>
-		</div>
+		</Reveal>
 	</section>
 </Layout>

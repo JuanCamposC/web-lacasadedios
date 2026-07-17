@@ -6,13 +6,6 @@ import Reveal from '../components/Reveal.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import { templos } from '../data/templos';
 import { IMG } from '../assets/images';
-
-const templeImg = {
-	'santiago-centro': IMG.auditorio,
-	'san-miguel': IMG.congregacion,
-	'limache': IMG.adoracion,
-	'coya': IMG.comunidad,
-} as const;
 ---
 
 <Layout>
@@ -117,7 +110,7 @@ const templeImg = {
 					<Reveal delay={(i % 4) * 90}>
 						<a href={`/templos/${t.slug}`} class="group block h-full overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
 							<div class="relative h-44 overflow-hidden">
-								<Image src={templeImg[t.slug as keyof typeof templeImg]} alt={t.name} widths={[400, 700]} sizes="(max-width:640px) 100vw, 25vw" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+								<Image src={IMG[t.image]} alt={t.name} widths={[400, 700]} sizes="(max-width:640px) 100vw, 25vw" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
 								<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
 								{t.matriz && <span class="absolute left-3 top-3 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-content">Iglesia Matriz</span>}
 								<h3 class="absolute bottom-3 left-4 font-display text-2xl font-bold text-white">{t.short}</h3>

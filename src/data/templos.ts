@@ -2,6 +2,7 @@
  * Datos de los templos de La Casa de Dios.
  * Fuente: información real del proyecto y de lacasadedios.cl.
  */
+import type { ImgKey } from '../assets/images';
 
 /**
  * Contacto general de la iglesia (mismo para todos los templos).
@@ -32,7 +33,8 @@ export interface Templo {
   name: string;
   /** nombre corto para tarjetas y navegación */
   short: string;
-  emoji: string;
+  /** clave de imagen (ver src/assets/images.ts) */
+  image: ImgKey;
   tagline: string;
   address: string;
   city: string;
@@ -55,7 +57,7 @@ export const templos: Templo[] = [
     slug: 'santiago-centro',
     name: 'Templo Santiago Centro',
     short: 'Santiago Centro',
-    emoji: '🌆',
+    image: 'auditorio',
     tagline: 'En el corazón de Santiago',
     address: 'Aldunate #1002, Santiago',
     city: 'Comuna de Santiago',
@@ -77,7 +79,7 @@ export const templos: Templo[] = [
     slug: 'san-miguel',
     name: 'Templo San Miguel',
     short: 'San Miguel',
-    emoji: '🏛️',
+    image: 'congregacion',
     tagline: 'Iglesia Matriz — Únete a nuestra comunidad',
     matriz: true,
     address: 'Santa Ester #623, San Miguel',
@@ -102,7 +104,7 @@ export const templos: Templo[] = [
     slug: 'limache',
     name: 'Templo Limache',
     short: 'Limache',
-    emoji: '🏘️',
+    image: 'adoracion',
     tagline: 'Sirviendo a la comunidad de Limache',
     address: 'El Espino #352, Limache',
     city: 'Comuna de Limache',
@@ -125,7 +127,7 @@ export const templos: Templo[] = [
     slug: 'coya',
     name: 'Templo Coya',
     short: 'Coya',
-    emoji: '⛰️',
+    image: 'comunidad',
     tagline: 'Una familia de fe en Coya',
     address: 'Pedro Aguirre Cerda #623, Coya',
     city: 'Comuna de Machalí',

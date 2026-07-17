@@ -2,6 +2,10 @@
 export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
+import PageHero from '../../components/PageHero.astro';
+import Reveal from '../../components/Reveal.astro';
+import { Icon } from 'astro-icon/components';
+import { IMG } from '../../assets/images';
 import type { EventItem } from '../../lib/supabase';
 
 const supabase = Astro.locals.supabase;
@@ -17,57 +21,58 @@ if (supabase) {
 
 const now = Date.now();
 const upcoming = events.filter((e) => new Date(e.event_date).getTime() >= now);
-const past = events
-  .filter((e) => new Date(e.event_date).getTime() < now)
-  .reverse();
+const past = events.filter((e) => new Date(e.event_date).getTime() < now).reverse();
 
-const fmtDate = (d: string) =>
-  new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
-const fmtTime = (d: string) =>
-  new Intl.DateTimeFormat('es-CL', { hour: '2-digit', minute: '2-digit' }).format(new Date(d));
+const fmtDate = (d: string) => new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
+const fmtTime = (d: string) => new Intl.DateTimeFormat('es-CL', { hour: '2-digit', minute: '2-digit' }).format(new Date(d));
 ---
 
-<Layout
-  title="Eventos · La Casa de Dios"
-  description="Próximos eventos y actividades de La Casa de Dios: cultos especiales, encuentros y celebraciones."
->
-  <section class="hero min-h-[36vh] bg-gradient-to-br from-primary/10 via-base-100 to-accent/10">
-    <div class="hero-content text-center">
-      <div class="max-w-3xl">
-        <div class="badge badge-primary badge-lg mb-4">Agenda</div>
-        <h1 class="font-display text-5xl md:text-6xl font-bold text-primary mb-4">Eventos</h1>
-        <p class="text-lg opacity-80">Actividades, cultos especiales y encuentros de nuestra comunidad</p>
-      </div>
-    </div>
-  </section>
+<Layout title="Eventos · La Casa de Dios" description="Próximos eventos y actividades de La Casa de Dios: cultos especiales, encuentros y celebraciones.">
+  <PageHero image={IMG.manosAlzadas} alt="Reunión de adoración" eyebrow="Agenda" title="Eventos" subtitle="Actividades, cultos especiales y encuentros de nuestra comunidad." height="min-h-[50vh]" />
 
-  <section class="py-16 px-4 bg-base-100">
-    <div class="container mx-auto max-w-5xl">
+  <section class="bg-base-100 px-4 py-20">
+    <div class="container mx-auto max-w-6xl">
       {upcoming.length === 0 && past.length === 0 && (
-        <p class="text-center text-lg opacity-70 py-16">
-          Pronto publicaremos nuestros próximos eventos. ¡Vuelve a visitarnos!
-        </p>
+        <div class="py-16 text-center">
+          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-base-200 text-base-content/40">
+            <Icon name="lucide:calendar" class="h-8 w-8" />
+          </div>
+          <p class="text-lg text-base-content/70">Pronto publicaremos nuestros próximos eventos. ¡Vuelve a visitarnos!</p>
+        </div>
       )}
 
       {upcoming.length > 0 && (
         <>
-          <h2 class="font-display text-3xl font-bold mb-8">Próximos eventos</h2>
-          <div class="grid md:grid-cols-2 gap-6 mb-16">
-            {upcoming.map((e) => (
-              <article class="card bg-base-100 shadow-lg border border-base-300 overflow-hidden hover:shadow-xl transition-all">
-                {e.image_url && (
-                  <figure class="h-48"><img src={e.image_url} alt={e.title} class="w-full h-full object-cover" loading="lazy" /></figure>
-                )}
-                <div class="card-body">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <div class="badge badge-primary gap-1">📅 {fmtDate(e.event_date)}</div>
-                    <div class="badge badge-ghost">🕒 {fmtTime(e.event_date)}</div>
+          <h2 class="mb-8 font-display text-3xl font-bold">Próximos eventos</h2>
+          <div class="mb-16 grid gap-6 md:grid-cols-2">
+            {upcoming.map((e, i) => (
+              <Reveal delay={(i % 2) * 80}>
+                <article class="group h-full overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                  <div class="relative h-48 overflow-hidden">
+                    {e.image_url ? (
+                      <img src={e.image_url} alt={e.title} class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                    ) : (
+                      <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 text-primary/40">
+                        <Icon name="lucide:calendar-days" class="h-14 w-14" />
+                      </div>
+                    )}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                    <div class="absolute left-4 top-4 flex flex-wrap gap-2">
+                      <span class="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-content">
+                        <Icon name="lucide:calendar" class="h-3.5 w-3.5" /> {fmtDate(e.event_date)}
+                      </span>
+                      <span class="inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                        <Icon name="lucide:clock" class="h-3.5 w-3.5" /> {fmtTime(e.event_date)}
+                      </span>
+                    </div>
                   </div>
-                  <h3 class="card-title text-2xl mt-2">{e.title}</h3>
-                  {e.location && <p class="text-sm text-accent font-medium">📍 {e.location}</p>}
-                  {e.description && <p class="opacity-80 mt-1">{e.description}</p>}
-                </div>
-              </article>
+                  <div class="p-6">
+                    <h3 class="card-title text-2xl">{e.title}</h3>
+                    {e.location && <p class="mt-1 flex items-center gap-1.5 text-sm font-medium text-accent"><Icon name="lucide:map-pin" class="h-4 w-4" /> {e.location}</p>}
+                    {e.description && <p class="mt-2 text-base-content/75">{e.description}</p>}
+                  </div>
+                </article>
+              </Reveal>
             ))}
           </div>
         </>
@@ -75,16 +80,16 @@ const fmtTime = (d: string) =>
 
       {past.length > 0 && (
         <>
-          <h2 class="font-display text-2xl font-bold mb-6 opacity-70">Eventos anteriores</h2>
-          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <h2 class="mb-6 font-display text-2xl font-bold opacity-70">Eventos anteriores</h2>
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {past.map((e) => (
-              <div class="card bg-base-200/60 border border-base-300">
-                <div class="card-body p-5">
-                  <div class="text-xs opacity-60">{fmtDate(e.event_date)}</div>
-                  <h3 class="card-title text-lg">{e.title}</h3>
-                  {e.location && <p class="text-sm opacity-70">📍 {e.location}</p>}
+              <Reveal>
+                <div class="h-full rounded-xl border border-base-300 bg-base-200/50 p-5">
+                  <div class="text-xs text-base-content/60">{fmtDate(e.event_date)}</div>
+                  <h3 class="mt-1 font-bold">{e.title}</h3>
+                  {e.location && <p class="mt-1 flex items-center gap-1.5 text-sm text-base-content/70"><Icon name="lucide:map-pin" class="h-4 w-4" /> {e.location}</p>}
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </>

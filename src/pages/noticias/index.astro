@@ -2,6 +2,10 @@
 export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
+import PageHero from '../../components/PageHero.astro';
+import Reveal from '../../components/Reveal.astro';
+import { Icon } from 'astro-icon/components';
+import { IMG } from '../../assets/images';
 import type { NewsItem } from '../../lib/supabase';
 
 const supabase = Astro.locals.supabase;
@@ -15,45 +19,46 @@ if (supabase) {
   news = data ?? [];
 }
 
-const fmtDate = (d: string) =>
-  new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
+const fmtDate = (d: string) => new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
 ---
 
-<Layout
-  title="Noticias · La Casa de Dios"
-  description="Últimas noticias y novedades de La Casa de Dios."
->
-  <section class="hero min-h-[36vh] bg-gradient-to-br from-accent/10 via-base-100 to-primary/10">
-    <div class="hero-content text-center">
-      <div class="max-w-3xl">
-        <div class="badge badge-accent badge-lg mb-4">Novedades</div>
-        <h1 class="font-display text-5xl md:text-6xl font-bold text-primary mb-4">Noticias</h1>
-        <p class="text-lg opacity-80">Mantente al día con lo que Dios está haciendo en nuestra comunidad</p>
-      </div>
-    </div>
-  </section>
+<Layout title="Noticias · La Casa de Dios" description="Últimas noticias y novedades de La Casa de Dios.">
+  <PageHero image={IMG.comunidad} alt="Nuestra comunidad" eyebrow="Novedades" title="Noticias" subtitle="Mantente al día con lo que Dios está haciendo en nuestra comunidad." height="min-h-[50vh]" />
 
-  <section class="py-16 px-4 bg-base-100">
-    <div class="container mx-auto max-w-5xl">
+  <section class="bg-base-100 px-4 py-20">
+    <div class="container mx-auto max-w-6xl">
       {news.length === 0 && (
-        <p class="text-center text-lg opacity-70 py-16">
-          Aún no hay noticias publicadas. ¡Vuelve pronto!
-        </p>
+        <div class="py-16 text-center">
+          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-base-200 text-base-content/40">
+            <Icon name="lucide:newspaper" class="h-8 w-8" />
+          </div>
+          <p class="text-lg text-base-content/70">Aún no hay noticias publicadas. ¡Vuelve pronto!</p>
+        </div>
       )}
 
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {news.map((n) => (
-          <article class="card bg-base-100 shadow-lg border border-base-300 overflow-hidden hover:shadow-xl transition-all">
-            {n.image_url && (
-              <figure class="h-44"><img src={n.image_url} alt={n.title} class="w-full h-full object-cover" loading="lazy" /></figure>
-            )}
-            <div class="card-body">
-              <div class="text-xs opacity-60">{fmtDate(n.published_at)}</div>
-              <h2 class="card-title text-xl">{n.title}</h2>
-              {n.excerpt && <p class="opacity-80 text-sm">{n.excerpt}</p>}
-              {n.body && !n.excerpt && <p class="opacity-80 text-sm line-clamp-4">{n.body}</p>}
-            </div>
-          </article>
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {news.map((n, i) => (
+          <Reveal delay={(i % 3) * 80}>
+            <article class="group h-full overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+              <div class="relative h-44 overflow-hidden">
+                {n.image_url ? (
+                  <img src={n.image_url} alt={n.title} class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                ) : (
+                  <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 text-accent/40">
+                    <Icon name="lucide:newspaper" class="h-12 w-12" />
+                  </div>
+                )}
+              </div>
+              <div class="p-6">
+                <div class="flex items-center gap-1.5 text-xs text-base-content/60">
+                  <Icon name="lucide:calendar" class="h-3.5 w-3.5" /> {fmtDate(n.published_at)}
+                </div>
+                <h2 class="card-title mt-1 text-xl">{n.title}</h2>
+                {n.excerpt && <p class="mt-2 text-sm text-base-content/75">{n.excerpt}</p>}
+                {n.body && !n.excerpt && <p class="mt-2 line-clamp-4 text-sm text-base-content/75">{n.body}</p>}
+              </div>
+            </article>
+          </Reveal>
         ))}
       </div>
     </div>
