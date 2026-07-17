@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import PageHero from './PageHero.astro';
 import Reveal from './Reveal.astro';
 import { Icon } from 'astro-icon/components';
-import { getTemplo, getSiblings, CONTACT } from '../data/templos';
+import { getTemplo, templos, CONTACT } from '../data/templos';
 import { IMG } from '../assets/images';
 
 interface Props {
@@ -15,7 +15,6 @@ const templo = getTemplo(slug);
 if (!templo) {
   throw new Error(`Templo no encontrado: ${slug}`);
 }
-const { prev, next } = getSiblings(templo.slug);
 
 // Iniciales del líder (sin el título Pastor/Hermano)
 const initials = templo.leader.name
@@ -158,16 +157,21 @@ const jsonLd = {
     </div>
   </section>
 
-  <!-- Navegación entre templos -->
-  <section class="border-t border-base-300 bg-base-100 px-4 py-10">
-    <div class="container mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
-      <a href={`/templos/${prev.slug}`} class="btn btn-outline gap-2">
-        <Icon name="lucide:chevron-left" class="h-5 w-5" /> {prev.short}
-      </a>
-      <a href="/#templos" class="btn btn-ghost">Ver todos</a>
-      <a href={`/templos/${next.slug}`} class="btn btn-outline gap-2">
-        {next.short} <Icon name="lucide:chevron-right" class="h-5 w-5" />
-      </a>
+  <!-- Selector de templos -->
+  <section class="border-t border-base-300 bg-base-200/60 px-4 py-12">
+    <div class="container mx-auto max-w-6xl">
+      <h2 class="mb-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-base-content/60">Conoce nuestros templos</h2>
+      <div class="flex flex-wrap justify-center gap-3">
+        {templos.map((t) => (
+          <a
+            href={`/templos/${t.slug}`}
+            aria-current={t.slug === templo.slug ? 'page' : undefined}
+            class={`inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition ${t.slug === templo.slug ? 'border-primary bg-primary text-primary-content shadow-sm' : 'border-base-300 bg-base-100 hover:-translate-y-0.5 hover:border-primary hover:text-primary'}`}
+          >
+            <Icon name="lucide:map-pin" class="h-4 w-4" /> {t.short}
+          </a>
+        ))}
+      </div>
     </div>
   </section>
 

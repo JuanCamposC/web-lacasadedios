@@ -3,6 +3,25 @@ import { Icon } from 'astro-icon/components';
 import { CONTACT } from '../data/templos';
 ---
 <footer class="bg-neutral text-neutral-content">
+  <!-- Newsletter -->
+  <div class="border-b border-white/10">
+    <div class="container mx-auto max-w-3xl px-4 py-14 text-center">
+      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/20 text-accent">
+        <Icon name="lucide:mail-plus" class="h-6 w-6" />
+      </div>
+      <h2 class="font-display text-2xl font-bold md:text-3xl">Recibe nuestras novedades</h2>
+      <p class="mx-auto mt-2 max-w-lg opacity-70">Suscríbete y entérate de eventos, prédicas y noticias de La Casa de Dios.</p>
+      <form id="newsletter-form" class="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row">
+        <input type="email" name="email" required placeholder="tucorreo@ejemplo.cl"
+          class="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-white placeholder-white/40 outline-none focus:border-white/50" />
+        <button type="submit" id="newsletter-btn" class="btn btn-primary gap-2">
+          <Icon name="lucide:send" class="h-4 w-4" /> Suscribirme
+        </button>
+      </form>
+      <p id="newsletter-msg" class="mt-3 hidden text-sm"></p>
+    </div>
+  </div>
+
   <div class="container mx-auto px-4 py-12">
     <!-- Grid principal responsivo -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
@@ -84,3 +103,30 @@ import { CONTACT } from '../data/templos';
     </div>
   </div>
 </footer>
+
+<script>
+  import { createBrowserSupabase } from '../lib/supabase';
+  const form = document.getElementById('newsletter-form') as HTMLFormElement | null;
+  const msg = document.getElementById('newsletter-msg');
+  const btn = document.getElementById('newsletter-btn') as HTMLButtonElement | null;
+  if (form && msg && btn) {
+    const supabase = createBrowserSupabase();
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.className = 'mt-3 hidden text-sm';
+      btn.disabled = true;
+      const email = String(new FormData(form).get('email') || '').trim();
+      const { error } = await supabase.from('subscribers').insert({ email });
+      btn.disabled = false;
+      if (error) {
+        const dup = (error as any).code === '23505' || /duplicate|unique/i.test(error.message);
+        msg.textContent = dup ? 'Ya estás suscrito. ¡Gracias!' : 'No se pudo suscribir. Intenta más tarde.';
+        msg.className = `mt-3 text-sm ${dup ? 'text-white/80' : 'text-red-300'}`;
+        return;
+      }
+      form.reset();
+      msg.textContent = '¡Listo! Te has suscrito correctamente.';
+      msg.className = 'mt-3 text-sm text-green-300';
+    });
+  }
+</script>

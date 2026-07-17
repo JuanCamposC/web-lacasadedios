@@ -11,25 +11,25 @@
   name: "church";
   default: true;
   color-scheme: light;
-  --color-primary: #1e40af;
+  --color-primary: #1d4ed8;
   --color-primary-content: #ffffff;
-  --color-secondary: #51607a;
+  --color-secondary: #334155;
   --color-secondary-content: #ffffff;
-  --color-accent: #b5892f;
+  --color-accent: #a97b1e;
   --color-accent-content: #ffffff;
-  --color-neutral: #1b2436;
-  --color-neutral-content: #e7e5e0;
-  --color-base-100: #fdfcfa;
-  --color-base-200: #f4f1ea;
-  --color-base-300: #e6e1d6;
-  --color-base-content: #1f2733;
-  --color-info: #2b6cb0;
+  --color-neutral: #111827;
+  --color-neutral-content: #e5e7eb;
+  --color-base-100: #ffffff;
+  --color-base-200: #eef1f6;
+  --color-base-300: #d3d9e2;
+  --color-base-content: #0f172a;
+  --color-info: #1e6fbf;
   --color-info-content: #ffffff;
-  --color-success: #3f7d54;
+  --color-success: #2f7d4f;
   --color-success-content: #ffffff;
-  --color-warning: #b5892f;
+  --color-warning: #a97b1e;
   --color-warning-content: #ffffff;
-  --color-error: #b04a3f;
+  --color-error: #b91c1c;
   --color-error-content: #ffffff;
 }
 
@@ -91,12 +91,16 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Serif (Playfair Display) para TODOS los títulos; Poppins para el resto */
+/* Tipografía coherente: Poppins en todo; títulos en pesos altos y tracking ajustado */
 h1, h2, h3, h4,
 .card-title,
 .font-display {
-  font-family: 'Playfair Display Variable', 'Georgia', 'Times New Roman', serif;
-  letter-spacing: 0.005em;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.font-display {
+  font-weight: 800;
 }
 
 /* Logo: negro sobre fondos claros; blanco en modo oscuro / footer */

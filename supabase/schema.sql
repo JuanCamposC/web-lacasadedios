@@ -72,6 +72,24 @@ create policy "auth update media" on storage.objects for update
 create policy "auth delete media" on storage.objects for delete
   using (bucket_id = 'media' and auth.role() = 'authenticated');
 
+-- ── Newsletter: suscriptores ─────────────────────────────────────────────────
+create table if not exists public.subscribers (
+  id         uuid primary key default gen_random_uuid(),
+  email      text not null unique,
+  created_at timestamptz not null default now()
+);
+
+alter table public.subscribers enable row level security;
+
+-- Cualquiera puede suscribirse (insertar su correo)…
+create policy "public subscribe" on public.subscribers for insert
+  with check (true);
+-- …pero solo el mantenedor autenticado puede leer/borrar la lista.
+create policy "auth read subscribers" on public.subscribers for select
+  using (auth.role() = 'authenticated');
+create policy "auth delete subscribers" on public.subscribers for delete
+  using (auth.role() = 'authenticated');
+
 -- ── Datos de ejemplo (opcional; borra si no los quieres) ─────────────────────
 insert into public.events (title, event_date, location, description) values
   ('Culto de Aniversario', now() + interval '14 days', 'Templo San Miguel', 'Celebración especial de aniversario de la congregación.')
