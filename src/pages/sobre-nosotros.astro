@@ -1,12 +1,25 @@
 ---
+import { Image } from 'astro:assets';
+import { Icon } from 'astro-icon/components';
 import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Reveal from '../components/Reveal.astro';
 import SectionHeading from '../components/SectionHeading.astro';
-import { Icon } from 'astro-icon/components';
+import CtaBand from '../components/CtaBand.astro';
 import { IMG } from '../assets/images';
+import { HISTORIA } from '../data/historia';
+import { SITE } from '../data/site';
 
 // Contenido tomado de lacasadedios.cl/nosotros
+
+const secciones = [
+  { href: '#mision', label: 'Misión y visión' },
+  { href: '#historia', label: 'Historia' },
+  { href: '#valores', label: 'Valores' },
+  { href: '#liderazgo', label: 'Pastores y líderes' },
+  { href: '#fe', label: 'Declaración de fe' },
+];
 
 const valores = [
 	{ icon: 'lucide:heart', title: 'Amor', text: 'Reflejamos el amor de Dios en nuestras acciones diarias.' },
@@ -55,17 +68,32 @@ const initials = (name: string) =>
 
 <Layout
 	title="Nosotros · La Casa de Dios"
-	description="Conoce la misión, visión, valores, liderazgo y declaración de fe de La Casa de Dios."
+	description="Conoce la historia, misión, visión, valores, liderazgo y declaración de fe de La Casa de Dios."
 >
-	<PageHero image={IMG.congregacion} alt="Congregación en adoración" eyebrow="La Casa de Dios" title="Nosotros" subtitle="La Palabra de Dios es el fundamento de todo lo que hacemos." />
+	<PageHero image={IMG.congregacion} alt="Congregación en adoración" eyebrow="La Casa de Dios" title="Nosotros" subtitle={SITE.claim} />
+
+	<Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Nosotros' }]} />
+
+	<!-- Índice de la página -->
+	<nav aria-label="Secciones de la página" class="sticky top-16 z-30 border-b border-base-300 bg-base-100/90 px-4 py-3 backdrop-blur-md">
+		<ul class="wrap flex items-center gap-2 overflow-x-auto pb-1">
+			{secciones.map((s) => (
+				<li class="shrink-0">
+					<a href={s.href} class="rounded-full border border-base-300 px-4 py-1.5 text-sm font-medium transition hover:border-primary hover:text-primary">
+						{s.label}
+					</a>
+				</li>
+			))}
+		</ul>
+	</nav>
 
 	<!-- Misión y Visión -->
-	<section class="bg-base-100 px-4 py-24">
-		<div class="container mx-auto max-w-6xl">
+	<section id="mision" class="section bg-base-100">
+		<div class="wrap">
 			<div class="grid gap-6 md:grid-cols-2">
 				<Reveal>
-					<div class="h-full rounded-3xl border border-base-300 bg-gradient-to-br from-primary/10 to-base-100 p-8">
-						<div class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+					<div class="h-full rounded-xl border border-base-300 bg-gradient-to-br from-primary/10 to-base-100 p-8">
+						<div class="mb-4 tile">
 							<Icon name="lucide:target" class="h-6 w-6" />
 						</div>
 						<h2 class="card-title text-3xl">Misión</h2>
@@ -73,8 +101,8 @@ const initials = (name: string) =>
 					</div>
 				</Reveal>
 				<Reveal delay={100}>
-					<div class="h-full rounded-3xl border border-base-300 bg-gradient-to-br from-accent/10 to-base-100 p-8">
-						<div class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/15 text-accent">
+					<div class="h-full rounded-xl border border-base-300 bg-gradient-to-br from-accent/10 to-base-100 p-8">
+						<div class="mb-4 tile tile-accent">
 							<Icon name="lucide:eye" class="h-6 w-6" />
 						</div>
 						<h2 class="card-title text-3xl">Visión</h2>
@@ -85,15 +113,66 @@ const initials = (name: string) =>
 		</div>
 	</section>
 
+	<!-- Historia -->
+	<section id="historia" class="section bg-base-200">
+		<div class="wrap">
+			<div class="grid items-center gap-10 lg:grid-cols-12">
+				<Reveal class="lg:col-span-5">
+					<div class="relative overflow-hidden rounded-xl">
+						<Image
+							src={IMG[HISTORIA.imagen]}
+							alt="Biblia abierta"
+							widths={[500, 900]}
+							sizes="(max-width:1024px) 100vw, 40vw"
+							class="aspect-[4/3] w-full object-cover"
+						/>
+						<div class="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent"></div>
+					</div>
+				</Reveal>
+
+				<div class="lg:col-span-7">
+					<SectionHeading
+						eyebrow={HISTORIA.eyebrow}
+						title={HISTORIA.title}
+						subtitle={HISTORIA.lead}
+						align="left"
+						tone="primary"
+					/>
+					<div data-reveal data-reveal-delay="90" class="prose-lcd mt-6">
+						{HISTORIA.parrafos.map((p) => <p>{p}</p>)}
+					</div>
+				</div>
+			</div>
+
+			{HISTORIA.hitos.length > 0 && (
+				<ol class="relative mt-16 space-y-8 border-l border-base-300 pl-6 sm:pl-8">
+					{HISTORIA.hitos.map((h, i) => (
+						<li data-reveal data-reveal-delay={Math.min(i, 5) * 70} class="relative">
+							<span class="absolute -left-[1.85rem] top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary ring-4 ring-base-200 sm:-left-[2.35rem]"></span>
+							<span class="eyebrow text-accent">{h.year}</span>
+							<h3 class="mt-1 font-display text-xl">{h.title}</h3>
+							<p class="mt-1 text-base-content/75">{h.text}</p>
+							{h.templo && (
+								<a href={`/templos/${h.templo}`} class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-accent">
+									<Icon name="lucide:map-pin" class="h-4 w-4" /> Ver el templo
+								</a>
+							)}
+						</li>
+					))}
+				</ol>
+			)}
+		</div>
+	</section>
+
 	<!-- Valores -->
-	<section class="bg-base-200 px-4 py-24">
-		<div class="container mx-auto max-w-6xl">
+	<section id="valores" class="section bg-base-100">
+		<div class="wrap">
 			<SectionHeading eyebrow="Nuestros principios" title="Valores" />
-			<div class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+			<div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
 				{valores.map((v, i) => (
-					<Reveal delay={(i % 5) * 70}>
-						<div class="group h-full rounded-2xl border border-base-300 bg-base-100 p-6 text-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg">
-							<div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-content">
+					<Reveal delay={(i % 5) * 70} class="h-full">
+						<div class="panel panel-sm panel-lift group h-full p-6 text-center">
+							<div class="mx-auto mb-4 tile tile-lg transition-colors group-hover:bg-primary group-hover:text-primary-content">
 								<Icon name={v.icon} class="h-7 w-7" />
 							</div>
 							<h3 class="card-title justify-center text-xl">{v.title}</h3>
@@ -106,14 +185,14 @@ const initials = (name: string) =>
 	</section>
 
 	<!-- Estructura de liderazgo -->
-	<section class="bg-base-100 px-4 py-24">
-		<div class="container mx-auto max-w-6xl">
+	<section class="section bg-base-200">
+		<div class="wrap">
 			<SectionHeading eyebrow="Cómo servimos" title="Estructura de liderazgo" tone="primary" />
-			<div class="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+			<div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
 				{liderazgo.map((l, i) => (
-					<Reveal delay={(i % 4) * 80}>
-						<div class="h-full rounded-2xl border border-base-300 bg-base-100 p-7 text-center shadow-sm">
-							<div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+					<Reveal delay={(i % 4) * 80} class="h-full">
+						<div class="panel panel-sm h-full p-7 text-center">
+							<div class="mx-auto mb-3 tile tile-lg tile-accent">
 								<Icon name={l.icon} class="h-7 w-7" />
 							</div>
 							<h3 class="card-title justify-center text-xl">{l.title}</h3>
@@ -126,21 +205,21 @@ const initials = (name: string) =>
 	</section>
 
 	<!-- Pastores y líderes -->
-	<section class="bg-base-200 px-4 py-24">
-		<div class="container mx-auto max-w-6xl">
+	<section id="liderazgo" class="section bg-base-100">
+		<div class="wrap">
 			<SectionHeading eyebrow="Nuestro equipo" title="Pastores y líderes" subtitle="Quienes sirven al pueblo de Dios en cada templo." />
-			<div class="mt-14 space-y-12">
+			<div class="mt-12 space-y-12">
 				{personas.map((grupo) => (
 					<div>
-						<h3 class="mb-6 text-center font-display text-2xl font-bold text-primary">{grupo.group}</h3>
+						<h3 class="mb-6 text-center font-display text-2xl text-primary">{grupo.group}</h3>
 						<div class="mx-auto grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
 							{grupo.people.map((p, i) => (
-								<Reveal delay={(i % 3) * 80}>
-									<a href={`/templos/${p.slug}`} class="flex h-full items-center gap-4 rounded-2xl border border-base-300 bg-base-100 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-										<div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary font-display text-lg font-bold text-primary-content">
+								<Reveal delay={(i % 3) * 80} class="h-full">
+									<a href={`/templos/${p.slug}`} class="panel panel-sm panel-lift flex h-full items-center gap-4 p-5">
+										<div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary font-data text-lg font-bold text-primary-content">
 											{initials(p.name)}
 										</div>
-										<div>
+										<div class="min-w-0">
 											<h4 class="font-bold leading-tight">{p.name}</h4>
 											<p class="text-sm text-accent">{p.place}</p>
 										</div>
@@ -155,14 +234,14 @@ const initials = (name: string) =>
 	</section>
 
 	<!-- Declaración de fe (banda oscura) -->
-	<section class="section-dark px-4 py-24">
-		<div class="container mx-auto max-w-6xl">
+	<section id="fe" class="section-dark section">
+		<div class="wrap">
 			<SectionHeading eyebrow="Nuestras creencias" title="Declaración de fe" invert tone="accent" />
-			<div class="mt-14 grid gap-6 md:grid-cols-3">
+			<div class="mt-12 grid gap-6 md:grid-cols-3">
 				{credo.map((c, i) => (
-					<Reveal delay={(i % 3) * 90}>
-						<div class="h-full rounded-2xl border border-white/10 bg-white/5 p-7 backdrop-blur-sm">
-							<div class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/20 text-accent">
+					<Reveal delay={(i % 3) * 90} class="h-full">
+						<div class="panel-invert h-full p-7">
+							<div class="mb-3 tile tile-accent">
 								<Icon name={c.icon} class="h-6 w-6" />
 							</div>
 							<h3 class="text-xl font-bold text-white">{c.title}</h3>
@@ -172,23 +251,19 @@ const initials = (name: string) =>
 					</Reveal>
 				))}
 			</div>
-		</div>
-	</section>
 
-	<!-- Sacramentos -->
-	<section class="bg-base-100 px-4 py-24">
-		<div class="container mx-auto max-w-5xl">
-			<SectionHeading eyebrow="Ordenanzas" title="Sacramentos" />
-			<div class="mt-14 grid gap-6 md:grid-cols-2">
+			<!-- Sacramentos -->
+			<h3 class="mt-16 text-center font-display text-2xl text-white">Sacramentos</h3>
+			<div class="mx-auto mt-8 grid max-w-4xl gap-5 md:grid-cols-2">
 				{sacramentos.map((s, i) => (
-					<Reveal delay={(i % 2) * 90}>
-						<div class="flex h-full items-start gap-5 rounded-3xl border border-base-300 bg-base-100 p-8 shadow-sm">
-							<div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-								<Icon name={s.icon} class="h-7 w-7" />
+					<Reveal delay={(i % 2) * 90} class="h-full">
+						<div class="panel-invert flex h-full items-start gap-5 p-7">
+							<div class="tile tile-accent">
+								<Icon name={s.icon} class="h-6 w-6" />
 							</div>
 							<div>
-								<h3 class="card-title text-2xl">{s.title}</h3>
-								<p class="mt-1 text-base-content/80">{s.text}</p>
+								<h4 class="text-xl font-bold text-white">{s.title}</h4>
+								<p class="mt-1 text-white/75">{s.text}</p>
 							</div>
 						</div>
 					</Reveal>
@@ -197,15 +272,24 @@ const initials = (name: string) =>
 		</div>
 	</section>
 
-	<!-- CTA -->
-	<section class="section-dark border-t border-white/10 px-4 py-20 text-center">
-		<Reveal>
-			<h2 class="font-display text-3xl font-bold text-white md:text-4xl">¿Quieres conocernos mejor?</h2>
-			<p class="mx-auto mt-3 max-w-2xl text-white/70">Te invitamos a visitarnos y ser parte de nuestra familia de fe.</p>
-			<div class="mt-8 flex flex-wrap justify-center gap-4">
-				<a href="/#templos" class="btn btn-primary gap-2"><Icon name="lucide:church" class="h-5 w-5" /> Visita un templo</a>
-				<a href="/" class="btn gap-2 border-white/60 bg-transparent text-white hover:bg-white hover:text-neutral">Volver al inicio</a>
-			</div>
-		</Reveal>
-	</section>
+	<CtaBand
+		eyebrow="Da el primer paso"
+		title="¿Quieres conocernos mejor?"
+		text="Te invitamos a visitarnos y ser parte de nuestra familia de fe."
+		image={IMG.manosAlzadas}
+		compact
+	>
+		<a href="/templos" class="btn btn-primary gap-2"><Icon name="lucide:church" class="h-5 w-5" /> Visita un templo</a>
+		<a href="/contacto" class="btn gap-2 btn-invert">
+			<Icon name="lucide:mail" class="h-5 w-5" /> Escríbenos
+		</a>
+	</CtaBand>
 </Layout>
+
+<style>
+	/* Esta página suma navbar fijo (4rem) + índice pegajoso (~3,3rem):
+	   los anclajes necesitan más margen que el global. */
+	section[id] {
+		scroll-margin-top: 9rem;
+	}
+</style>

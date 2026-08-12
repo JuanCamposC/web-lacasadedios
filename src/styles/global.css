@@ -1,206 +1,820 @@
 @import "tailwindcss";
 @source "../**/*.{astro,html,js,jsx,ts,tsx,vue,svelte,md,mdx}";
 
-/* ── DaisyUI 5 ───────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   IDENTIDAD VISUAL — La Casa de Dios
+   ───────────────────────────────────────────────────────────────────────────
+   La paleta sale del mundo de la congregación, no de la paleta del framework:
+   el azul de los estandartes y las fachadas pintadas de la tradición
+   evangélica chilena, el bronce de los instrumentos y las letras, el muro
+   encalado bajo tubo fluorescente (frío, no crema) y el azul de la noche del
+   culto de la tarde.
+
+     azul-vivo        #23448F   primario: enlaces, botones y tintes
+     azul-estandarte  #14295C   secundario: superficies serias
+     azul-noche       #0A1730   bandas oscuras y el cartel
+     bronce           #7D5518   acento SOLO estructural, nunca relleno
+     boletin          #FCFAF7   base clara: papel, no blanco de pantalla
+     papel-hondo      #ECE4D6   superficie secundaria
+     tinta            #17202E   texto
+
+   TRES CORRECCIONES QUE COSTARON UNA VUELTA:
+
+   1. Azul primario. El estandarte (#14295C) es tan oscuro que sobre claro no
+      se distingue de la tinta: los enlaces dejaban de parecer enlaces. Queda
+      de superficie; el trabajo interactivo lo hace el azul vivo.
+
+   2. Papel, no pantalla. La base era #FFFFFF con una secundaria #EDF1F7 un 3 %
+      más oscura: las bandas no se separaban y el conjunto salía frío. Ahora la
+      base es papel de boletín y la secundaria un 20 % más marcada. La calidez
+      no viene de bajar el color, sino de que la tinta azul caiga sobre papel
+      tibio — como un programa impreso.
+
+   3. Bronce legible. #A9752A daba 3,99:1 sobre blanco: reprobaba AA para texto
+      normal, y de ahí el aire apagado. #7D5518 da 6,6:1 sobre la base y 5,2:1
+      sobre la secundaria. Sobre las bandas oscuras el bronce se aclara solo
+      (ver la redefinición de variables en .section-dark).
+
+   NOTA SOBRE CAPAS: todo lo propio va en `base` o en `components`. Nunca
+   fuera de capa — el CSS sin capa gana a cualquier utilidad de Tailwind, y
+   entonces `font-normal` no puede corregir el peso de `.font-display`, ni
+   `max-w-xl` el ancho de `.wrap`. Es el error clásico de estos sistemas.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @plugin "daisyui" {
   themes: church --default, churchdark --prefersdark;
 }
 
-/* Tema claro — blanco cálido, texto pizarra, azul de marca + dorado */
 @plugin "daisyui/theme" {
   name: "church";
   default: true;
   color-scheme: light;
-  --color-primary: #1d4ed8;
+  --color-primary: #23448f;
   --color-primary-content: #ffffff;
-  --color-secondary: #334155;
+  --color-secondary: #14295c;
   --color-secondary-content: #ffffff;
-  --color-accent: #a97b1e;
+  --color-accent: #7d5518;
   --color-accent-content: #ffffff;
-  --color-neutral: #111827;
-  --color-neutral-content: #e5e7eb;
-  --color-base-100: #ffffff;
-  --color-base-200: #eef1f6;
-  --color-base-300: #d3d9e2;
-  --color-base-content: #0f172a;
-  --color-info: #1e6fbf;
+  --color-neutral: #0a1730;
+  --color-neutral-content: #e4e9f2;
+  --color-base-100: #fcfaf7;
+  --color-base-200: #ece4d6;
+  --color-base-300: #d6cab4;
+  --color-base-content: #17202e;
+  --color-info: #1b5694;
   --color-info-content: #ffffff;
-  --color-success: #2f7d4f;
+  --color-success: #1d6440;
   --color-success-content: #ffffff;
-  --color-warning: #a97b1e;
+  --color-warning: #7d5518;
   --color-warning-content: #ffffff;
-  --color-error: #b91c1c;
+  --color-error: #98231c;
   --color-error-content: #ffffff;
+
+  /* Geometría. Aquí estaba la incoherencia de fondo: DaisyUI traía sus propios
+     radios y sombras (lenguaje de tarjeta blanda) mientras el sistema propio
+     hablaba de placa impresa. Fijando estos tokens, TODO componente de DaisyUI
+     —botón, campo, badge, tarjeta, modal— hereda la misma geometría. */
+  --radius-selector: 0.25rem;
+  --radius-field: 0.375rem;
+  --radius-box: 0.5rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
 }
 
-/* Tema oscuro — navy coherente con el claro (mismo azul/dorado) */
 @plugin "daisyui/theme" {
   name: "churchdark";
   prefersdark: true;
   color-scheme: dark;
-  --color-primary: #7aa2ff;
-  --color-primary-content: #0b1220;
-  --color-secondary: #93a6c4;
-  --color-secondary-content: #0b1220;
-  --color-accent: #d8b45f;
-  --color-accent-content: #1a1608;
-  --color-neutral: #0b1220;
-  --color-neutral-content: #e7e9ee;
-  --color-base-100: #0f1523;
-  --color-base-200: #161d2e;
-  --color-base-300: #222b3d;
-  --color-base-content: #e6e9f0;
-  --color-info: #6fb0e6;
-  --color-info-content: #0b1220;
-  --color-success: #6bbf85;
-  --color-success-content: #0b1220;
-  --color-warning: #d8b45f;
-  --color-warning-content: #1a1608;
-  --color-error: #e08079;
-  --color-error-content: #0b1220;
+  --color-primary: #8aa9e8;
+  --color-primary-content: #0a1730;
+  --color-secondary: #9db0cf;
+  --color-secondary-content: #0a1730;
+  --color-accent: #d9ae63;
+  --color-accent-content: #1b1405;
+  --color-neutral: #0a1730;
+  --color-neutral-content: #e4e9f2;
+  --color-base-100: #0e1b33;
+  --color-base-200: #16243f;
+  --color-base-300: #253453;
+  --color-base-content: #e6ebf4;
+  --color-info: #6fa6e6;
+  --color-info-content: #0a1730;
+  --color-success: #6dbb8c;
+  --color-success-content: #0a1730;
+  --color-warning: #d9ae63;
+  --color-warning-content: #1b1405;
+  --color-error: #e0857d;
+  --color-error-content: #0a1730;
+
+  --radius-selector: 0.25rem;
+  --radius-field: 0.375rem;
+  --radius-box: 0.5rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
 }
 
-/* ── Animaciones (utilidades animate-*) ──────────────────────────────────── */
-@theme {
-  --animate-fade-in: fadeIn 0.5s ease-in;
-  --animate-fade-in-up: fadeInUp 0.6s ease-out;
-  --animate-slide-in-right: slideInRight 0.5s ease-out;
-  --animate-bounce-slow: bounce 3s infinite;
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer base {
+  /* ── Tipografía ────────────────────────────────────────────────────────────
+     Tres roles, no uno:
+       display  Fraunces (eje WONK activado) — titulares. Serif old-style con
+                carácter; lee a imprenta y escritura, no a producto digital.
+       cuerpo   Archivo — grotesca de señalética, robusta en español.
+       datos    Archivo Narrow — horas, días y etiquetas, con cifras tabulares.
+     El display se usa con restricción: h1, h2 y .font-display. Los títulos de
+     tarjeta van en cuerpo, para que la voz seria no se abarate por repetición.
+     ──────────────────────────────────────────────────────────────────────── */
+  :root {
+    --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+    --font-body: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-data: 'Archivo Narrow Variable', 'Archivo Variable', system-ui, sans-serif;
+  }
+
+  html {
+    font-family: var(--font-body);
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Fraunces trae eje de tamaño óptico: a 4rem dibuja letras de alto contraste
+     y a 1.5rem letras de texto. Se deja que el navegador lo module solo
+     (`font-optical-sizing: auto`, que es el comportamiento por defecto) — por
+     eso NO se declara `font-variation-settings`: fijar un eje ahí congela
+     también el óptico y los titulares grandes salen pesados y romos, que era
+     justo lo que se veía mal sobre fondo claro. */
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 550;
+    letter-spacing: -0.012em;
+    line-height: 1.08;
+  }
+
+  h3,
+  h4 {
+    font-family: var(--font-body);
+    font-weight: 650;
+    letter-spacing: -0.005em;
+  }
+
+  /* Los anclas (#historia, #liderazgo…) no deben quedar bajo el navbar fijo */
+  :target,
+  [id] {
+    scroll-margin-top: 5.5rem;
+  }
+
+  /* Foco visible y coherente en todo el sitio */
+  :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
 }
 
-@keyframes fadeIn {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
-}
-@keyframes fadeInUp {
-  0% { opacity: 0; transform: translateY(20px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-@keyframes slideInRight {
-  0% { opacity: 0; transform: translateX(-20px); }
-  100% { opacity: 1; transform: translateX(0); }
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENTES
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* ── Voces tipográficas ──────────────────────────────────────────────────── */
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 550;
+    letter-spacing: -0.012em;
+    line-height: 1.08;
+  }
+
+  /* Cifras y etiquetas: la voz de señalética */
+  .font-data,
+  .tabular {
+    font-family: var(--font-data);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* Antetítulo */
+  .eyebrow {
+    display: inline-block;
+    font-family: var(--font-data);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  /* Versículo: la voz de la Escritura.
+     Se distingue por familia y peso ligero, no por cursiva: solo se carga el
+     romano de Fraunces, y la cursiva sintética arruina un serif. */
+  .versiculo {
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 1.5;
+    text-wrap: balance;
+  }
+
+  /* ── Ritmo vertical y contenedores ───────────────────────────────────────── */
+  .section {
+    padding-block: 4rem;
+    padding-inline: 1rem;
+  }
+  .section-sm {
+    padding-block: 3rem;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 768px) {
+    .section { padding-block: 6rem; }
+    .section-sm { padding-block: 4.5rem; }
+  }
+
+  .wrap {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 72rem;
+  }
+  .wrap-narrow {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 48rem;
+  }
+
+  /* Banda oscura (independiente del tema claro/oscuro).
+     Redefine las variables del tema en vez de pelear con las utilidades: así
+     `text-accent`, `bg-accent/20` o `btn-primary` se aclaran solos dentro de la
+     banda. Con el bronce oscuro del tema claro sobre azul noche el contraste
+     caía a 2,5:1; ahora es la misma clase la que resuelve a otro valor. */
+  .section-dark,
+  .cartel,
+  .on-dark {
+    --color-primary: #7d9ce0;
+    --color-primary-content: #0a1730;
+    --color-accent: #d0a35c;
+    --color-accent-content: #1b1405;
+    --color-base-content: #e4e9f2;
+    --color-base-300: rgba(255, 255, 255, 0.16);
+  }
+  .section-dark {
+    background-color: #0a1730;
+    color: #e4e9f2;
+  }
+  .section-dark :is(h1, h2, h3, h4) {
+    color: #ffffff;
+  }
+  .section-dark :where(a, button, summary):focus-visible {
+    outline-color: var(--color-accent);
+  }
+
+  /* ── Placa de icono ──────────────────────────────────────────────────────
+     Antes había cuatro tamaños (h-10, h-11, h-12, h-14), dos radios y tres
+     colores repartidos a mano por las páginas. Una primitiva, dos tamaños,
+     tres tonos. */
+  .tile {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.5rem;
+    background-color: color-mix(in oklab, var(--color-primary) 11%, transparent);
+    color: var(--color-primary);
+  }
+  .tile-lg {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 0.625rem;
+  }
+  .tile-accent {
+    background-color: color-mix(in oklab, var(--color-accent) 13%, transparent);
+    color: var(--color-accent);
+  }
+  .tile-secondary {
+    background-color: color-mix(in oklab, var(--color-secondary) 12%, transparent);
+    color: var(--color-secondary);
+  }
+  .tile-muted {
+    background-color: var(--color-base-200);
+    color: color-mix(in oklab, var(--color-base-content) 45%, transparent);
+  }
+
+  /* ── Filete ──────────────────────────────────────────────────────────────
+     El motivo estructural que cose el sitio: la misma línea de bronce que
+     cierra el hero, separa secciones y encabeza el cartel. */
+  .rule {
+    height: 1px;
+    border: 0;
+    background: linear-gradient(
+      to right,
+      transparent,
+      color-mix(in oklab, var(--color-accent) 70%, transparent),
+      transparent
+    );
+  }
+  .rule-left {
+    background: linear-gradient(
+      to right,
+      color-mix(in oklab, var(--color-accent) 80%, transparent),
+      transparent
+    );
+  }
+
+  /* ── Botón sobre banda oscura ────────────────────────────────────────────
+     Estaba escrito a mano diez veces con variantes distintas.
+     Va con doble clase (.btn.btn-invert) a propósito: DaisyUI emite su `.btn`
+     DESPUÉS que esto dentro de la misma capa, así que con una sola clase el
+     botón salía con el fondo claro del tema y texto blanco encima —
+     literalmente invisible. Dos clases ganan por especificidad, sin
+     `!important` y sin depender del orden. */
+  /* El botón invertido vive en @layer utilities, al final del archivo: DaisyUI
+     emite `.btn` en esa capa y las capas mandan por encima de la
+     especificidad. Ver la nota al pie. */
+
+  /* ── Superficies ─────────────────────────────────────────────────────────── */
+  .panel {
+    border: 1px solid var(--color-base-300);
+    background-color: var(--color-base-100);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  }
+  .panel-sm {
+    border-radius: 0.5rem;
+  }
+  .panel-lift {
+    transition:
+      transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.3s ease;
+  }
+  .panel-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px -18px rgb(10 23 48 / 0.32);
+    border-color: color-mix(in oklab, var(--color-primary) 45%, transparent);
+  }
+  .panel-invert {
+    border: 1px solid rgb(255 255 255 / 0.12);
+    background-color: rgb(255 255 255 / 0.05);
+    border-radius: 0.75rem;
+    backdrop-filter: blur(4px);
+  }
+
+  /* ── Cuerpo de texto largo (noticias, historia) ──────────────────────────── */
+  .prose-lcd {
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    color: color-mix(in oklab, var(--color-base-content) 82%, transparent);
+  }
+  .prose-lcd > * + * {
+    margin-top: 1.15em;
+  }
+  .prose-lcd :is(h2, h3) {
+    color: var(--color-base-content);
+    margin-top: 2em;
+    line-height: 1.2;
+  }
+  .prose-lcd h2 { font-size: 1.7rem; }
+  .prose-lcd h3 { font-size: 1.3rem; }
+  .prose-lcd a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .prose-lcd blockquote {
+    border-left: 3px solid var(--color-accent);
+    padding-left: 1.15rem;
+    font-family: var(--font-display);
+    font-size: 1.15em;
+  }
+  .prose-lcd ul { list-style: disc; padding-left: 1.35rem; }
+  .prose-lcd ol { list-style: decimal; padding-left: 1.35rem; }
+
+  /* ── Logo ────────────────────────────────────────────────────────────────── */
+  .site-logo {
+    transition: filter 0.3s ease;
+  }
+  [data-theme='churchdark'] .site-logo {
+    filter: invert(1) brightness(1.8);
+  }
+  .footer-logo {
+    filter: invert(1) brightness(1.8);
+  }
+
+  /* ── Migas de pan ────────────────────────────────────────────────────────── */
+  .breadcrumbs > ul > li + li:before {
+    content: "";
+    margin-left: 0.5rem;
+    margin-right: 0.75rem;
+    display: block;
+    height: 0.375rem;
+    width: 0.375rem;
+    transform: rotate(45deg);
+    opacity: 0.4;
+    border-top: 1px solid;
+    border-right: 1px solid;
+  }
+
+  /* ── Accesibilidad ───────────────────────────────────────────────────────── */
+  .skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 100;
+    border-radius: 0.5rem;
+    background-color: var(--color-primary);
+    color: var(--color-primary-content);
+    padding: 0.65rem 1.1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: top 0.2s ease;
+  }
+  .skip-link:focus {
+    top: 1rem;
+  }
+
+  /* ── Utilidades varias ───────────────────────────────────────────────────── */
+  .clamp-2,
+  .clamp-3,
+  .clamp-4 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .clamp-2 { -webkit-line-clamp: 2; }
+  .clamp-3 { -webkit-line-clamp: 3; }
+  .clamp-4 { -webkit-line-clamp: 4; }
+
+  /* Trama de papel pautado para las bandas oscuras sin fotografía */
+  .grid-texture {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
 }
 
-/* ── Estilos globales ────────────────────────────────────────────────────── */
-html {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  scroll-behavior: smooth;
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOVIMIENTO
+   Un solo momento orquestado (el cartel se arma al cargar) más la entrada por
+   scroll. Se quitaron el Ken Burns de cada hero, el flotado y el gradiente
+   animado: efectos dispersos que competían entre sí y hacían ruido.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer components {
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(22px);
+    transition:
+      opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+  }
+  [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Entrada escalonada al cargar, para lo que está sobre el pliegue y por
+     tanto no puede usar el revelado por scroll. El retardo va por `--i`, que
+     se coordina con el armado del cartel. */
+  @keyframes entra-arriba {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+  .entra {
+    opacity: 0;
+    animation: entra-arriba 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: calc(var(--i, 0) * 90ms);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .entra { opacity: 1; animation: none; }
+  }
+
+  @keyframes pulsedot {
+    0% { box-shadow: 0 0 0 0 rgba(224, 66, 66, 0.55); }
+    70% { box-shadow: 0 0 0 9px rgba(224, 66, 66, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(224, 66, 66, 0); }
+  }
+  .pulse-dot {
+    animation: pulsedot 1.8s ease-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-reveal] { opacity: 1; transform: none; transition: none; }
+    .pulse-dot { animation: none; }
+  }
 }
 
-/* Tipografía coherente: Poppins en todo; títulos en pesos altos y tracking ajustado */
-h1, h2, h3, h4,
-.card-title,
-.font-display {
-  font-family: 'Poppins', sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-.font-display {
-  font-weight: 800;
+/* ═══════════════════════════════════════════════════════════════════════════
+   EL CARTEL
+   La firma del sitio: el tablero de horarios que la iglesia cuelga en la
+   puerta. No es decoración — el horario es lo que más se pregunta, y ponerlo
+   en forma de tablero lo hace escaneable de un vistazo.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer components {
+  .cartel {
+    --cartel-linea: rgba(255, 255, 255, 0.09);
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #142a4f 0%, #0a1730 100%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 24px 48px -24px rgba(3, 10, 25, 0.75);
+    color: #eef2f9;
+  }
+  .cartel :where(a, button):focus-visible {
+    outline-color: #c8994f;
+  }
+
+  /* Cabecera del tablero */
+  .cartel-cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid rgba(169, 117, 42, 0.55);
+    background: rgba(0, 0, 0, 0.18);
+  }
+  .cartel-titulo {
+    font-family: var(--font-data);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #d3a765;
+  }
+  .cartel-hoy {
+    font-family: var(--font-data);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-align: right;
+    color: rgba(238, 242, 249, 0.6);
+  }
+
+  .cartel-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Fila = un día */
+  /* `minmax(0, 1fr)` y no `1fr`: en CSS Grid `1fr` es `minmax(auto, 1fr)`, y
+     ese `auto` impide que la columna baje del ancho de su contenido. Con una
+     lista larga de sedes («Santiago Centro · San Miguel · Limache · Coya») la
+     columna empujaba el ancho de TODA la página y el móvil se desbordaba. */
+  .cartel-fila {
+    position: relative;
+    display: grid;
+    grid-template-columns: 4.25rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1.1rem 0.7rem 0;
+    border-bottom: 1px solid var(--cartel-linea);
+  }
+  .cartel-fila:last-child {
+    border-bottom: 0;
+  }
+
+  /* La ranura del día, hundida como en un tablero real */
+  .cartel-dia {
+    font-family: var(--font-data);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 0.3rem 0;
+    margin-left: 0.55rem;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.28);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    color: rgba(238, 242, 249, 0.75);
+  }
+
+  .cartel-horas {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.45rem 1.1rem;
+  }
+  /* Cada reunión: la hora arriba, la sede debajo en letra de etiqueta.
+     `min-width: 0` por la misma razón que el `minmax(0,1fr)` de la rejilla: un
+     elemento flex tampoco encoge por debajo de su contenido salvo que se le
+     diga. Sin esto, «SANTIAGO CENTRO · SAN MIGUEL · LIMACHE · COYA» ensanchaba
+     la página entera en móvil. */
+  .cartel-serv {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  .cartel-hora {
+    font-family: var(--font-data);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+    font-size: 1.28rem;
+    font-weight: 600;
+    line-height: 1;
+    color: #ffffff;
+  }
+  .cartel-sede {
+    font-family: var(--font-data);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    color: rgba(238, 242, 249, 0.5);
+  }
+
+  /* Fila encendida: hoy */
+  .cartel-fila.encendida {
+    background: rgba(169, 117, 42, 0.13);
+  }
+  .cartel-fila.encendida::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 3px;
+    background: #c8994f;
+  }
+  .cartel-fila.encendida .cartel-dia {
+    color: #f0dcb9;
+    background: rgba(169, 117, 42, 0.3);
+  }
+  .cartel-fila.encendida .cartel-hora {
+    color: #f3d9a8;
+  }
+
+  /* ── Variante extendida: la semana completa en /horarios ────────────────── */
+  .cartel-seccion {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 1.1rem;
+    background: rgba(0, 0, 0, 0.22);
+    border-block: 1px solid var(--cartel-linea);
+  }
+  .cartel-seccion h2 {
+    font-family: var(--font-data);
+    font-size: 0.86rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #eef2f9;
+  }
+  .cartel-seccion .cartel-conteo {
+    font-family: var(--font-data);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: rgba(238, 242, 249, 0.45);
+  }
+  [data-dia]:first-child .cartel-seccion {
+    border-top: 0;
+  }
+
+  .cartel-linea {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0.2rem 0.9rem;
+    padding: 0.75rem 1.1rem;
+    border-bottom: 1px solid var(--cartel-linea);
+    transition: background-color 0.2s ease;
+  }
+  .cartel-linea:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .cartel-nombre {
+    font-weight: 600;
+    color: #eef2f9;
+  }
+  .cartel-lugar {
+    grid-column: 2;
+    justify-self: start;
+    font-family: var(--font-data);
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(238, 242, 249, 0.5);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+  .cartel-lugar:hover {
+    color: #e0bd7d;
+    border-bottom-color: rgba(224, 189, 125, 0.5);
+  }
+  @media (min-width: 640px) {
+    .cartel-linea {
+      grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+      align-items: center;
+    }
+    .cartel-lugar {
+      grid-column: 3;
+      justify-self: end;
+    }
+  }
+
+  /* El día de hoy, dentro de la semana completa */
+  [data-dia].es-hoy .cartel-seccion {
+    background: rgba(169, 117, 42, 0.22);
+  }
+  [data-dia].es-hoy .cartel-seccion h2 {
+    color: #f3d9a8;
+  }
+  [data-dia].es-hoy .cartel-linea .cartel-hora {
+    color: #f3d9a8;
+  }
+
+  .cartel-pie {
+    padding: 0.8rem 1.1rem;
+    border-top: 1px solid var(--cartel-linea);
+    background: rgba(0, 0, 0, 0.18);
+    font-family: var(--font-data);
+    font-size: 0.76rem;
+    letter-spacing: 0.06em;
+    color: rgba(238, 242, 249, 0.6);
+  }
+
+  /* El único momento orquestado: el tablero se arma fila por fila */
+  @keyframes cartel-fila-entra {
+    from { opacity: 0; transform: translateY(9px); }
+    to { opacity: 1; transform: none; }
+  }
+  .cartel[data-animar] .cartel-fila {
+    opacity: 0;
+    animation: cartel-fila-entra 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: calc(160ms + var(--i, 0) * 70ms);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cartel[data-animar] .cartel-fila {
+      opacity: 1;
+      animation: none;
+    }
+  }
 }
 
-/* Logo: negro sobre fondos claros; blanco en modo oscuro / footer */
-.site-logo {
-  transition: filter 0.3s ease;
-}
-[data-theme='churchdark'] .site-logo {
-  filter: invert(1) brightness(1.8);
-}
-.footer-logo {
-  filter: invert(1) brightness(1.8);
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   SOBRESCRITURAS DE COMPONENTES DAISYUI
+   ───────────────────────────────────────────────────────────────────────────
+   TRAMPA QUE COSTÓ TRES INTENTOS: DaisyUI 5 emite sus componentes (`.btn`,
+   `.card-title`, …) en `@layer utilities`, NO en `@layer components`. Y las
+   capas mandan por encima de la especificidad: una regla en `components`
+   pierde contra una de `utilities` aunque tenga diez clases.
 
-body {
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
+   Por eso todo lo que deba ganarle a un componente de DaisyUI va aquí, en
+   `utilities` y al final del archivo. Lo demás (`.panel`, `.tile`, `.section`,
+   `.wrap`…) sigue en `components` a propósito, para que las utilidades de
+   Tailwind sí puedan corregirlo desde el HTML.
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
+   Cómo verificarlo si vuelve a pasar: buscar la regla en el CSS compilado y
+   mirar dentro de qué `@layer` cae.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  /* Botón sobre banda oscura. Se fijan las variables de DaisyUI además de las
+     propiedades: `.btn` pinta también con `background-image`. */
+  .btn.btn-invert {
+    --btn-bg: rgb(255 255 255 / 0.08);
+    --btn-fg: #ffffff;
+    --btn-border: rgb(255 255 255 / 0.55);
+    --btn-shadow: none;
+    background-image: none;
+    background-color: rgb(255 255 255 / 0.08);
+    border-color: rgb(255 255 255 / 0.55);
+    color: #ffffff;
+    backdrop-filter: blur(2px);
+  }
+  .btn.btn-invert:hover {
+    --btn-bg: #ffffff;
+    --btn-fg: #0a1730;
+    --btn-border: #ffffff;
+    background-image: none;
+    background-color: #ffffff;
+    border-color: #ffffff;
+    color: #0a1730;
+  }
 
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  .animate-float,
-  .animate-fade-in,
-  .animate-fade-in-up,
-  .animate-slide-in-right { animation: none; }
-}
-
-/* Breadcrumbs */
-.breadcrumbs > ul > li + li:before {
-  content: "";
-  margin-left: 0.5rem;
-  margin-right: 0.75rem;
-  display: block;
-  height: 0.375rem;
-  width: 0.375rem;
-  transform: rotate(45deg);
-  opacity: 0.4;
-  border-top: 1px solid;
-  border-right: 1px solid;
-}
-
-/* ── Rediseño cinematográfico ────────────────────────────────────────────── */
-
-/* Reveal en scroll (activado por src/scripts/reveal.ts) */
-[data-reveal] {
-  opacity: 0;
-  transform: translateY(26px);
-  transition:
-    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
-}
-[data-reveal].is-visible {
-  opacity: 1;
-  transform: none;
-}
-
-/* Banda oscura cinematográfica (independiente del tema claro/oscuro) */
-.section-dark {
-  background-color: #0b1220;
-  color: #e6e9f0;
-}
-.section-dark :is(h1, h2, h3, h4) {
-  color: #ffffff;
-}
-
-/* Ken Burns: zoom lento para heros con foto */
-@keyframes kenburns {
-  from { transform: scale(1.04); }
-  to { transform: scale(1.16); }
-}
-.animate-kenburns {
-  animation: kenburns 22s ease-out both;
-}
-
-/* Punto pulsante "En vivo" */
-@keyframes pulsedot {
-  0% { box-shadow: 0 0 0 0 rgba(224, 66, 66, 0.55); }
-  70% { box-shadow: 0 0 0 9px rgba(224, 66, 66, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(224, 66, 66, 0); }
-}
-.pulse-dot {
-  animation: pulsedot 1.8s ease-out infinite;
-}
-
-/* Gradiente animado para fondos sin foto */
-@keyframes gradientpan {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradientpan 14s ease infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-reveal] { opacity: 1 !important; transform: none !important; transition: none; }
-  .animate-kenburns,
-  .pulse-dot,
-  .animate-gradient { animation: none; }
+  /* Los títulos de tarjeta se quedan en la voz de cuerpo, a propósito: si el
+     serif de titulares apareciera también aquí, dejaría de significar algo. */
+  .card-title {
+    font-family: var(--font-body);
+    font-weight: 650;
+    letter-spacing: -0.005em;
+  }
 }

@@ -1,0 +1,35 @@
+---
+/**
+ * Migas de pan — solo datos estructurados, sin barra visible.
+ *
+ * La barra de «Inicio › Templos» entre el encabezado y el contenido cortaba la
+ * página en dos y no aportaba nada: el menú superior ya dice dónde estás y cada
+ * página tiene su propia vuelta atrás. Se quitó lo visual y se conservó el
+ * `BreadcrumbList`, que es lo que Google usa para dibujar la ruta en los
+ * resultados de búsqueda. Cero pérdida de SEO, un elemento menos en pantalla.
+ */
+export interface Crumb {
+  label: string;
+  /** Sin href = página actual. */
+  href?: string;
+}
+
+interface Props {
+  items: Crumb[];
+}
+const { items } = Astro.props;
+
+const site = Astro.site?.toString().replace(/\/$/, '') ?? '';
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((c, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: c.label,
+    ...(c.href ? { item: `${site}${c.href}` } : {}),
+  })),
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />

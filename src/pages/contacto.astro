@@ -1,0 +1,163 @@
+---
+// Bajo demanda: así el formulario también funciona sin JavaScript
+// (el endpoint devuelve /contacto?enviado=1 y la página lee ese parámetro).
+export const prerender = false;
+
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Reveal from '../components/Reveal.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import ContactForm from '../components/ContactForm.astro';
+import { Icon } from 'astro-icon/components';
+import { templos } from '../data/templos';
+import { CONTACT, SOCIAL, hasPhone } from '../data/site';
+import { IMG } from '../assets/images';
+---
+
+<Layout
+  title="Contacto · La Casa de Dios"
+  description="Escríbenos: resolvemos tus dudas sobre horarios, visitas, peticiones de oración o cómo servir en La Casa de Dios."
+>
+  <PageHero
+    image={IMG.comunidad}
+    alt="Comunidad reunida"
+    eyebrow="Hablemos"
+    title="Contacto"
+    subtitle="Estamos para escucharte. Escríbenos y te respondemos lo antes posible."
+    height="min-h-[46vh]"
+  />
+
+  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Contacto' }]} />
+
+  <!-- Formulario + datos -->
+  <section id="contacto" class="section bg-base-100">
+    <div class="wrap grid gap-8 lg:grid-cols-12">
+      <Reveal class="lg:col-span-7">
+        <ContactForm />
+      </Reveal>
+
+      <div class="space-y-5 lg:col-span-5">
+        <Reveal delay={90}>
+          <div class="panel p-6 sm:p-8">
+            <h2 class="font-display text-2xl">Datos de contacto</h2>
+            <ul class="mt-5 space-y-4">
+              <li class="flex items-start gap-3">
+                <span class="tile">
+                  <Icon name="lucide:mail" class="h-5 w-5" />
+                </span>
+                <div class="min-w-0">
+                  <p class="text-xs uppercase tracking-wider text-base-content/50">Correo</p>
+                  <a href={`mailto:${CONTACT.email}`} class="break-all font-medium hover:text-primary">
+                    {CONTACT.email}
+                  </a>
+                </div>
+              </li>
+
+              {hasPhone && (
+                <li class="flex items-start gap-3">
+                  <span class="tile">
+                    <Icon name="lucide:phone" class="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p class="text-xs uppercase tracking-wider text-base-content/50">Teléfono</p>
+                    <a href={`tel:${CONTACT.phoneHref}`} class="font-medium hover:text-primary">{CONTACT.phone}</a>
+                  </div>
+                </li>
+              )}
+
+              <li class="flex items-start gap-3">
+                <span class="tile tile-accent">
+                  <Icon name="lucide:clock" class="h-5 w-5" />
+                </span>
+                <div>
+                  <p class="text-xs uppercase tracking-wider text-base-content/50">Horarios de culto</p>
+                  <a href="/horarios" class="font-medium hover:text-primary">Ver la semana completa</a>
+                </div>
+              </li>
+            </ul>
+
+            <div class="mt-7 border-t border-base-300 pt-6">
+              <p class="mb-3 text-xs uppercase tracking-wider text-base-content/50">Síguenos</p>
+              <div class="flex flex-col gap-2">
+                {SOCIAL.map((s) => (
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center gap-3 rounded-xl border border-base-300 px-4 py-2.5 text-sm transition hover:border-primary hover:text-primary"
+                  >
+                    <Icon name={s.icon} class="h-5 w-5 shrink-0 text-accent" />
+                    <span class="min-w-0 flex-1 truncate">{s.handle}</span>
+                    <Icon name="lucide:external-link" class="h-4 w-4 shrink-0 opacity-50" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
+        <Reveal delay={150}>
+          <div class="rounded-xl border border-primary/25 bg-primary/5 p-6">
+            <div class="mb-2 flex items-center gap-2 text-primary">
+              <Icon name="lucide:hand-heart" class="h-5 w-5" />
+              <h3 class="font-display text-lg">¿Necesitas oración?</h3>
+            </div>
+            <p class="text-sm text-base-content/75">
+              Elige <strong>«Petición de oración»</strong> en el asunto del formulario. Lo que nos
+              escribas lo lee únicamente el equipo pastoral.
+            </p>
+          </div>
+        </Reveal>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dónde encontrarnos -->
+  <section class="section bg-base-200">
+    <div class="wrap">
+      <SectionHeading
+        eyebrow="Visítanos"
+        title="Dónde encontrarnos"
+        subtitle="Puedes venir a cualquiera de nuestros templos. Todos tienen las puertas abiertas."
+      />
+
+      <div class="mt-12 grid gap-4 sm:grid-cols-2">
+        {templos.map((t, i) => (
+          <Reveal delay={(i % 2) * 80} class="h-full">
+            <div class="panel panel-lift flex h-full flex-col p-6">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h3 class="font-display text-xl">{t.short}</h3>
+                  <p class="mt-1 text-sm text-base-content/70">{t.address}</p>
+                  <p class="text-sm text-base-content/55">{t.region}</p>
+                </div>
+                {t.matriz && (
+                  <span class="shrink-0 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-content">
+                    Matriz
+                  </span>
+                )}
+              </div>
+              <div class="mt-5 flex flex-wrap gap-2 pt-1">
+                <a href={`/templos/${t.slug}`} class="btn btn-sm btn-primary gap-1.5">
+                  Ver templo
+                </a>
+                <a href={`/horarios?templo=${t.slug}`} class="btn btn-sm btn-ghost gap-1.5">
+                  <Icon name="lucide:clock" class="h-4 w-4" /> Horarios
+                </a>
+                <a
+                  href={t.mapLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="btn btn-sm btn-ghost gap-1.5"
+                >
+                  <Icon name="lucide:navigation" class="h-4 w-4" /> Cómo llegar
+                </a>
+              </div>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>

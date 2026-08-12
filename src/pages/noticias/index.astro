@@ -3,9 +3,12 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import PageHero from '../../components/PageHero.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import Reveal from '../../components/Reveal.astro';
+import EmptyState from '../../components/EmptyState.astro';
 import { Icon } from 'astro-icon/components';
 import { IMG } from '../../assets/images';
+import { markdownAResumen } from '../../lib/markdown';
 import type { NewsItem } from '../../lib/supabase';
 
 const supabase = Astro.locals.supabase;
@@ -19,48 +22,111 @@ if (supabase) {
   news = data ?? [];
 }
 
+const [destacada, ...resto] = news;
 const fmtDate = (d: string) => new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
+const url = (n: NewsItem) => `/noticias/${n.slug ?? n.id}`;
 ---
 
 <Layout title="Noticias · La Casa de Dios" description="Últimas noticias y novedades de La Casa de Dios.">
-  <PageHero image={IMG.comunidad} alt="Nuestra comunidad" eyebrow="Novedades" title="Noticias" subtitle="Mantente al día con lo que Dios está haciendo en nuestra comunidad." height="min-h-[50vh]" />
+  <PageHero
+    image={IMG.comunidad}
+    alt="Nuestra comunidad"
+    eyebrow="Novedades"
+    title="Noticias"
+    subtitle="Mantente al día con lo que Dios está haciendo en nuestra comunidad."
+    height="min-h-[50vh]"
+  />
 
-  <section class="bg-base-100 px-4 py-20">
-    <div class="container mx-auto max-w-6xl">
-      {news.length === 0 && (
-        <div class="py-16 text-center">
-          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-base-200 text-base-content/40">
-            <Icon name="lucide:newspaper" class="h-8 w-8" />
-          </div>
-          <p class="text-lg text-base-content/70">Aún no hay noticias publicadas. ¡Vuelve pronto!</p>
-        </div>
-      )}
+  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Noticias' }]} />
 
-      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {news.map((n, i) => (
-          <Reveal delay={(i % 3) * 80}>
-            <article class="group h-full overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <div class="relative h-44 overflow-hidden">
-                {n.image_url ? (
-                  <img src={n.image_url} alt={n.title} class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+  <section class="section bg-base-100">
+    <div class="wrap">
+      {news.length === 0 ? (
+        <EmptyState
+          icon="lucide:newspaper"
+          title="Aún no hay noticias publicadas"
+          text="Cuando publiquemos algo nuevo lo verás aquí. Mientras tanto, revisa nuestra agenda de eventos."
+        >
+          <a href="/eventos" class="btn btn-primary gap-2">
+            <Icon name="lucide:calendar-days" class="h-5 w-5" /> Ver eventos
+          </a>
+        </EmptyState>
+      ) : (
+        <>
+          <!-- Destacada -->
+          <Reveal>
+            <a href={url(destacada)} class="panel panel-lift group grid overflow-hidden md:grid-cols-2">
+              <div class="relative h-56 overflow-hidden md:h-full md:min-h-[20rem]">
+                {destacada.image_url ? (
+                  <img
+                    src={destacada.image_url}
+                    alt={destacada.title}
+                    class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    loading="eager"
+                  />
                 ) : (
                   <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 text-accent/40">
-                    <Icon name="lucide:newspaper" class="h-12 w-12" />
+                    <Icon name="lucide:newspaper" class="h-16 w-16" />
                   </div>
                 )}
+                <span class="absolute left-4 top-4 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-content">
+                  Lo más reciente
+                </span>
               </div>
-              <div class="p-6">
-                <div class="flex items-center gap-1.5 text-xs text-base-content/60">
-                  <Icon name="lucide:calendar" class="h-3.5 w-3.5" /> {fmtDate(n.published_at)}
-                </div>
-                <h2 class="card-title mt-1 text-xl">{n.title}</h2>
-                {n.excerpt && <p class="mt-2 text-sm text-base-content/75">{n.excerpt}</p>}
-                {n.body && !n.excerpt && <p class="mt-2 line-clamp-4 text-sm text-base-content/75">{n.body}</p>}
+              <div class="flex flex-col justify-center p-7 sm:p-10">
+                <span class="flex items-center gap-1.5 text-xs text-base-content/60">
+                  <Icon name="lucide:calendar" class="h-3.5 w-3.5" /> {fmtDate(destacada.published_at)}
+                </span>
+                <h2 class="mt-2 font-display text-2xl leading-tight md:text-3xl">{destacada.title}</h2>
+                {(destacada.excerpt || destacada.body) && (
+                  <p class="mt-3 clamp-3 text-base-content/75">{destacada.excerpt ?? markdownAResumen(destacada.body, 190)}</p>
+                )}
+                <span class="mt-5 inline-flex items-center gap-2 font-medium text-primary group-hover:text-accent">
+                  Leer la noticia <Icon name="lucide:arrow-right" class="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </span>
               </div>
-            </article>
+            </a>
           </Reveal>
-        ))}
-      </div>
+
+          <!-- Resto -->
+          {resto.length > 0 && (
+            <div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {resto.map((n, i) => (
+                <Reveal delay={(i % 3) * 80} class="h-full">
+                  <a href={url(n)} class="panel panel-sm panel-lift group flex h-full flex-col overflow-hidden">
+                    <div class="relative h-44 overflow-hidden">
+                      {n.image_url ? (
+                        <img
+                          src={n.image_url}
+                          alt={n.title}
+                          class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 text-accent/40">
+                          <Icon name="lucide:newspaper" class="h-12 w-12" />
+                        </div>
+                      )}
+                    </div>
+                    <div class="flex flex-1 flex-col p-6">
+                      <div class="flex items-center gap-1.5 text-xs text-base-content/60">
+                        <Icon name="lucide:calendar" class="h-3.5 w-3.5" /> {fmtDate(n.published_at)}
+                      </div>
+                      <h2 class="card-title mt-1 text-xl leading-snug">{n.title}</h2>
+                      {(n.excerpt || n.body) && (
+                        <p class="mt-2 clamp-3 text-sm text-base-content/75">{n.excerpt ?? markdownAResumen(n.body, 140)}</p>
+                      )}
+                      <span class="mt-4 inline-flex items-center gap-1.5 pt-1 text-sm font-medium text-primary group-hover:text-accent">
+                        Leer más <Icon name="lucide:arrow-right" class="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </div>
+                  </a>
+                </Reveal>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   </section>
 </Layout>

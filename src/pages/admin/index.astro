@@ -7,53 +7,212 @@ import { Icon } from 'astro-icon/components';
 const supabase = Astro.locals.supabase;
 if (!supabase) return Astro.redirect('/admin/login');
 
-const [ev, nw, vd] = await Promise.all([
-  supabase.from('events').select('id', { count: 'exact', head: true }),
-  supabase.from('news').select('id', { count: 'exact', head: true }),
-  supabase.from('videos').select('id', { count: 'exact', head: true }),
+const cuenta = (tabla: string, filtro?: Record<string, unknown>) => {
+  let q = supabase.from(tabla).select('id', { count: 'exact', head: true });
+  if (filtro) for (const [k, v] of Object.entries(filtro)) q = q.eq(k, v);
+  return q;
+};
+
+const [ev, evPub, nw, nwPub, vd, vdPub, subs, ajustes, recientes] = await Promise.all([
+  cuenta('events'),
+  cuenta('events', { published: true }),
+  cuenta('news'),
+  cuenta('news', { published: true }),
+  cuenta('videos'),
+  cuenta('videos', { published: true }),
+  cuenta('subscribers'),
+  supabase.from('settings').select('live_enabled, live_title').eq('id', 1).maybeSingle(),
+  Promise.all([
+    supabase.from('events').select('id,title,created_at,published').order('created_at', { ascending: false }).limit(4),
+    supabase.from('news').select('id,title,created_at,published').order('created_at', { ascending: false }).limit(4),
+    supabase.from('videos').select('id,title,created_at,published').order('created_at', { ascending: false }).limit(4),
+  ]),
 ]);
 
-const cards = [
-  { href: '/admin/eventos', label: 'Eventos', icon: 'lucide:calendar', count: ev.count ?? 0, tone: 'primary' },
-  { href: '/admin/noticias', label: 'Noticias', icon: 'lucide:newspaper', count: nw.count ?? 0, tone: 'accent' },
-  { href: '/admin/videos', label: 'Videos', icon: 'lucide:youtube', count: vd.count ?? 0, tone: 'secondary' },
+const enVivo = Boolean(ajustes.data?.live_enabled);
+
+const tarjetas = [
+  {
+    href: '/admin/eventos',
+    label: 'Eventos',
+    icon: 'lucide:calendar-days',
+    total: ev.count ?? 0,
+    publicados: evPub.count ?? 0,
+    tile: 'tile',
+  },
+  {
+    href: '/admin/noticias',
+    label: 'Noticias',
+    icon: 'lucide:newspaper',
+    total: nw.count ?? 0,
+    publicados: nwPub.count ?? 0,
+    tile: 'tile tile-accent',
+  },
+  {
+    href: '/admin/videos',
+    label: 'Videos',
+    icon: 'lucide:youtube',
+    total: vd.count ?? 0,
+    publicados: vdPub.count ?? 0,
+    tile: 'tile tile-secondary',
+  },
+  {
+    href: '/admin/suscriptores',
+    label: 'Suscriptores',
+    icon: 'lucide:mail',
+    total: subs.count ?? 0,
+    publicados: null,
+    tile: 'tile tile-muted',
+  },
 ];
-const toneBg: Record<string, string> = {
-  primary: 'bg-primary/10 text-primary',
-  accent: 'bg-accent/10 text-accent',
-  secondary: 'bg-secondary/10 text-secondary',
-};
+
+const acciones = [
+  { href: '/admin/eventos', label: 'Nuevo evento', icon: 'lucide:calendar-plus' },
+  { href: '/admin/noticias', label: 'Nueva noticia', icon: 'lucide:file-plus-2' },
+  { href: '/admin/videos', label: 'Nuevo video', icon: 'lucide:video' },
+];
+
+const TIPO = {
+  events: { label: 'Evento', icon: 'lucide:calendar-days', href: '/admin/eventos' },
+  news: { label: 'Noticia', icon: 'lucide:newspaper', href: '/admin/noticias' },
+  videos: { label: 'Video', icon: 'lucide:youtube', href: '/admin/videos' },
+} as const;
+
+type Fila = { id: string; title: string; created_at: string; published: boolean };
+const [evR, nwR, vdR] = recientes;
+const actividad = (
+  [
+    ...((evR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'events' as const })),
+    ...((nwR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'news' as const })),
+    ...((vdR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'videos' as const })),
+  ]
+)
+  .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
+  .slice(0, 6);
+
+const fecha = (d: string) =>
+  new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: 'short' }).format(new Date(d));
 ---
 
-<AdminLayout title="Inicio" active="inicio">
-  <div data-reveal class="mb-8">
-    <h1 class="text-3xl font-bold">Panel de administración</h1>
-    <p class="mt-1 opacity-70">Gestiona el contenido del sitio de La Casa de Dios.</p>
-  </div>
+<AdminLayout title="Inicio" description="Todo el contenido del sitio, en un solo lugar." active="inicio">
+  <!-- Estado de la transmisión: lo primero, porque es lo único que cambia el
+       sitio al instante y lo que más se consulta un domingo. -->
+  <a
+    href="/admin/en-vivo"
+    data-reveal
+    class={`panel panel-lift mb-6 flex items-center gap-4 p-5 ${enVivo ? 'border-error/45 bg-error/5' : ''}`}
+  >
+    <span class={enVivo ? 'tile tile-lg bg-error/15 text-error' : 'tile tile-lg tile-muted'}>
+      <Icon name="lucide:radio" class="h-6 w-6" />
+    </span>
+    <span class="min-w-0 flex-1">
+      <span class="flex items-center gap-2">
+        {enVivo && <span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-error" aria-hidden="true"></span>}
+        <strong class={enVivo ? 'text-error' : ''}>
+          {enVivo ? 'El sitio está mostrando una transmisión en vivo' : 'No hay transmisión activa'}
+        </strong>
+      </span>
+      <span class="mt-0.5 block truncate text-sm text-base-content/60">
+        {enVivo
+          ? (ajustes.data?.live_title || 'Sin título') + ' — toca para cambiarla o apagarla'
+          : 'Toca para activar la transmisión cuando empiece el culto'}
+      </span>
+    </span>
+    <Icon name="lucide:chevron-right" class="h-5 w-5 shrink-0 text-base-content/35" />
+  </a>
 
-  <div class="grid gap-6 sm:grid-cols-3">
-    {cards.map((c, i) => (
-      <a href={c.href} data-reveal data-reveal-delay={i * 80} class="group rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-        <div class="flex items-center justify-between">
-          <span class={`flex h-12 w-12 items-center justify-center rounded-2xl ${toneBg[c.tone]}`}>
-            <Icon name={c.icon} class="h-6 w-6" />
+  <!-- Cifras -->
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    {tarjetas.map((c, i) => (
+      <a href={c.href} data-reveal data-reveal-delay={i * 70} class="panel panel-lift group p-5">
+        <div class="flex items-start justify-between">
+          <span class={c.tile}>
+            <Icon name={c.icon} class="h-5 w-5" />
           </span>
-          <Icon name="lucide:arrow-up-right" class="h-5 w-5 text-base-content/30 transition group-hover:text-primary" />
+          <Icon name="lucide:arrow-up-right" class="h-4 w-4 text-base-content/25 transition group-hover:text-primary" />
         </div>
-        <div class="mt-4">
-          <span data-count={c.count} class="font-display text-4xl font-bold text-primary">0</span>
-          <h2 class="card-title mt-1 text-xl">{c.label}</h2>
-        </div>
+        <p class="mt-4 flex items-baseline gap-2">
+          <span data-count={c.total} class="font-data text-4xl font-bold leading-none text-primary">0</span>
+          <span class="text-sm font-semibold">{c.label}</span>
+        </p>
+        <p class="mt-1.5 text-xs text-base-content/55">
+          {c.publicados === null
+            ? 'Personas suscritas al boletín'
+            : `${c.publicados} publicado${c.publicados === 1 ? '' : 's'} · ${c.total - c.publicados} borrador${c.total - c.publicados === 1 ? '' : 'es'}`}
+        </p>
       </a>
     ))}
   </div>
 
-  <div data-reveal class="mt-8 rounded-2xl border border-base-300 bg-base-100 p-6">
-    <h2 class="mb-3 flex items-center gap-2 font-display text-xl font-bold"><Icon name="lucide:info" class="h-5 w-5 text-accent" /> Consejos</h2>
-    <ul class="space-y-2 text-sm text-base-content/75">
-      <li class="flex items-start gap-2"><Icon name="lucide:check" class="mt-0.5 h-4 w-4 text-success" /> Marca "Publicado" para que el contenido aparezca en el sitio; desmárcalo para guardarlo como borrador.</li>
-      <li class="flex items-start gap-2"><Icon name="lucide:check" class="mt-0.5 h-4 w-4 text-success" /> En videos, pega la URL de YouTube (watch, youtu.be o shorts).</li>
-      <li class="flex items-start gap-2"><Icon name="lucide:check" class="mt-0.5 h-4 w-4 text-success" /> Las imágenes se suben automáticamente al crear o editar.</li>
-    </ul>
+  <div class="mt-6 grid gap-6 lg:grid-cols-3">
+    <!-- Actividad -->
+    <section data-reveal class="panel p-5 lg:col-span-2">
+      <h2 class="flex items-center gap-2 text-base font-bold">
+        <Icon name="lucide:history" class="h-4 w-4 text-accent" /> Lo último que se cargó
+      </h2>
+
+      {actividad.length === 0 ? (
+        <p class="mt-5 rounded border border-dashed border-base-300 px-4 py-8 text-center text-sm text-base-content/55">
+          Todavía no hay contenido. Empieza creando un evento o una noticia.
+        </p>
+      ) : (
+        <ul class="mt-4 divide-y divide-base-300/70">
+          {actividad.map((r) => (
+            <li>
+              <a href={TIPO[r.tipo].href} class="flex items-center gap-3 py-3 transition-colors hover:bg-base-200/50">
+                <span class="tile h-9 w-9 shrink-0">
+                  <Icon name={TIPO[r.tipo].icon} class="h-4 w-4" />
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-medium">{r.title}</span>
+                  <span class="font-data text-xs uppercase tracking-wide text-base-content/50">
+                    {TIPO[r.tipo].label} · {fecha(r.created_at)}
+                  </span>
+                </span>
+                <span class={`badge badge-sm shrink-0 ${r.published ? 'badge-success' : 'badge-ghost'}`}>
+                  {r.published ? 'Publicado' : 'Borrador'}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    <!-- Acciones y ayuda -->
+    <div class="space-y-6">
+      <section data-reveal class="panel p-5">
+        <h2 class="flex items-center gap-2 text-base font-bold">
+          <Icon name="lucide:zap" class="h-4 w-4 text-accent" /> Crear algo
+        </h2>
+        <div class="mt-4 space-y-2">
+          {acciones.map((a) => (
+            <a href={a.href} class="btn btn-outline btn-sm w-full justify-start gap-2">
+              <Icon name={a.icon} class="h-4 w-4" /> {a.label}
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section data-reveal class="panel p-5">
+        <h2 class="flex items-center gap-2 text-base font-bold">
+          <Icon name="lucide:life-buoy" class="h-4 w-4 text-accent" /> Cómo funciona
+        </h2>
+        <ul class="mt-4 space-y-3 text-sm text-base-content/75">
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            Lo que está en <strong>borrador</strong> no se ve en el sitio. Publícalo cuando esté listo.
+          </li>
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            En videos basta pegar la dirección de YouTube; la miniatura sale sola.
+          </li>
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            Las imágenes se suben solas al guardar.
+          </li>
+        </ul>
+      </section>
+    </div>
   </div>
 </AdminLayout>

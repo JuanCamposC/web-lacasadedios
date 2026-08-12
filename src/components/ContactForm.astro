@@ -1,0 +1,219 @@
+---
+import { Icon } from 'astro-icon/components';
+import { templos } from '../data/templos';
+import { CONTACT } from '../data/site';
+
+// Formulario de contacto con mejora progresiva:
+//  · sin JavaScript envía por POST normal y vuelve con ?enviado=1
+//  · con JavaScript envía por fetch y muestra el resultado sin recargar
+const asuntos = [
+  'Quiero visitar la iglesia',
+  'Petición de oración',
+  'Consulta sobre horarios',
+  'Bautismo o membresía',
+  'Servir como voluntario',
+  'Otro',
+];
+
+const enviado = Astro.url.searchParams.get('enviado');
+---
+
+<form
+  id="contact-form"
+  method="post"
+  action="/api/contacto"
+  class="panel p-6 sm:p-8"
+  novalidate
+>
+  <h2 class="font-display text-2xl">Escríbenos</h2>
+  <p class="mt-1 text-sm text-base-content/70">
+    Cuéntanos en qué podemos ayudarte. Respondemos al correo que nos dejes.
+  </p>
+
+  <!-- Trampa para bots: invisible para las personas -->
+  <div class="hidden" aria-hidden="true">
+    <label>
+      No completes este campo
+      <input type="text" name="website" tabindex="-1" autocomplete="off" />
+    </label>
+  </div>
+  <input type="hidden" name="_t" id="contact-ts" value="" />
+
+  <div class="mt-6 grid gap-4 sm:grid-cols-2">
+    <div class="form-control">
+      <label class="label pb-1" for="cf-nombre">
+        <span class="label-text font-medium">Nombre <span class="text-error">*</span></span>
+      </label>
+      <input
+        id="cf-nombre"
+        name="nombre"
+        type="text"
+        required
+        autocomplete="name"
+        placeholder="Tu nombre"
+        class="input input-bordered w-full"
+      />
+    </div>
+
+    <div class="form-control">
+      <label class="label pb-1" for="cf-email">
+        <span class="label-text font-medium">Correo <span class="text-error">*</span></span>
+      </label>
+      <input
+        id="cf-email"
+        name="email"
+        type="email"
+        required
+        autocomplete="email"
+        placeholder="tucorreo@ejemplo.cl"
+        class="input input-bordered w-full"
+      />
+    </div>
+
+    <div class="form-control">
+      <label class="label pb-1" for="cf-telefono">
+        <span class="label-text font-medium">Teléfono <span class="text-base-content/50">(opcional)</span></span>
+      </label>
+      <input
+        id="cf-telefono"
+        name="telefono"
+        type="tel"
+        autocomplete="tel"
+        placeholder="+56 9 ..."
+        class="input input-bordered w-full"
+      />
+    </div>
+
+    <div class="form-control">
+      <label class="label pb-1" for="cf-templo">
+        <span class="label-text font-medium">Templo</span>
+      </label>
+      <select id="cf-templo" name="templo" class="select select-bordered w-full">
+        <option value="">Consulta general</option>
+        {templos.map((t) => <option value={t.short}>{t.short}</option>)}
+      </select>
+    </div>
+
+    <div class="form-control sm:col-span-2">
+      <label class="label pb-1" for="cf-asunto">
+        <span class="label-text font-medium">Asunto <span class="text-error">*</span></span>
+      </label>
+      <select id="cf-asunto" name="asunto" required class="select select-bordered w-full">
+        <option value="">Elige un motivo…</option>
+        {asuntos.map((a) => <option value={a}>{a}</option>)}
+      </select>
+    </div>
+
+    <div class="form-control sm:col-span-2">
+      <label class="label pb-1" for="cf-mensaje">
+        <span class="label-text font-medium">Mensaje <span class="text-error">*</span></span>
+      </label>
+      <textarea
+        id="cf-mensaje"
+        name="mensaje"
+        required
+        rows="5"
+        minlength="10"
+        placeholder="Escribe tu mensaje…"
+        class="textarea textarea-bordered w-full"></textarea>
+    </div>
+  </div>
+
+  <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <button type="submit" id="contact-submit" class="btn btn-primary gap-2">
+      <Icon name="lucide:send" class="h-4 w-4" />
+      <span data-label>Enviar mensaje</span>
+    </button>
+    <p class="text-xs text-base-content/60">
+      Usamos tus datos solo para responderte. No los compartimos con nadie.
+    </p>
+  </div>
+
+  <p
+    id="contact-msg"
+    role="status"
+    aria-live="polite"
+    class:list={[
+      'mt-4 rounded-xl px-4 py-3 text-sm',
+      enviado === '1' && 'bg-success/10 text-success',
+      enviado === '0' && 'bg-error/10 text-error',
+      !enviado && 'hidden',
+    ]}
+  >
+    {enviado === '1' && '¡Gracias! Recibimos tu mensaje y te responderemos pronto.'}
+    {enviado === '0' && `No pudimos enviar el mensaje. Escríbenos directamente a ${CONTACT.email}.`}
+  </p>
+</form>
+
+<script>
+  function initContacto() {
+    const form = document.getElementById('contact-form') as HTMLFormElement | null;
+    const msg = document.getElementById('contact-msg');
+    const btn = document.getElementById('contact-submit') as HTMLButtonElement | null;
+    const ts = document.getElementById('contact-ts') as HTMLInputElement | null;
+
+    if (ts) ts.value = String(Date.now());
+    if (!form || !msg || !btn || form.dataset.listo) return;
+    form.dataset.listo = '1';
+
+    const label = btn.querySelector('[data-label]')!;
+    const original = label.textContent ?? 'Enviar mensaje';
+
+    const show = (text: string, kind: 'ok' | 'error' | 'warn') => {
+      msg.textContent = text;
+      msg.className =
+        'mt-4 rounded-xl px-4 py-3 text-sm ' +
+        (kind === 'ok'
+          ? 'bg-success/10 text-success'
+          : kind === 'warn'
+            ? 'bg-warning/10 text-warning'
+            : 'bg-error/10 text-error');
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      btn.disabled = true;
+      label.textContent = 'Enviando…';
+      msg.className = 'mt-4 hidden';
+
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: new FormData(form),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (data.ok) {
+          form.reset();
+          if (ts) ts.value = String(Date.now());
+          show('¡Gracias! Recibimos tu mensaje y te responderemos pronto.', 'ok');
+        } else if (data.reason === 'no_email_provider') {
+          show(
+            'El envío por el sitio todavía no está habilitado. Escríbenos a ' +
+              (data.email ?? 'contacto@lacasadedios.cl') +
+              ' y te respondemos igual.',
+            'warn',
+          );
+        } else if (data.reason === 'invalid') {
+          show('Revisa los campos obligatorios e inténtalo de nuevo.', 'error');
+        } else {
+          show('No pudimos enviar el mensaje. Inténtalo más tarde.', 'error');
+        }
+      } catch {
+        show('No pudimos enviar el mensaje. Revisa tu conexión e inténtalo de nuevo.', 'error');
+      } finally {
+        btn.disabled = false;
+        label.textContent = original;
+      }
+    });
+  }
+
+  document.addEventListener('astro:page-load', initContacto);
+</script>

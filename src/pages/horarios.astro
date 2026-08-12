@@ -1,0 +1,195 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Reveal from '../components/Reveal.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { Icon } from 'astro-icon/components';
+import { templos, weekSchedule, totalServices } from '../data/templos';
+import { IMG } from '../assets/images';
+
+const semana = weekSchedule();
+---
+
+<Layout
+  title="Horarios de cultos · La Casa de Dios"
+  description="Todos los cultos, estudios bíblicos y reuniones de La Casa de Dios en Santiago Centro, San Miguel, Limache y Coya, día por día."
+>
+  <PageHero
+    image={IMG.biblia}
+    alt="Biblia abierta"
+    eyebrow="Toda la semana"
+    title="Horarios de cultos"
+    subtitle={`${totalServices()} reuniones semanales entre nuestros ${templos.length} templos.`}
+    height="min-h-[46vh]"
+  />
+
+  <Breadcrumbs
+    items={[
+      { label: 'Inicio', href: '/' },
+      { label: 'Templos', href: '/templos' },
+      { label: 'Horarios' },
+    ]}
+  />
+
+  <!-- Filtro por templo -->
+  <section class="sticky top-16 z-30 border-b border-base-300 bg-base-100/92 px-4 py-3 backdrop-blur-md">
+    <div class="wrap">
+      <div class="flex items-center gap-2 overflow-x-auto pb-1" role="group" aria-label="Filtrar por templo">
+        <span class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/45 sm:inline">
+          Filtrar
+        </span>
+        <button
+          type="button"
+          data-filter="all"
+          aria-pressed="true"
+          class="filtro-chip shrink-0 rounded-full border border-primary bg-primary px-4 py-1.5 text-sm font-medium text-primary-content transition"
+        >
+          Todos
+        </button>
+        {templos.map((t) => (
+          <button
+            type="button"
+            data-filter={t.slug}
+            aria-pressed="false"
+            class="filtro-chip shrink-0 rounded-full border border-base-300 bg-base-100 px-4 py-1.5 text-sm font-medium transition hover:border-primary hover:text-primary"
+          >
+            {t.short}
+          </button>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- El cartel: la semana completa -->
+  <section class="section bg-base-200">
+    <div class="wrap">
+      <Reveal>
+        <div class="cartel" data-cartel-semana>
+          <header class="cartel-cab">
+            <span class="cartel-titulo">La semana completa</span>
+            <span class="cartel-hoy" data-hoy aria-live="polite"></span>
+          </header>
+
+          {semana.map((dia) => (
+            <div data-dia data-dia-indice={dia.dayIndex}>
+              <div class="cartel-seccion">
+                <h2>{dia.day}</h2>
+                <span class="cartel-conteo" data-conteo>
+                  {dia.services.length} {dia.services.length === 1 ? 'reunión' : 'reuniones'}
+                </span>
+              </div>
+              <ul class="cartel-lista">
+                {dia.services.map((s) => (
+                  <li class="cartel-linea" data-servicio data-templo={s.templo.slug}>
+                    <span class="cartel-hora">{s.time}</span>
+                    <span class="cartel-nombre">{s.name}</span>
+                    <a class="cartel-lugar" href={`/templos/${s.templo.slug}`}>{s.templo.short}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          <footer class="cartel-pie">
+            Los horarios pueden cambiar en fechas especiales. Ante la duda, escríbenos.
+          </footer>
+        </div>
+      </Reveal>
+
+      <p
+        id="sin-resultados"
+        class="mt-6 hidden rounded-lg border border-dashed border-base-300 px-6 py-10 text-center text-base-content/60"
+      >
+        Ese templo no tiene reuniones cargadas.
+      </p>
+
+      <p class="mt-8 text-center text-sm text-base-content/60">
+        ¿Cambió un horario o falta una reunión?
+        <a href="/contacto" class="link link-primary">Avísanos</a>.
+      </p>
+    </div>
+  </section>
+
+  <CtaBand
+    eyebrow="Ven cuando quieras"
+    title="No hace falta avisar"
+    text="Llega unos minutos antes, siéntate donde te acomode y sé bienvenido. Si prefieres que alguien te reciba, escríbenos y te esperamos en la puerta."
+    image={IMG.congregacion}
+    compact
+  >
+    <a href="/contacto" class="btn btn-primary gap-2">
+      <Icon name="lucide:mail" class="h-5 w-5" /> Escríbenos
+    </a>
+    <a href="/templos" class="btn gap-2 btn-invert">
+      <Icon name="lucide:church" class="h-5 w-5" /> Ver los templos
+    </a>
+  </CtaBand>
+</Layout>
+
+<script>
+  const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+  function initHorarios() {
+    const cartel = document.querySelector<HTMLElement>('[data-cartel-semana]');
+    if (!cartel || cartel.dataset.listo) return;
+    cartel.dataset.listo = '1';
+
+    const dias = Array.from(cartel.querySelectorAll<HTMLElement>('[data-dia]'));
+
+    /* ── Hoy ─────────────────────────────────────────────────────────── */
+    const hoy = new Date().getDay();
+    const etiqueta = cartel.querySelector<HTMLElement>('[data-hoy]');
+    const diaHoy = dias.find((d) => Number(d.dataset.diaIndice) === hoy);
+
+    if (diaHoy) diaHoy.classList.add('es-hoy');
+    if (etiqueta) {
+      etiqueta.textContent = diaHoy ? `Hoy · ${DIAS[hoy]}` : `Hoy ${DIAS[hoy]} · sin reunión`;
+    }
+
+    /* ── Filtro por templo ───────────────────────────────────────────── */
+    const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('.filtro-chip'));
+    const vacio = document.getElementById('sin-resultados');
+    const activo = 'border-primary bg-primary text-primary-content';
+    const inactivo = 'border-base-300 bg-base-100 hover:border-primary hover:text-primary';
+
+    const aplicar = (slug: string) => {
+      let visibles = 0;
+
+      dias.forEach((dia) => {
+        let n = 0;
+        dia.querySelectorAll<HTMLElement>('[data-servicio]').forEach((fila) => {
+          const ok = slug === 'all' || fila.dataset.templo === slug;
+          fila.classList.toggle('hidden', !ok);
+          if (ok) n++;
+        });
+
+        const conteo = dia.querySelector<HTMLElement>('[data-conteo]');
+        if (conteo) conteo.textContent = `${n} ${n === 1 ? 'reunión' : 'reuniones'}`;
+        dia.classList.toggle('hidden', n === 0);
+        visibles += n;
+      });
+
+      vacio?.classList.toggle('hidden', visibles > 0);
+
+      chips.forEach((c) => {
+        const on = c.dataset.filter === slug;
+        c.setAttribute('aria-pressed', String(on));
+        c.className = `filtro-chip shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition ${on ? activo : inactivo}`;
+      });
+    };
+
+    chips.forEach((c) => c.addEventListener('click', () => aplicar(c.dataset.filter || 'all')));
+
+    // Permite llegar filtrado desde otra página: /horarios?templo=limache
+    const pedido = new URLSearchParams(location.search).get('templo');
+    if (pedido && chips.some((c) => c.dataset.filter === pedido)) aplicar(pedido);
+  }
+
+  document.addEventListener('astro:page-load', initHorarios);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHorarios);
+  } else {
+    initHorarios();
+  }
+</script>

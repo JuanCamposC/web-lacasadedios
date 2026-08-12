@@ -37,11 +37,21 @@ function animateCount(el: HTMLElement, target: number) {
   const dur = 1200;
   const start = performance.now();
   const suffix = el.dataset.countSuffix ?? '';
+
+  // Red de seguridad: si el navegador congela los fotogramas (pestaña en
+  // segundo plano, equipo lento, captura automatizada), la cifra se quedaría a
+  // medias mostrando un dato FALSO. Pasado el tiempo previsto se fija el valor
+  // real, pase lo que pase.
+  const cierre = window.setTimeout(() => {
+    el.textContent = target.toString() + suffix;
+  }, dur + 120);
+
   function tick(now: number) {
     const p = Math.min((now - start) / dur, 1);
     const eased = 1 - Math.pow(1 - p, 3);
     el.textContent = Math.round(eased * target).toString() + suffix;
     if (p < 1) requestAnimationFrame(tick);
+    else window.clearTimeout(cierre);
   }
   requestAnimationFrame(tick);
 }

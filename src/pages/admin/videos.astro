@@ -3,8 +3,7 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 ---
 
-<AdminLayout title="Videos" active="videos">
-  <h1 class="text-2xl font-bold mb-6">Videos</h1>
+<AdminLayout title="Videos" description="Prédicas y enseñanzas alojadas en YouTube." active="videos">
   <div id="crud-root"></div>
 
   <script>
@@ -15,12 +14,12 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       titleField: 'title',
       subtitleField: 'youtube_url',
       orderBy: { column: 'sort_order', ascending: true },
+      orderable: { column: 'sort_order' },
       notify: { type: 'video', urlBase: '/videos' },
       fields: [
         { name: 'title', label: 'Título', type: 'text', required: true },
         { name: 'youtube_url', label: 'Link de YouTube', type: 'url', required: true, help: 'Pega la URL del video (youtube.com/watch?v=… o youtu.be/…).' },
         { name: 'description', label: 'Descripción', type: 'textarea' },
-        { name: 'sort_order', label: 'Orden (menor primero)', type: 'number' },
         { name: 'published', label: 'Publicado', type: 'checkbox' },
       ],
     });

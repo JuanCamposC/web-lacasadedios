@@ -3,9 +3,13 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import PageHero from '../../components/PageHero.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import Reveal from '../../components/Reveal.astro';
+import EmptyState from '../../components/EmptyState.astro';
+import CtaBand from '../../components/CtaBand.astro';
 import { Icon } from 'astro-icon/components';
 import { IMG } from '../../assets/images';
+import { YOUTUBE_CHANNEL } from '../../data/site';
 import { youtubeId, type VideoItem } from '../../lib/supabase';
 
 const supabase = Astro.locals.supabase;
@@ -21,29 +25,63 @@ if (supabase) {
 }
 
 const withId = videos.map((v) => ({ ...v, vid: youtubeId(v.youtube_url) })).filter((v) => v.vid);
+
+// VideoObject: hace que las prédicas puedan aparecer en la pestaña Videos de
+// Google con miniatura, en vez de como un enlace más.
+const videosJsonLd =
+  withId.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@graph': withId.map((v) => ({
+          '@type': 'VideoObject',
+          name: v.title,
+          ...(v.description ? { description: v.description } : {}),
+          thumbnailUrl: `https://i.ytimg.com/vi/${v.vid}/hqdefault.jpg`,
+          uploadDate: v.created_at,
+          embedUrl: `https://www.youtube.com/embed/${v.vid}`,
+          contentUrl: `https://www.youtube.com/watch?v=${v.vid}`,
+        })),
+      }
+    : null;
 ---
 
 <Layout title="Videos · La Casa de Dios" description="Prédicas y enseñanzas en video de La Casa de Dios — Conociendo la Palabra.">
-  <PageHero image={IMG.camara} alt="Cámara de video" eyebrow="Conociendo la Palabra" title="Videos" subtitle="Prédicas y enseñanzas para crecer en la fe." height="min-h-[50vh]" />
+  <PageHero
+    image={IMG.camara}
+    alt="Cámara de video"
+    eyebrow="Conociendo la Palabra"
+    title="Videos"
+    subtitle="Prédicas y enseñanzas para crecer en la fe."
+    height="min-h-[50vh]"
+  />
 
-  <section class="bg-base-100 px-4 py-20">
-    <div class="container mx-auto max-w-6xl">
+  {videosJsonLd && (
+    <script type="application/ld+json" set:html={JSON.stringify(videosJsonLd)} is:inline />
+  )}
+
+  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Videos' }]} />
+
+  <section class="section bg-base-100">
+    <div class="wrap">
       {withId.length === 0 ? (
-        <div class="py-12 text-center">
-          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-base-200 text-base-content/40">
-            <Icon name="lucide:youtube" class="h-8 w-8" />
-          </div>
-          <p class="mb-6 text-lg text-base-content/70">Pronto publicaremos más videos. Mientras tanto, visita nuestro canal:</p>
-          <a href="https://www.youtube.com/@casadediosconociendolapalabrad" target="_blank" rel="noopener noreferrer" class="btn btn-primary gap-2">
+        <EmptyState
+          icon="lucide:youtube"
+          title="Pronto publicaremos más videos"
+          text="Mientras tanto, en nuestro canal de YouTube están todas las prédicas y transmisiones anteriores."
+        >
+          <a href={YOUTUBE_CHANNEL} target="_blank" rel="noopener noreferrer" class="btn btn-primary gap-2">
             <Icon name="lucide:youtube" class="h-5 w-5" /> Ver canal en YouTube
           </a>
-        </div>
+          <a href="/en-vivo" class="btn btn-ghost gap-2">
+            <Icon name="lucide:radio" class="h-5 w-5" /> Transmisión en vivo
+          </a>
+        </EmptyState>
       ) : (
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {withId.map((v, i) => (
-            <Reveal delay={(i % 3) * 80}>
-              <div class="group h-full overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm transition-all duration-300 hover:shadow-xl">
-                <div class="aspect-video overflow-hidden">
+            <Reveal delay={(i % 3) * 80} class="h-full">
+              <div class="panel panel-sm panel-lift flex h-full flex-col overflow-hidden">
+                <div class="aspect-video overflow-hidden bg-black">
                   <iframe
                     class="h-full w-full"
                     src={`https://www.youtube-nocookie.com/embed/${v.vid}`}
@@ -53,8 +91,8 @@ const withId = videos.map((v) => ({ ...v, vid: youtubeId(v.youtube_url) })).filt
                     allowfullscreen
                   ></iframe>
                 </div>
-                <div class="p-5">
-                  <h2 class="card-title text-lg">{v.title}</h2>
+                <div class="flex flex-1 flex-col p-5">
+                  <h2 class="card-title text-lg leading-snug">{v.title}</h2>
                   {v.description && <p class="mt-1 text-sm text-base-content/75">{v.description}</p>}
                 </div>
               </div>
@@ -64,4 +102,21 @@ const withId = videos.map((v) => ({ ...v, vid: youtubeId(v.youtube_url) })).filt
       )}
     </div>
   </section>
+
+  {withId.length > 0 && (
+    <CtaBand
+      eyebrow="Hay mucho más"
+      title="Todas nuestras prédicas están en YouTube"
+      text="Suscríbete al canal y no te pierdas las nuevas enseñanzas ni las transmisiones en vivo."
+      image={IMG.estudio}
+      compact
+    >
+      <a href={YOUTUBE_CHANNEL} target="_blank" rel="noopener noreferrer" class="btn gap-2 border-none bg-red-600 text-white hover:bg-red-500">
+        <Icon name="lucide:youtube" class="h-5 w-5" /> Ir al canal
+      </a>
+      <a href="/en-vivo" class="btn gap-2 btn-invert">
+        <Icon name="lucide:radio" class="h-5 w-5" /> En vivo
+      </a>
+    </CtaBand>
+  )}
 </Layout>

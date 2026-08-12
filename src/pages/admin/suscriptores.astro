@@ -16,43 +16,58 @@ const emails = subs.map((s: any) => s.email).join(', ');
 const fmt = (d: string) => new Intl.DateTimeFormat('es-CL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(d));
 ---
 
-<AdminLayout title="Suscriptores" active="suscriptores">
-  <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-    <div>
-      <h1 class="text-3xl font-bold">Suscriptores</h1>
-      <p class="mt-1 opacity-70">{subs.length} {subs.length === 1 ? 'persona suscrita' : 'personas suscritas'} al newsletter.</p>
+<AdminLayout
+  title="Suscriptores"
+  description="Quiénes reciben el boletín cuando publicas algo."
+  active="suscriptores"
+>
+  {subs.length > 0 && (
+    <button slot="acciones" id="copy-emails" data-emails={emails} class="btn btn-outline btn-sm gap-2">
+      <Icon name="lucide:copy" class="h-4 w-4" />
+      <span class="hidden sm:inline">Copiar correos</span>
+    </button>
+  )}
+
+  <div class="max-w-3xl">
+    <div class="panel mb-4 flex items-center gap-4 p-5">
+      <span class="tile tile-lg">
+        <Icon name="lucide:mail" class="h-6 w-6" />
+      </span>
+      <div>
+        <p class="font-data text-3xl font-bold leading-none text-primary">{subs.length}</p>
+        <p class="mt-1 text-sm text-base-content/60">
+          {subs.length === 1 ? 'persona suscrita' : 'personas suscritas'} · se dan de alta desde el pie del sitio
+        </p>
+      </div>
     </div>
-    {subs.length > 0 && (
-      <button id="copy-emails" data-emails={emails} class="btn btn-outline btn-sm gap-2">
-        <Icon name="lucide:copy" class="h-4 w-4" /> Copiar correos
-      </button>
+
+    {subs.length === 0 ? (
+      <div class="panel p-10 text-center">
+        <span class="tile tile-lg tile-muted mx-auto mb-4">
+          <Icon name="lucide:mail" class="h-6 w-6" />
+        </span>
+        <p class="text-sm text-base-content/60">
+          Todavía no hay suscriptores. El formulario está en el pie del sitio público.
+        </p>
+      </div>
+    ) : (
+      <div class="panel overflow-hidden">
+        <table class="table">
+          <thead>
+            <tr><th>Correo</th><th class="text-right">Se suscribió</th></tr>
+          </thead>
+          <tbody>
+            {subs.map((s: any) => (
+              <tr>
+                <td class="font-medium">{s.email}</td>
+                <td class="font-data text-right text-sm text-base-content/55">{fmt(s.created_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     )}
   </div>
-
-  {subs.length === 0 ? (
-    <div class="rounded-2xl border border-dashed border-base-300 p-10 text-center">
-      <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-base-200 text-base-content/40">
-        <Icon name="lucide:mail" class="h-7 w-7" />
-      </div>
-      <p class="opacity-70">Aún no hay suscriptores. El formulario está en el pie del sitio.</p>
-    </div>
-  ) : (
-    <div class="overflow-hidden rounded-2xl border border-base-300 bg-base-100">
-      <table class="table">
-        <thead>
-          <tr><th>Correo</th><th class="text-right">Fecha</th></tr>
-        </thead>
-        <tbody>
-          {subs.map((s: any) => (
-            <tr>
-              <td class="font-medium">{s.email}</td>
-              <td class="text-right text-sm opacity-60">{fmt(s.created_at)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )}
 
   <script>
     const btn = document.getElementById('copy-emails');

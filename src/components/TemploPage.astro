@@ -1,9 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PageHero from './PageHero.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
 import Reveal from './Reveal.astro';
+import ScheduleList from './ScheduleList.astro';
+import CtaBand from './CtaBand.astro';
 import { Icon } from 'astro-icon/components';
-import { getTemplo, templos, CONTACT } from '../data/templos';
+import { getTemplo, getSiblings, templos } from '../data/templos';
+import { CONTACT, hasPhone } from '../data/site';
 import { IMG } from '../assets/images';
 
 interface Props {
@@ -16,6 +20,8 @@ if (!templo) {
   throw new Error(`Templo no encontrado: ${slug}`);
 }
 
+const { prev, next } = getSiblings(slug);
+
 // Iniciales del líder (sin el título Pastor/Hermano)
 const initials = templo.leader.name
   .replace(/^(Pastor|Pastora|Hermano|Hermana|Rev\.?)\s+/i, '')
@@ -24,6 +30,8 @@ const initials = templo.leader.name
   .map((w) => w[0])
   .join('')
   .toUpperCase();
+
+const reuniones = templo.schedule.reduce((n, s) => n + s.services.length, 0);
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -57,36 +65,33 @@ const jsonLd = {
     )}
   </PageHero>
 
-  <!-- Breadcrumbs -->
-  <div class="border-b border-base-300 bg-base-100 px-4 py-3">
-    <div class="container mx-auto max-w-6xl text-sm breadcrumbs">
-      <ul>
-        <li><a href="/" class="link link-hover">Inicio</a></li>
-        <li><a href="/#templos" class="link link-hover">Templos</a></li>
-        <li>{templo.short}</li>
-      </ul>
-    </div>
-  </div>
+  <Breadcrumbs
+    items={[
+      { label: 'Inicio', href: '/' },
+      { label: 'Templos', href: '/templos' },
+      { label: templo.short },
+    ]}
+  />
 
   <!-- Info -->
-  <section class="bg-base-100 px-4 py-20">
-    <div class="container mx-auto max-w-6xl">
+  <section class="section bg-base-100">
+    <div class="wrap">
       <div class="grid gap-6 md:grid-cols-2">
         <!-- Ubicación -->
         <Reveal class="md:col-span-2">
-          <div class="overflow-hidden rounded-3xl border border-base-300 bg-base-100 shadow-sm">
+          <div class="panel overflow-hidden">
             <div class="grid md:grid-cols-2">
               <div class="p-8">
                 <div class="mb-4 flex items-center gap-3">
-                  <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <span class="tile">
                     <Icon name="lucide:map-pin" class="h-6 w-6" />
                   </span>
                   <h2 class="card-title text-2xl">Ubicación</h2>
                 </div>
                 <ul class="space-y-2 text-base-content/80">
-                  <li class="flex items-center gap-2"><Icon name="lucide:navigation" class="h-4 w-4 text-accent" /> {templo.address}</li>
-                  <li class="flex items-center gap-2"><Icon name="lucide:building-2" class="h-4 w-4 text-accent" /> {templo.city}</li>
-                  <li class="flex items-center gap-2"><Icon name="lucide:map" class="h-4 w-4 text-accent" /> {templo.region}</li>
+                  <li class="flex items-center gap-2"><Icon name="lucide:navigation" class="h-4 w-4 shrink-0 text-accent" /> {templo.address}</li>
+                  <li class="flex items-center gap-2"><Icon name="lucide:building-2" class="h-4 w-4 shrink-0 text-accent" /> {templo.city}</li>
+                  <li class="flex items-center gap-2"><Icon name="lucide:map" class="h-4 w-4 shrink-0 text-accent" /> {templo.region}</li>
                 </ul>
                 <a href={templo.mapLink} target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm mt-5 gap-2">
                   <Icon name="lucide:navigation" class="h-4 w-4" /> Cómo llegar
@@ -95,7 +100,7 @@ const jsonLd = {
               <iframe
                 src={templo.mapEmbed}
                 title={`Mapa de ${templo.name}`}
-                class="h-64 w-full md:h-full"
+                class="h-64 w-full md:h-full md:min-h-[20rem]"
                 style="border:0;"
                 allowfullscreen
                 loading="lazy"
@@ -107,50 +112,60 @@ const jsonLd = {
 
         <!-- Horarios -->
         <Reveal delay={80}>
-          <div class="h-full rounded-3xl border border-base-300 bg-base-100 p-8 shadow-sm">
-            <div class="mb-5 flex items-center gap-3">
-              <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary/10 text-secondary">
-                <Icon name="lucide:clock" class="h-6 w-6" />
-              </span>
-              <h2 class="card-title text-2xl">Horarios</h2>
+          <div class="panel h-full p-8">
+            <div class="mb-5 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <span class="tile tile-secondary">
+                  <Icon name="lucide:clock" class="h-6 w-6" />
+                </span>
+                <h2 class="card-title text-2xl">Horarios</h2>
+              </div>
+              <span class="text-xs text-base-content/55">{reuniones} por semana</span>
             </div>
-            <div class="space-y-3">
-              {templo.schedule.map((s) => (
-                <div class="rounded-xl bg-base-200 p-3">
-                  <div class={`badge badge-${s.tone} mb-1`}>{s.day}</div>
-                  {s.services.map((svc) => <p class="text-sm text-base-content/80">{svc}</p>)}
-                </div>
-              ))}
-            </div>
+
+            <ScheduleList schedule={templo.schedule} />
+
+            <a href={`/horarios?templo=${templo.slug}`} class="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-accent">
+              Ver esta sede en el calendario semanal <Icon name="lucide:arrow-right" class="h-4 w-4" />
+            </a>
           </div>
         </Reveal>
 
         <!-- Líder -->
         <Reveal delay={160}>
-          <div class="flex h-full flex-col rounded-3xl border border-base-300 bg-base-100 p-8 shadow-sm">
+          <div class="panel flex h-full flex-col p-8">
             <div class="mb-5 flex items-center gap-3">
-              <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+              <span class="tile tile-accent">
                 <Icon name="lucide:user" class="h-6 w-6" />
               </span>
-              <h2 class="card-title text-2xl">{templo.leader.role.startsWith('Obrero') ? 'Hermano a cargo' : 'Pastor a cargo'}</h2>
+              <h2 class="card-title text-2xl">
+                {templo.leader.role.startsWith('Obrero') ? 'Hermano a cargo' : 'Pastor a cargo'}
+              </h2>
             </div>
             <div class="flex items-center gap-4">
-              <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary font-display text-xl font-bold text-primary-content">
+              <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary font-data text-xl font-bold text-primary-content">
                 {initials}
               </div>
-              <div>
+              <div class="min-w-0">
                 <h3 class="text-lg font-bold">{templo.leader.name}</h3>
                 <p class="text-sm text-base-content/60">{templo.leader.role}</p>
               </div>
             </div>
-            <div class="mt-5 space-y-2 text-sm">
-              <a href={`tel:${CONTACT.phoneHref}`} class="flex items-center gap-2 text-base-content/80 hover:text-primary">
-                <Icon name="lucide:phone" class="h-4 w-4 text-accent" /> {CONTACT.phone}
-              </a>
+
+            <div class="mt-6 space-y-2 text-sm">
               <a href={`mailto:${CONTACT.email}`} class="flex items-center gap-2 break-all text-base-content/80 hover:text-primary">
-                <Icon name="lucide:mail" class="h-4 w-4 text-accent" /> {CONTACT.email}
+                <Icon name="lucide:mail" class="h-4 w-4 shrink-0 text-accent" /> {CONTACT.email}
               </a>
+              {hasPhone && (
+                <a href={`tel:${CONTACT.phoneHref}`} class="flex items-center gap-2 text-base-content/80 hover:text-primary">
+                  <Icon name="lucide:phone" class="h-4 w-4 shrink-0 text-accent" /> {CONTACT.phone}
+                </a>
+              )}
             </div>
+
+            <a href="/contacto" class="btn btn-outline btn-sm mt-6 w-fit gap-2 md:mt-auto">
+              <Icon name="lucide:message-square" class="h-4 w-4" /> Escribir a la iglesia
+            </a>
           </div>
         </Reveal>
       </div>
@@ -159,8 +174,10 @@ const jsonLd = {
 
   <!-- Selector de templos -->
   <section class="border-t border-base-300 bg-base-200/60 px-4 py-12">
-    <div class="container mx-auto max-w-6xl">
-      <h2 class="mb-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-base-content/60">Conoce nuestros templos</h2>
+    <div class="wrap">
+      <h2 class="mb-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-base-content/60">
+        Conoce nuestros templos
+      </h2>
       <div class="flex flex-wrap justify-center gap-3">
         {templos.map((t) => (
           <a
@@ -172,20 +189,32 @@ const jsonLd = {
           </a>
         ))}
       </div>
+
+      <!-- Anterior / siguiente -->
+      <div class="mt-8 flex flex-col gap-3 border-t border-base-300 pt-6 sm:flex-row sm:justify-between">
+        <a href={`/templos/${prev.slug}`} class="group inline-flex items-center gap-2 text-sm text-base-content/70 hover:text-primary">
+          <Icon name="lucide:arrow-left" class="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+          <span><span class="hidden sm:inline">Anterior: </span>{prev.short}</span>
+        </a>
+        <a href="/templos" class="text-sm font-medium text-primary hover:text-accent">Ver los cuatro templos</a>
+        <a href={`/templos/${next.slug}`} class="group inline-flex items-center gap-2 text-sm text-base-content/70 hover:text-primary">
+          <span><span class="hidden sm:inline">Siguiente: </span>{next.short}</span>
+          <Icon name="lucide:arrow-right" class="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </a>
+      </div>
     </div>
   </section>
 
-  <!-- CTA -->
-  <section class="section-dark px-4 py-20 text-center">
-    <Reveal>
-      <h2 class="font-display text-3xl font-bold text-white md:text-4xl">¡Te esperamos!</h2>
-      <p class="mx-auto mt-3 max-w-lg text-white/70">Ven y sé parte de nuestra familia de fe en {templo.short}.</p>
-      <div class="mt-8 flex flex-wrap justify-center gap-4">
-        <a href={templo.mapLink} target="_blank" rel="noopener noreferrer" class="btn btn-primary gap-2">
-          <Icon name="lucide:navigation" class="h-5 w-5" /> Cómo llegar
-        </a>
-        <a href="/" class="btn gap-2 border-white/60 bg-transparent text-white hover:bg-white hover:text-neutral">Volver al inicio</a>
-      </div>
-    </Reveal>
-  </section>
+  <CtaBand
+    title="¡Te esperamos!"
+    text={`Ven y sé parte de nuestra familia de fe en ${templo.short}.`}
+    compact
+  >
+    <a href={templo.mapLink} target="_blank" rel="noopener noreferrer" class="btn btn-primary gap-2">
+      <Icon name="lucide:navigation" class="h-5 w-5" /> Cómo llegar
+    </a>
+    <a href="/contacto" class="btn gap-2 btn-invert">
+      <Icon name="lucide:mail" class="h-5 w-5" /> Escríbenos
+    </a>
+  </CtaBand>
 </Layout>

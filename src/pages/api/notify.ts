@@ -51,10 +51,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       bcc: emails,
       subject: `La Casa de Dios — ${title}`,
       html: `<div style="font-family:sans-serif;max-width:520px;margin:auto">
-        <h2 style="color:#1d4ed8">La Casa de Dios</h2>
+        <h2 style="color:#14295c">La Casa de Dios</h2>
         <p>Publicamos ${label}:</p>
         <p style="font-size:1.15rem;font-weight:600">${esc(title)}</p>
-        <p><a href="${esc(link)}" style="display:inline-block;background:#1d4ed8;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Verlo en el sitio</a></p>
+        <p><a href="${esc(link)}" style="display:inline-block;background:#14295c;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Verlo en el sitio</a></p>
         <p style="color:#64748b;font-size:.85rem;margin-top:24px">Recibes este correo porque te suscribiste al newsletter de La Casa de Dios.</p>
       </div>`,
     });

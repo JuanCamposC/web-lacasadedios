@@ -15,16 +15,24 @@ const {
   tone = 'accent',
   invert = false,
 } = Astro.props;
+
+// Clases literales: Tailwind rastrea el código fuente, así que `text-${tone}`
+// no generaría nada. El mapa mantiene los nombres completos a la vista.
+const TONE: Record<string, string> = {
+  primary: 'text-primary',
+  secondary: 'text-secondary',
+  accent: 'text-accent',
+};
+
 const alignCls = align === 'center' ? 'text-center mx-auto' : 'text-left';
+const toneCls = invert ? 'text-accent' : (TONE[tone] ?? TONE.accent);
 ---
 
 <div data-reveal class={`max-w-2xl ${alignCls}`}>
-  {eyebrow && (
-    <span class={`inline-block text-xs font-semibold uppercase tracking-[0.25em] mb-3 text-${tone}`}>
-      {eyebrow}
-    </span>
-  )}
-  <h2 class={`font-display font-bold leading-[1.05] text-[clamp(2rem,5vw,3.25rem)] ${invert ? 'text-white' : 'text-base-content'}`}>
+  {eyebrow && <span class={`eyebrow mb-3 ${toneCls}`}>{eyebrow}</span>}
+  <h2
+    class={`font-display leading-[1.05] text-[clamp(1.85rem,5vw,3.25rem)] ${invert ? 'text-white' : 'text-base-content'}`}
+  >
     {title}
   </h2>
   {subtitle && (
@@ -32,4 +40,5 @@ const alignCls = align === 'center' ? 'text-center mx-auto' : 'text-left';
       {subtitle}
     </p>
   )}
+  <slot />
 </div>

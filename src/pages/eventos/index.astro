@@ -3,9 +3,14 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import PageHero from '../../components/PageHero.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import Reveal from '../../components/Reveal.astro';
+import EmptyState from '../../components/EmptyState.astro';
+import CtaBand from '../../components/CtaBand.astro';
 import { Icon } from 'astro-icon/components';
 import { IMG } from '../../assets/images';
+import { templos } from '../../data/templos';
+import { SITE } from '../../data/site';
 import type { EventItem } from '../../lib/supabase';
 
 const supabase = Astro.locals.supabase;
@@ -25,51 +30,130 @@ const past = events.filter((e) => new Date(e.event_date).getTime() < now).revers
 
 const fmtDate = (d: string) => new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
 const fmtTime = (d: string) => new Intl.DateTimeFormat('es-CL', { hour: '2-digit', minute: '2-digit' }).format(new Date(d));
+const fmtDay = (d: string) => new Intl.DateTimeFormat('es-CL', { day: '2-digit' }).format(new Date(d));
+const fmtMonth = (d: string) => new Intl.DateTimeFormat('es-CL', { month: 'short' }).format(new Date(d)).replace('.', '');
+
+// Datos estructurados de evento: Google los usa para mostrar la agenda en los
+// resultados de búsqueda. El lugar se resuelve contra los templos reales.
+const sitio = Astro.site?.toString().replace(/\/$/, '') ?? '';
+const matriz = templos.find((t) => t.matriz) ?? templos[0];
+
+function lugarDe(nombre: string | null) {
+  const t =
+    (nombre && templos.find((x) => nombre.toLowerCase().includes(x.short.toLowerCase()))) || matriz;
+  return {
+    '@type': 'Place',
+    name: nombre || t.name,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: t.address,
+      addressLocality: t.city,
+      addressRegion: t.region,
+      addressCountry: 'CL',
+    },
+  };
+}
+
+const eventosJsonLd =
+  upcoming.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@graph': upcoming.map((e) => ({
+          '@type': 'Event',
+          name: e.title,
+          startDate: e.event_date,
+          eventStatus: 'https://schema.org/EventScheduled',
+          eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+          location: lugarDe(e.location),
+          ...(e.description ? { description: e.description } : {}),
+          ...(e.image_url ? { image: e.image_url } : {}),
+          organizer: { '@type': 'Organization', name: SITE.name, url: sitio },
+        })),
+      }
+    : null;
 ---
 
-<Layout title="Eventos · La Casa de Dios" description="Próximos eventos y actividades de La Casa de Dios: cultos especiales, encuentros y celebraciones.">
-  <PageHero image={IMG.manosAlzadas} alt="Reunión de adoración" eyebrow="Agenda" title="Eventos" subtitle="Actividades, cultos especiales y encuentros de nuestra comunidad." height="min-h-[50vh]" />
+<Layout
+  title="Eventos · La Casa de Dios"
+  description="Próximos eventos y actividades de La Casa de Dios: cultos especiales, encuentros y celebraciones."
+>
+  <PageHero
+    image={IMG.manosAlzadas}
+    alt="Reunión de adoración"
+    eyebrow="Agenda"
+    title="Eventos"
+    subtitle="Actividades, cultos especiales y encuentros de nuestra comunidad."
+    height="min-h-[50vh]"
+  />
 
-  <section class="bg-base-100 px-4 py-20">
-    <div class="container mx-auto max-w-6xl">
+  {eventosJsonLd && (
+    <script type="application/ld+json" set:html={JSON.stringify(eventosJsonLd)} is:inline />
+  )}
+
+  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Eventos' }]} />
+
+  <section class="section bg-base-100">
+    <div class="wrap">
       {upcoming.length === 0 && past.length === 0 && (
-        <div class="py-16 text-center">
-          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-base-200 text-base-content/40">
-            <Icon name="lucide:calendar" class="h-8 w-8" />
-          </div>
-          <p class="text-lg text-base-content/70">Pronto publicaremos nuestros próximos eventos. ¡Vuelve a visitarnos!</p>
-        </div>
+        <EmptyState
+          icon="lucide:calendar-days"
+          title="Todavía no hay eventos publicados"
+          text="Nuestras reuniones habituales sí siguen su curso: revisa los horarios de culto de cada templo."
+        >
+          <a href="/horarios" class="btn btn-primary gap-2">
+            <Icon name="lucide:clock" class="h-5 w-5" /> Ver horarios de culto
+          </a>
+        </EmptyState>
       )}
 
       {upcoming.length > 0 && (
         <>
-          <h2 class="mb-8 font-display text-3xl font-bold">Próximos eventos</h2>
-          <div class="mb-16 grid gap-6 md:grid-cols-2">
+          <h2 class="font-display text-3xl">Próximos eventos</h2>
+          <p class="mt-1 text-base-content/60">
+            {upcoming.length} {upcoming.length === 1 ? 'actividad programada' : 'actividades programadas'}
+          </p>
+
+          <div class="mt-8 grid gap-6 md:grid-cols-2">
             {upcoming.map((e, i) => (
-              <Reveal delay={(i % 2) * 80}>
-                <article class="group h-full overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+              <Reveal delay={(i % 2) * 80} class="h-full">
+                <article class="panel panel-sm panel-lift group flex h-full flex-col overflow-hidden">
                   <div class="relative h-48 overflow-hidden">
                     {e.image_url ? (
-                      <img src={e.image_url} alt={e.title} class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                      <img
+                        src={e.image_url}
+                        alt={e.title}
+                        class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
                     ) : (
                       <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 text-primary/40">
                         <Icon name="lucide:calendar-days" class="h-14 w-14" />
                       </div>
                     )}
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                    <div class="absolute left-4 top-4 flex flex-wrap gap-2">
-                      <span class="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-content">
-                        <Icon name="lucide:calendar" class="h-3.5 w-3.5" /> {fmtDate(e.event_date)}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent"></div>
+
+                    <!-- Taco de calendario -->
+                    <div class="absolute left-4 top-4 flex w-14 flex-col items-center overflow-hidden rounded-xl bg-base-100 shadow-lg">
+                      <span class="w-full bg-primary py-0.5 text-center text-[0.65rem] font-bold uppercase text-primary-content">
+                        {fmtMonth(e.event_date)}
                       </span>
-                      <span class="inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur">
-                        <Icon name="lucide:clock" class="h-3.5 w-3.5" /> {fmtTime(e.event_date)}
-                      </span>
+                      <span class="py-1 font-data text-xl font-bold leading-none">{fmtDay(e.event_date)}</span>
                     </div>
+
+                    <span class="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                      <Icon name="lucide:clock" class="h-3.5 w-3.5" /> {fmtTime(e.event_date)}
+                    </span>
                   </div>
-                  <div class="p-6">
-                    <h3 class="card-title text-2xl">{e.title}</h3>
-                    {e.location && <p class="mt-1 flex items-center gap-1.5 text-sm font-medium text-accent"><Icon name="lucide:map-pin" class="h-4 w-4" /> {e.location}</p>}
-                    {e.description && <p class="mt-2 text-base-content/75">{e.description}</p>}
+
+                  <div class="flex flex-1 flex-col p-6">
+                    <span class="text-xs text-base-content/55">{fmtDate(e.event_date)}</span>
+                    <h3 class="card-title mt-1 text-2xl leading-snug">{e.title}</h3>
+                    {e.location && (
+                      <p class="mt-1 flex items-center gap-1.5 text-sm font-medium text-accent">
+                        <Icon name="lucide:map-pin" class="h-4 w-4 shrink-0" /> {e.location}
+                      </p>
+                    )}
+                    {e.description && <p class="mt-3 text-base-content/75">{e.description}</p>}
                   </div>
                 </article>
               </Reveal>
@@ -79,21 +163,40 @@ const fmtTime = (d: string) => new Intl.DateTimeFormat('es-CL', { hour: '2-digit
       )}
 
       {past.length > 0 && (
-        <>
-          <h2 class="mb-6 font-display text-2xl font-bold opacity-70">Eventos anteriores</h2>
-          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class={upcoming.length > 0 ? 'mt-16' : ''}>
+          <h2 class="font-display text-2xl opacity-70">Eventos anteriores</h2>
+          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {past.map((e) => (
-              <Reveal>
+              <Reveal class="h-full">
                 <div class="h-full rounded-xl border border-base-300 bg-base-200/50 p-5">
                   <div class="text-xs text-base-content/60">{fmtDate(e.event_date)}</div>
-                  <h3 class="mt-1 font-bold">{e.title}</h3>
-                  {e.location && <p class="mt-1 flex items-center gap-1.5 text-sm text-base-content/70"><Icon name="lucide:map-pin" class="h-4 w-4" /> {e.location}</p>}
+                  <h3 class="mt-1 font-bold leading-snug">{e.title}</h3>
+                  {e.location && (
+                    <p class="mt-1 flex items-center gap-1.5 text-sm text-base-content/70">
+                      <Icon name="lucide:map-pin" class="h-4 w-4 shrink-0" /> {e.location}
+                    </p>
+                  )}
                 </div>
               </Reveal>
             ))}
           </div>
-        </>
+        </div>
       )}
     </div>
   </section>
+
+  <CtaBand
+    eyebrow="Cada semana"
+    title="Además de los eventos, nos reunimos todas las semanas"
+    text="Cultos generales, estudios bíblicos, discipulado y encuentros de jóvenes en los cuatro templos."
+    image={IMG.eventoLuces}
+    compact
+  >
+    <a href="/horarios" class="btn btn-primary gap-2">
+      <Icon name="lucide:clock" class="h-5 w-5" /> Ver horarios
+    </a>
+    <a href="/templos" class="btn gap-2 btn-invert">
+      <Icon name="lucide:church" class="h-5 w-5" /> Nuestros templos
+    </a>
+  </CtaBand>
 </Layout>

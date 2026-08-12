@@ -4,95 +4,141 @@ import { Icon } from 'astro-icon/components';
 import Layout from '../layouts/Layout.astro';
 import Reveal from '../components/Reveal.astro';
 import SectionHeading from '../components/SectionHeading.astro';
-import { templos } from '../data/templos';
+import TemploCard from '../components/TemploCard.astro';
+import Cartel from '../components/Cartel.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { templos, totalServices } from '../data/templos';
+import { SITE, SOCIAL } from '../data/site';
 import { IMG } from '../assets/images';
+
+const sedes = templos.map((t) => t.short).join(' · ');
+const regiones = [...new Set(templos.map((t) => t.region))].length;
+const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
+const instagram = SOCIAL.find((s) => s.key === 'instagram')!;
 ---
 
 <Layout>
-	<!-- ── Hero cinematográfico ─────────────────────────────────────────── -->
-	<section class="relative -mt-16 flex min-h-screen items-center justify-center overflow-hidden">
-		<div class="absolute inset-0">
-			<Image
-				src={IMG.heroWorship}
-				alt="Reunión de adoración"
-				widths={[768, 1280, 1920]}
-				sizes="100vw"
-				loading="eager"
-				class="h-full w-full object-cover animate-kenburns"
-			/>
-			<div class="absolute inset-0 bg-gradient-to-b from-black/75 via-black/55 to-black/85"></div>
-			<div class="absolute inset-0 bg-gradient-to-t from-base-100 via-transparent to-transparent"></div>
-		</div>
+	<!-- ══ Hero: el cartel ══════════════════════════════════════════════════
+	     La pregunta que más recibe una iglesia es «¿a qué hora se reúnen?».
+	     El hero la responde antes que cualquier otra cosa.
+	     La fotografía queda de fondo, no de sujeto: las imágenes actuales son
+	     de stock y muestran una congregación que no es esta.
+	  ══════════════════════════════════════════════════════════════════════ -->
+	<section class="section-dark relative -mt-16 flex min-h-[72vh] items-center overflow-hidden">
+		<Image
+			src={IMG.congregacion}
+			alt=""
+			aria-hidden="true"
+			widths={[768, 1280, 1920]}
+			sizes="100vw"
+			loading="eager"
+			class="absolute inset-0 h-full w-full object-cover opacity-[0.22]"
+		/>
+		<div class="absolute inset-0 bg-gradient-to-br from-[#0a1730]/70 via-[#0a1730]/85 to-[#0a1730]"></div>
+		<div class="grid-texture absolute inset-0" aria-hidden="true"></div>
+		<!-- Corte limpio hacia la página, con un filete de bronce que lo hace
+		     deliberado. Antes había un degradado hacia base-100 que se leía como
+		     una mancha clara: un borde nítido es más fiel al lenguaje impreso. -->
+		<div class="rule absolute inset-x-0 bottom-0" aria-hidden="true"></div>
 
-		<div class="relative z-10 mx-auto max-w-3xl px-4 pt-20 text-center">
-			<p data-reveal class="mb-6 text-xs font-semibold uppercase tracking-[0.35em] text-accent">
-				Bienvenidos a
-			</p>
-			<img
-				src="/logo.png"
-				alt="La Casa de Dios"
-				width="605"
-				height="204"
-				data-reveal
-				data-reveal-delay="80"
-				class="mx-auto h-20 w-auto [filter:brightness(0)_invert(1)] md:h-28"
-			/>
-			<p data-reveal data-reveal-delay="160" class="mx-auto mt-8 max-w-xl text-lg font-light italic leading-relaxed text-white/85 md:text-xl">
-				"Porque donde dos o tres se reúnen en mi nombre, allí estoy yo en medio de ellos"
-			</p>
-			<div data-reveal data-reveal-delay="240" class="mt-10 flex flex-wrap justify-center gap-4">
-				<a href="#templos" class="btn btn-primary btn-lg gap-2 shadow-lg">
-					<Icon name="lucide:church" class="h-5 w-5" />
-					Nuestros templos
-				</a>
-				<a href="/sobre-nosotros" class="btn btn-lg gap-2 border-white/70 bg-white/5 text-white backdrop-blur-sm hover:bg-white hover:text-neutral">
-					Conócenos
-					<Icon name="lucide:arrow-right" class="h-5 w-5" />
-				</a>
+		<div class="wrap relative z-10 grid items-center gap-12 px-4 pb-20 pt-24 md:pb-24 md:pt-28 lg:grid-cols-12 lg:gap-16">
+			<div class="lg:col-span-6">
+				<p class="entra eyebrow text-accent" style="--i:0">Iglesia Evangélica</p>
+
+				<h1 class="entra mt-5" style="--i:1">
+					<img
+						src="/logo.png"
+						alt={SITE.name}
+						width="605"
+						height="204"
+						class="h-14 w-auto [filter:brightness(0)_invert(1)] md:h-[4.5rem]"
+					/>
+				</h1>
+
+				<p class="entra mt-7 font-display text-[clamp(1.4rem,3vw,2.15rem)] font-normal leading-[1.25] text-white" style="--i:2">
+					{sedes}
+				</p>
+
+				<p class="entra versiculo mt-6 max-w-lg text-lg text-white/65 md:text-xl" style="--i:3">
+					«{SITE.verse.text}»
+				</p>
+				<p class="entra font-data mt-2 text-xs uppercase tracking-[0.18em] text-white/40" style="--i:4">
+					{SITE.verse.ref}
+				</p>
+
+				<div class="entra mt-9 flex flex-wrap gap-3" style="--i:5">
+					<a href="/templos" class="btn btn-primary gap-2">
+						<Icon name="lucide:map-pin" class="h-5 w-5" /> Dónde estamos
+					</a>
+					<a
+						href="/horarios"
+						class="btn gap-2 btn-invert"
+					>
+						<Icon name="lucide:calendar-days" class="h-5 w-5" /> Toda la semana
+					</a>
+				</div>
+			</div>
+
+			<div class="lg:col-span-6">
+				<Cartel
+					animar
+					titulo="Nos reunimos"
+					pie={`${templos.length} templos · ${regiones} regiones · ${totalServices()} reuniones cada semana`}
+				/>
 			</div>
 		</div>
-
-		<a href="#nosotros" aria-label="Bajar" class="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 text-white/70 transition hover:text-white">
-			<Icon name="lucide:chevron-down" class="h-8 w-8 animate-bounce" />
-		</a>
 	</section>
 
-	<!-- ── Bento: quiénes somos ─────────────────────────────────────────── -->
-	<section id="nosotros" class="bg-base-100 px-4 py-24">
-		<div class="container mx-auto max-w-6xl">
+	<!-- ══ Quiénes somos ═══════════════════════════════════════════════════ -->
+	<section id="nosotros" class="section bg-base-100">
+		<div class="wrap">
 			<div class="grid gap-5 md:grid-cols-3 md:grid-rows-2">
-				<!-- Tile grande con imagen -->
-				<Reveal class="group relative col-span-1 overflow-hidden rounded-3xl md:col-span-2 md:row-span-2 min-h-[22rem]">
-					<Image src={IMG.congregacion} alt="Congregación en adoración" widths={[600, 1000]} sizes="(max-width:768px) 100vw, 66vw" class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-					<div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20"></div>
+				<Reveal class="on-dark group relative col-span-1 min-h-[22rem] overflow-hidden rounded-xl md:col-span-2 md:row-span-2">
+					<Image
+						src={IMG.adoracion}
+						alt="Reunión de adoración"
+						widths={[600, 1000]}
+						sizes="(max-width:768px) 100vw, 66vw"
+						class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+					/>
+					<div class="absolute inset-0 bg-gradient-to-t from-[#0a1730]/95 via-[#0a1730]/50 to-[#0a1730]/15"></div>
 					<div class="relative flex h-full flex-col justify-end p-8 text-white">
-						<span class="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-accent">Sobre nosotros</span>
-						<h3 class="font-display text-3xl font-bold md:text-4xl">La Palabra de Dios es el fundamento de todo lo que hacemos</h3>
-						<p class="mt-3 max-w-lg text-white/80">Buscamos vivir y compartir Su verdad, crecer en la fe y servir con amor.</p>
-						<a href="/sobre-nosotros" class="mt-5 inline-flex w-fit items-center gap-2 font-medium text-white hover:text-accent">
-							Conoce nuestra historia <Icon name="lucide:arrow-right" class="h-4 w-4" />
-						</a>
+						<span class="eyebrow mb-3 text-accent">Sobre nosotros</span>
+						<h2 class="text-3xl md:text-4xl">
+							La Palabra de Dios es el fundamento de todo lo que hacemos
+						</h2>
+						<p class="mt-4 max-w-lg text-white/75">
+							Buscamos vivir y compartir Su verdad, crecer en la fe y servir con amor.
+						</p>
+						<div class="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+							<a href="/sobre-nosotros" class="inline-flex items-center gap-2 font-medium text-white hover:text-accent">
+								Quiénes somos <Icon name="lucide:arrow-right" class="h-4 w-4" />
+							</a>
+							<a href="/sobre-nosotros#historia" class="inline-flex items-center gap-2 font-medium text-white/75 hover:text-accent">
+								Nuestra historia <Icon name="lucide:arrow-right" class="h-4 w-4" />
+							</a>
+						</div>
 					</div>
 				</Reveal>
 
-				<!-- Misión -->
-				<Reveal delay={80} class="flex flex-col justify-center rounded-3xl border border-base-300 bg-base-200/50 p-8">
-					<div class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+				<Reveal delay={80} class="panel flex flex-col justify-center bg-base-200/60 p-8">
+					<div class="mb-4 tile">
 						<Icon name="lucide:target" class="h-6 w-6" />
 					</div>
-					<h3 class="font-display text-2xl font-bold">Nuestra misión</h3>
-					<p class="mt-2 text-base-content/75">Predicar el evangelio, discipular creyentes y servir a otros con amor y excelencia.</p>
+					<h2 class="text-2xl">Nuestra misión</h2>
+					<p class="mt-2 text-base-content/75">
+						Predicar el evangelio, discipular creyentes y servir a otros con amor y excelencia.
+					</p>
 				</Reveal>
 
-				<!-- Stat -->
-				<Reveal delay={160} class="flex flex-col justify-center rounded-3xl border border-base-300 bg-base-200/50 p-8">
+				<Reveal delay={160} class="panel flex flex-col justify-center bg-base-200/60 p-8">
 					<div class="flex items-baseline gap-2">
-						<span data-count="4" class="font-display text-5xl font-bold text-primary">0</span>
+						<span data-count={templos.length} class="font-data text-5xl font-bold leading-none text-primary">0</span>
 						<Icon name="lucide:map-pin" class="h-6 w-6 text-accent" />
 					</div>
-					<h3 class="mt-1 font-display text-2xl font-bold">Templos</h3>
+					<h2 class="mt-3 text-2xl">Templos</h2>
 					<p class="mt-1 text-base-content/75">Comunidades en Santiago, San Miguel, Limache y Coya.</p>
-					<a href="#templos" class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-accent">
+					<a href="/templos" class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-accent">
 						Ver templos <Icon name="lucide:arrow-right" class="h-4 w-4" />
 					</a>
 				</Reveal>
@@ -100,61 +146,47 @@ import { IMG } from '../assets/images';
 		</div>
 	</section>
 
-	<!-- ── Templos ──────────────────────────────────────────────────────── -->
-	<section id="templos" class="bg-base-200 px-4 py-24">
-		<div class="container mx-auto max-w-6xl">
-			<SectionHeading eyebrow="Nuestros templos" title="Encuentra el más cercano" subtitle="Únete a nuestra familia de fe en cualquiera de nuestras cuatro comunidades." />
+	<!-- ══ Templos ═════════════════════════════════════════════════════════ -->
+	<section id="templos" class="section bg-base-200">
+		<div class="wrap">
+			<SectionHeading
+				eyebrow="Nuestros templos"
+				title="Encuentra el más cercano"
+				subtitle="Únete a nuestra familia de fe en cualquiera de nuestras cuatro comunidades."
+			/>
 
-			<div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+			<div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 				{templos.map((t, i) => (
-					<Reveal delay={(i % 4) * 90}>
-						<a href={`/templos/${t.slug}`} class="group block h-full overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
-							<div class="relative h-44 overflow-hidden">
-								<Image src={IMG[t.image]} alt={t.name} widths={[400, 700]} sizes="(max-width:640px) 100vw, 25vw" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
-								<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-								{t.matriz && <span class="absolute left-3 top-3 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-content">Iglesia Matriz</span>}
-								<h3 class="absolute bottom-3 left-4 font-display text-2xl font-bold text-white">{t.short}</h3>
-							</div>
-							<div class="flex items-center justify-between p-5">
-								<span class="flex items-center gap-1.5 text-sm text-base-content/70">
-									<Icon name="lucide:map-pin" class="h-4 w-4 text-accent" />
-									{t.region}
-								</span>
-								<Icon name="lucide:arrow-right" class="h-5 w-5 text-primary transition-transform group-hover:translate-x-1" />
-							</div>
-						</a>
+					<Reveal delay={(i % 4) * 90} class="h-full">
+						<TemploCard templo={t} />
 					</Reveal>
 				))}
 			</div>
+
+			<Reveal class="mt-10 text-center">
+				<a href="/templos" class="btn btn-outline gap-2">
+					Ver todos los templos en detalle <Icon name="lucide:arrow-right" class="h-4 w-4" />
+				</a>
+			</Reveal>
 		</div>
 	</section>
 
-	<!-- ── Banda "En vivo" / Redes (siempre oscura) ─────────────────────── -->
-	<section class="section-dark relative overflow-hidden px-4 py-28">
-		<Image src={IMG.adoracion} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="absolute inset-0 h-full w-full object-cover opacity-25" />
-		<div class="absolute inset-0 bg-gradient-to-b from-[#0b1220]/80 via-[#0b1220]/70 to-[#0b1220]/90"></div>
-
-		<div class="relative z-10 container mx-auto max-w-4xl text-center">
-			<span data-reveal class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-white">
-				<span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-red-500"></span>
-				Conociendo la Palabra
-			</span>
-			<h2 data-reveal data-reveal-delay="80" class="mt-6 font-display text-[clamp(2rem,5vw,3.25rem)] font-bold leading-tight text-white">
-				Síguenos y crece en la fe
-			</h2>
-			<p data-reveal data-reveal-delay="140" class="mx-auto mt-4 max-w-2xl text-white/70">
-				Conéctate con lo que Dios está haciendo a través de nuestras plataformas: prédicas, enseñanzas y la vida de nuestra comunidad.
-			</p>
-			<div data-reveal data-reveal-delay="200" class="mt-10 flex flex-wrap justify-center gap-4">
-				<a href="https://www.youtube.com/@casadediosconociendolapalabrad" target="_blank" rel="noopener noreferrer" class="btn btn-lg gap-2 border-none bg-red-600 text-white hover:bg-red-500">
-					<Icon name="lucide:youtube" class="h-5 w-5" />
-					Ver en YouTube
-				</a>
-				<a href="https://instagram.com/jovenescasadedios._" target="_blank" rel="noopener noreferrer" class="btn btn-lg gap-2 border-white/60 bg-transparent text-white hover:bg-white hover:text-neutral">
-					<Icon name="lucide:instagram" class="h-5 w-5" />
-					Instagram
-				</a>
-			</div>
-		</div>
-	</section>
+	<!-- ══ Redes y transmisión ═════════════════════════════════════════════ -->
+	<CtaBand
+		eyebrow="Conociendo la Palabra"
+		title="Síguenos y crece en la fe"
+		text="Prédicas, enseñanzas y la vida de nuestra comunidad, también fuera del templo."
+		image={IMG.estudio}
+	>
+		<a href={youtube.href} target="_blank" rel="noopener noreferrer" class="btn btn-lg gap-2 border-none bg-red-600 text-white hover:bg-red-500">
+			<Icon name="lucide:youtube" class="h-5 w-5" /> Ver en YouTube
+		</a>
+		<a href={instagram.href} target="_blank" rel="noopener noreferrer" class="btn btn-lg gap-2 btn-invert">
+			<Icon name="lucide:instagram" class="h-5 w-5" /> Instagram
+		</a>
+		<a href="/en-vivo" class="btn btn-lg gap-2 btn-invert">
+			<span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden="true"></span>
+			En vivo
+		</a>
+	</CtaBand>
 </Layout>

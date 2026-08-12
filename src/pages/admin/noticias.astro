@@ -3,8 +3,7 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 ---
 
-<AdminLayout title="Noticias" active="noticias">
-  <h1 class="text-2xl font-bold mb-6">Noticias</h1>
+<AdminLayout title="Noticias" description="Novedades y avisos de la congregación." active="noticias">
   <div id="crud-root"></div>
 
   <script>
@@ -12,6 +11,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     setupCrud({
       table: 'news',
       singular: 'noticia',
+      plural: 'noticias',
       titleField: 'title',
       subtitleField: 'excerpt',
       orderBy: { column: 'published_at', ascending: false },
@@ -19,7 +19,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       fields: [
         { name: 'title', label: 'Título', type: 'text', required: true },
         { name: 'excerpt', label: 'Resumen breve', type: 'text', help: 'Una o dos líneas para la tarjeta.' },
-        { name: 'body', label: 'Cuerpo', type: 'textarea' },
+        { name: 'body', label: 'Cuerpo', type: 'markdown', help: 'Usa los botones para dar formato. Se ve tal cual en el sitio.' },
         { name: 'image_url', label: 'Imagen (opcional)', type: 'image' },
         { name: 'published', label: 'Publicado', type: 'checkbox' },
       ],

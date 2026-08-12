@@ -1,26 +1,27 @@
 ---
 import { Icon } from 'astro-icon/components';
-import '@fontsource/poppins/400.css';
-import '@fontsource/poppins/500.css';
-import '@fontsource/poppins/600.css';
-import '@fontsource/poppins/700.css';
-import '@fontsource/poppins/800.css';
+// El panel usa las mismas familias que el sitio público, menos el display:
+// aquí no hay titulares de portada, solo interfaz.
+import '@fontsource-variable/archivo/wght.css';
+import '@fontsource-variable/archivo-narrow/wght.css';
 import '../styles/global.css';
 
 interface Props {
   title?: string;
+  /** Bajada bajo el título, para orientar sin tener que adivinar. */
+  description?: string;
   active?: 'inicio' | 'eventos' | 'noticias' | 'videos' | 'suscriptores' | 'en-vivo';
 }
-const { title = 'Panel', active } = Astro.props;
+const { title = 'Panel', description, active } = Astro.props;
 const user = Astro.locals.user;
 
 const links = [
   { href: '/admin', label: 'Inicio', key: 'inicio', icon: 'lucide:layout-dashboard' },
-  { href: '/admin/eventos', label: 'Eventos', key: 'eventos', icon: 'lucide:calendar' },
+  { href: '/admin/eventos', label: 'Eventos', key: 'eventos', icon: 'lucide:calendar-days' },
   { href: '/admin/noticias', label: 'Noticias', key: 'noticias', icon: 'lucide:newspaper' },
   { href: '/admin/videos', label: 'Videos', key: 'videos', icon: 'lucide:youtube' },
   { href: '/admin/en-vivo', label: 'En vivo', key: 'en-vivo', icon: 'lucide:radio' },
-  { href: '/admin/suscriptores', label: 'Suscriptores', key: 'suscriptores', icon: 'lucide:mail' },
+  { href: '/admin/suscriptores', label: 'Correos', key: 'suscriptores', icon: 'lucide:mail' },
 ];
 ---
 
@@ -30,51 +31,133 @@ const links = [
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0a1730" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{title} · Admin — La Casa de Dios</title>
+    <title>{title} · Panel — La Casa de Dios</title>
   </head>
+
   <body class="min-h-screen bg-base-200">
-    <header class="sticky top-0 z-40 border-b border-base-300 bg-base-100/90 backdrop-blur">
-      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <a href="/admin" class="flex items-center gap-2">
-          <img src="/logo.png" alt="La Casa de Dios" class="site-logo h-7 w-auto" />
-          <span class="hidden rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary sm:inline">Admin</span>
-        </a>
-        <div class="flex items-center gap-2">
-          {user && <span class="hidden text-sm opacity-60 md:inline">{user.email}</span>}
-          <a href="/" class="btn btn-ghost btn-sm gap-1"><Icon name="lucide:external-link" class="h-4 w-4" /> Ver sitio</a>
-          <button id="logout-btn" class="btn btn-outline btn-sm gap-1"><Icon name="lucide:log-out" class="h-4 w-4" /> Salir</button>
-        </div>
+    <!-- ══ Barra lateral (escritorio) ═══════════════════════════════════════
+         En azul noche, la misma superficie que el cartel del sitio: el panel
+         se siente parte de la misma casa, no una herramienta prestada.
+      ══════════════════════════════════════════════════════════════════════ -->
+    <aside class="on-dark fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-[#0a1730] lg:flex">
+      <div class="flex items-center gap-2.5 px-6 py-5">
+        <img src="/logo.png" alt="" class="h-7 w-auto [filter:brightness(0)_invert(1)]" />
+        <span class="font-data rounded px-1.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-accent ring-1 ring-inset ring-accent/40">
+          Panel
+        </span>
       </div>
 
-      {active && (
-        <nav class="border-t border-base-300">
-          <div class="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 py-2">
-            {links.map((l) => (
-              <a href={l.href} class={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${active === l.key ? 'bg-primary text-primary-content' : 'text-base-content/70 hover:bg-base-200'}`}>
-                <Icon name={l.icon} class="h-4 w-4" /> {l.label}
-              </a>
-            ))}
+      <div class="rule mx-6" aria-hidden="true"></div>
+
+      <nav class="flex-1 space-y-1 px-3 py-5" aria-label="Secciones del panel">
+        {links.map((l) => (
+          <a
+            href={l.href}
+            aria-current={active === l.key ? 'page' : undefined}
+            class={`relative flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium transition-colors ${
+              active === l.key
+                ? 'bg-white/10 text-white'
+                : 'text-white/60 hover:bg-white/5 hover:text-white'
+            }`}
+          >
+            {active === l.key && (
+              <span class="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-accent" aria-hidden="true"></span>
+            )}
+            <Icon name={l.icon} class="h-[18px] w-[18px] shrink-0" />
+            {l.label}
+          </a>
+        ))}
+      </nav>
+
+      <div class="rule mx-6" aria-hidden="true"></div>
+
+      <div class="space-y-1 px-3 py-4">
+        {user && (
+          <p class="truncate px-3 pb-2 text-xs text-white/40" title={user.email}>{user.email}</p>
+        )}
+        <a
+          href="/"
+          class="flex items-center gap-3 rounded px-3 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+        >
+          <Icon name="lucide:external-link" class="h-[18px] w-[18px]" /> Ver el sitio
+        </a>
+        <button
+          type="button"
+          data-logout
+          class="flex w-full items-center gap-3 rounded px-3 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+        >
+          <Icon name="lucide:log-out" class="h-[18px] w-[18px]" /> Cerrar sesión
+        </button>
+      </div>
+    </aside>
+
+    <!-- ══ Contenido ═══════════════════════════════════════════════════════ -->
+    <div class="flex min-h-screen flex-col lg:pl-64">
+      <header class="sticky top-0 z-30 border-b border-base-300 bg-base-100/92 backdrop-blur">
+        <div class="flex items-center gap-3 px-4 py-3.5 md:px-8">
+          <img src="/logo.png" alt="La Casa de Dios" class="site-logo h-6 w-auto lg:hidden" />
+          <div class="min-w-0 flex-1">
+            <h1 class="truncate text-lg font-bold leading-tight md:text-xl">{title}</h1>
+            {description && (
+              <p class="hidden truncate text-sm text-base-content/60 sm:block">{description}</p>
+            )}
           </div>
-        </nav>
-      )}
-    </header>
+          <div class="flex shrink-0 items-center gap-2">
+            <slot name="acciones" />
+            <button
+              type="button"
+              data-logout
+              class="btn btn-ghost btn-sm btn-square lg:hidden"
+              aria-label="Cerrar sesión"
+            >
+              <Icon name="lucide:log-out" class="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </header>
 
-    <main class="mx-auto max-w-6xl p-4 md:p-8">
-      <slot />
-    </main>
+      <main class="flex-1 p-4 pb-24 md:p-8 lg:pb-8">
+        <slot />
+      </main>
+    </div>
 
-    <div id="toast" class="toast toast-end z-50"></div>
+    <!-- ══ Barra inferior (móvil) ══════════════════════════════════════════ -->
+    <nav
+      class="fixed inset-x-0 bottom-0 z-40 border-t border-base-300 bg-base-100/95 backdrop-blur lg:hidden"
+      aria-label="Secciones del panel"
+    >
+      <ul class="flex">
+        {links.map((l) => (
+          <li class="flex-1">
+            <a
+              href={l.href}
+              aria-current={active === l.key ? 'page' : undefined}
+              class={`flex flex-col items-center gap-0.5 py-2 text-[0.62rem] font-medium transition-colors ${
+                active === l.key ? 'text-primary' : 'text-base-content/55'
+              }`}
+            >
+              <Icon name={l.icon} class="h-5 w-5" />
+              {l.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <div id="toast" class="toast toast-end z-50 pb-20 lg:pb-4"></div>
 
     <script>
       import { createBrowserSupabase } from '../lib/supabase';
       import '../scripts/reveal';
-      const btn = document.getElementById('logout-btn');
-      btn?.addEventListener('click', async () => {
-        const supabase = createBrowserSupabase();
-        await supabase.auth.signOut();
-        window.location.href = '/admin/login';
-      });
+
+      document.querySelectorAll('[data-logout]').forEach((b) =>
+        b.addEventListener('click', async () => {
+          await createBrowserSupabase().auth.signOut();
+          window.location.href = '/admin/login';
+        }),
+      );
     </script>
   </body>
 </html>

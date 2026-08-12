@@ -1,0 +1,102 @@
+---
+/**
+ * EL CARTEL — elemento firma del sitio.
+ *
+ * Es el tablero de horarios que la iglesia cuelga en la puerta del templo,
+ * traducido a la pantalla. No es adorno: «¿a qué hora se reúnen?» es la
+ * pregunta que más recibe una iglesia, y el tablero la responde de un vistazo.
+ *
+ * El día de hoy se enciende en el navegador, después de que el tablero termina
+ * de armarse. Sin JavaScript el cartel se ve completo igual: solo no enciende.
+ */
+import { weekSchedule, groupByTime } from '../data/templos';
+
+interface Props {
+  titulo?: string;
+  pie?: string;
+  /** Anima la entrada fila por fila. Solo en el primer cartel de la página. */
+  animar?: boolean;
+  class?: string;
+}
+
+const { titulo = 'Nos reunimos', pie, animar = false, class: className = '' } = Astro.props;
+
+// Agrupado por hora: cuando tres templos se reúnen a las 20:00, se dice una
+// vez «20:00» y se nombran los tres, en vez de repetir el número tres veces.
+const semana = weekSchedule().map((dia) => ({ ...dia, franjas: groupByTime(dia.services) }));
+const abrev = (dia: string) => dia.slice(0, 3).toUpperCase();
+---
+
+<section
+  class={`cartel ${className}`}
+  data-cartel
+  data-animar={animar ? '' : undefined}
+  aria-label="Horarios de reunión de la semana"
+>
+  <header class="cartel-cab">
+    <span class="cartel-titulo">{titulo}</span>
+    <span class="cartel-hoy" data-cartel-hoy aria-live="polite"></span>
+  </header>
+
+  <ol class="cartel-lista">
+    {semana.map((dia, i) => (
+      <li class="cartel-fila" data-dia-indice={dia.dayIndex} style={`--i:${i}`}>
+        <span class="cartel-dia">
+          <span class="sr-only">{dia.day}</span>
+          <span aria-hidden="true">{abrev(dia.day)}</span>
+        </span>
+        <span class="cartel-horas">
+          {dia.franjas.map((f) => (
+            <span class="cartel-serv">
+              <span class="cartel-hora">{f.time}</span>
+              <span class="cartel-sede">{f.sedes.map((t) => t.short).join(' · ')}</span>
+            </span>
+          ))}
+        </span>
+      </li>
+    ))}
+  </ol>
+
+  {pie && <footer class="cartel-pie">{pie}</footer>}
+</section>
+
+<script>
+  const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+  function encenderCarteles() {
+    const carteles = document.querySelectorAll<HTMLElement>('[data-cartel]:not([data-encendido])');
+    if (!carteles.length) return;
+
+    const hoy = new Date().getDay();
+    const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    carteles.forEach((cartel) => {
+      cartel.setAttribute('data-encendido', '');
+
+      const fila = cartel.querySelector<HTMLElement>(`[data-dia-indice="${hoy}"]`);
+      const etiqueta = cartel.querySelector<HTMLElement>('[data-cartel-hoy]');
+
+      // Se enciende cuando el tablero terminó de armarse: primero llega la
+      // información, después se destaca. Un solo momento, no varios sueltos.
+      const filas = cartel.querySelectorAll('.cartel-fila').length;
+      const espera =
+        sinMovimiento || !cartel.hasAttribute('data-animar') ? 0 : 160 + filas * 70 + 180;
+
+      window.setTimeout(() => {
+        if (fila) fila.classList.add('encendida');
+        if (etiqueta) {
+          etiqueta.textContent = fila
+            ? `Hoy · ${DIAS[hoy]}`
+            : `Hoy ${DIAS[hoy]} · sin reunión`;
+        }
+      }, espera);
+    });
+  }
+
+  document.addEventListener('astro:page-load', encenderCarteles);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', encenderCarteles);
+  } else {
+    encenderCarteles();
+  }
+</script>

@@ -1,0 +1,22 @@
+---
+import { Icon } from 'astro-icon/components';
+
+// Estado vacío compartido por eventos, noticias, videos y resultados sin datos.
+interface Props {
+  icon: string;
+  title: string;
+  text?: string;
+}
+const { icon, title, text } = Astro.props;
+---
+
+<div data-reveal class="panel mx-auto max-w-xl px-6 py-14 text-center">
+  <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-lg bg-base-200 text-base-content/40">
+    <Icon name={icon} class="h-8 w-8" />
+  </div>
+  <h2 class="font-display text-2xl">{title}</h2>
+  {text && <p class="mx-auto mt-2 max-w-md text-base-content/70">{text}</p>}
+  <div class="mt-7 flex flex-wrap justify-center gap-3 empty:mt-0">
+    <slot />
+  </div>
+</div>

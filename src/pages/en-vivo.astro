@@ -3,8 +3,13 @@ export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Reveal from '../components/Reveal.astro';
+import EmptyState from '../components/EmptyState.astro';
 import { Icon } from 'astro-icon/components';
 import { IMG } from '../assets/images';
+import { YOUTUBE_CHANNEL } from '../data/site';
+import { weekSchedule } from '../data/templos';
 import { youtubeId, type SiteSettings } from '../lib/supabase';
 
 const supabase = Astro.locals.supabase;
@@ -20,43 +25,93 @@ if (supabase) {
 const live = settings?.live_enabled ?? false;
 const vid = live && settings?.live_url ? youtubeId(settings.live_url) : null;
 const title = settings?.live_title || 'Transmisión en vivo';
-const channel = 'https://www.youtube.com/@casadediosconociendolapalabrad';
+const semana = weekSchedule();
 ---
 
 <Layout title="En vivo · La Casa de Dios" description="Mira la transmisión en vivo de La Casa de Dios — Conociendo la Palabra.">
-  <PageHero image={IMG.adoracion} alt="Adoración" eyebrow="Transmisión" title="En vivo" subtitle="Únete a nuestros cultos y prédicas desde donde estés." height="min-h-[42vh]" />
+  <PageHero
+    image={IMG.adoracion}
+    alt="Adoración"
+    eyebrow="Transmisión"
+    title="En vivo"
+    subtitle="Únete a nuestros cultos y prédicas desde donde estés."
+    height="min-h-[42vh]"
+  />
 
-  <section class="bg-base-100 px-4 py-16">
-    <div class="container mx-auto max-w-4xl">
+  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'En vivo' }]} />
+
+  <section class="section bg-base-100">
+    <div class="wrap-narrow">
       {live && vid ? (
         <div data-reveal>
           <div class="mb-4 flex items-center gap-2">
-            <span class="pulse-dot inline-block h-3 w-3 rounded-full bg-red-500"></span>
+            <span class="pulse-dot inline-block h-3 w-3 rounded-full bg-red-500" aria-hidden="true"></span>
             <span class="font-semibold text-red-500">En vivo ahora</span>
           </div>
-          <div class="aspect-video overflow-hidden rounded-2xl border border-base-300 shadow-lg">
-            <iframe class="h-full w-full" src={`https://www.youtube-nocookie.com/embed/${vid}?autoplay=1`} title={title} loading="eager" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <div class="aspect-video overflow-hidden rounded-lg border border-base-300 bg-black shadow-lg">
+            <iframe
+              class="h-full w-full"
+              src={`https://www.youtube-nocookie.com/embed/${vid}?autoplay=1`}
+              title={title}
+              loading="eager"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
           </div>
-          <h2 class="mt-5 font-display text-2xl font-bold">{title}</h2>
+          <h2 class="mt-5 font-display text-2xl">{title}</h2>
+          <a href={YOUTUBE_CHANNEL} target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-accent">
+            <Icon name="lucide:youtube" class="h-4 w-4" /> Verlo en YouTube
+          </a>
         </div>
       ) : live && settings?.live_url ? (
-        <div data-reveal class="rounded-2xl border border-base-300 bg-base-100 p-10 text-center shadow-sm">
-          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-500"><Icon name="lucide:radio" class="h-8 w-8" /></div>
-          <h2 class="font-display text-2xl font-bold">{title}</h2>
-          <p class="mt-2 opacity-70">Estamos transmitiendo en vivo.</p>
-          <a href={settings.live_url} target="_blank" rel="noopener noreferrer" class="btn btn-primary mt-6 gap-2"><Icon name="lucide:youtube" class="h-5 w-5" /> Ver transmisión</a>
-        </div>
+        <EmptyState icon="lucide:radio" title={title} text="Estamos transmitiendo en vivo en este momento.">
+          <a href={settings.live_url} target="_blank" rel="noopener noreferrer" class="btn btn-primary gap-2">
+            <Icon name="lucide:youtube" class="h-5 w-5" /> Ver transmisión
+          </a>
+        </EmptyState>
       ) : (
-        <div data-reveal class="rounded-2xl border border-base-300 bg-base-100 p-10 text-center shadow-sm">
-          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-base-200 text-base-content/40"><Icon name="lucide:radio" class="h-8 w-8" /></div>
-          <h2 class="font-display text-2xl font-bold">No hay transmisión en este momento</h2>
-          <p class="mx-auto mt-2 max-w-md opacity-70">Cuando estemos en vivo lo verás aquí. Mientras tanto, visita nuestro canal y revisa los horarios de culto.</p>
-          <div class="mt-6 flex flex-wrap justify-center gap-3">
-            <a href={channel} target="_blank" rel="noopener noreferrer" class="btn btn-primary gap-2"><Icon name="lucide:youtube" class="h-5 w-5" /> Ir al canal</a>
-            <a href="/#templos" class="btn btn-outline gap-2"><Icon name="lucide:clock" class="h-5 w-5" /> Ver horarios</a>
-          </div>
-        </div>
+        <EmptyState
+          icon="lucide:radio"
+          title="No hay transmisión en este momento"
+          text="Cuando estemos en vivo lo verás aquí. Mientras tanto, en el canal están todas las prédicas anteriores."
+        >
+          <a href={YOUTUBE_CHANNEL} target="_blank" rel="noopener noreferrer" class="btn btn-primary gap-2">
+            <Icon name="lucide:youtube" class="h-5 w-5" /> Ir al canal
+          </a>
+          <a href="/videos" class="btn btn-ghost gap-2">
+            <Icon name="lucide:play" class="h-5 w-5" /> Ver videos
+          </a>
+        </EmptyState>
       )}
+    </div>
+  </section>
+
+  <!-- Cuándo transmitimos -->
+  <section class="section bg-base-200">
+    <div class="wrap-narrow">
+      <h2 class="font-display text-2xl">¿Cuándo transmitimos?</h2>
+      <p class="mt-2 text-base-content/70">
+        Las transmisiones acompañan a nuestros cultos. Estos son los días en que la congregación se reúne:
+      </p>
+
+      <div class="mt-6 flex flex-wrap gap-2">
+        {semana.map((d) => (
+          <span class="inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100 px-4 py-2 text-sm">
+            <Icon name="lucide:calendar" class="h-4 w-4 text-accent" />
+            <span class="font-medium">{d.day}</span>
+            <span class="tabular-nums text-base-content/55">{d.services[0].time}</span>
+          </span>
+        ))}
+      </div>
+
+      <div class="mt-7 flex flex-wrap gap-3">
+        <a href="/horarios" class="btn btn-primary btn-sm gap-2">
+          <Icon name="lucide:clock" class="h-4 w-4" /> Horarios completos
+        </a>
+        <a href="/contacto" class="btn btn-ghost btn-sm gap-2">
+          <Icon name="lucide:mail" class="h-4 w-4" /> Escríbenos
+        </a>
+      </div>
     </div>
   </section>
 </Layout>

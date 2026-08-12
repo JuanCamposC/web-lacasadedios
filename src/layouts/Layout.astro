@@ -1,15 +1,16 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import Navigation from '../components/Navigation.astro';
 import Footer from '../components/Footer.astro';
-import { templos, CONTACT } from '../data/templos';
+import { templos } from '../data/templos';
+import { SITE, CONTACT, SOCIAL, hasPhone } from '../data/site';
 
-// Fuentes auto-hospedadas (sin depender del CDN de Google Fonts)
-import '@fontsource/poppins/300.css';
-import '@fontsource/poppins/400.css';
-import '@fontsource/poppins/500.css';
-import '@fontsource/poppins/600.css';
-import '@fontsource/poppins/700.css';
-import '@fontsource/poppins/800.css';
+// Fuentes auto-hospedadas y variables (sin depender del CDN de Google Fonts).
+// Solo el romano de cada familia: ~88 kB para las tres, menos de lo que pesaban
+// los seis pesos estáticos de Poppins que había antes.
+import '@fontsource-variable/fraunces/opsz.css';      // display (eje de tamaño óptico)
+import '@fontsource-variable/archivo/wght.css';        // cuerpo
+import '@fontsource-variable/archivo-narrow/wght.css'; // datos y señalética
 import '../styles/global.css';
 
 interface Props {
@@ -27,21 +28,22 @@ const {
 const canonical = Astro.site
 	? new URL(Astro.url.pathname, Astro.site).href
 	: Astro.url.href;
-const ogImage = image ? new URL(image, Astro.site ?? Astro.url).href : undefined;
+// Imagen social: la propia de la página si la hay, y si no la tarjeta de marca
+// (public/og-image.png, generada con `node scripts/og-image.mjs`).
+const ogImage = new URL(image ?? '/og-image.png', Astro.site ?? Astro.url).href;
 
 // Datos estructurados de la organización (todas las páginas).
 const orgJsonLd = {
 	'@context': 'https://schema.org',
 	'@type': 'Church',
-	name: 'La Casa de Dios',
+	name: SITE.name,
+	legalName: SITE.legalName,
 	description,
 	url: Astro.site?.toString() ?? canonical,
 	email: CONTACT.email,
-	telephone: CONTACT.phone,
-	sameAs: [
-		'https://instagram.com/jovenescasadedios._',
-		'https://www.youtube.com/@casadediosconociendolapalabrad',
-	],
+	// Solo se publica el teléfono si hay uno real cargado en src/data/site.ts.
+	...(hasPhone ? { telephone: CONTACT.phone } : {}),
+	sameAs: SOCIAL.map((s) => s.href),
 	location: templos.map((t) => ({
 		'@type': 'Place',
 		name: t.name,
@@ -77,7 +79,7 @@ const orgJsonLd = {
 		<link rel="canonical" href={canonical} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
-		<meta name="theme-color" content="#1e3a8a" />
+		<meta name="theme-color" content="#14295c" />
 		<meta name="generator" content={Astro.generator} />
 
 		<!-- Open Graph -->
@@ -87,64 +89,93 @@ const orgJsonLd = {
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content={canonical} />
-		{ogImage && <meta property="og:image" content={ogImage} />}
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
 
 		<!-- Twitter -->
-		<meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />
-		{ogImage && <meta name="twitter:image" content={ogImage} />}
+		<meta name="twitter:image" content={ogImage} />
 
 		<script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} is:inline />
+
+		{/* Transiciones de vista nativas de Astro: navegación sin recarga y con
+		    continuidad visual, sin una sola dependencia extra. Es el mayor
+		    salto de dinamismo por peso cero — importa para Core Web Vitals. */}
+		<ClientRouter />
 
 		<title>{title}</title>
 	</head>
 	<body class="min-h-screen">
 		<Navigation />
-		<main class="pt-16">
+		<main id="contenido" class="pt-16">
 			<slot />
 		</main>
 		<Footer />
 
-		<a id="live-pill" href="/en-vivo" class="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500">
-			<span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-white"></span> En vivo
+		<a
+			id="live-pill"
+			href="/en-vivo"
+			class="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500"
+		>
+			<span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-white" aria-hidden="true"></span>
+			Estamos en vivo
 		</a>
 	</body>
 </html>
 
 <script>
+	// Con <ClientRouter /> los módulos se evalúan una sola vez: todo lo que
+	// dependa del DOM de la página se cuelga de `astro:page-load`, que además
+	// dispara en la carga inicial.
 	import '../scripts/reveal';
-	import { createBrowserSupabase } from '../lib/supabase';
+	// `restLeer` en vez del cliente de Supabase: son 215 kB de JavaScript menos
+	// en cada página pública (ver src/lib/rest.ts).
+	import { restLeer } from '../lib/rest';
 
-	(async () => {
+	let estaEnVivo: boolean | null = null;
+
+	async function pastillaEnVivo() {
 		const pill = document.getElementById('live-pill');
 		if (!pill) return;
 		try {
-			const supabase = createBrowserSupabase();
-			const { data } = await supabase.from('settings').select('live_enabled').eq('id', 1).maybeSingle();
-			if (data && data.live_enabled) {
-				pill.classList.remove('hidden');
-				pill.classList.add('inline-flex');
+			// La consulta se hace una vez por sesión, no en cada navegación.
+			if (estaEnVivo === null) {
+				const filas = await restLeer<{ live_enabled: boolean }>(
+					'settings?id=eq.1&select=live_enabled',
+				);
+				estaEnVivo = Boolean(filas[0]?.live_enabled);
 			}
-		} catch {}
-	})();
-</script>
+			pill.classList.toggle('hidden', !estaEnVivo);
+			pill.classList.toggle('inline-flex', estaEnVivo);
+		} catch {
+			/* sin conexión: la pastilla simplemente no aparece */
+		}
+	}
 
-<script is:inline>
-	// Smooth scroll para enlaces internos con desfase por el navbar fijo
-	document.addEventListener('DOMContentLoaded', function () {
-		document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-			anchor.addEventListener('click', function (e) {
-				const href = this.getAttribute('href');
-				if (href && href !== '#') {
-					const target = document.querySelector(href);
-					if (target) {
-						e.preventDefault();
-						const offsetTop = target.getBoundingClientRect().top + window.scrollY - 80;
-						window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-					}
-				}
+	// Desplazamiento suave para anclas, compensando el navbar fijo.
+	function anclasSuaves() {
+		document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
+			if (a.dataset.anclaLista) return;
+			a.dataset.anclaLista = '1';
+			a.addEventListener('click', (e) => {
+				const href = a.getAttribute('href');
+				if (!href || href === '#') return;
+				const destino = document.querySelector(href);
+				if (!destino) return;
+				e.preventDefault();
+				window.scrollTo({
+					top: destino.getBoundingClientRect().top + window.scrollY - 80,
+					behavior: 'smooth',
+				});
 			});
 		});
+	}
+
+	document.addEventListener('astro:page-load', () => {
+		pastillaEnVivo();
+		anclasSuaves();
 	});
 </script>

@@ -1,0 +1,58 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
+import { templos } from '../data/templos';
+
+const atajos = [
+  { href: '/', label: 'Inicio', icon: 'lucide:home' },
+  { href: '/templos', label: 'Nuestros templos', icon: 'lucide:church' },
+  { href: '/horarios', label: 'Horarios de culto', icon: 'lucide:clock' },
+  { href: '/eventos', label: 'Eventos', icon: 'lucide:calendar-days' },
+  { href: '/noticias', label: 'Noticias', icon: 'lucide:newspaper' },
+  { href: '/contacto', label: 'Contacto', icon: 'lucide:mail' },
+];
+---
+
+<Layout
+  title="Página no encontrada · La Casa de Dios"
+  description="La página que buscas no existe o cambió de dirección."
+>
+  <section class="section flex min-h-[70vh] items-center bg-base-100">
+    <div class="wrap-narrow text-center">
+      <p class="eyebrow text-accent">Error 404</p>
+      <h1 class="mt-3 font-display leading-[1.05] text-[clamp(2.25rem,7vw,4rem)]">
+        Esta página no existe
+      </h1>
+      <p class="mx-auto mt-4 max-w-lg text-lg text-base-content/70">
+        Puede que el enlace esté mal escrito o que hayamos movido el contenido. Desde aquí puedes
+        seguir a cualquier parte del sitio.
+      </p>
+
+      <div class="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {atajos.map((a) => (
+          <a href={a.href} class="panel panel-sm panel-lift flex items-center gap-3 p-4 text-left">
+            <span class="tile">
+              <Icon name={a.icon} class="h-5 w-5" />
+            </span>
+            <span class="font-medium">{a.label}</span>
+            <Icon name="lucide:arrow-right" class="ml-auto h-4 w-4 shrink-0 text-base-content/40" />
+          </a>
+        ))}
+      </div>
+
+      <div class="mt-10 border-t border-base-300 pt-8">
+        <p class="mb-4 text-sm text-base-content/60">¿Buscabas un templo en particular?</p>
+        <div class="flex flex-wrap justify-center gap-2">
+          {templos.map((t) => (
+            <a
+              href={`/templos/${t.slug}`}
+              class="inline-flex items-center gap-1.5 rounded-full border border-base-300 px-4 py-2 text-sm transition hover:border-primary hover:text-primary"
+            >
+              <Icon name="lucide:map-pin" class="h-4 w-4" /> {t.short}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

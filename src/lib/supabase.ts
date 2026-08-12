@@ -64,6 +64,7 @@ export interface VideoItem {
   description: string | null;
   published: boolean;
   sort_order: number;
+  created_at: string;
 }
 
 export interface SiteSettings {

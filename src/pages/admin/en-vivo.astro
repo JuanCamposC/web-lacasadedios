@@ -15,36 +15,91 @@ const { data } = await supabase
 const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
 ---
 
-<AdminLayout title="En vivo" active="en-vivo">
-  <div class="mb-6">
-    <h1 class="text-3xl font-bold">Transmisión en vivo</h1>
-    <p class="mt-1 opacity-70">Habilita el "En vivo" y pega el enlace de la transmisión de YouTube. Cuando esté activo, aparecerá un botón flotante en el sitio y en <a href="/en-vivo" class="link link-primary">/en-vivo</a>.</p>
-  </div>
-
-  <div class="max-w-xl rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
-    <form id="live-form" class="space-y-5">
-      <label class="flex cursor-pointer items-center justify-between gap-4 rounded-xl bg-base-200 p-4">
-        <span>
-          <span class="flex items-center gap-2 font-semibold"><Icon name="lucide:radio" class="h-5 w-5 text-red-500" /> En vivo ahora</span>
-          <span class="text-sm opacity-60">Activa esto cuando estén transmitiendo.</span>
+<AdminLayout
+  title="En vivo"
+  description="El interruptor que enciende la transmisión en todo el sitio."
+  active="en-vivo"
+>
+  <div class="grid max-w-4xl gap-6 lg:grid-cols-5">
+    <form id="live-form" class="panel space-y-5 p-5 lg:col-span-3">
+      <!-- El interruptor primero y grande: es la única acción que importa -->
+      <label
+        id="live-switch"
+        class={`flex cursor-pointer items-center justify-between gap-4 rounded border p-4 transition-colors ${
+          s.live_enabled ? 'border-error/45 bg-error/5' : 'border-base-300 bg-base-200/50'
+        }`}
+      >
+        <span class="flex items-center gap-3">
+          <span class={s.live_enabled ? 'tile tile-lg bg-error/15 text-error' : 'tile tile-lg tile-muted'}>
+            <Icon name="lucide:radio" class="h-6 w-6" />
+          </span>
+          <span>
+            <span class="block font-semibold">Transmitiendo ahora</span>
+            <span class="block text-sm text-base-content/60">
+              Enciéndelo cuando empiece el culto y apágalo al terminar.
+            </span>
+          </span>
         </span>
-        <input type="checkbox" name="live_enabled" class="toggle toggle-primary" checked={s.live_enabled} />
+        <input type="checkbox" name="live_enabled" class="toggle toggle-error" checked={s.live_enabled} />
       </label>
 
       <label class="block">
-        <span class="mb-1 block text-sm font-medium">Enlace de YouTube (transmisión)</span>
-        <input type="url" name="live_url" value={s.live_url ?? ''} placeholder="https://www.youtube.com/watch?v=..." class="input input-bordered w-full" />
-        <span class="mt-1 block text-xs opacity-60">Pega la URL del video en vivo (watch?v=… o youtu.be/…).</span>
+        <span class="mb-1.5 block text-sm font-medium">Enlace de YouTube</span>
+        <input
+          type="url"
+          name="live_url"
+          value={s.live_url ?? ''}
+          placeholder="https://www.youtube.com/watch?v=..."
+          class="input input-bordered w-full"
+        />
+        <span class="mt-1 block text-xs text-base-content/55">
+          Sirve tanto <code>watch?v=…</code> como <code>youtu.be/…</code>.
+        </span>
       </label>
 
       <label class="block">
-        <span class="mb-1 block text-sm font-medium">Título (opcional)</span>
-        <input type="text" name="live_title" value={s.live_title ?? ''} placeholder="Culto dominical" class="input input-bordered w-full" />
+        <span class="mb-1.5 block text-sm font-medium">Título <span class="text-base-content/50">(opcional)</span></span>
+        <input
+          type="text"
+          name="live_title"
+          value={s.live_title ?? ''}
+          placeholder="Culto dominical"
+          class="input input-bordered w-full"
+        />
       </label>
 
-      <p id="live-msg" class="hidden text-sm"></p>
-      <button type="submit" id="live-save" class="btn btn-primary gap-2"><Icon name="lucide:save" class="h-5 w-5" /> Guardar</button>
+      <p id="live-msg" class="hidden rounded px-3 py-2 text-sm"></p>
+
+      <button type="submit" id="live-save" class="btn btn-primary w-full gap-2">
+        <Icon name="lucide:save" class="h-5 w-5" /> Guardar
+      </button>
     </form>
+
+    <aside class="space-y-4 lg:col-span-2">
+      <div class="panel p-5">
+        <h2 class="flex items-center gap-2 text-base font-bold">
+          <Icon name="lucide:eye" class="h-4 w-4 text-accent" /> Qué pasa al encenderlo
+        </h2>
+        <ul class="mt-4 space-y-3 text-sm text-base-content/75">
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            Aparece una pastilla roja flotante en todas las páginas del sitio.
+          </li>
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            La página <a href="/en-vivo" class="link link-primary">/en-vivo</a> reproduce la transmisión.
+          </li>
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:alert-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            Acuérdate de apagarlo al terminar: si no, el sitio sigue anunciando un vivo que ya acabó.
+          </li>
+        </ul>
+      </div>
+
+      <a href="/en-vivo" target="_blank" rel="noopener" class="btn btn-outline btn-sm w-full gap-2">
+        <Icon name="lucide:external-link" class="h-4 w-4" /> Ver cómo se ve
+      </a>
+    </aside>
   </div>
 
   <script>
@@ -53,6 +108,20 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
     const form = document.getElementById('live-form') as HTMLFormElement;
     const msg = document.getElementById('live-msg')!;
     const btn = document.getElementById('live-save') as HTMLButtonElement;
+    const caja = document.getElementById('live-switch')!;
+    const check = form.querySelector('[name="live_enabled"]') as HTMLInputElement;
+
+    // El interruptor cambia de color en el acto, antes de guardar: se ve lo que
+    // se va a hacer sin tener que confiar en la memoria.
+    const pintarEstado = () => {
+      const on = check.checked;
+      caja.className = `flex cursor-pointer items-center justify-between gap-4 rounded border p-4 transition-colors ${
+        on ? 'border-error/45 bg-error/5' : 'border-base-300 bg-base-200/50'
+      }`;
+      const placa = caja.querySelector('.tile')!;
+      placa.className = on ? 'tile tile-lg bg-error/15 text-error' : 'tile tile-lg tile-muted';
+    };
+    check.addEventListener('change', pintarEstado);
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -68,11 +137,13 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
       const { error } = await supabase.from('settings').update(payload).eq('id', 1);
       btn.disabled = false;
       if (error) {
-        msg.textContent = 'Error al guardar: ' + error.message;
-        msg.className = 'text-sm text-error';
+        msg.textContent = 'No se pudo guardar: ' + error.message;
+        msg.className = 'rounded bg-error/10 px-3 py-2 text-sm text-error';
       } else {
-        msg.textContent = 'Guardado correctamente.';
-        msg.className = 'text-sm text-success';
+        msg.textContent = payload.live_enabled
+          ? 'Listo: el sitio ya anuncia la transmisión.'
+          : 'Listo: el sitio ya no anuncia ninguna transmisión.';
+        msg.className = 'rounded bg-success/10 px-3 py-2 text-sm text-success';
       }
     });
   </script>

@@ -20,7 +20,7 @@ const {
 } = Astro.props;
 ---
 
-<section class={`relative -mt-16 flex ${height} items-center overflow-hidden`}>
+<section class={`on-dark relative -mt-16 flex ${height} items-center overflow-hidden`}>
   <div class="absolute inset-0">
     <Image
       src={image}
@@ -28,19 +28,22 @@ const {
       widths={[768, 1280, 1920]}
       sizes="100vw"
       loading="eager"
-      class="h-full w-full object-cover animate-kenburns"
+      class="h-full w-full object-cover"
     />
-    <div class="absolute inset-0 bg-gradient-to-b from-black/75 via-black/55 to-black/85"></div>
-    <div class="absolute inset-0 bg-gradient-to-t from-base-100 via-transparent to-transparent"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-[#0a1730]/78 via-[#0a1730]/62 to-[#0a1730]/88"></div>
+    <!-- Misma costura de bronce que cierra el hero de la portada: los dos
+         encabezados comparten gramática aunque tengan composición distinta.
+         Sin degradado hacia la página: lavaba la fotografía entera. -->
+    <div class="rule absolute inset-x-0 bottom-0" aria-hidden="true"></div>
   </div>
 
   <div class="relative z-10 mx-auto w-full max-w-4xl px-4 pt-16 text-center">
     {eyebrow && (
-      <span data-reveal class="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.3em] text-accent">
+      <span data-reveal class="eyebrow mb-4 text-accent">
         {eyebrow}
       </span>
     )}
-    <h1 data-reveal data-reveal-delay="60" class="font-display font-bold leading-[1.05] text-[clamp(2.4rem,6vw,4rem)] text-white">
+    <h1 data-reveal data-reveal-delay="60" class="text-[clamp(2.4rem,6vw,4rem)] text-white">
       {title}
     </h1>
     {subtitle && (

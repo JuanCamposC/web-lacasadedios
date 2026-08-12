@@ -1,0 +1,47 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Reveal from './Reveal.astro';
+
+// Banda oscura de cierre. Antes estaba copiada en cinco páginas con variantes
+// distintas; ahora es un solo componente con o sin fotografía de fondo.
+interface Props {
+  eyebrow?: string;
+  title: string;
+  text?: string;
+  image?: ImageMetadata;
+  compact?: boolean;
+}
+const { eyebrow, title, text, image, compact = false } = Astro.props;
+---
+
+<section class={`section-dark relative overflow-hidden ${compact ? 'section-sm' : 'section'} text-center`}>
+  {image ? (
+    <>
+      <Image
+        src={image}
+        alt=""
+        widths={[768, 1280, 1920]}
+        sizes="100vw"
+        loading="lazy"
+        class="absolute inset-0 h-full w-full object-cover opacity-25"
+      />
+      <div class="absolute inset-0 bg-gradient-to-b from-[#0a1730]/88 via-[#0a1730]/72 to-[#0a1730]/96"></div>
+    </>
+  ) : (
+    <div class="grid-texture absolute inset-0 opacity-60"></div>
+  )}
+
+  <div class="wrap relative z-10">
+    <Reveal>
+      {eyebrow && <span class="eyebrow mb-3 text-accent">{eyebrow}</span>}
+      <h2 class="font-display leading-tight text-[clamp(1.75rem,4.5vw,2.75rem)] text-white">
+        {title}
+      </h2>
+      {text && <p class="mx-auto mt-4 max-w-2xl text-white/70">{text}</p>}
+      <div class="mt-9 flex flex-wrap justify-center gap-3 empty:mt-0">
+        <slot />
+      </div>
+    </Reveal>
+  </div>
+</section>

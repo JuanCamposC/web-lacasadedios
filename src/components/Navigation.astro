@@ -1,73 +1,100 @@
 ---
 import { Icon } from 'astro-icon/components';
+import { MAIN_NAV, isGroup, isActive } from '../data/nav';
 
 const pathname = Astro.url.pathname;
 
-const navLinks = [
-  { href: '/', label: 'Inicio' },
-  { href: '/sobre-nosotros', label: 'Nosotros' },
-  { href: '/eventos', label: 'Eventos' },
-  { href: '/noticias', label: 'Noticias' },
-  { href: '/videos', label: 'Videos' },
-];
-
-const templos = [
-  { href: '/templos/santiago-centro', label: 'Santiago Centro' },
-  { href: '/templos/san-miguel', label: 'San Miguel' },
-  { href: '/templos/limache', label: 'Limache' },
-  { href: '/templos/coya', label: 'Coya' },
-];
-
-const pill = 'rounded-full px-3.5 py-2 text-sm font-medium transition-colors';
+const pill = 'nav-pill rounded-full px-3 py-2 text-sm font-medium transition-colors';
 const pillActive = 'bg-primary/10 text-primary';
 const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content';
-const isTemplos = pathname.startsWith('/templos');
 ---
 
-<nav id="site-nav" class="fixed top-0 z-50 w-full border-b border-base-300/70 bg-base-100/85 backdrop-blur-md transition-shadow duration-300">
+<a href="#contenido" class="skip-link">Saltar al contenido</a>
+
+<nav
+  id="site-nav"
+  aria-label="Navegación principal"
+  class="fixed top-0 z-50 w-full border-b border-base-300/70 bg-base-100/85 backdrop-blur-md transition-shadow duration-300"
+>
   <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6">
     <!-- Logo -->
     <a href="/" class="shrink-0" aria-label="La Casa de Dios — Inicio">
       <img src="/logo.png" alt="La Casa de Dios" class="site-logo h-8 w-auto md:h-9" width="605" height="204" />
     </a>
 
-    <!-- Links (desktop) -->
-    <ul class="hidden items-center gap-1 lg:flex">
-      {navLinks.map((link) => (
-        <li><a href={link.href} class={`${pill} ${pathname === link.href ? pillActive : pillIdle}`}>{link.label}</a></li>
-      ))}
-      <li>
-        <details class="dropdown">
-          <summary class={`${pill} ${isTemplos ? pillActive : pillIdle} flex cursor-pointer list-none items-center gap-1`}>
-            Templos
-            <Icon name="lucide:chevron-down" class="h-4 w-4 transition-transform" />
-          </summary>
-          <ul class="menu dropdown-content z-[100] mt-3 w-56 rounded-2xl border border-base-300 bg-base-100 p-2 shadow-xl">
-            {templos.map((t) => (
-              <li><a href={t.href} class={pathname === t.href ? 'font-semibold text-primary' : ''}>{t.label}</a></li>
-            ))}
-          </ul>
-        </details>
-      </li>
+    <!-- Menú (escritorio) -->
+    <ul class="hidden items-center gap-0.5 xl:flex">
+      {MAIN_NAV.map((entry) => {
+        const activo = isActive(entry, pathname);
+        return isGroup(entry) ? (
+          <li>
+            <details class="dropdown">
+              <summary
+                data-activo={activo ? '' : undefined}
+                class={`${pill} ${activo ? pillActive : pillIdle} flex cursor-pointer list-none items-center gap-1`}
+              >
+                {entry.label}
+                <Icon name="lucide:chevron-down" class="h-4 w-4 transition-transform" />
+              </summary>
+              <ul class="dropdown-content z-[100] mt-3 w-72 rounded-lg border border-base-300 bg-base-100 p-2 shadow-xl">
+                {entry.items.map((item) => (
+                  <li>
+                    <a
+                      href={item.href}
+                      class={`flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-base-200 ${pathname === item.href ? 'bg-primary/10' : ''}`}
+                    >
+                      {item.icon && <Icon name={item.icon} class="mt-0.5 h-4 w-4 shrink-0 text-accent" />}
+                      <span class="min-w-0">
+                        <span class={`block text-sm font-medium ${pathname === item.href ? 'text-primary' : ''}`}>
+                          {item.label}
+                        </span>
+                        {item.desc && <span class="block text-xs text-base-content/55">{item.desc}</span>}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </li>
+        ) : (
+          <li>
+            <a
+              href={entry.href}
+              data-activo={activo ? '' : undefined}
+              class={`${pill} ${activo ? pillActive : pillIdle}`}
+              aria-current={activo ? 'page' : undefined}
+            >
+              {entry.label}
+            </a>
+          </li>
+        );
+      })}
     </ul>
 
-    <!-- Acciones (derecha) -->
+    <!-- Acciones -->
     <div class="flex items-center gap-1">
-      <label class="swap swap-rotate btn btn-ghost btn-circle btn-sm" aria-label="Cambiar tema" title="Cambiar tema">
+      <label class="swap swap-rotate btn btn-ghost btn-circle btn-sm" title="Cambiar tema">
         <input type="checkbox" id="theme-toggle" aria-label="Cambiar entre tema claro y oscuro" />
-        <svg class="swap-off h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <svg class="swap-off h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z" />
         </svg>
-        <svg class="swap-on h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <svg class="swap-on h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z" />
         </svg>
       </label>
 
-      <a href="/#templos" class="btn btn-primary btn-sm hidden gap-1.5 lg:inline-flex">
-        <Icon name="lucide:hand-heart" class="h-4 w-4" /> Visítanos
+      <a href="/contacto" class="btn btn-primary btn-sm hidden gap-1.5 sm:inline-flex">
+        <Icon name="lucide:mail" class="h-4 w-4" /> Contacto
       </a>
 
-      <button id="nav-toggle" type="button" class="btn btn-ghost btn-sm btn-square lg:hidden" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-menu">
+      <button
+        id="nav-toggle"
+        type="button"
+        class="btn btn-ghost btn-sm btn-square xl:hidden"
+        aria-label="Abrir menú"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+      >
         <Icon name="lucide:menu" class="nav-open h-6 w-6" />
         <Icon name="lucide:x" class="nav-close hidden h-6 w-6" />
       </button>
@@ -75,21 +102,46 @@ const isTemplos = pathname.startsWith('/templos');
   </div>
 
   <!-- Panel móvil -->
-  <div id="mobile-menu" class="hidden border-t border-base-300 bg-base-100 lg:hidden">
+  <div id="mobile-menu" class="hidden max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-base-300 bg-base-100 xl:hidden">
     <ul class="flex flex-col gap-0.5 px-4 py-3">
-      {navLinks.map((link) => (
-        <li>
-          <a href={link.href} class={`block rounded-xl px-4 py-3 text-base font-medium ${pathname === link.href ? 'bg-primary/10 text-primary' : 'hover:bg-base-200'}`}>{link.label}</a>
-        </li>
-      ))}
-      <li class="mt-2 px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-base-content/50">Templos</li>
-      {templos.map((t) => (
-        <li>
-          <a href={t.href} class={`block rounded-xl px-4 py-2.5 text-sm ${pathname === t.href ? 'bg-primary/10 text-primary' : 'text-base-content/80 hover:bg-base-200'}`}>{t.label}</a>
-        </li>
-      ))}
+      {MAIN_NAV.map((entry) => {
+        const activo = isActive(entry, pathname);
+        return isGroup(entry) ? (
+          <li>
+            <details class="group" open={activo}>
+              <summary class="flex cursor-pointer list-none items-center justify-between rounded-xl px-4 py-3 text-base font-medium hover:bg-base-200">
+                <span class={activo ? 'text-primary' : ''}>{entry.label}</span>
+                <Icon name="lucide:chevron-down" class="h-4 w-4 transition-transform group-open:rotate-180" />
+              </summary>
+              <ul class="mb-1 ml-3 space-y-0.5 border-l border-base-300 pl-3">
+                {entry.items.map((item) => (
+                  <li>
+                    <a
+                      href={item.href}
+                      class={`block rounded-lg px-3 py-2.5 text-sm ${pathname === item.href ? 'bg-primary/10 font-semibold text-primary' : 'text-base-content/80 hover:bg-base-200'}`}
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </li>
+        ) : (
+          <li>
+            <a
+              href={entry.href}
+              class={`block rounded-xl px-4 py-3 text-base font-medium ${activo ? 'bg-primary/10 text-primary' : 'hover:bg-base-200'}`}
+            >
+              {entry.label}
+            </a>
+          </li>
+        );
+      })}
       <li class="mt-3">
-        <a href="/#templos" class="btn btn-primary w-full gap-2"><Icon name="lucide:hand-heart" class="h-5 w-5" /> Visítanos</a>
+        <a href="/contacto" class="btn btn-primary w-full gap-2">
+          <Icon name="lucide:mail" class="h-5 w-5" /> Contacto
+        </a>
       </li>
     </ul>
   </div>
@@ -116,11 +168,43 @@ const isTemplos = pathname.startsWith('/templos');
     }
 
     const nav = document.getElementById('site-nav');
-    if (nav && !nav.dataset.scrollBound) {
-      nav.dataset.scrollBound = '1';
-      const onScroll = () => nav.classList.toggle('is-scrolled', window.scrollY > 16);
-      window.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
+    if (nav) {
+      // Si la página abre con una banda oscura a sangre, la barra se vuelve
+      // transparente arriba del todo y se solidifica al bajar. Sin esto queda
+      // una franja clara opaca cortando el hero.
+      const primero = document.querySelector('main > *');
+      const sobreHero = primero instanceof Element && primero.matches('.section-dark, .on-dark');
+      nav.toggleAttribute('data-sobre-hero', sobreHero);
+
+      if (!nav.dataset.scrollBound) {
+        nav.dataset.scrollBound = '1';
+        const onScroll = () => nav.classList.toggle('is-scrolled', window.scrollY > 24);
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+      } else {
+        nav.classList.toggle('is-scrolled', window.scrollY > 24);
+      }
+    }
+
+    // Menús desplegables de escritorio: cerrar al hacer clic fuera o con Escape.
+    if (nav && !nav.dataset.ddBound) {
+      nav.dataset.ddBound = '1';
+      const cerrarTodos = (excepto) => {
+        nav.querySelectorAll('details.dropdown[open]').forEach((d) => {
+          if (d !== excepto) d.removeAttribute('open');
+        });
+      };
+      nav.querySelectorAll('details.dropdown').forEach((d) => {
+        d.addEventListener('toggle', () => {
+          if (d.hasAttribute('open')) cerrarTodos(d);
+        });
+      });
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('details.dropdown')) cerrarTodos(null);
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') cerrarTodos(null);
+      });
     }
 
     const toggle = document.getElementById('nav-toggle');
@@ -132,15 +216,23 @@ const isTemplos = pathname.startsWith('/templos');
       const setOpen = (open) => {
         menu.classList.toggle('hidden', !open);
         toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
         if (openI) openI.classList.toggle('hidden', open);
         if (closeI) closeI.classList.toggle('hidden', !open);
       };
       toggle.addEventListener('click', () => setOpen(menu.classList.contains('hidden')));
       menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
-      window.addEventListener('resize', () => { if (window.innerWidth >= 1024) setOpen(false); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !menu.classList.contains('hidden')) setOpen(false);
+      });
+      window.addEventListener('resize', () => {
+        if (window.innerWidth >= 1280) setOpen(false);
+      });
     }
   }
 
+  // `astro:page-load` cubre la carga inicial y cada navegación del ClientRouter.
+  document.addEventListener('astro:page-load', initNav);
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initNav);
   } else {
@@ -149,11 +241,49 @@ const isTemplos = pathname.startsWith('/templos');
 </script>
 
 <style>
+  #site-nav {
+    transition:
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      box-shadow 0.35s ease;
+  }
   #site-nav.is-scrolled {
     box-shadow: 0 6px 24px -12px rgba(0, 0, 0, 0.25);
     background-color: color-mix(in oklab, var(--color-base-100) 95%, transparent);
   }
-  details.dropdown > summary::-webkit-details-marker {
+
+  /* ── Barra transparente sobre una banda oscura ──────────────────────────
+     Arriba del todo la barra desaparece y deja respirar el hero; al bajar
+     recupera el fondo. Es la transición que más movimiento aporta por menos
+     código, y no cuesta un solo kilobyte de JavaScript extra. */
+  #site-nav[data-sobre-hero]:not(.is-scrolled) {
+    background-color: transparent;
+    border-color: transparent;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  #site-nav[data-sobre-hero]:not(.is-scrolled) :global(.site-logo) {
+    filter: brightness(0) invert(1);
+  }
+  #site-nav[data-sobre-hero]:not(.is-scrolled) :global(.nav-pill) {
+    color: rgb(255 255 255 / 0.72);
+  }
+  #site-nav[data-sobre-hero]:not(.is-scrolled) :global(.nav-pill:hover) {
+    background-color: rgb(255 255 255 / 0.12);
+    color: #ffffff;
+  }
+  #site-nav[data-sobre-hero]:not(.is-scrolled) :global(.nav-pill[data-activo]) {
+    background-color: rgb(255 255 255 / 0.14);
+    color: #ffffff;
+  }
+  #site-nav[data-sobre-hero]:not(.is-scrolled) :global(.btn-ghost) {
+    color: rgb(255 255 255 / 0.8);
+  }
+  #site-nav[data-sobre-hero]:not(.is-scrolled) :global(.btn-ghost:hover) {
+    background-color: rgb(255 255 255 / 0.12);
+    color: #ffffff;
+  }
+  details > summary::-webkit-details-marker {
     display: none;
   }
   details.dropdown[open] > summary :global(svg:last-child) {

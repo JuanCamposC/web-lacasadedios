@@ -1,0 +1,45 @@
+---
+import { Icon } from 'astro-icon/components';
+import { parseService, type ServiceDay } from '../data/templos';
+
+interface Props {
+  schedule: ServiceDay[];
+  /** `card` para la ficha del templo, `plain` para listados compactos. */
+  variant?: 'card' | 'plain';
+}
+const { schedule, variant = 'card' } = Astro.props;
+
+// Clases literales (Tailwind rastrea el código fuente: `badge-${tone}` no
+// generaba ninguna clase y los días salían sin color).
+const BADGE: Record<string, string> = {
+  primary: 'badge-primary',
+  secondary: 'badge-secondary',
+  accent: 'badge-accent',
+  neutral: 'badge-neutral',
+};
+---
+
+<ul class={variant === 'card' ? 'space-y-3' : 'space-y-2'}>
+  {schedule.map((s) => (
+    <li class={variant === 'card' ? 'rounded-xl bg-base-200/70 p-4' : ''}>
+      <div class="flex items-center gap-2">
+        <span class={`badge ${BADGE[s.tone] ?? BADGE.neutral} badge-sm font-semibold`}>{s.day}</span>
+        <span class="h-px flex-1 bg-base-300"></span>
+      </div>
+      <ul class="mt-2 space-y-1.5">
+        {s.services.map((raw) => {
+          const { time, name } = parseService(raw);
+          return (
+            <li class="flex items-baseline gap-2.5 text-sm">
+              <span class="font-data inline-flex shrink-0 items-center gap-1 text-base font-semibold text-base-content">
+                <Icon name="lucide:clock" class="h-3.5 w-3.5 text-accent" />
+                {time}
+              </span>
+              <span class="text-base-content/70">{name}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </li>
+  ))}
+</ul>

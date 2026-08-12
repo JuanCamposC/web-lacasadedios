@@ -1,0 +1,89 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHero from '../../components/PageHero.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import Reveal from '../../components/Reveal.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import TemploCard from '../../components/TemploCard.astro';
+import CtaBand from '../../components/CtaBand.astro';
+import { Icon } from 'astro-icon/components';
+import { templos, totalServices } from '../../data/templos';
+import { IMG } from '../../assets/images';
+
+const regiones = [...new Set(templos.map((t) => t.region))];
+
+const cifras = [
+  { value: templos.length, label: 'Templos', icon: 'lucide:church' },
+  { value: regiones.length, label: 'Regiones', icon: 'lucide:map' },
+  { value: totalServices(), label: 'Reuniones por semana', icon: 'lucide:calendar-clock' },
+];
+---
+
+<Layout
+  title="Templos · La Casa de Dios"
+  description="Los cuatro templos de La Casa de Dios: Santiago Centro, San Miguel, Limache y Coya. Direcciones, horarios de cultos y cómo llegar."
+>
+  <PageHero
+    image={IMG.auditorio}
+    alt="Interior de un templo"
+    eyebrow="Nuestras comunidades"
+    title="Templos"
+    subtitle="Cuatro comunidades, una misma familia de fe. Encuentra la más cercana a ti."
+    height="min-h-[52vh]"
+  />
+
+  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Templos' }]} />
+
+  <!-- Cifras -->
+  <section class="border-b border-base-300 bg-base-100 px-4 py-8">
+    <div class="wrap grid grid-cols-3 gap-4 text-center">
+      {cifras.map((c, i) => (
+        <Reveal delay={i * 70} class="flex flex-col items-center gap-1">
+          <Icon name={c.icon} class="h-5 w-5 text-accent" />
+          <span data-count={c.value} class="font-data text-3xl font-bold text-primary md:text-4xl">0</span>
+          <span class="text-xs text-base-content/60 sm:text-sm">{c.label}</span>
+        </Reveal>
+      ))}
+    </div>
+  </section>
+
+  <!-- Listado -->
+  <section class="section bg-base-200">
+    <div class="wrap">
+      <SectionHeading
+        eyebrow="Dónde estamos"
+        title="Encuentra tu templo"
+        subtitle="Cada comunidad tiene sus propios horarios y su equipo pastoral. Entra a la que te quede más cerca para ver todos los detalles."
+      />
+
+      <div class="mt-12 grid gap-6 md:grid-cols-2">
+        {templos.map((t, i) => (
+          <Reveal delay={(i % 2) * 90} class="h-full">
+            <TemploCard templo={t} variant="detailed" />
+          </Reveal>
+        ))}
+      </div>
+
+      <Reveal class="mt-10 text-center">
+        <a href="/horarios" class="btn btn-outline gap-2">
+          <Icon name="lucide:clock" class="h-5 w-5" />
+          Ver todos los horarios de la semana
+        </a>
+      </Reveal>
+    </div>
+  </section>
+
+  <CtaBand
+    eyebrow="Te esperamos"
+    title="¿Es tu primera vez?"
+    text="No necesitas avisar ni inscribirte: llega, siéntate donde quieras y sé bienvenido. Si prefieres, escríbenos antes y te contamos qué esperar."
+    image={IMG.manosAlzadas}
+  >
+    <a href="/contacto" class="btn btn-primary gap-2">
+      <Icon name="lucide:mail" class="h-5 w-5" /> Escríbenos
+    </a>
+    <a href="/horarios" class="btn gap-2 btn-invert">
+      <Icon name="lucide:clock" class="h-5 w-5" /> Ver horarios
+    </a>
+  </CtaBand>
+</Layout>

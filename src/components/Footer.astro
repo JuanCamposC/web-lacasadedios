@@ -1,100 +1,125 @@
 ---
 import { Icon } from 'astro-icon/components';
-import { CONTACT } from '../data/templos';
+import { FOOTER_NAV } from '../data/nav';
+import { SITE, CONTACT, SOCIAL, hasPhone } from '../data/site';
 
-const nav = [
-  { href: '/', label: 'Inicio' },
-  { href: '/sobre-nosotros', label: 'Nosotros' },
+const year = new Date().getFullYear();
+
+// En móvil el pie medía más de una pantalla y media. En vez de repetir el mapa
+// completo del sitio —que ya está a un toque en el menú superior— se muestran
+// seis destinos en fichas. Las columnas completas siguen en el HTML para
+// pantallas grandes y para el rastreo de buscadores.
+const atajosMovil = [
+  { href: '/templos', label: 'Templos' },
+  { href: '/horarios', label: 'Horarios' },
   { href: '/eventos', label: 'Eventos' },
   { href: '/noticias', label: 'Noticias' },
   { href: '/videos', label: 'Videos' },
-  { href: '/en-vivo', label: 'En vivo' },
-];
-const templos = [
-  { href: '/templos/santiago-centro', label: 'Santiago Centro' },
-  { href: '/templos/san-miguel', label: 'San Miguel' },
-  { href: '/templos/limache', label: 'Limache' },
-  { href: '/templos/coya', label: 'Coya' },
+  { href: '/contacto', label: 'Contacto' },
 ];
 ---
 
-<footer class="bg-neutral text-neutral-content">
-  <!-- Newsletter -->
+<footer class="on-dark bg-neutral text-neutral-content">
+  <!-- Boletín. Compacto en móvil: sin placa de icono, sin bajada y con la
+       mitad de aire vertical. -->
   <div class="border-b border-white/10">
-    <div class="mx-auto max-w-3xl px-6 py-14 text-center">
-      <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/20 text-accent">
+    <div class="mx-auto max-w-3xl px-6 py-8 text-center sm:py-14">
+      <div class="tile tile-accent mx-auto mb-4 hidden sm:inline-flex">
         <Icon name="lucide:mail-plus" class="h-6 w-6" />
       </div>
-      <h2 class="font-display text-2xl font-bold md:text-3xl">Recibe nuestras novedades</h2>
-      <p class="mx-auto mt-2 max-w-lg text-sm opacity-70 sm:text-base">Suscríbete y entérate de eventos, prédicas y noticias de La Casa de Dios.</p>
-      <form id="newsletter-form" class="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row">
-        <input type="email" name="email" required placeholder="tucorreo@ejemplo.cl"
-          class="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-white placeholder-white/40 outline-none focus:border-white/50" />
+      <h2 class="font-display text-xl sm:text-2xl md:text-3xl">Recibe nuestras novedades</h2>
+      <p class="mx-auto mt-2 hidden max-w-lg text-sm opacity-70 sm:block sm:text-base">
+        Suscríbete y entérate de eventos, prédicas y noticias de {SITE.name}.
+      </p>
+      <form id="newsletter-form" class="mx-auto mt-4 flex max-w-md flex-col gap-2.5 sm:mt-6 sm:flex-row sm:gap-3">
+        <label for="newsletter-email" class="sr-only">Correo electrónico</label>
+        <input
+          id="newsletter-email"
+          type="email"
+          name="email"
+          required
+          placeholder="tucorreo@ejemplo.cl"
+          class="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-white placeholder-white/40 outline-none focus:border-white/50"
+        />
         <button type="submit" id="newsletter-btn" class="btn btn-primary w-full gap-2 sm:w-auto">
           <Icon name="lucide:send" class="h-4 w-4" /> Suscribirme
         </button>
       </form>
-      <p id="newsletter-msg" class="mt-3 hidden text-sm"></p>
+      <p id="newsletter-msg" role="status" aria-live="polite" class="mt-3 hidden text-sm"></p>
     </div>
   </div>
 
   <!-- Contenido -->
-  <div class="mx-auto max-w-6xl px-6 py-14">
-    <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
+  <div class="mx-auto max-w-6xl px-6 py-9 sm:py-14">
+    <div class="grid gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-12">
       <!-- Marca + contacto -->
-      <div class="sm:col-span-2 lg:col-span-4">
-        <img src="/logo.png" alt="La Casa de Dios" class="footer-logo mb-4 h-10 w-auto" width="605" height="204" />
-        <p class="mb-4 max-w-xs text-sm opacity-70">
-          Comunidad de fe cristiana con templos en Santiago, San Miguel, Limache y Coya.
-        </p>
-        <div class="flex flex-col gap-2 text-sm opacity-80">
+      <div class="sm:col-span-2 lg:col-span-3">
+        <img src="/logo.png" alt={SITE.name} class="footer-logo h-8 w-auto sm:h-10" width="605" height="204" />
+        <p class="mb-4 mt-3 hidden max-w-xs text-sm opacity-70 sm:block">{SITE.intro}</p>
+
+        <div class="mt-4 flex flex-col gap-2 text-sm opacity-80 sm:mt-0">
           <a href={`mailto:${CONTACT.email}`} class="inline-flex items-center gap-2 hover:opacity-100">
-            <Icon name="lucide:mail" class="h-4 w-4 shrink-0 text-accent" /> <span class="break-all">{CONTACT.email}</span>
+            <Icon name="lucide:mail" class="h-4 w-4 shrink-0 text-accent" />
+            <span class="break-all">{CONTACT.email}</span>
           </a>
-          <a href={`tel:${CONTACT.phoneHref}`} class="inline-flex items-center gap-2 hover:opacity-100">
-            <Icon name="lucide:phone" class="h-4 w-4 shrink-0 text-accent" /> {CONTACT.phone}
-          </a>
+          {hasPhone && (
+            <a href={`tel:${CONTACT.phoneHref}`} class="inline-flex items-center gap-2 hover:opacity-100">
+              <Icon name="lucide:phone" class="h-4 w-4 shrink-0 text-accent" /> {CONTACT.phone}
+            </a>
+          )}
+        </div>
+
+        <div class="mt-5 flex gap-3">
+          {SOCIAL.map((s) => (
+            <a
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={s.label}
+              class="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-accent"
+            >
+              <Icon name={s.icon} class="h-5 w-5" />
+            </a>
+          ))}
         </div>
       </div>
 
-      <!-- Navegación -->
-      <div class="lg:col-span-3">
-        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider opacity-90">Navegación</h3>
-        <ul class="flex flex-col gap-2 text-sm opacity-80">
-          {nav.map((l) => <li><a href={l.href} class="hover:text-accent hover:opacity-100">{l.label}</a></li>)}
+      <!-- Móvil: seis destinos en fichas, en lugar del mapa completo -->
+      <nav class="sm:hidden" aria-label="Enlaces del sitio">
+        <ul class="flex flex-wrap gap-2">
+          {atajosMovil.map((l) => (
+            <li>
+              <a
+                href={l.href}
+                class="inline-flex rounded-full border border-white/20 px-3.5 py-1.5 text-sm transition hover:border-accent hover:text-accent"
+              >
+                {l.label}
+              </a>
+            </li>
+          ))}
         </ul>
-      </div>
+      </nav>
 
-      <!-- Templos -->
-      <div class="lg:col-span-3">
-        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider opacity-90">Templos</h3>
-        <ul class="flex flex-col gap-2 text-sm opacity-80">
-          {templos.map((t) => <li><a href={t.href} class="hover:text-accent hover:opacity-100">{t.label}</a></li>)}
-        </ul>
-      </div>
-
-      <!-- Síguenos -->
-      <div class="lg:col-span-2">
-        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider opacity-90">Síguenos</h3>
-        <div class="flex gap-3">
-          <a href="https://instagram.com/jovenescasadedios._" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
-             class="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-accent">
-            <Icon name="lucide:instagram" class="h-5 w-5" />
-          </a>
-          <a href="https://www.youtube.com/@casadediosconociendolapalabrad" target="_blank" rel="noopener noreferrer" aria-label="YouTube"
-             class="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-accent">
-            <Icon name="lucide:youtube" class="h-5 w-5" />
-          </a>
-        </div>
-      </div>
+      <!-- Escritorio: el mapa completo -->
+      {FOOTER_NAV.map((col) => (
+        <nav class="hidden sm:block lg:col-span-3" aria-label={col.title}>
+          <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider opacity-90">{col.title}</h3>
+          <ul class="flex flex-col gap-2 text-sm opacity-80">
+            {col.items.map((l) => (
+              <li><a href={l.href} class="hover:text-accent hover:opacity-100">{l.label}</a></li>
+            ))}
+          </ul>
+        </nav>
+      ))}
     </div>
 
-    <div class="mt-12 border-t border-white/10 pt-6">
-      <p class="text-center text-xs italic opacity-50">
-        "Porque donde están dos o tres congregados en mi nombre, allí estoy yo en medio de ellos." — Mateo 18:20
+    <div class="mt-8 border-t border-white/10 pt-5 sm:mt-12 sm:pt-6">
+      <!-- El versículo ya abre la portada: repetirlo aquí solo alarga el pie -->
+      <p class="hidden text-center text-xs italic opacity-50 sm:block">
+        «{SITE.verse.text}» — {SITE.verse.ref}
       </p>
-      <div class="mt-3 flex flex-col items-center justify-between gap-2 text-sm opacity-70 sm:flex-row">
-        <span>© {new Date().getFullYear()} La Casa de Dios.</span>
+      <div class="flex flex-col items-center justify-between gap-2 text-sm opacity-70 sm:mt-3 sm:flex-row">
+        <span>© {year} {SITE.name}.</span>
         <a href="/admin" class="inline-flex items-center gap-1 opacity-70 transition hover:text-accent hover:opacity-100">
           <Icon name="lucide:lock" class="h-3.5 w-3.5" /> Ingresar
         </a>
@@ -104,28 +129,39 @@ const templos = [
 </footer>
 
 <script>
-  import { createBrowserSupabase } from '../lib/supabase';
-  const form = document.getElementById('newsletter-form') as HTMLFormElement | null;
-  const msg = document.getElementById('newsletter-msg');
-  const btn = document.getElementById('newsletter-btn') as HTMLButtonElement | null;
-  if (form && msg && btn) {
-    const supabase = createBrowserSupabase();
+  // `restInsertar` en vez del cliente de Supabase: el sitio público no carga
+  // los 215 kB de la librería solo para dar de alta un correo.
+  import { restInsertar } from '../lib/rest';
+
+  function initBoletin() {
+    const form = document.getElementById('newsletter-form') as HTMLFormElement | null;
+    const msg = document.getElementById('newsletter-msg');
+    const btn = document.getElementById('newsletter-btn') as HTMLButtonElement | null;
+    if (!form || !msg || !btn || form.dataset.listo) return;
+    form.dataset.listo = '1';
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       msg.className = 'mt-3 hidden text-sm';
       btn.disabled = true;
       const email = String(new FormData(form).get('email') || '').trim();
-      const { error } = await supabase.from('subscribers').insert({ email });
+      const res = await restInsertar('subscribers', { email });
       btn.disabled = false;
-      if (error) {
-        const dup = (error as any).code === '23505' || /duplicate|unique/i.test(error.message);
-        msg.textContent = dup ? 'Ya estás suscrito. ¡Gracias!' : 'No se pudo suscribir. Intenta más tarde.';
-        msg.className = `mt-3 text-sm ${dup ? 'text-white/80' : 'text-red-300'}`;
+
+      if (!res.ok) {
+        const duplicado = res.code === '23505' || res.status === 409;
+        msg.textContent = duplicado
+          ? 'Ya estás suscrito. ¡Gracias!'
+          : 'No se pudo suscribir. Inténtalo más tarde.';
+        msg.className = `mt-3 text-sm ${duplicado ? 'text-white/80' : 'text-red-300'}`;
         return;
       }
+
       form.reset();
       msg.textContent = '¡Listo! Te has suscrito correctamente.';
       msg.className = 'mt-3 text-sm text-green-300';
     });
   }
+
+  document.addEventListener('astro:page-load', initBoletin);
 </script>
