@@ -643,6 +643,7 @@ export function setupCrud(config: CrudConfig) {
       // «no se pudo enviar» que se tragaba la causa real y dejaba sin pistas.
       const EXPLICACION: Record<string, string> = {
         no_email_provider: 'Falta configurar RESEND_API_KEY en Vercel.',
+        from_invalido: 'La variable CONTACT_FROM está mal escrita en Vercel.',
         falta_migracion: 'Falta correr la migración de baja del boletín en Supabase.',
         unauthorized: 'Tu sesión expiró. Vuelve a entrar al panel.',
         unconfigured: 'El servidor no tiene configurada la conexión a la base.',

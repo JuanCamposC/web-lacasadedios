@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
 import { CONTACT, SITE } from '../../data/site';
+import { resolverRemitente } from '../../lib/correo';
 
 export const prerender = false;
 
@@ -71,7 +72,15 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
           ? 'un nuevo video'
           : 'una novedad';
 
-  const from = process.env.CONTACT_FROM || `${SITE.name} <onboarding@resend.dev>`;
+  const remitente = resolverRemitente();
+  if (!remitente.ok) {
+    return json({
+      ok: false,
+      reason: 'from_invalido',
+      detalle: `CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
+    });
+  }
+  const from = remitente.from;
   const base = process.env.SITE_URL || reqUrl.origin;
   const link = url || base;
 

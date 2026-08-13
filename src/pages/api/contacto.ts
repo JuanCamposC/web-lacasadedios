@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
 import { CONTACT, SITE } from '../../data/site';
+import { resolverRemitente } from '../../lib/correo';
 
 export const prerender = false;
 
@@ -73,7 +74,9 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     return done(false, { reason: 'no_email_provider', email: CONTACT.email, status: 200 });
   }
 
-  const from = process.env.CONTACT_FROM || `${SITE.name} <onboarding@resend.dev>`;
+  const remitente = resolverRemitente();
+  if (!remitente.ok) return done(false, { reason: 'from_invalido', email: CONTACT.email, status: 500 });
+  const from = remitente.from;
   const filas: [string, string][] = [
     ['Nombre', nombre],
     ['Correo', email],

@@ -203,6 +203,14 @@ const enviado = Astro.url.searchParams.get('enviado');
           );
         } else if (data.reason === 'invalid') {
           show('Revisa los campos obligatorios e inténtalo de nuevo.', 'error');
+        } else if (data.reason === 'from_invalido') {
+          // Error de configuración, no del visitante: se le da una salida.
+          show(
+            'El envío está mal configurado. Escríbenos a ' +
+              (data.email ?? 'contacto@lacasadedios.cl') +
+              ' mientras lo arreglamos.',
+            'warn',
+          );
         } else {
           show('No pudimos enviar el mensaje. Inténtalo más tarde.', 'error');
         }
