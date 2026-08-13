@@ -15,7 +15,11 @@ export default defineConfig({
   // videos) se sirven bajo demanda con `export const prerender = false`.
   output: 'static',
   adapter: vercel(),
-  integrations: [sitemap(), icon()],
+  integrations: [
+    // /baja solo se alcanza con un enlace personal: fuera del sitemap.
+    sitemap({ filter: (page) => !page.includes('/baja') }),
+    icon(),
+  ],
   vite: {
     plugins: [tailwindcss()],
     optimizeDeps: {

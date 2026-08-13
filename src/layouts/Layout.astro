@@ -17,12 +17,15 @@ interface Props {
 	title?: string;
 	description?: string;
 	image?: string;
+	/** Páginas a las que solo se llega con un enlace personal (baja del boletín). */
+	noindex?: boolean;
 }
 
 const {
 	title = 'La Casa de Dios · Iglesia Cristiana',
 	description = 'La Casa de Dios es una comunidad de fe cristiana con templos en Santiago, San Miguel, Limache y Coya. Conoce nuestros horarios, ubicaciones y declaración de fe.',
 	image,
+	noindex = false,
 } = Astro.props;
 
 const canonical = Astro.site
@@ -80,6 +83,7 @@ const orgJsonLd = {
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="theme-color" content="#14295c" />
+		{noindex && <meta name="robots" content="noindex, nofollow" />}
 		<meta name="generator" content={Astro.generator} />
 
 		<!-- Open Graph -->

@@ -1,0 +1,76 @@
+---
+// Baja del boletín. Se llega desde el enlace del pie de cada correo, sin
+// sesión: el token del enlace es la única credencial.
+export const prerender = false;
+
+import Layout from '../layouts/Layout.astro';
+import EmptyState from '../components/EmptyState.astro';
+import { Icon } from 'astro-icon/components';
+import { restRpc } from '../lib/rest';
+import { CONTACT } from '../data/site';
+
+const token = Astro.url.searchParams.get('t')?.trim() ?? '';
+const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type Estado = 'sin-token' | 'listo' | 'no-encontrado' | 'error';
+let estado: Estado = 'sin-token';
+
+if (token) {
+  if (!ES_UUID.test(token)) {
+    estado = 'no-encontrado';
+  } else {
+    // La función devuelve true si borró una fila. `null` = la llamada falló.
+    const borrado = await restRpc<boolean>('baja_suscriptor', { p_token: token });
+    estado = borrado === null ? 'error' : borrado ? 'listo' : 'no-encontrado';
+  }
+}
+
+const TEXTOS: Record<Estado, { icono: string; titulo: string; texto: string }> = {
+  'sin-token': {
+    icono: 'lucide:link-2-off',
+    titulo: 'Enlace incompleto',
+    texto:
+      'Para darte de baja usa el enlace que aparece al final de cualquiera de nuestros correos.',
+  },
+  listo: {
+    icono: 'lucide:check-circle-2',
+    titulo: 'Listo, te diste de baja',
+    texto:
+      'No volverás a recibir el boletín. Si algún día cambias de opinión, puedes suscribirte otra vez desde el pie del sitio.',
+  },
+  'no-encontrado': {
+    icono: 'lucide:search-x',
+    titulo: 'Ese correo ya no está en la lista',
+    texto:
+      'Puede que ya te hubieras dado de baja antes, o que el enlace esté incompleto. En cualquier caso, no vas a recibir más correos con esa dirección.',
+  },
+  error: {
+    icono: 'lucide:alert-triangle',
+    titulo: 'No pudimos completar la baja',
+    texto: `Hubo un problema al procesar tu solicitud. Escríbenos a ${CONTACT.email} y te sacamos de la lista a mano.`,
+  },
+};
+
+const t = TEXTOS[estado];
+---
+
+<Layout
+  title="Baja del boletín · La Casa de Dios"
+  description="Cancela tu suscripción al boletín de La Casa de Dios."
+  noindex
+>
+  <section class="section flex min-h-[70vh] items-center bg-base-100">
+    <div class="wrap-narrow">
+      <EmptyState icon={t.icono} title={t.titulo} text={t.texto}>
+        <a href="/" class="btn btn-primary gap-2">
+          <Icon name="lucide:home" class="h-5 w-5" /> Ir al inicio
+        </a>
+        {estado === 'listo' && (
+          <a href="/contacto" class="btn btn-ghost gap-2">
+            <Icon name="lucide:message-square" class="h-5 w-5" /> Contarnos por qué
+          </a>
+        )}
+      </EmptyState>
+    </div>
+  </section>
+</Layout>

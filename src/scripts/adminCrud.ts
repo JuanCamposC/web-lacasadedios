@@ -35,8 +35,13 @@ export type CrudConfig = {
    * imaginarse los números en vez de ver el resultado.
    */
   orderable?: { column: string };
-  /** si se define, ofrece notificar a suscriptores al crear contenido publicado */
-  notify?: { type: string; urlBase: string };
+  /**
+   * Si se define, ofrece avisar a los suscriptores cuando el contenido pasa a
+   * publicado — tanto al crearlo como al encenderlo desde la lista.
+   * `porItem` añade el identificador a la URL, para enlazar a la ficha en vez
+   * de al listado (solo noticias tiene ficha propia).
+   */
+  notify?: { type: string; urlBase: string; porItem?: boolean };
 };
 
 /** Ancho máximo al que se reducen las imágenes antes de subirlas. */
@@ -282,6 +287,25 @@ export function setupCrud(config: CrudConfig) {
       </div>
       <form method="dialog" class="modal-backdrop"><button>cerrar</button></form>
     </dialog>
+
+    <!-- Confirmación antes de avisar a los suscriptores. Publicar desde la
+         lista no debe mandar correos sin preguntar. -->
+    <dialog id="crud-avisar" class="modal">
+      <div class="modal-box max-w-sm">
+        <h3 class="text-lg font-bold">¿Avisar a los suscriptores?</h3>
+        <p class="mt-2 text-sm text-base-content/70">
+          Se enviará un correo con <strong data-nombre class="break-words"></strong>
+          a todas las personas suscritas al boletín.
+        </p>
+        <div class="modal-action">
+          <form method="dialog" class="flex w-full gap-2">
+            <button value="no" class="btn btn-ghost flex-1">Solo publicar</button>
+            <button value="si" class="btn btn-primary flex-1">Publicar y avisar</button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>cerrar</button></form>
+    </dialog>
   `;
 
   const form = document.getElementById('crud-form') as HTMLFormElement;
@@ -295,6 +319,7 @@ export function setupCrud(config: CrudConfig) {
   const formTitle = document.getElementById('form-title')!;
 
   const dlgBorrar = document.getElementById('crud-borrar') as HTMLDialogElement;
+  const dlgAvisar = document.getElementById('crud-avisar') as HTMLDialogElement;
   const avisoOrden = document.getElementById('crud-orden-aviso');
 
   autoAnimate(listEl);
@@ -590,15 +615,63 @@ export function setupCrud(config: CrudConfig) {
   }
 
   /* ── Acciones ────────────────────────────────────────────────────────── */
+  /* ── Aviso a los suscriptores ────────────────────────────────────────────
+     Antes solo se disparaba al CREAR. Como el panel ahora invita a guardar en
+     borrador y publicar después desde la lista, ese camino no avisaba a nadie
+     y no lo decía. Ahora avisa por los dos caminos y SIEMPRE informa qué pasó,
+     incluido «no hay suscriptores», que era el silencio más confuso. */
+  async function avisarSuscriptores(titulo: string, ruta: string) {
+    try {
+      const r = await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: config.notify!.type, title: titulo, url: location.origin + ruta }),
+      }).then((x) => x.json());
+
+      if (r.ok && r.sent > 0) {
+        toast(`Avisamos a ${r.sent} suscriptor${r.sent === 1 ? '' : 'es'}`);
+      } else if (r.ok) {
+        toast('Guardado. Todavía no hay nadie suscrito al boletín.');
+      } else if (r.reason === 'no_email_provider') {
+        toast('Guardado, pero falta configurar RESEND_API_KEY para poder avisar.', 'error');
+      } else if (r.reason === 'falta_migracion') {
+        toast('Guardado. Falta correr la migración de baja del boletín en Supabase.', 'error');
+      } else {
+        toast('Guardado, pero el aviso no se pudo enviar.', 'error');
+      }
+    } catch {
+      toast('Guardado, pero el aviso no se pudo enviar.', 'error');
+    }
+  }
+
+  /** URL pública del elemento (ficha propia si la tiene, listado si no). */
+  function rutaDe(row: any): string {
+    const base = config.notify!.urlBase;
+    return config.notify!.porItem ? `${base}/${row.slug ?? row.id}` : base;
+  }
+
   async function togglePublicado(id: string) {
     const row = filas.find((r) => r.id === id);
     if (!row) return;
     const nuevo = !row.published;
+
+    // Al encender, se pregunta antes de mandar correos.
+    let avisar = false;
+    if (nuevo && config.notify) {
+      dlgAvisar.querySelector('[data-nombre]')!.textContent = `«${String(row[config.titleField] ?? '')}»`;
+      dlgAvisar.showModal();
+      avisar = await new Promise<string>((r) =>
+        dlgAvisar.addEventListener('close', () => r(dlgAvisar.returnValue), { once: true }),
+      ).then((v) => v === 'si');
+    }
+
     const { error } = await supabase.from(config.table).update({ published: nuevo }).eq('id', id);
     if (error) return toast('No se pudo cambiar el estado: ' + error.message, 'error');
     row.published = nuevo;
     pintar();
     toast(nuevo ? 'Publicado: ya se ve en el sitio' : 'Pasó a borrador: ya no se ve en el sitio');
+
+    if (avisar) await avisarSuscriptores(String(row[config.titleField] ?? ''), rutaDe(row));
   }
 
   async function uploadImage(blob: Blob, nombre: string): Promise<string> {
@@ -656,32 +729,19 @@ export function setupCrud(config: CrudConfig) {
       }
 
       const id = (form.querySelector('[name="id"]') as HTMLInputElement).value;
+      // `.select()` en el alta: hace falta la fila creada para enlazar al
+      // elemento concreto en el correo, no al listado.
       const res = id
         ? await supabase.from(config.table).update(payload).eq('id', id)
-        : await supabase.from(config.table).insert(payload);
+        : await supabase.from(config.table).insert(payload).select().single();
 
       if (res.error) throw res.error;
 
-      // Notificar a suscriptores al CREAR contenido publicado
+      // Aviso a suscriptores al CREAR contenido ya publicado.
       if (!id && config.notify && payload.published) {
         const notifyEl = form.querySelector('[name="__notify"]') as HTMLInputElement | null;
         if (notifyEl?.checked) {
-          try {
-            const r = await fetch('/api/notify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                type: config.notify.type,
-                title: payload[config.titleField],
-                url: location.origin + config.notify.urlBase,
-              }),
-            }).then((x) => x.json());
-            if (r.ok && r.sent) toast(`Avisamos a ${r.sent} suscriptor${r.sent === 1 ? '' : 'es'}`);
-            else if (r.reason === 'no_email_provider')
-              toast('Guardado. Falta configurar el correo para poder avisar.', 'error');
-          } catch {
-            /* notificación silenciosa si falla */
-          }
+          await avisarSuscriptores(String(payload[config.titleField] ?? ''), rutaDe(res.data ?? {}));
         }
       }
 

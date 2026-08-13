@@ -285,6 +285,36 @@ Environment Variables* añade las mismas variables y vuelve a desplegar.
   4 ubicaciones, `BreadcrumbList` en las páginas internas y `NewsArticle` en cada noticia.
 - `sitemap-index.xml` (`@astrojs/sitemap`) + `public/robots.txt`.
 
+## 📣 Boletín: cómo funciona el aviso
+
+1. Alguien deja su correo en el pie del sitio → fila en `subscribers`.
+2. Al **publicar** una noticia, evento o video —al crearlo, o al encender el
+   interruptor desde la lista— el panel pregunta si avisar y llama a
+   [`/api/notify`](src/pages/api/notify.ts).
+3. Se envía **un correo por persona**, en lotes de 100 (`resend.batch.send`),
+   cada uno con su propio enlace de baja y la cabecera `List-Unsubscribe`.
+
+> Antes iba un único mensaje con todos en copia oculta. Así era imposible dar a
+> cada persona su enlace de baja, y Gmail y Outlook penalizan el envío masivo
+> sin esa salida.
+
+El enlace lleva a [`/baja`](src/pages/baja.astro), que no se indexa ni entra al
+sitemap: solo se llega con el token personal del correo.
+
+### ⛔ Migración obligatoria antes del próximo aviso
+
+El aviso necesita la columna `token` y la función `baja_suscriptor`. **Hasta que
+se corra, `/api/notify` no envía nada** y el panel avisa con «Falta correr la
+migración de baja del boletín en Supabase».
+
+Copia el bloque final de [`supabase/schema.sql`](supabase/schema.sql)
+—«BAJA DEL BOLETÍN»— en *Supabase → SQL Editor → Run*. Es idempotente: se puede
+ejecutar más de una vez sin romper nada.
+
+La baja se resuelve con una función `security definer` y no con una política de
+borrado abierta: con una política, cualquiera podría vaciar la tabla omitiendo
+el filtro. La función solo borra la fila cuyo token coincide.
+
 ## ⚠️ Pendientes de contenido
 
 Estos puntos esperan información de la iglesia; el código ya está preparado:

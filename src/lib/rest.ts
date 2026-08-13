@@ -34,6 +34,23 @@ export async function restLeer<T>(consulta: string): Promise<T[]> {
   return (await res.json()) as T[];
 }
 
+/**
+ * Llama a una función de Postgres expuesta por PostgREST.
+ * Se usa para la baja del boletín: la función `baja_suscriptor` corre con
+ * `security definer` y solo borra la fila cuyo token coincide, así que puede
+ * invocarse sin sesión sin abrir la tabla a nadie.
+ */
+export async function restRpc<T>(fn: string, args: Record<string, unknown>): Promise<T | null> {
+  if (!restConfigurado) return null;
+  const res = await fetch(`${URL_BASE}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: cabeceras({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(args),
+  });
+  if (!res.ok) return null;
+  return (await res.json()) as T;
+}
+
 export interface RestEscritura {
   ok: boolean;
   /** 23505 = clave duplicada (por ejemplo, un correo ya suscrito) */
