@@ -51,8 +51,12 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
     .select('email, token');
 
   if (errorSubs) {
-    const faltaToken = /token/i.test(errorSubs.message);
-    return json({ ok: false, reason: faltaToken ? 'falta_migracion' : 'db_error' });
+    const faltaToken = /token/i.test(errorSubs.message ?? '');
+    return json({
+      ok: false,
+      reason: faltaToken ? 'falta_migracion' : 'db_error',
+      detalle: errorSubs.message,
+    });
   }
 
   const destinatarios = (subs ?? []).filter((s: any) => s.email && s.token);
@@ -112,12 +116,24 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
       });
 
       const { error } = await resend.batch.send(mensajes);
-      if (error) return json({ ok: false, reason: 'send_error', sent: enviados });
+      if (error) {
+        // El detalle de Resend es lo único que dice si el dominio no está
+        // verificado, si el remitente no corresponde o si se topó el límite.
+        // Este endpoint ya exige sesión de administrador, así que devolverlo
+        // no expone nada a un visitante — y sin él, el panel solo podía decir
+        // «no se pudo enviar», que no ayuda a nadie.
+        return json({
+          ok: false,
+          reason: 'send_error',
+          sent: enviados,
+          detalle: (error as any)?.message ?? String(error),
+        });
+      }
       enviados += mensajes.length;
     }
 
     return json({ ok: true, sent: enviados });
-  } catch {
-    return json({ ok: false, reason: 'exception' });
+  } catch (e: any) {
+    return json({ ok: false, reason: 'exception', detalle: e?.message ?? String(e) });
   }
 };

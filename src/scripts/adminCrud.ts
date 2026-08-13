@@ -105,10 +105,14 @@ function toast(message: string, type: 'success' | 'error' = 'success') {
   const c = document.getElementById('toast');
   if (!c) return;
   const el = document.createElement('div');
-  el.className = `alert ${type === 'error' ? 'alert-error' : 'alert-success'} shadow-lg`;
+  const error = type === 'error';
+  el.className = `alert ${error ? 'alert-error' : 'alert-success'} max-w-sm cursor-pointer shadow-lg`;
   el.textContent = message;
+  // Los errores explican qué hacer: 3,5 s no alcanzan para leerlos. Se quedan
+  // 15 s y se cierran al tocarlos.
+  el.addEventListener('click', () => el.remove());
   c.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
+  setTimeout(() => el.remove(), error ? 15000 : 3500);
 }
 
 export function setupCrud(config: CrudConfig) {
@@ -629,18 +633,29 @@ export function setupCrud(config: CrudConfig) {
       }).then((x) => x.json());
 
       if (r.ok && r.sent > 0) {
-        toast(`Avisamos a ${r.sent} suscriptor${r.sent === 1 ? '' : 'es'}`);
-      } else if (r.ok) {
-        toast('Guardado. Todavía no hay nadie suscrito al boletín.');
-      } else if (r.reason === 'no_email_provider') {
-        toast('Guardado, pero falta configurar RESEND_API_KEY para poder avisar.', 'error');
-      } else if (r.reason === 'falta_migracion') {
-        toast('Guardado. Falta correr la migración de baja del boletín en Supabase.', 'error');
-      } else {
-        toast('Guardado, pero el aviso no se pudo enviar.', 'error');
+        return toast(`Avisamos a ${r.sent} suscriptor${r.sent === 1 ? '' : 'es'}`);
       }
-    } catch {
-      toast('Guardado, pero el aviso no se pudo enviar.', 'error');
+      if (r.ok) {
+        return toast('Guardado. Todavía no hay nadie suscrito al boletín.');
+      }
+
+      // Siempre se dice QUÉ falló. La versión anterior tenía un comodín
+      // «no se pudo enviar» que se tragaba la causa real y dejaba sin pistas.
+      const EXPLICACION: Record<string, string> = {
+        no_email_provider: 'Falta configurar RESEND_API_KEY en Vercel.',
+        falta_migracion: 'Falta correr la migración de baja del boletín en Supabase.',
+        unauthorized: 'Tu sesión expiró. Vuelve a entrar al panel.',
+        unconfigured: 'El servidor no tiene configurada la conexión a la base.',
+        db_error: 'No se pudo leer la lista de suscriptores.',
+        send_error: 'Resend rechazó el envío.',
+        exception: 'Error inesperado al enviar.',
+      };
+      const causa = EXPLICACION[r.reason] ?? `Fallo desconocido (${r.reason ?? 'sin código'}).`;
+      console.error('[aviso a suscriptores]', r);
+      toast(`Guardado, pero no se avisó. ${causa}${r.detalle ? ' ' + r.detalle : ''}`, 'error');
+    } catch (e) {
+      console.error('[aviso a suscriptores]', e);
+      toast('Guardado, pero no se pudo contactar al servidor para avisar.', 'error');
     }
   }
 
