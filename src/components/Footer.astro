@@ -129,9 +129,18 @@ const atajosMovil = [
 </footer>
 
 <script>
-  // `restInsertar` en vez del cliente de Supabase: el sitio público no carga
-  // los 215 kB de la librería solo para dar de alta un correo.
-  import { restInsertar } from '../lib/rest';
+  // El alta ya no se inserta desde el navegador: la tabla dejó de aceptar la
+  // clave anónima. Va contra /api/suscribir, que valida el correo, frena por IP
+  // y manda el correo de confirmación. Ver src/pages/api/suscribir.ts.
+  const MENSAJES: Record<string, string> = {
+    correo_invalido: 'Revisa el correo: no parece una dirección válida.',
+    demasiados_intentos: 'Demasiados intentos. Prueba de nuevo en un rato.',
+    sin_configurar: 'El boletín no está configurado todavía. Escríbenos y te agregamos.',
+    falta_migracion: 'El boletín no está configurado todavía. Escríbenos y te agregamos.',
+    sin_proveedor_correo: 'Te anotamos, pero no pudimos enviarte el correo de confirmación.',
+    from_invalido: 'Te anotamos, pero no pudimos enviarte el correo de confirmación.',
+    send_error: 'Te anotamos, pero no pudimos enviarte el correo de confirmación.',
+  };
 
   function initBoletin() {
     const form = document.getElementById('newsletter-form') as HTMLFormElement | null;
@@ -145,20 +154,31 @@ const atajosMovil = [
       msg.className = 'mt-3 hidden text-sm';
       btn.disabled = true;
       const email = String(new FormData(form).get('email') || '').trim();
-      const res = await restInsertar('subscribers', { email });
+
+      let data: Record<string, unknown> = {};
+      try {
+        const res = await fetch('/api/suscribir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        data = await res.json();
+      } catch {
+        data = { ok: false, reason: 'red' };
+      }
       btn.disabled = false;
 
-      if (!res.ok) {
-        const duplicado = res.code === '23505' || res.status === 409;
-        msg.textContent = duplicado
-          ? 'Ya estás suscrito. ¡Gracias!'
-          : 'No se pudo suscribir. Inténtalo más tarde.';
-        msg.className = `mt-3 text-sm ${duplicado ? 'text-white/80' : 'text-red-300'}`;
+      if (!data.ok) {
+        msg.textContent =
+          MENSAJES[String(data.reason)] ?? 'No se pudo suscribir. Inténtalo más tarde.';
+        msg.className = 'mt-3 text-sm text-red-300';
         return;
       }
 
       form.reset();
-      msg.textContent = '¡Listo! Te has suscrito correctamente.';
+      // No se distingue el alta nueva del correo ya presente: decir «ya estabas
+      // suscrito» permitiría comprobar desde fuera quién está en la lista.
+      msg.textContent = 'Revisa tu correo y confirma la suscripción.';
       msg.className = 'mt-3 text-sm text-green-300';
     });
   }

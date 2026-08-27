@@ -1,0 +1,80 @@
+---
+// Confirmación del alta al boletín. Se llega desde el enlace del correo, sin
+// sesión: el token del enlace es la única credencial, igual que en /baja.
+//
+// El alta queda `pending` hasta que se pasa por aquí. Ese es todo el sentido
+// del doble opt-in: dejar un correo en un formulario no prueba que sea tuyo,
+// abrir el mensaje que llega a esa dirección sí.
+export const prerender = false;
+
+import Layout from '../layouts/Layout.astro';
+import EmptyState from '../components/EmptyState.astro';
+import { Icon } from 'astro-icon/components';
+import { restRpc } from '../lib/rest';
+import { CONTACT } from '../data/site';
+
+const token = Astro.url.searchParams.get('t')?.trim() ?? '';
+const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type Estado = 'sin-token' | 'listo' | 'no-encontrado' | 'error';
+let estado: Estado = 'sin-token';
+
+if (token) {
+  if (!ES_UUID.test(token)) {
+    estado = 'no-encontrado';
+  } else {
+    // Devuelve true si actualizó una fila. `null` = la llamada falló.
+    const confirmado = await restRpc<boolean>('confirmar_suscriptor', { p_token: token });
+    estado = confirmado === null ? 'error' : confirmado ? 'listo' : 'no-encontrado';
+  }
+}
+
+const TEXTOS: Record<Estado, { icono: string; titulo: string; texto: string }> = {
+  'sin-token': {
+    icono: 'lucide:link-2-off',
+    titulo: 'Enlace incompleto',
+    texto:
+      'Para confirmar tu suscripción usa el botón del correo que te enviamos. Si no llegó, revisa la carpeta de correo no deseado.',
+  },
+  listo: {
+    icono: 'lucide:check-circle-2',
+    titulo: '¡Listo! Ya estás suscrito',
+    texto:
+      'Te avisaremos cuando publiquemos eventos, noticias y prédicas. Cada correo lleva un enlace para darte de baja cuando quieras.',
+  },
+  'no-encontrado': {
+    icono: 'lucide:search-x',
+    titulo: 'No encontramos esa suscripción',
+    texto:
+      'Puede que el enlace esté incompleto o que ya te hubieras dado de baja. Vuelve a suscribirte desde el pie del sitio y te mandamos un correo nuevo.',
+  },
+  error: {
+    icono: 'lucide:alert-triangle',
+    titulo: 'No pudimos confirmar tu suscripción',
+    texto: `Hubo un problema al procesar tu solicitud. Escríbenos a ${CONTACT.email} y te agregamos a mano.`,
+  },
+};
+
+const t = TEXTOS[estado];
+---
+
+<Layout
+  title="Confirmar suscripción · La Casa de Dios"
+  description="Confirma tu suscripción al boletín de La Casa de Dios."
+  noindex
+>
+  <section class="section flex min-h-[70vh] items-center bg-base-100">
+    <div class="wrap-narrow">
+      <EmptyState icon={t.icono} title={t.titulo} text={t.texto}>
+        <a href="/" class="btn btn-primary gap-2">
+          <Icon name="lucide:home" class="h-5 w-5" /> Ir al inicio
+        </a>
+        {estado === 'listo' && (
+          <a href="/eventos" class="btn btn-ghost gap-2">
+            <Icon name="lucide:calendar-days" class="h-5 w-5" /> Ver los próximos eventos
+          </a>
+        )}
+      </EmptyState>
+    </div>
+  </section>
+</Layout>

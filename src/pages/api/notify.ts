@@ -47,15 +47,21 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   // `token` viene de la migración de baja (ver supabase/schema.sql). Si la
   // migración todavía no se corrió, la consulta falla y se dice por qué en
   // vez de enviar correos sin enlace de baja.
+  //
+  // `pending` viene de la migración de doble opt-in: solo se escribe a quien
+  // confirmó su correo desde su propia bandeja. Enviar a los pendientes sería
+  // escribir a direcciones que nadie verificó, que es justo lo que dispara las
+  // quejas de spam y arrastra la reputación del dominio.
   const { data: subs, error: errorSubs } = await supabase
     .from('subscribers')
-    .select('email, token');
+    .select('email, token')
+    .eq('pending', false);
 
   if (errorSubs) {
-    const faltaToken = /token/i.test(errorSubs.message ?? '');
+    const faltaColumna = /token|pending/i.test(errorSubs.message ?? '');
     return json({
       ok: false,
-      reason: faltaToken ? 'falta_migracion' : 'db_error',
+      reason: faltaColumna ? 'falta_migracion' : 'db_error',
       detalle: errorSubs.message,
     });
   }

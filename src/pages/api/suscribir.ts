@@ -1,0 +1,171 @@
+/**
+ * Alta al boletín con doble opt-in.
+ *
+ * POR QUÉ EXISTE
+ * Antes el navegador insertaba directamente en `subscribers` con la clave
+ * anónima, amparado en una política `for insert with check (true)`. Como esa
+ * clave es pública por diseño, cualquiera podía llenar la tabla o suscribir a
+ * terceros a su nombre. La política ya no existe (ver la migración «ALTA DEL
+ * BOLETÍN CON DOBLE OPT-IN» en supabase/schema.sql) y esta es la única vía de
+ * escritura: valida el correo, frena por IP y deja la fila en `pending` hasta
+ * que la persona confirme desde su bandeja.
+ */
+import type { APIRoute } from 'astro';
+import { Resend } from 'resend';
+import { SITE } from '../../data/site';
+import { resolverRemitente } from '../../lib/correo';
+import { crearSupabaseServicio } from '../../lib/supabaseAdmin';
+
+export const prerender = false;
+
+/** Altas permitidas por IP dentro de la ventana. */
+const LIMITE = 5;
+const VENTANA_MIN = 60;
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+  });
+}
+
+function esc(s: unknown) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Validación de formato, no de existencia. Deliberadamente más estricta que el
+ * `type="email"` del navegador —sin espacios, un solo arroba, TLD de dos letras
+ * o más— pero sin pretender cubrir el RFC entero: quien pase de aquí todavía
+ * tiene que confirmar desde su bandeja, que es la comprobación de verdad.
+ */
+const CORREO = /^[^\s@,;<>()[\]\\]+@[^\s@.]+(\.[^\s@.]+)*\.[a-z]{2,}$/i;
+
+function correoValido(email: string): boolean {
+  return email.length <= 254 && CORREO.test(email);
+}
+
+/**
+ * IP del visitante. En Vercel llega en `x-forwarded-for`, donde el primer
+ * elemento es el cliente real y el resto son los proxies intermedios.
+ */
+function ipDe(request: Request): string {
+  const xff = request.headers.get('x-forwarded-for') ?? '';
+  const primera = xff.split(',')[0]?.trim();
+  return primera || request.headers.get('x-real-ip')?.trim() || 'desconocida';
+}
+
+export const POST: APIRoute = async ({ request, url: reqUrl }) => {
+  // El formato se valida antes que nada: una petición malformada se rechaza
+  // igual esté o no configurado el servidor, y sin gastar una consulta.
+  const body = await request.json().catch(() => ({}) as Record<string, unknown>);
+  const email = String((body as any)?.email ?? '').trim().toLowerCase();
+
+  if (!correoValido(email)) return json({ ok: false, reason: 'correo_invalido' }, 400);
+
+  const supabase = crearSupabaseServicio();
+  if (!supabase) {
+    // Sin la clave de servicio no se puede escribir: la tabla ya no acepta la
+    // clave anónima. Se dice cuál falta en vez de devolver un 500 mudo.
+    return json({
+      ok: false,
+      reason: 'sin_configurar',
+      detalle: 'Falta SUPABASE_SERVICE_ROLE_KEY en el entorno del servidor.',
+    });
+  }
+
+  // ── Freno por IP ──────────────────────────────────────────────────────────
+  // La cuenta vive en la base y no en memoria del proceso: en serverless cada
+  // instancia tendría su propio contador y bastaría con reintentar hasta caer
+  // en una nueva para saltárselo.
+  const { data: previos, error: errorFreno } = await supabase.rpc('registrar_intento_alta', {
+    p_ip: ipDe(request),
+    p_ventana: `${VENTANA_MIN} minutes`,
+  });
+
+  if (errorFreno) {
+    const faltaMigracion = /registrar_intento_alta|subscribe_attempts/i.test(
+      errorFreno.message ?? '',
+    );
+    return json({
+      ok: false,
+      reason: faltaMigracion ? 'falta_migracion' : 'db_error',
+      detalle: errorFreno.message,
+    });
+  }
+
+  if (typeof previos === 'number' && previos >= LIMITE) {
+    return json({ ok: false, reason: 'demasiados_intentos' }, 429);
+  }
+
+  // ── Alta ──────────────────────────────────────────────────────────────────
+  const { data: fila, error } = await supabase
+    .from('subscribers')
+    .insert({ email })
+    .select('token, pending')
+    .single();
+
+  if (error) {
+    // 23505 = correo ya presente. No se revela si estaba confirmado o
+    // pendiente: eso permitiría comprobar quién está suscrito.
+    if (error.code === '23505') return json({ ok: true, estado: 'ya_estaba' });
+
+    const faltaMigracion = /pending|confirmed_at/i.test(error.message ?? '');
+    return json({
+      ok: false,
+      reason: faltaMigracion ? 'falta_migracion' : 'db_error',
+      detalle: error.message,
+    });
+  }
+
+  // ── Correo de confirmación ────────────────────────────────────────────────
+  const apiKey = process.env.RESEND_API_KEY;
+  const remitente = resolverRemitente();
+
+  if (!apiKey || !remitente.ok) {
+    // La fila queda pendiente a propósito. Confirmar es lo que da permiso para
+    // escribir a esa persona, y sin correo saliente ese permiso no existe.
+    return json({
+      ok: false,
+      reason: !apiKey ? 'sin_proveedor_correo' : 'from_invalido',
+      detalle: !apiKey
+        ? 'Falta RESEND_API_KEY: el alta quedó pendiente de confirmar.'
+        : `CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
+    });
+  }
+
+  const base = process.env.SITE_URL || reqUrl.origin;
+  const enlace = `${base}/confirmar?t=${encodeURIComponent(String(fila.token))}`;
+
+  const html = `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;color:#17202e">
+    <h2 style="color:#14295c;margin:0 0 4px">${esc(SITE.name)}</h2>
+    <p style="color:#64748b;margin:0 0 20px">Confirma tu suscripción al boletín</p>
+    <p style="margin:0 0 20px">Alguien —esperamos que tú— dejó este correo para recibir nuestras novedades. Confírmalo con el botón y quedas dentro.</p>
+    <p><a href="${esc(enlace)}" style="display:inline-block;background:#14295c;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">Confirmar mi suscripción</a></p>
+    <p style="color:#64748b;font-size:.8rem;margin-top:28px;border-top:1px solid #e2e8f0;padding-top:14px">
+      Si no fuiste tú, no hagas nada: sin confirmar no te llegará ningún boletín.
+    </p>
+  </div>`;
+
+  try {
+    const resend = new Resend(apiKey);
+    const { error: errorEnvio } = await resend.emails.send({
+      from: remitente.from,
+      to: email,
+      subject: `${SITE.name} — Confirma tu suscripción`,
+      html,
+    });
+
+    if (errorEnvio) {
+      return json({
+        ok: false,
+        reason: 'send_error',
+        detalle: (errorEnvio as any)?.message ?? String(errorEnvio),
+      });
+    }
+  } catch (e) {
+    return json({ ok: false, reason: 'send_error', detalle: (e as Error).message });
+  }
+
+  return json({ ok: true, estado: 'confirmacion_enviada' });
+};
