@@ -80,8 +80,14 @@ const orgJsonLd = {
 		</script>
 		<meta name="description" content={description} />
 		<link rel="canonical" href={canonical} />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
+		{/* Iconos de pestaña: el isotipo de la marca en azul, generado desde
+		    public/marca/isotipo-azul.png con `node scripts/favicons.mjs`.
+		    apple-touch-icon va sobre blanco porque iOS aplana la transparencia
+		    contra negro y el azul quedaría ilegible. */}
+		<link rel="icon" href="/favicon.ico" sizes="32x32" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+		<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<meta name="theme-color" content="#14295c" />
 		{noindex && <meta name="robots" content="noindex, nofollow" />}
 		<meta name="generator" content={Astro.generator} />

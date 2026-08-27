@@ -79,13 +79,20 @@ const texto = `
   </text>
 </svg>`;
 
-// Logo en silueta blanca a partir de su canal alfa.
-const logoPath = fileURLToPath(new URL('public/logo.png', raiz));
-const ANCHO_LOGO = 460;
+// Logo en silueta blanca a partir de su canal alfa. Se parte del archivo blanco
+// igual: la silueta lo deja en blanco puro sea cual sea la variante de origen.
+const logoPath = fileURLToPath(new URL('public/marca/logo-blanco.png', raiz));
+const ANCHO_LOGO = 560;
 
-const logoRedim = sharp(logoPath).resize({ width: ANCHO_LOGO }).ensureAlpha();
-const { width: lw, height: lh } = await logoRedim.metadata();
-const alfa = await logoRedim.clone().extractChannel('alpha').toBuffer();
+// Las medidas salen del búfer YA redimensionado. `metadata()` sobre un pipeline
+// pendiente devuelve las del archivo de origen, no las del resultado: con eso
+// el lienzo se creaba del tamaño original y ANCHO_LOGO no se aplicaba nunca.
+const { data: alfa, info } = await sharp(logoPath)
+  .resize({ width: ANCHO_LOGO })
+  .ensureAlpha()
+  .extractChannel('alpha')
+  .toBuffer({ resolveWithObject: true });
+const { width: lw, height: lh } = info;
 
 const logoBlanco = await sharp({
   create: { width: lw, height: lh, channels: 3, background: '#ffffff' },
