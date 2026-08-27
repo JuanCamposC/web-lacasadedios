@@ -14,6 +14,43 @@ export default defineConfig({
   // Estático por defecto; las páginas dinámicas (admin, eventos, noticias,
   // videos) se sirven bajo demanda con `export const prerender = false`.
   output: 'static',
+  // Política de seguridad de contenido. Astro calcula el hash de cada script y
+  // cada bloque <style> propios y los emite en un <meta> por página, así que
+  // 'script-src' queda sin 'unsafe-inline': un script inyectado no se ejecuta
+  // aunque llegue a colarse en el HTML. Es la defensa que de verdad importa.
+  //
+  // Dos detalles que costaron descubrir:
+  //   · Los atributos style= sueltos (los `--i:N` del hero) NO los cubren los
+  //     hashes de 'style-src', y añadir 'unsafe-inline' ahí no sirve: cuando
+  //     hay hashes, el navegador ignora 'unsafe-inline'. Van por su propia
+  //     directiva, style-src-attr, que aquí se pide con `kind: 'attribute'`.
+  //   · 'frame-ancestors' no va aquí: los navegadores lo ignoran dentro de un
+  //     <meta>. Se cubre con X-Frame-Options en vercel.json, que sí es cabecera.
+  security: {
+    csp: {
+      directives: [
+        "default-src 'self'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "object-src 'none'",
+        "font-src 'self'",
+        // Miniaturas de YouTube e imágenes subidas al storage de Supabase.
+        "img-src 'self' data: blob: https://i.ytimg.com https://*.supabase.co",
+        // El panel habla con Supabase (sesión, CRUD y subidas) desde el navegador.
+        "connect-src 'self' https://*.supabase.co",
+        // Los dos únicos embebidos: el reproductor de YouTube sin cookies y el
+        // mapa de cada templo. Cualquier otro iframe queda bloqueado.
+        "frame-src https://www.youtube-nocookie.com https://www.google.com",
+        "upgrade-insecure-requests",
+      ],
+      styleDirective: {
+        resources: [
+          { resource: "'self'", kind: 'default' },
+          { resource: "'unsafe-inline'", kind: 'attribute' },
+        ],
+      },
+    },
+  },
   adapter: vercel(),
   integrations: [
     // /baja solo se alcanza con un enlace personal: fuera del sitemap.

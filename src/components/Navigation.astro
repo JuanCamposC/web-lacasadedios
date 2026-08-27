@@ -147,7 +147,10 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
   </div>
 </nav>
 
-<script is:inline>
+{/* Sin `is:inline`: así Astro lo empaqueta y calcula su hash para la CSP. No
+    necesitaba serlo —no usa nada del ámbito de la plantilla y ya se registra
+    con `astro:page-load`, igual que el del pie, que tampoco es inline. */}
+<script>
   function initNav() {
     const html = document.documentElement;
     const themeToggle = document.getElementById('theme-toggle');

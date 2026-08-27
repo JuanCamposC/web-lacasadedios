@@ -4,6 +4,7 @@ import Navigation from '../components/Navigation.astro';
 import Footer from '../components/Footer.astro';
 import { templos } from '../data/templos';
 import { SITE, CONTACT, SOCIAL, hasPhone } from '../data/site';
+import { hashCsp } from '../lib/csp';
 
 // Fuentes auto-hospedadas y variables (sin depender del CDN de Google Fonts).
 // Solo el romano de cada familia: ~88 kB para las tres, menos de lo que pesaban
@@ -60,6 +61,22 @@ const orgJsonLd = {
 		geo: { '@type': 'GeoCoordinates', latitude: t.coords.lat, longitude: t.coords.lng },
 	})),
 };
+
+/* ── Scripts inline y su hash para la CSP ──────────────────────────────────
+   Astro hashea los scripts que procesa, pero no los `is:inline` —los deja
+   intactos a propósito—, así que hay que declararlos o el navegador los
+   rechaza con `script-src-elem`. Se renderizan con `set:html` desde estas
+   constantes y el hash se calcula sobre ellas mismas: así el contenido y su
+   hash no pueden desincronizarse al editar.
+
+   El del tema sigue siendo `is:inline` porque tiene que correr antes del
+   primer fotograma. Convertido en módulo llegaría tarde y la página
+   parpadearía en claro antes de saltar a oscuro. */
+const SCRIPT_TEMA = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark')t='churchdark';if(t!=='church'&&t!=='churchdark')t='church';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
+const JSON_LD = JSON.stringify(orgJsonLd);
+
+Astro.csp.insertScriptHash({ hash: hashCsp(SCRIPT_TEMA), kind: 'element' });
+Astro.csp.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
 ---
 
 <!doctype html>
@@ -67,17 +84,7 @@ const orgJsonLd = {
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<script is:inline>
-			// Aplica el tema guardado antes de pintar (evita parpadeo).
-			(function () {
-				try {
-					var t = localStorage.getItem('theme');
-					if (t === 'dark') t = 'churchdark';
-					if (t !== 'church' && t !== 'churchdark') t = 'church';
-					document.documentElement.setAttribute('data-theme', t);
-				} catch (e) {}
-			})();
-		</script>
+		<script is:inline set:html={SCRIPT_TEMA} />
 		<meta name="description" content={description} />
 		<link rel="canonical" href={canonical} />
 		{/* Iconos de pestaña: el isotipo de la marca en azul, generado desde
@@ -109,7 +116,7 @@ const orgJsonLd = {
 		<meta name="twitter:description" content={description} />
 		<meta name="twitter:image" content={ogImage} />
 
-		<script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} is:inline />
+		<script type="application/ld+json" set:html={JSON_LD} is:inline />
 
 		{/* Transiciones de vista nativas de Astro: navegación sin recarga y con
 		    continuidad visual, sin una sola dependencia extra. Es el mayor
