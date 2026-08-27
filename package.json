@@ -30,5 +30,8 @@
   },
   "devDependencies": {
     "@types/sortablejs": "^1.15.9"
+  },
+  "overrides": {
+    "path-to-regexp": "^6.3.0"
   }
 }
