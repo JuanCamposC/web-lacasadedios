@@ -51,12 +51,12 @@ function ico(png, lado) {
   const entrada = Buffer.alloc(16);
   entrada.writeUInt8(lado === 256 ? 0 : lado, 0); // ancho (0 significa 256)
   entrada.writeUInt8(lado === 256 ? 0 : lado, 1); // alto
-  entrada.writeUInt8(0, 2);                       // colores de paleta
-  entrada.writeUInt8(0, 3);                       // reservado
-  entrada.writeUInt16LE(1, 4);                    // planos
-  entrada.writeUInt16LE(32, 6);                   // bits por píxel
-  entrada.writeUInt32LE(png.length, 8);           // tamaño de los datos
-  entrada.writeUInt32LE(22, 12);                  // desplazamiento
+  entrada.writeUInt8(0, 2); // colores de paleta
+  entrada.writeUInt8(0, 3); // reservado
+  entrada.writeUInt16LE(1, 4); // planos
+  entrada.writeUInt16LE(32, 6); // bits por píxel
+  entrada.writeUInt32LE(png.length, 8); // tamaño de los datos
+  entrada.writeUInt32LE(22, 12); // desplazamiento
 
   return Buffer.concat([cabecera, entrada, png]);
 }

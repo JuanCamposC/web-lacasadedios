@@ -57,7 +57,9 @@ const res = await fetch(`${url}/auth/v1/admin/users`, {
 const data = await res.json().catch(() => ({}));
 
 if (!res.ok) {
-  salir(`Supabase respondió ${res.status}: ${data.msg ?? data.error_description ?? JSON.stringify(data)}`);
+  salir(
+    `Supabase respondió ${res.status}: ${data.msg ?? data.error_description ?? JSON.stringify(data)}`,
+  );
 }
 
 console.log(`\n  ✓ Usuario creado: ${data.email}`);

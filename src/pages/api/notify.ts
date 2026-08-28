@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
-import { CONTACT, SITE } from '../../data/site';
+import { SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 
 export const prerender = false;
@@ -16,7 +16,10 @@ function json(data: unknown, status = 200) {
 }
 
 function esc(s: unknown) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function trozos<T>(arr: T[], n: number): T[][] {
@@ -90,7 +93,9 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   const base = process.env.SITE_URL || reqUrl.origin;
   const link = url || base;
 
-  const cuerpo = (urlBaja: string) => `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;color:#17202e">
+  const cuerpo = (
+    urlBaja: string,
+  ) => `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;color:#17202e">
     <h2 style="color:#14295c;margin:0 0 4px">${esc(SITE.name)}</h2>
     <p style="color:#64748b;margin:0 0 20px">Publicamos ${label}:</p>
     <p style="font-size:1.15rem;font-weight:600;margin:0 0 20px">${esc(title)}</p>

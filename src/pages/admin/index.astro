@@ -23,9 +23,21 @@ const [ev, evPub, nw, nwPub, vd, vdPub, subs, ajustes, recientes] = await Promis
   cuenta('subscribers'),
   supabase.from('settings').select('live_enabled, live_title').eq('id', 1).maybeSingle(),
   Promise.all([
-    supabase.from('events').select('id,title,created_at,published').order('created_at', { ascending: false }).limit(4),
-    supabase.from('news').select('id,title,created_at,published').order('created_at', { ascending: false }).limit(4),
-    supabase.from('videos').select('id,title,created_at,published').order('created_at', { ascending: false }).limit(4),
+    supabase
+      .from('events')
+      .select('id,title,created_at,published')
+      .order('created_at', { ascending: false })
+      .limit(4),
+    supabase
+      .from('news')
+      .select('id,title,created_at,published')
+      .order('created_at', { ascending: false })
+      .limit(4),
+    supabase
+      .from('videos')
+      .select('id,title,created_at,published')
+      .order('created_at', { ascending: false })
+      .limit(4),
   ]),
 ]);
 
@@ -80,13 +92,11 @@ const TIPO = {
 
 type Fila = { id: string; title: string; created_at: string; published: boolean };
 const [evR, nwR, vdR] = recientes;
-const actividad = (
-  [
-    ...((evR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'events' as const })),
-    ...((nwR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'news' as const })),
-    ...((vdR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'videos' as const })),
-  ]
-)
+const actividad = [
+  ...((evR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'events' as const })),
+  ...((nwR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'news' as const })),
+  ...((vdR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'videos' as const })),
+]
   .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
   .slice(0, 6);
 
@@ -94,7 +104,11 @@ const fecha = (d: string) =>
   new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: 'short' }).format(new Date(d));
 ---
 
-<AdminLayout title="Inicio" description="Todo el contenido del sitio, en un solo lugar." active="inicio">
+<AdminLayout
+  title="Inicio"
+  description="Todo el contenido del sitio, en un solo lugar."
+  active="inicio"
+>
   <!-- Estado de la transmisión: lo primero, porque es lo único que cambia el
        sitio al instante y lo que más se consulta un domingo. -->
   <a
@@ -107,15 +121,24 @@ const fecha = (d: string) =>
     </span>
     <span class="min-w-0 flex-1">
       <span class="flex items-center gap-2">
-        {enVivo && <span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-error" aria-hidden="true"></span>}
+        {
+          enVivo && (
+            <span
+              class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-error"
+              aria-hidden="true"
+            />
+          )
+        }
         <strong class={enVivo ? 'text-error' : ''}>
           {enVivo ? 'El sitio está mostrando una transmisión en vivo' : 'No hay transmisión activa'}
         </strong>
       </span>
       <span class="mt-0.5 block truncate text-sm text-base-content/60">
-        {enVivo
-          ? (ajustes.data?.live_title || 'Sin título') + ' — toca para cambiarla o apagarla'
-          : 'Toca para activar la transmisión cuando empiece el culto'}
+        {
+          enVivo
+            ? (ajustes.data?.live_title || 'Sin título') + ' — toca para cambiarla o apagarla'
+            : 'Toca para activar la transmisión cuando empiece el culto'
+        }
       </span>
     </span>
     <Icon name="lucide:chevron-right" class="h-5 w-5 shrink-0 text-base-content/35" />
@@ -123,25 +146,35 @@ const fecha = (d: string) =>
 
   <!-- Cifras -->
   <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    {tarjetas.map((c, i) => (
-      <a href={c.href} data-reveal data-reveal-delay={i * 70} class="panel panel-lift group p-5">
-        <div class="flex items-start justify-between">
-          <span class={c.tile}>
-            <Icon name={c.icon} class="h-5 w-5" />
-          </span>
-          <Icon name="lucide:arrow-up-right" class="h-4 w-4 text-base-content/25 transition group-hover:text-primary" />
-        </div>
-        <p class="mt-4 flex items-baseline gap-2">
-          <span data-count={c.total} class="font-data text-4xl font-bold leading-none text-primary">0</span>
-          <span class="text-sm font-semibold">{c.label}</span>
-        </p>
-        <p class="mt-1.5 text-xs text-base-content/55">
-          {c.publicados === null
-            ? 'Personas suscritas al boletín'
-            : `${c.publicados} publicado${c.publicados === 1 ? '' : 's'} · ${c.total - c.publicados} borrador${c.total - c.publicados === 1 ? '' : 'es'}`}
-        </p>
-      </a>
-    ))}
+    {
+      tarjetas.map((c, i) => (
+        <a href={c.href} data-reveal data-reveal-delay={i * 70} class="panel panel-lift group p-5">
+          <div class="flex items-start justify-between">
+            <span class={c.tile}>
+              <Icon name={c.icon} class="h-5 w-5" />
+            </span>
+            <Icon
+              name="lucide:arrow-up-right"
+              class="h-4 w-4 text-base-content/25 transition group-hover:text-primary"
+            />
+          </div>
+          <p class="mt-4 flex items-baseline gap-2">
+            <span
+              data-count={c.total}
+              class="font-data text-4xl font-bold leading-none text-primary"
+            >
+              0
+            </span>
+            <span class="text-sm font-semibold">{c.label}</span>
+          </p>
+          <p class="mt-1.5 text-xs text-base-content/55">
+            {c.publicados === null
+              ? 'Personas suscritas al boletín'
+              : `${c.publicados} publicado${c.publicados === 1 ? '' : 's'} · ${c.total - c.publicados} borrador${c.total - c.publicados === 1 ? '' : 'es'}`}
+          </p>
+        </a>
+      ))
+    }
   </div>
 
   <div class="mt-6 grid gap-6 lg:grid-cols-3">
@@ -151,32 +184,39 @@ const fecha = (d: string) =>
         <Icon name="lucide:history" class="h-4 w-4 text-accent" /> Lo último que se cargó
       </h2>
 
-      {actividad.length === 0 ? (
-        <p class="mt-5 rounded border border-dashed border-base-300 px-4 py-8 text-center text-sm text-base-content/55">
-          Todavía no hay contenido. Empieza creando un evento o una noticia.
-        </p>
-      ) : (
-        <ul class="mt-4 divide-y divide-base-300/70">
-          {actividad.map((r) => (
-            <li>
-              <a href={TIPO[r.tipo].href} class="flex items-center gap-3 py-3 transition-colors hover:bg-base-200/50">
-                <span class="tile h-9 w-9 shrink-0">
-                  <Icon name={TIPO[r.tipo].icon} class="h-4 w-4" />
-                </span>
-                <span class="min-w-0 flex-1">
-                  <span class="block truncate text-sm font-medium">{r.title}</span>
-                  <span class="font-data text-xs uppercase tracking-wide text-base-content/50">
-                    {TIPO[r.tipo].label} · {fecha(r.created_at)}
+      {
+        actividad.length === 0 ? (
+          <p class="mt-5 rounded border border-dashed border-base-300 px-4 py-8 text-center text-sm text-base-content/55">
+            Todavía no hay contenido. Empieza creando un evento o una noticia.
+          </p>
+        ) : (
+          <ul class="mt-4 divide-y divide-base-300/70">
+            {actividad.map((r) => (
+              <li>
+                <a
+                  href={TIPO[r.tipo].href}
+                  class="flex items-center gap-3 py-3 transition-colors hover:bg-base-200/50"
+                >
+                  <span class="tile h-9 w-9 shrink-0">
+                    <Icon name={TIPO[r.tipo].icon} class="h-4 w-4" />
                   </span>
-                </span>
-                <span class={`badge badge-sm shrink-0 ${r.published ? 'badge-success' : 'badge-ghost'}`}>
-                  {r.published ? 'Publicado' : 'Borrador'}
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+                  <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-medium">{r.title}</span>
+                    <span class="font-data text-xs uppercase tracking-wide text-base-content/50">
+                      {TIPO[r.tipo].label} · {fecha(r.created_at)}
+                    </span>
+                  </span>
+                  <span
+                    class={`badge badge-sm shrink-0 ${r.published ? 'badge-success' : 'badge-ghost'}`}
+                  >
+                    {r.published ? 'Publicado' : 'Borrador'}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
     </section>
 
     <!-- Acciones y ayuda -->
@@ -186,11 +226,13 @@ const fecha = (d: string) =>
           <Icon name="lucide:zap" class="h-4 w-4 text-accent" /> Crear algo
         </h2>
         <div class="mt-4 space-y-2">
-          {acciones.map((a) => (
-            <a href={a.href} class="btn btn-outline btn-sm w-full justify-start gap-2">
-              <Icon name={a.icon} class="h-4 w-4" /> {a.label}
-            </a>
-          ))}
+          {
+            acciones.map((a) => (
+              <a href={a.href} class="btn btn-outline btn-sm w-full justify-start gap-2">
+                <Icon name={a.icon} class="h-4 w-4" /> {a.label}
+              </a>
+            ))
+          }
         </div>
       </section>
 

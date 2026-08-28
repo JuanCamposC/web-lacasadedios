@@ -26,9 +26,7 @@ async function readBody(request: Request): Promise<Record<string, string>> {
   const type = request.headers.get('content-type') ?? '';
   if (type.includes('application/json')) {
     const raw = await request.json().catch(() => ({}));
-    return Object.fromEntries(
-      Object.entries(raw ?? {}).map(([k, v]) => [k, String(v ?? '')]),
-    );
+    return Object.fromEntries(Object.entries(raw ?? {}).map(([k, v]) => [k, String(v ?? '')]));
   }
   const form = await request.formData();
   return Object.fromEntries(
@@ -75,7 +73,8 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   }
 
   const remitente = resolverRemitente();
-  if (!remitente.ok) return done(false, { reason: 'from_invalido', email: CONTACT.email, status: 500 });
+  if (!remitente.ok)
+    return done(false, { reason: 'from_invalido', email: CONTACT.email, status: 500 });
   const from = remitente.from;
   const filas: [string, string][] = [
     ['Nombre', nombre],

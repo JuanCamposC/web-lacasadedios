@@ -1,0 +1,13 @@
+dist
+.vercel
+.astro
+node_modules
+package-lock.json
+public
+# El esquema lleva alineaciones a mano en las definiciones de columna que
+# Prettier no entiende y desharía.
+supabase/schema.sql
+
+# Sistema de diseño: las reglas de una línea y el orden de los bloques están
+# puestos a mano y Prettier los desharía. Fuera de este trabajo de auditoría.
+src/styles/global.css

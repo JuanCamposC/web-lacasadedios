@@ -10,8 +10,7 @@ export const SITE = {
   legalName: 'Iglesia Evangélica La Casa de Dios',
   tagline: 'Iglesia Cristiana',
   claim: 'La Palabra de Dios es el fundamento de todo lo que hacemos.',
-  intro:
-    'Comunidad de fe cristiana con templos en Santiago, San Miguel, Limache y Coya.',
+  intro: 'Comunidad de fe cristiana con templos en Santiago, San Miguel, Limache y Coya.',
   verse: {
     text: 'Porque donde están dos o tres congregados en mi nombre, allí estoy yo en medio de ellos.',
     ref: 'Mateo 18:20',

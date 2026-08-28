@@ -7,14 +7,7 @@ interface Props {
   tone?: 'primary' | 'accent' | 'secondary';
   invert?: boolean; // texto claro sobre fondo oscuro
 }
-const {
-  eyebrow,
-  title,
-  subtitle,
-  align = 'center',
-  tone = 'accent',
-  invert = false,
-} = Astro.props;
+const { eyebrow, title, subtitle, align = 'center', tone = 'accent', invert = false } = Astro.props;
 
 // Clases literales: Tailwind rastrea el código fuente, así que `text-${tone}`
 // no generaría nada. El mapa mantiene los nombres completos a la vista.
@@ -35,10 +28,10 @@ const toneCls = invert ? 'text-accent' : (TONE[tone] ?? TONE.accent);
   >
     {title}
   </h2>
-  {subtitle && (
-    <p class={`mt-4 text-lg ${invert ? 'text-white/70' : 'text-base-content/70'}`}>
-      {subtitle}
-    </p>
-  )}
+  {
+    subtitle && (
+      <p class={`mt-4 text-lg ${invert ? 'text-white/70' : 'text-base-content/70'}`}>{subtitle}</p>
+    )
+  }
   <slot />
 </div>

@@ -30,7 +30,11 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
         }`}
       >
         <span class="flex items-center gap-3">
-          <span class={s.live_enabled ? 'tile tile-lg bg-error/15 text-error' : 'tile tile-lg tile-muted'}>
+          <span
+            class={s.live_enabled
+              ? 'tile tile-lg bg-error/15 text-error'
+              : 'tile tile-lg tile-muted'}
+          >
             <Icon name="lucide:radio" class="h-6 w-6" />
           </span>
           <span>
@@ -40,7 +44,12 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
             </span>
           </span>
         </span>
-        <input type="checkbox" name="live_enabled" class="toggle toggle-error" checked={s.live_enabled} />
+        <input
+          type="checkbox"
+          name="live_enabled"
+          class="toggle toggle-error"
+          checked={s.live_enabled}
+        />
       </label>
 
       <label class="block">
@@ -58,7 +67,9 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
       </label>
 
       <label class="block">
-        <span class="mb-1.5 block text-sm font-medium">Título <span class="text-base-content/50">(opcional)</span></span>
+        <span class="mb-1.5 block text-sm font-medium"
+          >Título <span class="text-base-content/50">(opcional)</span></span
+        >
         <input
           type="text"
           name="live_title"

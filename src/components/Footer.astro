@@ -31,7 +31,10 @@ const atajosMovil = [
       <p class="mx-auto mt-2 hidden max-w-lg text-sm opacity-70 sm:block sm:text-base">
         Suscríbete y entérate de eventos, prédicas y noticias de {SITE.name}.
       </p>
-      <form id="newsletter-form" class="mx-auto mt-4 flex max-w-md flex-col gap-2.5 sm:mt-6 sm:flex-row sm:gap-3">
+      <form
+        id="newsletter-form"
+        class="mx-auto mt-4 flex max-w-md flex-col gap-2.5 sm:mt-6 sm:flex-row sm:gap-3"
+      >
         <label for="newsletter-email" class="sr-only">Correo electrónico</label>
         <input
           id="newsletter-email"
@@ -54,63 +57,89 @@ const atajosMovil = [
     <div class="grid gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-12">
       <!-- Marca + contacto -->
       <div class="sm:col-span-2 lg:col-span-3">
-        <img src="/marca/logo-blanco.png" alt={SITE.name} class="h-8 w-auto sm:h-9" width="1220" height="276" />
+        <img
+          src="/marca/logo-blanco.png"
+          alt={SITE.name}
+          class="h-8 w-auto sm:h-9"
+          width="1220"
+          height="276"
+        />
         <p class="mb-4 mt-3 hidden max-w-xs text-sm opacity-70 sm:block">{SITE.intro}</p>
 
         <div class="mt-4 flex flex-col gap-2 text-sm opacity-80 sm:mt-0">
-          <a href={`mailto:${CONTACT.email}`} class="inline-flex items-center gap-2 hover:opacity-100">
+          <a
+            href={`mailto:${CONTACT.email}`}
+            class="inline-flex items-center gap-2 hover:opacity-100"
+          >
             <Icon name="lucide:mail" class="h-4 w-4 shrink-0 text-accent" />
             <span class="break-all">{CONTACT.email}</span>
           </a>
-          {hasPhone && (
-            <a href={`tel:${CONTACT.phoneHref}`} class="inline-flex items-center gap-2 hover:opacity-100">
-              <Icon name="lucide:phone" class="h-4 w-4 shrink-0 text-accent" /> {CONTACT.phone}
-            </a>
-          )}
+          {
+            hasPhone && (
+              <a
+                href={`tel:${CONTACT.phoneHref}`}
+                class="inline-flex items-center gap-2 hover:opacity-100"
+              >
+                <Icon name="lucide:phone" class="h-4 w-4 shrink-0 text-accent" /> {CONTACT.phone}
+              </a>
+            )
+          }
         </div>
 
         <div class="mt-5 flex gap-3">
-          {SOCIAL.map((s) => (
-            <a
-              href={s.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={s.label}
-              class="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-accent"
-            >
-              <Icon name={s.icon} class="h-5 w-5" />
-            </a>
-          ))}
+          {
+            SOCIAL.map((s) => (
+              <a
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={s.label}
+                class="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-accent"
+              >
+                <Icon name={s.icon} class="h-5 w-5" />
+              </a>
+            ))
+          }
         </div>
       </div>
 
       <!-- Móvil: seis destinos en fichas, en lugar del mapa completo -->
       <nav class="sm:hidden" aria-label="Enlaces del sitio">
         <ul class="flex flex-wrap gap-2">
-          {atajosMovil.map((l) => (
-            <li>
-              <a
-                href={l.href}
-                class="inline-flex rounded-full border border-white/20 px-3.5 py-1.5 text-sm transition hover:border-accent hover:text-accent"
-              >
-                {l.label}
-              </a>
-            </li>
-          ))}
+          {
+            atajosMovil.map((l) => (
+              <li>
+                <a
+                  href={l.href}
+                  class="inline-flex rounded-full border border-white/20 px-3.5 py-1.5 text-sm transition hover:border-accent hover:text-accent"
+                >
+                  {l.label}
+                </a>
+              </li>
+            ))
+          }
         </ul>
       </nav>
 
       <!-- Escritorio: el mapa completo -->
-      {FOOTER_NAV.map((col) => (
-        <nav class="hidden sm:block lg:col-span-3" aria-label={col.title}>
-          <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider opacity-90">{col.title}</h3>
-          <ul class="flex flex-col gap-2 text-sm opacity-80">
-            {col.items.map((l) => (
-              <li><a href={l.href} class="hover:text-accent hover:opacity-100">{l.label}</a></li>
-            ))}
-          </ul>
-        </nav>
-      ))}
+      {
+        FOOTER_NAV.map((col) => (
+          <nav class="hidden sm:block lg:col-span-3" aria-label={col.title}>
+            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider opacity-90">
+              {col.title}
+            </h3>
+            <ul class="flex flex-col gap-2 text-sm opacity-80">
+              {col.items.map((l) => (
+                <li>
+                  <a href={l.href} class="hover:text-accent hover:opacity-100">
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))
+      }
     </div>
 
     <div class="mt-8 border-t border-white/10 pt-5 sm:mt-12 sm:pt-6">
@@ -118,9 +147,14 @@ const atajosMovil = [
       <p class="hidden text-center text-xs italic opacity-50 sm:block">
         «{SITE.verse.text}» — {SITE.verse.ref}
       </p>
-      <div class="flex flex-col items-center justify-between gap-2 text-sm opacity-70 sm:mt-3 sm:flex-row">
+      <div
+        class="flex flex-col items-center justify-between gap-2 text-sm opacity-70 sm:mt-3 sm:flex-row"
+      >
         <span>© {year} {SITE.name}.</span>
-        <a href="/admin" class="inline-flex items-center gap-1 opacity-70 transition hover:text-accent hover:opacity-100">
+        <a
+          href="/admin"
+          class="inline-flex items-center gap-1 opacity-70 transition hover:text-accent hover:opacity-100"
+        >
           <Icon name="lucide:lock" class="h-3.5 w-3.5" /> Ingresar
         </a>
       </div>

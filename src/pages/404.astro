@@ -29,28 +29,38 @@ const atajos = [
       </p>
 
       <div class="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {atajos.map((a) => (
-          <a href={a.href} class="panel panel-sm panel-lift flex items-center gap-3 p-4 text-left">
-            <span class="tile">
-              <Icon name={a.icon} class="h-5 w-5" />
-            </span>
-            <span class="font-medium">{a.label}</span>
-            <Icon name="lucide:arrow-right" class="ml-auto h-4 w-4 shrink-0 text-base-content/40" />
-          </a>
-        ))}
+        {
+          atajos.map((a) => (
+            <a
+              href={a.href}
+              class="panel panel-sm panel-lift flex items-center gap-3 p-4 text-left"
+            >
+              <span class="tile">
+                <Icon name={a.icon} class="h-5 w-5" />
+              </span>
+              <span class="font-medium">{a.label}</span>
+              <Icon
+                name="lucide:arrow-right"
+                class="ml-auto h-4 w-4 shrink-0 text-base-content/40"
+              />
+            </a>
+          ))
+        }
       </div>
 
       <div class="mt-10 border-t border-base-300 pt-8">
         <p class="mb-4 text-sm text-base-content/60">¿Buscabas un templo en particular?</p>
         <div class="flex flex-wrap justify-center gap-2">
-          {templos.map((t) => (
-            <a
-              href={`/templos/${t.slug}`}
-              class="inline-flex items-center gap-1.5 rounded-full border border-base-300 px-4 py-2 text-sm transition hover:border-primary hover:text-primary"
-            >
-              <Icon name="lucide:map-pin" class="h-4 w-4" /> {t.short}
-            </a>
-          ))}
+          {
+            templos.map((t) => (
+              <a
+                href={`/templos/${t.slug}`}
+                class="inline-flex items-center gap-1.5 rounded-full border border-base-300 px-4 py-2 text-sm transition hover:border-primary hover:text-primary"
+              >
+                <Icon name="lucide:map-pin" class="h-4 w-4" /> {t.short}
+              </a>
+            ))
+          }
         </div>
       </div>
     </div>

@@ -37,13 +37,20 @@ const cifras = [
   <!-- Cifras -->
   <section class="border-b border-base-300 bg-base-100 px-4 py-8">
     <div class="wrap grid grid-cols-3 gap-4 text-center">
-      {cifras.map((c, i) => (
-        <Reveal delay={i * 70} class="flex flex-col items-center gap-1">
-          <Icon name={c.icon} class="h-5 w-5 text-accent" />
-          <span data-count={c.value} class="font-data text-3xl font-bold text-primary md:text-4xl">0</span>
-          <span class="text-xs text-base-content/60 sm:text-sm">{c.label}</span>
-        </Reveal>
-      ))}
+      {
+        cifras.map((c, i) => (
+          <Reveal delay={i * 70} class="flex flex-col items-center gap-1">
+            <Icon name={c.icon} class="h-5 w-5 text-accent" />
+            <span
+              data-count={c.value}
+              class="font-data text-3xl font-bold text-primary md:text-4xl"
+            >
+              0
+            </span>
+            <span class="text-xs text-base-content/60 sm:text-sm">{c.label}</span>
+          </Reveal>
+        ))
+      }
     </div>
   </section>
 
@@ -57,11 +64,13 @@ const cifras = [
       />
 
       <div class="mt-12 grid gap-6 md:grid-cols-2">
-        {templos.map((t, i) => (
-          <Reveal delay={(i % 2) * 90} class="h-full">
-            <TemploCard templo={t} variant="detailed" />
-          </Reveal>
-        ))}
+        {
+          templos.map((t, i) => (
+            <Reveal delay={(i % 2) * 90} class="h-full">
+              <TemploCard templo={t} variant="detailed" />
+            </Reveal>
+          ))
+        }
       </div>
 
       <Reveal class="mt-10 text-center">

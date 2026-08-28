@@ -75,18 +75,30 @@ const jsonLd = {
 
   <!-- Cabecera del artículo -->
   <header class="relative overflow-hidden bg-base-200 pt-16">
-    {item.image_url && (
-      <>
-        <img src={item.image_url} alt="" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover opacity-20" />
-        <div class="absolute inset-0 bg-gradient-to-b from-base-200/80 to-base-200"></div>
-      </>
-    )}
+    {
+      item.image_url && (
+        <>
+          <img
+            src={item.image_url}
+            alt=""
+            aria-hidden="true"
+            class="absolute inset-0 h-full w-full object-cover opacity-20"
+          />
+          <div class="absolute inset-0 bg-gradient-to-b from-base-200/80 to-base-200" />
+        </>
+      )
+    }
     <div class="wrap-narrow relative px-4 py-14 md:py-20">
-      <a href="/noticias" class="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-accent">
+      <a
+        href="/noticias"
+        class="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-accent"
+      >
         <Icon name="lucide:arrow-left" class="h-4 w-4" /> Volver a noticias
       </a>
-      {/* `block` a propósito: .eyebrow es inline-block y se pegaba al enlace
-          de volver, encimándose con él. */}
+      {
+        /* `block` a propósito: .eyebrow es inline-block y se pegaba al enlace
+          de volver, encimándose con él. */
+      }
       <p class="eyebrow mt-6 block text-accent">Noticias</p>
       <h1 class="mt-2 font-display leading-[1.1] text-[clamp(2rem,5.5vw,3.25rem)]">
         {item.title}
@@ -109,25 +121,39 @@ const jsonLd = {
   <!-- Cuerpo -->
   <article class="section bg-base-100">
     <div class="wrap-narrow">
-      {item.image_url && (
-        <Reveal class="mb-10 block overflow-hidden rounded-xl">
-          <img src={item.image_url} alt={item.title} class="w-full object-cover" loading="eager" />
-        </Reveal>
-      )}
-
-      {item.excerpt && (
-        <p data-reveal class="mb-8 border-l-4 border-accent pl-5 text-xl font-light leading-relaxed text-base-content/85">
-          {item.excerpt}
-        </p>
-      )}
-
-      {cuerpoHtml ? (
-        <div data-reveal data-reveal-delay="60" class="prose-lcd" set:html={cuerpoHtml} />
-      ) : (
-        !item.excerpt && (
-          <p class="prose-lcd italic opacity-60">Esta noticia todavía no tiene contenido.</p>
+      {
+        item.image_url && (
+          <Reveal class="mb-10 block overflow-hidden rounded-xl">
+            <img
+              src={item.image_url}
+              alt={item.title}
+              class="w-full object-cover"
+              loading="eager"
+            />
+          </Reveal>
         )
-      )}
+      }
+
+      {
+        item.excerpt && (
+          <p
+            data-reveal
+            class="mb-8 border-l-4 border-accent pl-5 text-xl font-light leading-relaxed text-base-content/85"
+          >
+            {item.excerpt}
+          </p>
+        )
+      }
+
+      {
+        cuerpoHtml ? (
+          <div data-reveal data-reveal-delay="60" class="prose-lcd" set:html={cuerpoHtml} />
+        ) : (
+          !item.excerpt && (
+            <p class="prose-lcd italic opacity-60">Esta noticia todavía no tiene contenido.</p>
+          )
+        )
+      }
 
       <!-- Compartir -->
       <div class="mt-12 flex flex-wrap items-center gap-3 border-t border-base-300 pt-8">
@@ -148,42 +174,58 @@ const jsonLd = {
         >
           <Icon name="lucide:share-2" class="h-4 w-4" /> Facebook
         </a>
-        <button type="button" id="copiar-enlace" data-url={canonical} class="btn btn-sm btn-ghost gap-1.5">
-          <Icon name="lucide:link" class="h-4 w-4" /> <span data-label>Copiar enlace</span>
+        <button
+          type="button"
+          id="copiar-enlace"
+          data-url={canonical}
+          class="btn btn-sm btn-ghost gap-1.5"
+        >
+          <Icon name="lucide:link" class="h-4 w-4" />
+          <span data-label>Copiar enlace</span>
         </button>
       </div>
     </div>
   </article>
 
   <!-- Otras noticias -->
-  {otras.length > 0 && (
-    <section class="section bg-base-200">
-      <div class="wrap">
-        <h2 class="font-display text-2xl">Sigue leyendo</h2>
-        <div class="mt-8 grid gap-5 md:grid-cols-3">
-          {otras.map((n, i) => (
-            <Reveal delay={(i % 3) * 80} class="h-full">
-              <a href={`/noticias/${n.slug ?? n.id}`} class="panel panel-sm panel-lift group flex h-full flex-col overflow-hidden">
-                <div class="h-36 overflow-hidden bg-base-300">
-                  {n.image_url ? (
-                    <img src={n.image_url} alt="" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-                  ) : (
-                    <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 text-accent/40">
-                      <Icon name="lucide:newspaper" class="h-10 w-10" />
-                    </div>
-                  )}
-                </div>
-                <div class="flex flex-1 flex-col p-5">
-                  <span class="text-xs text-base-content/55">{fmtDate(n.published_at)}</span>
-                  <h3 class="mt-1 font-bold leading-snug clamp-3">{n.title}</h3>
-                </div>
-              </a>
-            </Reveal>
-          ))}
+  {
+    otras.length > 0 && (
+      <section class="section bg-base-200">
+        <div class="wrap">
+          <h2 class="font-display text-2xl">Sigue leyendo</h2>
+          <div class="mt-8 grid gap-5 md:grid-cols-3">
+            {otras.map((n, i) => (
+              <Reveal delay={(i % 3) * 80} class="h-full">
+                <a
+                  href={`/noticias/${n.slug ?? n.id}`}
+                  class="panel panel-sm panel-lift group flex h-full flex-col overflow-hidden"
+                >
+                  <div class="h-36 overflow-hidden bg-base-300">
+                    {n.image_url ? (
+                      <img
+                        src={n.image_url}
+                        alt=""
+                        class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 text-accent/40">
+                        <Icon name="lucide:newspaper" class="h-10 w-10" />
+                      </div>
+                    )}
+                  </div>
+                  <div class="flex flex-1 flex-col p-5">
+                    <span class="text-xs text-base-content/55">{fmtDate(n.published_at)}</span>
+                    <h3 class="mt-1 font-bold leading-snug clamp-3">{n.title}</h3>
+                  </div>
+                </a>
+              </Reveal>
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
-  )}
+      </section>
+    )
+  }
 
   <CtaBand
     title="No te pierdas nada"

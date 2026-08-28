@@ -45,7 +45,10 @@ const videosJsonLd =
     : null;
 ---
 
-<Layout title="Videos · La Casa de Dios" description="Prédicas y enseñanzas en video de La Casa de Dios — Conociendo la Palabra.">
+<Layout
+  title="Videos · La Casa de Dios"
+  description="Prédicas y enseñanzas en video de La Casa de Dios — Conociendo la Palabra."
+>
   <PageHero
     image={IMG.camara}
     alt="Cámara de video"
@@ -55,68 +58,86 @@ const videosJsonLd =
     height="min-h-[50vh]"
   />
 
-  {videosJsonLd && (
-    <script type="application/ld+json" set:html={JSON.stringify(videosJsonLd)} is:inline />
-  )}
+  {
+    videosJsonLd && (
+      <script type="application/ld+json" set:html={JSON.stringify(videosJsonLd)} is:inline />
+    )
+  }
 
   <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Videos' }]} />
 
   <section class="section bg-base-100">
     <div class="wrap">
-      {withId.length === 0 ? (
-        <EmptyState
-          icon="lucide:youtube"
-          title="Pronto publicaremos más videos"
-          text="Mientras tanto, en nuestro canal de YouTube están todas las prédicas y transmisiones anteriores."
-        >
-          <a href={YOUTUBE_CHANNEL} target="_blank" rel="noopener noreferrer" class="btn btn-primary gap-2">
-            <Icon name="lucide:youtube" class="h-5 w-5" /> Ver canal en YouTube
-          </a>
-          <a href="/en-vivo" class="btn btn-ghost gap-2">
-            <Icon name="lucide:radio" class="h-5 w-5" /> Transmisión en vivo
-          </a>
-        </EmptyState>
-      ) : (
-        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {withId.map((v, i) => (
-            <Reveal delay={(i % 3) * 80} class="h-full">
-              <div class="panel panel-sm panel-lift flex h-full flex-col overflow-hidden">
-                <div class="aspect-video overflow-hidden bg-black">
-                  <iframe
-                    class="h-full w-full"
-                    src={`https://www.youtube-nocookie.com/embed/${v.vid}`}
-                    title={v.title}
-                    loading="lazy"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen
-                  ></iframe>
+      {
+        withId.length === 0 ? (
+          <EmptyState
+            icon="lucide:youtube"
+            title="Pronto publicaremos más videos"
+            text="Mientras tanto, en nuestro canal de YouTube están todas las prédicas y transmisiones anteriores."
+          >
+            <a
+              href={YOUTUBE_CHANNEL}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-primary gap-2"
+            >
+              <Icon name="lucide:youtube" class="h-5 w-5" /> Ver canal en YouTube
+            </a>
+            <a href="/en-vivo" class="btn btn-ghost gap-2">
+              <Icon name="lucide:radio" class="h-5 w-5" /> Transmisión en vivo
+            </a>
+          </EmptyState>
+        ) : (
+          <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {withId.map((v, i) => (
+              <Reveal delay={(i % 3) * 80} class="h-full">
+                <div class="panel panel-sm panel-lift flex h-full flex-col overflow-hidden">
+                  <div class="aspect-video overflow-hidden bg-black">
+                    <iframe
+                      class="h-full w-full"
+                      src={`https://www.youtube-nocookie.com/embed/${v.vid}`}
+                      title={v.title}
+                      loading="lazy"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen
+                    />
+                  </div>
+                  <div class="flex flex-1 flex-col p-5">
+                    <h2 class="card-title text-lg leading-snug">{v.title}</h2>
+                    {v.description && (
+                      <p class="mt-1 text-sm text-base-content/75">{v.description}</p>
+                    )}
+                  </div>
                 </div>
-                <div class="flex flex-1 flex-col p-5">
-                  <h2 class="card-title text-lg leading-snug">{v.title}</h2>
-                  {v.description && <p class="mt-1 text-sm text-base-content/75">{v.description}</p>}
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      )}
+              </Reveal>
+            ))}
+          </div>
+        )
+      }
     </div>
   </section>
 
-  {withId.length > 0 && (
-    <CtaBand
-      eyebrow="Hay mucho más"
-      title="Todas nuestras prédicas están en YouTube"
-      text="Suscríbete al canal y no te pierdas las nuevas enseñanzas ni las transmisiones en vivo."
-      image={IMG.estudio}
-      compact
-    >
-      <a href={YOUTUBE_CHANNEL} target="_blank" rel="noopener noreferrer" class="btn gap-2 border-none bg-red-600 text-white hover:bg-red-500">
-        <Icon name="lucide:youtube" class="h-5 w-5" /> Ir al canal
-      </a>
-      <a href="/en-vivo" class="btn gap-2 btn-invert">
-        <Icon name="lucide:radio" class="h-5 w-5" /> En vivo
-      </a>
-    </CtaBand>
-  )}
+  {
+    withId.length > 0 && (
+      <CtaBand
+        eyebrow="Hay mucho más"
+        title="Todas nuestras prédicas están en YouTube"
+        text="Suscríbete al canal y no te pierdas las nuevas enseñanzas ni las transmisiones en vivo."
+        image={IMG.estudio}
+        compact
+      >
+        <a
+          href={YOUTUBE_CHANNEL}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn gap-2 border-none bg-red-600 text-white hover:bg-red-500"
+        >
+          <Icon name="lucide:youtube" class="h-5 w-5" /> Ir al canal
+        </a>
+        <a href="/en-vivo" class="btn gap-2 btn-invert">
+          <Icon name="lucide:radio" class="h-5 w-5" /> En vivo
+        </a>
+      </CtaBand>
+    )
+  }
 </Layout>

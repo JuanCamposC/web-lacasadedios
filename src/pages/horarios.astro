@@ -33,10 +33,18 @@ const semana = weekSchedule();
   />
 
   <!-- Filtro por templo -->
-  <section class="sticky top-16 z-30 border-b border-base-300 bg-base-100/92 px-4 py-3 backdrop-blur-md">
+  <section
+    class="sticky top-16 z-30 border-b border-base-300 bg-base-100/92 px-4 py-3 backdrop-blur-md"
+  >
     <div class="wrap">
-      <div class="flex items-center gap-2 overflow-x-auto pb-1" role="group" aria-label="Filtrar por templo">
-        <span class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/45 sm:inline">
+      <div
+        class="flex items-center gap-2 overflow-x-auto pb-1"
+        role="group"
+        aria-label="Filtrar por templo"
+      >
+        <span
+          class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/45 sm:inline"
+        >
           Filtrar
         </span>
         <button
@@ -47,16 +55,18 @@ const semana = weekSchedule();
         >
           Todos
         </button>
-        {templos.map((t) => (
-          <button
-            type="button"
-            data-filter={t.slug}
-            aria-pressed="false"
-            class="filtro-chip shrink-0 rounded-full border border-base-300 bg-base-100 px-4 py-1.5 text-sm font-medium transition hover:border-primary hover:text-primary"
-          >
-            {t.short}
-          </button>
-        ))}
+        {
+          templos.map((t) => (
+            <button
+              type="button"
+              data-filter={t.slug}
+              aria-pressed="false"
+              class="filtro-chip shrink-0 rounded-full border border-base-300 bg-base-100 px-4 py-1.5 text-sm font-medium transition hover:border-primary hover:text-primary"
+            >
+              {t.short}
+            </button>
+          ))
+        }
       </div>
     </div>
   </section>
@@ -71,25 +81,29 @@ const semana = weekSchedule();
             <span class="cartel-hoy" data-hoy aria-live="polite"></span>
           </header>
 
-          {semana.map((dia) => (
-            <div data-dia data-dia-indice={dia.dayIndex}>
-              <div class="cartel-seccion">
-                <h2>{dia.day}</h2>
-                <span class="cartel-conteo" data-conteo>
-                  {dia.services.length} {dia.services.length === 1 ? 'reunión' : 'reuniones'}
-                </span>
+          {
+            semana.map((dia) => (
+              <div data-dia data-dia-indice={dia.dayIndex}>
+                <div class="cartel-seccion">
+                  <h2>{dia.day}</h2>
+                  <span class="cartel-conteo" data-conteo>
+                    {dia.services.length} {dia.services.length === 1 ? 'reunión' : 'reuniones'}
+                  </span>
+                </div>
+                <ul class="cartel-lista">
+                  {dia.services.map((s) => (
+                    <li class="cartel-linea" data-servicio data-templo={s.templo.slug}>
+                      <span class="cartel-hora">{s.time}</span>
+                      <span class="cartel-nombre">{s.name}</span>
+                      <a class="cartel-lugar" href={`/templos/${s.templo.slug}`}>
+                        {s.templo.short}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul class="cartel-lista">
-                {dia.services.map((s) => (
-                  <li class="cartel-linea" data-servicio data-templo={s.templo.slug}>
-                    <span class="cartel-hora">{s.time}</span>
-                    <span class="cartel-nombre">{s.name}</span>
-                    <a class="cartel-lugar" href={`/templos/${s.templo.slug}`}>{s.templo.short}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+            ))
+          }
 
           <footer class="cartel-pie">
             Los horarios pueden cambiar en fechas especiales. Ante la duda, escríbenos.

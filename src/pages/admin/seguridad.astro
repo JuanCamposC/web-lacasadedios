@@ -20,10 +20,7 @@ const totp = factores?.totp?.[0] ?? null;
 const activo = totp?.status === 'verified';
 ---
 
-<AdminLayout
-  title="Seguridad"
-  description="Verificación en dos pasos para entrar al panel"
->
+<AdminLayout title="Seguridad" description="Verificación en dos pasos para entrar al panel">
   <div class="max-w-2xl space-y-6">
     <div class="panel p-6">
       <div class="flex items-start gap-4">
@@ -33,29 +30,41 @@ const activo = totp?.status === 'verified';
         <div class="min-w-0 flex-1">
           <h2 class="text-lg font-bold">Verificación en dos pasos</h2>
           <p class="mt-1 text-sm text-base-content/70">
-            {activo
-              ? 'Está activa. Al entrar al panel se te pedirá el código de tu aplicación de autenticación además de la contraseña.'
-              : 'No está activa. Con solo la contraseña, quien la consiga entra al panel. Actívala: toma un minuto.'}
+            {
+              activo
+                ? 'Está activa. Al entrar al panel se te pedirá el código de tu aplicación de autenticación además de la contraseña.'
+                : 'No está activa. Con solo la contraseña, quien la consiga entra al panel. Actívala: toma un minuto.'
+            }
           </p>
 
           <div class="mt-4 flex flex-wrap gap-2">
-            {!activo && (
-              <button id="empezar" class="btn btn-primary btn-sm gap-2">
-                <Icon name="lucide:shield-plus" class="h-4 w-4" /> Activar
-              </button>
-            )}
-            {activo && (
-              <button id="quitar" class="btn btn-ghost btn-sm gap-2 text-error" data-factor={totp?.id}>
-                <Icon name="lucide:shield-off" class="h-4 w-4" /> Desactivar
-              </button>
-            )}
+            {
+              !activo && (
+                <button id="empezar" class="btn btn-primary btn-sm gap-2">
+                  <Icon name="lucide:shield-plus" class="h-4 w-4" /> Activar
+                </button>
+              )
+            }
+            {
+              activo && (
+                <button
+                  id="quitar"
+                  class="btn btn-ghost btn-sm gap-2 text-error"
+                  data-factor={totp?.id}
+                >
+                  <Icon name="lucide:shield-off" class="h-4 w-4" /> Desactivar
+                </button>
+              )
+            }
           </div>
         </div>
       </div>
     </div>
 
-    {/* Alta. Oculto hasta que se pulsa «Activar»: el QR solo se genera cuando
-        hay alguien mirando la pantalla, no en cada carga de la página. */}
+    {
+      /* Alta. Oculto hasta que se pulsa «Activar»: el QR solo se genera cuando
+        hay alguien mirando la pantalla, no en cada carga de la página. */
+    }
     <div id="alta" class="panel hidden p-6">
       <h3 class="font-bold">1 · Escanea el código</h3>
       <p class="mt-1 text-sm text-base-content/70">
@@ -67,7 +76,8 @@ const activo = totp?.status === 'verified';
         <details class="text-sm">
           <summary class="cursor-pointer text-base-content/60">No puedo escanear el código</summary>
           <p class="mt-2 text-base-content/70">Escribe esta clave a mano en la aplicación:</p>
-          <code id="secreto" class="mt-1 block break-all rounded bg-base-200 p-2 font-mono text-xs"></code>
+          <code id="secreto" class="mt-1 block break-all rounded bg-base-200 p-2 font-mono text-xs"
+          ></code>
         </details>
       </div>
 
@@ -136,7 +146,8 @@ const activo = totp?.status === 'verified';
       factorId = data.id;
       // `qr_code` viene como SVG en un data: URI. La CSP permite data: en
       // img-src justo para esto.
-      if (qr) qr.innerHTML = `<img src="${data.totp.qr_code}" alt="Código QR" width="180" height="180" />`;
+      if (qr)
+        qr.innerHTML = `<img src="${data.totp.qr_code}" alt="Código QR" width="180" height="180" />`;
       if (secreto) secreto.textContent = data.totp.secret;
       alta.classList.remove('hidden');
       alta.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -164,7 +175,12 @@ const activo = totp?.status === 'verified';
     quitar?.addEventListener('click', async () => {
       const id = (quitar as HTMLElement).dataset.factor;
       if (!id) return;
-      if (!confirm('¿Desactivar la verificación en dos pasos? El panel quedará protegido solo por la contraseña.')) return;
+      if (
+        !confirm(
+          '¿Desactivar la verificación en dos pasos? El panel quedará protegido solo por la contraseña.',
+        )
+      )
+        return;
       const { error } = await supabase.auth.mfa.unenroll({ factorId: id });
       if (error) {
         alert('No se pudo desactivar: ' + error.message);

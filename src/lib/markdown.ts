@@ -12,10 +12,7 @@ import { marked } from 'marked';
  * propio Markdown, y los enlaces con esquema peligroso se descartan.
  */
 function escaparHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 const ESQUEMA_SEGURO = /^(https?:|mailto:|tel:|\/|#)/i;
@@ -27,7 +24,9 @@ renderer.link = function ({ href, title, tokens }: any) {
     // Enlace con esquema no permitido (javascript:, data:…): se deja el texto.
     return this.parser.parseInline(tokens);
   }
-  const html = enlaceOriginal({ href, title, tokens });
+  // `marked` tipa Link con más campos de los que hacen falta aquí; se pasa
+  // exactamente lo que el renderer original usa.
+  const html = enlaceOriginal({ href, title, tokens } as any);
   // Los enlaces externos salen en pestaña nueva y sin pasar referente.
   return /^https?:/i.test(String(href)) && !String(href).includes('lacasadedios')
     ? html.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ')

@@ -1,12 +1,15 @@
 {
-  "name": "cyan-centauri",
+  "name": "la-casa-de-dios",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "check": "astro check",
+    "format": "prettier --write \"src/**/*.{ts,astro,css}\" \"scripts/**/*.mjs\" \"*.{json,mjs}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,astro,css}\" \"scripts/**/*.mjs\" \"*.{json,mjs}\""
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
@@ -29,7 +32,11 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
-    "@types/sortablejs": "^1.15.9"
+    "@astrojs/check": "^0.9.10",
+    "@types/sortablejs": "^1.15.9",
+    "prettier": "^3.9.6",
+    "prettier-plugin-astro": "^0.14.1",
+    "typescript": "^6.0.3"
   },
   "overrides": {
     "path-to-regexp": "^6.3.0"

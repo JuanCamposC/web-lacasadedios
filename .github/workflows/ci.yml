@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Un solo trabajo en vuelo por rama: empujar dos veces seguidas cancela el
+# anterior en vez de dejar dos compilaciones compitiendo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      # Valores de mentira: la compilación necesita que EXISTAN, no que sirvan.
+      # Las páginas del panel y las de contenido se compilan sin tocar la red;
+      # las consultas reales ocurren en cada petición, ya en producción.
+      PUBLIC_SUPABASE_URL: https://ejemplo.supabase.co
+      PUBLIC_SUPABASE_ANON_KEY: clave-anonima-de-mentira
+      SITE_URL: https://ejemplo.test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar
+        run: npm ci
+
+      - name: Formato
+        run: npm run format:check
+
+      - name: Tipos
+        run: npm run check
+
+      - name: Compilar
+        run: npm run build

@@ -18,13 +18,7 @@ export interface ServiceDay {
 export type Tone = 'primary' | 'secondary' | 'accent' | 'neutral';
 
 export type DayName =
-  | 'Domingo'
-  | 'Lunes'
-  | 'Martes'
-  | 'Miércoles'
-  | 'Jueves'
-  | 'Viernes'
-  | 'Sábado';
+  'Domingo' | 'Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes' | 'Sábado';
 
 /** Orden litúrgico de la semana (domingo primero). */
 export const DAYS: DayName[] = [
@@ -100,7 +94,11 @@ export const templos: Templo[] = [
     mapLink: 'https://maps.app.goo.gl/GfSjQ3v7yJURcXU26',
     coords: { lat: -33.497703, lng: -70.642289 },
     schedule: [
-      { day: 'Domingo', tone: 'primary', services: ['10:30 · Culto General', '19:00 · Culto General'] },
+      {
+        day: 'Domingo',
+        tone: 'primary',
+        services: ['10:30 · Culto General', '19:00 · Culto General'],
+      },
       { day: 'Lunes', tone: 'secondary', services: ['20:00 · Estudio Bíblico'] },
       { day: 'Martes', tone: 'accent', services: ['20:00 · Discipulado'] },
       { day: 'Jueves', tone: 'neutral', services: ['20:00 · Reunión General'] },
@@ -124,7 +122,11 @@ export const templos: Templo[] = [
     schedule: [
       { day: 'Sábado', tone: 'primary', services: ['19:00 · Culto General'] },
       { day: 'Lunes', tone: 'neutral', services: ['20:00 · Estudio Bíblico'] },
-      { day: 'Miércoles', tone: 'secondary', services: ['20:00 · Reunión de Jóvenes y Preadolescentes'] },
+      {
+        day: 'Miércoles',
+        tone: 'secondary',
+        services: ['20:00 · Reunión de Jóvenes y Preadolescentes'],
+      },
       { day: 'Jueves', tone: 'accent', services: ['20:00 · Culto General'] },
     ],
     leader: { name: 'Pastor Alberto Gutiérrez Plaza', role: 'Pastor' },
@@ -224,8 +226,5 @@ export function groupByTime(
 
 /** Nº total de reuniones semanales en toda la congregación. */
 export function totalServices(): number {
-  return templos.reduce(
-    (n, t) => n + t.schedule.reduce((m, s) => m + s.services.length, 0),
-    0,
-  );
+  return templos.reduce((n, t) => n + t.schedule.reduce((m, s) => m + s.services.length, 0), 0);
 }

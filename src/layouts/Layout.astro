@@ -9,57 +9,55 @@ import { hashCsp } from '../lib/csp';
 // Fuentes auto-hospedadas y variables (sin depender del CDN de Google Fonts).
 // Solo el romano de cada familia: ~88 kB para las tres, menos de lo que pesaban
 // los seis pesos estáticos de Poppins que había antes.
-import '@fontsource-variable/fraunces/opsz.css';      // display (eje de tamaño óptico)
-import '@fontsource-variable/archivo/wght.css';        // cuerpo
+import '@fontsource-variable/fraunces/opsz.css'; // display (eje de tamaño óptico)
+import '@fontsource-variable/archivo/wght.css'; // cuerpo
 import '@fontsource-variable/archivo-narrow/wght.css'; // datos y señalética
 import '../styles/global.css';
 
 interface Props {
-	title?: string;
-	description?: string;
-	image?: string;
-	/** Páginas a las que solo se llega con un enlace personal (baja del boletín). */
-	noindex?: boolean;
+  title?: string;
+  description?: string;
+  image?: string;
+  /** Páginas a las que solo se llega con un enlace personal (baja del boletín). */
+  noindex?: boolean;
 }
 
 const {
-	title = 'La Casa de Dios · Iglesia Cristiana',
-	description = 'La Casa de Dios es una comunidad de fe cristiana con templos en Santiago, San Miguel, Limache y Coya. Conoce nuestros horarios, ubicaciones y declaración de fe.',
-	image,
-	noindex = false,
+  title = 'La Casa de Dios · Iglesia Cristiana',
+  description = 'La Casa de Dios es una comunidad de fe cristiana con templos en Santiago, San Miguel, Limache y Coya. Conoce nuestros horarios, ubicaciones y declaración de fe.',
+  image,
+  noindex = false,
 } = Astro.props;
 
-const canonical = Astro.site
-	? new URL(Astro.url.pathname, Astro.site).href
-	: Astro.url.href;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : Astro.url.href;
 // Imagen social: la propia de la página si la hay, y si no la tarjeta de marca
 // (public/og-image.png, generada con `node scripts/og-image.mjs`).
 const ogImage = new URL(image ?? '/og-image.png', Astro.site ?? Astro.url).href;
 
 // Datos estructurados de la organización (todas las páginas).
 const orgJsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'Church',
-	name: SITE.name,
-	legalName: SITE.legalName,
-	description,
-	url: Astro.site?.toString() ?? canonical,
-	email: CONTACT.email,
-	// Solo se publica el teléfono si hay uno real cargado en src/data/site.ts.
-	...(hasPhone ? { telephone: CONTACT.phone } : {}),
-	sameAs: SOCIAL.map((s) => s.href),
-	location: templos.map((t) => ({
-		'@type': 'Place',
-		name: t.name,
-		address: {
-			'@type': 'PostalAddress',
-			streetAddress: t.address,
-			addressLocality: t.city,
-			addressRegion: t.region,
-			addressCountry: 'CL',
-		},
-		geo: { '@type': 'GeoCoordinates', latitude: t.coords.lat, longitude: t.coords.lng },
-	})),
+  '@context': 'https://schema.org',
+  '@type': 'Church',
+  name: SITE.name,
+  legalName: SITE.legalName,
+  description,
+  url: Astro.site?.toString() ?? canonical,
+  email: CONTACT.email,
+  // Solo se publica el teléfono si hay uno real cargado en src/data/site.ts.
+  ...(hasPhone ? { telephone: CONTACT.phone } : {}),
+  sameAs: SOCIAL.map((s) => s.href),
+  location: templos.map((t) => ({
+    '@type': 'Place',
+    name: t.name,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: t.address,
+      addressLocality: t.city,
+      addressRegion: t.region,
+      addressCountry: 'CL',
+    },
+    geo: { '@type': 'GeoCoordinates', latitude: t.coords.lat, longitude: t.coords.lng },
+  })),
 };
 
 /* ── Scripts inline y su hash para la CSP ──────────────────────────────────
@@ -75,124 +73,129 @@ const orgJsonLd = {
 const SCRIPT_TEMA = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark')t='churchdark';if(t!=='church'&&t!=='churchdark')t='church';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
 const JSON_LD = JSON.stringify(orgJsonLd);
 
-Astro.csp.insertScriptHash({ hash: hashCsp(SCRIPT_TEMA), kind: 'element' });
-Astro.csp.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
+Astro.csp?.insertScriptHash({ hash: hashCsp(SCRIPT_TEMA), kind: 'element' });
+Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
 ---
 
 <!doctype html>
 <html lang="es" data-theme="church">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<script is:inline set:html={SCRIPT_TEMA} />
-		<meta name="description" content={description} />
-		<link rel="canonical" href={canonical} />
-		{/* Iconos de pestaña: el isotipo de la marca en azul, generado desde
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline set:html={SCRIPT_TEMA} />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {
+      /* Iconos de pestaña: el isotipo de la marca en azul, generado desde
 		    public/marca/isotipo-azul.png con `node scripts/favicons.mjs`.
 		    apple-touch-icon va sobre blanco porque iOS aplana la transparencia
-		    contra negro y el azul quedaría ilegible. */}
-		<link rel="icon" href="/favicon.ico" sizes="32x32" />
-		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-		<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
-		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-		<meta name="theme-color" content="#14295c" />
-		{noindex && <meta name="robots" content="noindex, nofollow" />}
-		<meta name="generator" content={Astro.generator} />
+		    contra negro y el azul quedaría ilegible. */
+    }
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#14295c" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="generator" content={Astro.generator} />
 
-		<!-- Open Graph -->
-		<meta property="og:type" content="website" />
-		<meta property="og:site_name" content="La Casa de Dios" />
-		<meta property="og:locale" content="es_CL" />
-		<meta property="og:title" content={title} />
-		<meta property="og:description" content={description} />
-		<meta property="og:url" content={canonical} />
-		<meta property="og:image" content={ogImage} />
-		<meta property="og:image:width" content="1200" />
-		<meta property="og:image:height" content="630" />
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="La Casa de Dios" />
+    <meta property="og:locale" content="es_CL" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
-		<!-- Twitter -->
-		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:title" content={title} />
-		<meta name="twitter:description" content={description} />
-		<meta name="twitter:image" content={ogImage} />
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
 
-		<script type="application/ld+json" set:html={JSON_LD} is:inline />
+    <script type="application/ld+json" set:html={JSON_LD} is:inline />
 
-		{/* Transiciones de vista nativas de Astro: navegación sin recarga y con
+    {
+      /* Transiciones de vista nativas de Astro: navegación sin recarga y con
 		    continuidad visual, sin una sola dependencia extra. Es el mayor
-		    salto de dinamismo por peso cero — importa para Core Web Vitals. */}
-		<ClientRouter />
+		    salto de dinamismo por peso cero — importa para Core Web Vitals. */
+    }
+    <ClientRouter />
 
-		<title>{title}</title>
-	</head>
-	<body class="min-h-screen">
-		<Navigation />
-		<main id="contenido" class="pt-16">
-			<slot />
-		</main>
-		<Footer />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen">
+    <Navigation />
+    <main id="contenido" class="pt-16">
+      <slot />
+    </main>
+    <Footer />
 
-		<a
-			id="live-pill"
-			href="/en-vivo"
-			class="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500"
-		>
-			<span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-white" aria-hidden="true"></span>
-			Estamos en vivo
-		</a>
-	</body>
+    <a
+      id="live-pill"
+      href="/en-vivo"
+      class="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500"
+    >
+      <span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-white" aria-hidden="true"
+      ></span>
+      Estamos en vivo
+    </a>
+  </body>
 </html>
 
 <script>
-	// Con <ClientRouter /> los módulos se evalúan una sola vez: todo lo que
-	// dependa del DOM de la página se cuelga de `astro:page-load`, que además
-	// dispara en la carga inicial.
-	import '../scripts/reveal';
-	// `restLeer` en vez del cliente de Supabase: son 215 kB de JavaScript menos
-	// en cada página pública (ver src/lib/rest.ts).
-	import { restLeer } from '../lib/rest';
+  // Con <ClientRouter /> los módulos se evalúan una sola vez: todo lo que
+  // dependa del DOM de la página se cuelga de `astro:page-load`, que además
+  // dispara en la carga inicial.
+  import '../scripts/reveal';
+  // `restLeer` en vez del cliente de Supabase: son 215 kB de JavaScript menos
+  // en cada página pública (ver src/lib/rest.ts).
+  import { restLeer } from '../lib/rest';
 
-	let estaEnVivo: boolean | null = null;
+  let estaEnVivo: boolean | null = null;
 
-	async function pastillaEnVivo() {
-		const pill = document.getElementById('live-pill');
-		if (!pill) return;
-		try {
-			// La consulta se hace una vez por sesión, no en cada navegación.
-			if (estaEnVivo === null) {
-				const filas = await restLeer<{ live_enabled: boolean }>(
-					'settings?id=eq.1&select=live_enabled',
-				);
-				estaEnVivo = Boolean(filas[0]?.live_enabled);
-			}
-			pill.classList.toggle('hidden', !estaEnVivo);
-			pill.classList.toggle('inline-flex', estaEnVivo);
-		} catch {
-			/* sin conexión: la pastilla simplemente no aparece */
-		}
-	}
+  async function pastillaEnVivo() {
+    const pill = document.getElementById('live-pill');
+    if (!pill) return;
+    try {
+      // La consulta se hace una vez por sesión, no en cada navegación.
+      if (estaEnVivo === null) {
+        const filas = await restLeer<{ live_enabled: boolean }>(
+          'settings?id=eq.1&select=live_enabled',
+        );
+        estaEnVivo = Boolean(filas[0]?.live_enabled);
+      }
+      pill.classList.toggle('hidden', !estaEnVivo);
+      pill.classList.toggle('inline-flex', estaEnVivo);
+    } catch {
+      /* sin conexión: la pastilla simplemente no aparece */
+    }
+  }
 
-	// Desplazamiento suave para anclas, compensando el navbar fijo.
-	function anclasSuaves() {
-		document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
-			if (a.dataset.anclaLista) return;
-			a.dataset.anclaLista = '1';
-			a.addEventListener('click', (e) => {
-				const href = a.getAttribute('href');
-				if (!href || href === '#') return;
-				const destino = document.querySelector(href);
-				if (!destino) return;
-				e.preventDefault();
-				window.scrollTo({
-					top: destino.getBoundingClientRect().top + window.scrollY - 80,
-					behavior: 'smooth',
-				});
-			});
-		});
-	}
+  // Desplazamiento suave para anclas, compensando el navbar fijo.
+  function anclasSuaves() {
+    document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
+      if (a.dataset.anclaLista) return;
+      a.dataset.anclaLista = '1';
+      a.addEventListener('click', (e) => {
+        const href = a.getAttribute('href');
+        if (!href || href === '#') return;
+        const destino = document.querySelector(href);
+        if (!destino) return;
+        e.preventDefault();
+        window.scrollTo({
+          top: destino.getBoundingClientRect().top + window.scrollY - 80,
+          behavior: 'smooth',
+        });
+      });
+    });
+  }
 
-	document.addEventListener('astro:page-load', () => {
-		pastillaEnVivo();
-		anclasSuaves();
-	});
+  document.addEventListener('astro:page-load', () => {
+    pastillaEnVivo();
+    anclasSuaves();
+  });
 </script>

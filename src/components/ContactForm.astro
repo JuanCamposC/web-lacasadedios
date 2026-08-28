@@ -18,13 +18,7 @@ const asuntos = [
 const enviado = Astro.url.searchParams.get('enviado');
 ---
 
-<form
-  id="contact-form"
-  method="post"
-  action="/api/contacto"
-  class="panel p-6 sm:p-8"
-  novalidate
->
+<form id="contact-form" method="post" action="/api/contacto" class="panel p-6 sm:p-8" novalidate>
   <h2 class="font-display text-2xl">Escríbenos</h2>
   <p class="mt-1 text-sm text-base-content/70">
     Cuéntanos en qué podemos ayudarte. Respondemos al correo que nos dejes.
@@ -72,7 +66,9 @@ const enviado = Astro.url.searchParams.get('enviado');
 
     <div class="form-control">
       <label class="label pb-1" for="cf-telefono">
-        <span class="label-text font-medium">Teléfono <span class="text-base-content/50">(opcional)</span></span>
+        <span class="label-text font-medium"
+          >Teléfono <span class="text-base-content/50">(opcional)</span></span
+        >
       </label>
       <input
         id="cf-telefono"

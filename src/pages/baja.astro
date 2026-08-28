@@ -65,11 +65,13 @@ const t = TEXTOS[estado];
         <a href="/" class="btn btn-primary gap-2">
           <Icon name="lucide:home" class="h-5 w-5" /> Ir al inicio
         </a>
-        {estado === 'listo' && (
-          <a href="/contacto" class="btn btn-ghost gap-2">
-            <Icon name="lucide:message-square" class="h-5 w-5" /> Contarnos por qué
-          </a>
-        )}
+        {
+          estado === 'listo' && (
+            <a href="/contacto" class="btn btn-ghost gap-2">
+              <Icon name="lucide:message-square" class="h-5 w-5" /> Contarnos por qué
+            </a>
+          )
+        }
       </EmptyState>
     </div>
   </section>

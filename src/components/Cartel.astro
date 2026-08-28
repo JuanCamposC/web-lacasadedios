@@ -39,22 +39,24 @@ const abrev = (dia: string) => dia.slice(0, 3).toUpperCase();
   </header>
 
   <ol class="cartel-lista">
-    {semana.map((dia, i) => (
-      <li class="cartel-fila" data-dia-indice={dia.dayIndex} style={`--i:${i}`}>
-        <span class="cartel-dia">
-          <span class="sr-only">{dia.day}</span>
-          <span aria-hidden="true">{abrev(dia.day)}</span>
-        </span>
-        <span class="cartel-horas">
-          {dia.franjas.map((f) => (
-            <span class="cartel-serv">
-              <span class="cartel-hora">{f.time}</span>
-              <span class="cartel-sede">{f.sedes.map((t) => t.short).join(' · ')}</span>
-            </span>
-          ))}
-        </span>
-      </li>
-    ))}
+    {
+      semana.map((dia, i) => (
+        <li class="cartel-fila" data-dia-indice={dia.dayIndex} style={`--i:${i}`}>
+          <span class="cartel-dia">
+            <span class="sr-only">{dia.day}</span>
+            <span aria-hidden="true">{abrev(dia.day)}</span>
+          </span>
+          <span class="cartel-horas">
+            {dia.franjas.map((f) => (
+              <span class="cartel-serv">
+                <span class="cartel-hora">{f.time}</span>
+                <span class="cartel-sede">{f.sedes.map((t) => t.short).join(' · ')}</span>
+              </span>
+            ))}
+          </span>
+        </li>
+      ))
+    }
   </ol>
 
   {pie && <footer class="cartel-pie">{pie}</footer>}
@@ -85,9 +87,7 @@ const abrev = (dia: string) => dia.slice(0, 3).toUpperCase();
       window.setTimeout(() => {
         if (fila) fila.classList.add('encendida');
         if (etiqueta) {
-          etiqueta.textContent = fila
-            ? `Hoy · ${DIAS[hoy]}`
-            : `Hoy ${DIAS[hoy]} · sin reunión`;
+          etiqueta.textContent = fila ? `Hoy · ${DIAS[hoy]}` : `Hoy ${DIAS[hoy]} · sin reunión`;
         }
       }, espera);
     });

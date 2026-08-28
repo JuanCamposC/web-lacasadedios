@@ -10,14 +10,7 @@ interface Props {
   subtitle?: string;
   height?: string;
 }
-const {
-  image,
-  alt = '',
-  eyebrow,
-  title,
-  subtitle,
-  height = 'min-h-[58vh]',
-} = Astro.props;
+const { image, alt = '', eyebrow, title, subtitle, height = 'min-h-[58vh]' } = Astro.props;
 ---
 
 <section class={`on-dark relative -mt-16 flex ${height} items-center overflow-hidden`}>
@@ -30,7 +23,10 @@ const {
       loading="eager"
       class="h-full w-full object-cover"
     />
-    <div class="absolute inset-0 bg-gradient-to-b from-[#0a1730]/78 via-[#0a1730]/62 to-[#0a1730]/88"></div>
+    <div
+      class="absolute inset-0 bg-gradient-to-b from-[#0a1730]/78 via-[#0a1730]/62 to-[#0a1730]/88"
+    >
+    </div>
     <!-- Misma costura de bronce que cierra el hero de la portada: los dos
          encabezados comparten gramática aunque tengan composición distinta.
          Sin degradado hacia la página: lavaba la fotografía entera. -->
@@ -38,19 +34,23 @@ const {
   </div>
 
   <div class="relative z-10 mx-auto w-full max-w-4xl px-4 pt-16 text-center">
-    {eyebrow && (
-      <span data-reveal class="eyebrow mb-4 text-accent">
-        {eyebrow}
-      </span>
-    )}
+    {
+      eyebrow && (
+        <span data-reveal class="eyebrow mb-4 text-accent">
+          {eyebrow}
+        </span>
+      )
+    }
     <h1 data-reveal data-reveal-delay="60" class="text-[clamp(2.4rem,6vw,4rem)] text-white">
       {title}
     </h1>
-    {subtitle && (
-      <p data-reveal data-reveal-delay="120" class="mx-auto mt-5 max-w-2xl text-lg text-white/80">
-        {subtitle}
-      </p>
-    )}
+    {
+      subtitle && (
+        <p data-reveal data-reveal-delay="120" class="mx-auto mt-5 max-w-2xl text-lg text-white/80">
+          {subtitle}
+        </p>
+      )
+    }
     <slot />
   </div>
 </section>

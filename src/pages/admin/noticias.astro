@@ -3,7 +3,11 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 ---
 
-<AdminLayout title="Noticias" description="Novedades y avisos de la congregación." active="noticias">
+<AdminLayout
+  title="Noticias"
+  description="Novedades y avisos de la congregación."
+  active="noticias"
+>
   <div id="crud-root"></div>
 
   <script>
@@ -18,8 +22,18 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       notify: { type: 'noticia', urlBase: '/noticias', porItem: true },
       fields: [
         { name: 'title', label: 'Título', type: 'text', required: true },
-        { name: 'excerpt', label: 'Resumen breve', type: 'text', help: 'Una o dos líneas para la tarjeta.' },
-        { name: 'body', label: 'Cuerpo', type: 'markdown', help: 'Usa los botones para dar formato. Se ve tal cual en el sitio.' },
+        {
+          name: 'excerpt',
+          label: 'Resumen breve',
+          type: 'text',
+          help: 'Una o dos líneas para la tarjeta.',
+        },
+        {
+          name: 'body',
+          label: 'Cuerpo',
+          type: 'markdown',
+          help: 'Usa los botones para dar formato. Se ve tal cual en el sitio.',
+        },
         { name: 'image_url', label: 'Imagen (opcional)', type: 'image' },
         { name: 'published', label: 'Publicado', type: 'checkbox' },
       ],

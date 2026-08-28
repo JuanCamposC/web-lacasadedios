@@ -40,8 +40,8 @@ export default defineConfig({
         "connect-src 'self' https://*.supabase.co",
         // Los dos únicos embebidos: el reproductor de YouTube sin cookies y el
         // mapa de cada templo. Cualquier otro iframe queda bloqueado.
-        "frame-src https://www.youtube-nocookie.com https://www.google.com",
-        "upgrade-insecure-requests",
+        'frame-src https://www.youtube-nocookie.com https://www.google.com',
+        'upgrade-insecure-requests',
       ],
       styleDirective: {
         resources: [

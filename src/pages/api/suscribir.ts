@@ -30,7 +30,10 @@ function json(data: unknown, status = 200) {
 }
 
 function esc(s: unknown) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 /**
@@ -59,7 +62,9 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   // El formato se valida antes que nada: una petición malformada se rechaza
   // igual esté o no configurado el servidor, y sin gastar una consulta.
   const body = await request.json().catch(() => ({}) as Record<string, unknown>);
-  const email = String((body as any)?.email ?? '').trim().toLowerCase();
+  const email = String((body as any)?.email ?? '')
+    .trim()
+    .toLowerCase();
 
   if (!correoValido(email)) return json({ ok: false, reason: 'correo_invalido' }, 400);
 
@@ -122,15 +127,25 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   const apiKey = process.env.RESEND_API_KEY;
   const remitente = resolverRemitente();
 
-  if (!apiKey || !remitente.ok) {
-    // La fila queda pendiente a propósito. Confirmar es lo que da permiso para
-    // escribir a esa persona, y sin correo saliente ese permiso no existe.
+  // Los dos fallos van por separado y no en una disyunción: `remitente.valor`
+  // solo existe en la rama de error del tipo, y agrupándolos TypeScript no
+  // puede estrecharlo. Es lo que hacía que el mensaje dijera «undefined».
+  //
+  // En ambos casos la fila queda pendiente a propósito: confirmar es lo que da
+  // permiso para escribir a esa persona, y sin correo saliente no hay permiso.
+  if (!apiKey) {
     return json({
       ok: false,
-      reason: !apiKey ? 'sin_proveedor_correo' : 'from_invalido',
-      detalle: !apiKey
-        ? 'Falta RESEND_API_KEY: el alta quedó pendiente de confirmar.'
-        : `CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
+      reason: 'sin_proveedor_correo',
+      detalle: 'Falta RESEND_API_KEY: el alta quedó pendiente de confirmar.',
+    });
+  }
+
+  if (!remitente.ok) {
+    return json({
+      ok: false,
+      reason: 'from_invalido',
+      detalle: `CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
     });
   }
 

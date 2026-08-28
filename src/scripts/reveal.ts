@@ -6,9 +6,7 @@ function reduceMotion(): boolean {
 }
 
 function initReveal() {
-  const els = Array.from(
-    document.querySelectorAll<HTMLElement>('[data-reveal]:not(.is-visible)'),
-  );
+  const els = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]:not(.is-visible)'));
   if (!els.length) return;
 
   if (reduceMotion()) {

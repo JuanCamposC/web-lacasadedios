@@ -15,22 +15,26 @@ interface Props {
 const { eyebrow, title, text, image, compact = false } = Astro.props;
 ---
 
-<section class={`section-dark relative overflow-hidden ${compact ? 'section-sm' : 'section'} text-center`}>
-  {image ? (
-    <>
-      <Image
-        src={image}
-        alt=""
-        widths={[768, 1280, 1920]}
-        sizes="100vw"
-        loading="lazy"
-        class="absolute inset-0 h-full w-full object-cover opacity-25"
-      />
-      <div class="absolute inset-0 bg-gradient-to-b from-[#0a1730]/88 via-[#0a1730]/72 to-[#0a1730]/96"></div>
-    </>
-  ) : (
-    <div class="grid-texture absolute inset-0 opacity-60"></div>
-  )}
+<section
+  class={`section-dark relative overflow-hidden ${compact ? 'section-sm' : 'section'} text-center`}
+>
+  {
+    image ? (
+      <>
+        <Image
+          src={image}
+          alt=""
+          widths={[768, 1280, 1920]}
+          sizes="100vw"
+          loading="lazy"
+          class="absolute inset-0 h-full w-full object-cover opacity-25"
+        />
+        <div class="absolute inset-0 bg-gradient-to-b from-[#0a1730]/88 via-[#0a1730]/72 to-[#0a1730]/96" />
+      </>
+    ) : (
+      <div class="grid-texture absolute inset-0 opacity-60" />
+    )
+  }
 
   <div class="wrap relative z-10">
     <Reveal>

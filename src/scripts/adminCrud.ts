@@ -156,7 +156,9 @@ export function setupCrud(config: CrudConfig) {
     .map((f) => {
       const req = f.required ? 'required' : '';
       const marca = f.required ? ' <span class="text-error">*</span>' : '';
-      const help = f.help ? `<span class="mt-1 block text-xs text-base-content/55">${esc(f.help)}</span>` : '';
+      const help = f.help
+        ? `<span class="mt-1 block text-xs text-base-content/55">${esc(f.help)}</span>`
+        : '';
       const label = `<span class="mb-1.5 block text-sm font-medium">${esc(f.label)}${marca}</span>`;
 
       if (f.type === 'textarea')
@@ -370,16 +372,25 @@ export function setupCrud(config: CrudConfig) {
         link: () => envolver('[', '](https://)', 'texto del enlace'),
       };
 
-      caja.querySelectorAll<HTMLButtonElement>('[data-md-cmd]').forEach((b) =>
-        b.addEventListener('click', () => acciones[b.dataset.mdCmd!]?.()),
-      );
+      caja
+        .querySelectorAll<HTMLButtonElement>('[data-md-cmd]')
+        .forEach((b) => b.addEventListener('click', () => acciones[b.dataset.mdCmd!]?.()));
 
       ta.addEventListener('keydown', (e) => {
         if (!(e.ctrlKey || e.metaKey)) return;
         const k = e.key.toLowerCase();
-        if (k === 'b') { e.preventDefault(); acciones.bold(); }
-        if (k === 'i') { e.preventDefault(); acciones.italic(); }
-        if (k === 'k') { e.preventDefault(); acciones.link(); }
+        if (k === 'b') {
+          e.preventDefault();
+          acciones.bold();
+        }
+        if (k === 'i') {
+          e.preventDefault();
+          acciones.italic();
+        }
+        if (k === 'k') {
+          e.preventDefault();
+          acciones.link();
+        }
       });
 
       // Vista previa: el mismo Markdown mínimo, resuelto en el navegador solo
@@ -482,13 +493,16 @@ export function setupCrud(config: CrudConfig) {
     formCard.classList.remove('ring-2', 'ring-primary/40');
     imagenesListas.clear();
     config.fields.forEach((f) => {
-      if (f.type === 'checkbox') (form.querySelector(`[name="${f.name}"]`) as HTMLInputElement).checked = true;
+      if (f.type === 'checkbox')
+        (form.querySelector(`[name="${f.name}"]`) as HTMLInputElement).checked = true;
       if (f.type === 'image') {
         const prev = root!.querySelector(`[data-preview="${f.name}"]`);
         if (prev) prev.innerHTML = '';
       }
     });
-    listEl.querySelectorAll('[data-fila]').forEach((el) => el.classList.remove('ring-2', 'ring-primary/40'));
+    listEl
+      .querySelectorAll('[data-fila]')
+      .forEach((el) => el.classList.remove('ring-2', 'ring-primary/40'));
   }
 
   function startEdit(row: Record<string, any>) {
@@ -503,7 +517,8 @@ export function setupCrud(config: CrudConfig) {
       if (!el) return;
       const val = row[f.name];
       if (f.type === 'checkbox') (el as HTMLInputElement).checked = Boolean(val);
-      else if (f.type === 'datetime-local') (el as HTMLInputElement).value = val ? toLocalInput(val) : '';
+      else if (f.type === 'datetime-local')
+        (el as HTMLInputElement).value = val ? toLocalInput(val) : '';
       else if (f.type === 'image') {
         const prev = root!.querySelector(`[data-preview="${f.name}"]`);
         if (prev)
@@ -513,7 +528,9 @@ export function setupCrud(config: CrudConfig) {
       } else (el as HTMLInputElement).value = val ?? '';
     });
 
-    listEl.querySelectorAll('[data-fila]').forEach((el) => el.classList.remove('ring-2', 'ring-primary/40'));
+    listEl
+      .querySelectorAll('[data-fila]')
+      .forEach((el) => el.classList.remove('ring-2', 'ring-primary/40'));
     listEl.querySelector(`[data-fila="${row.id}"]`)?.classList.add('ring-2', 'ring-primary/40');
 
     formCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -527,7 +544,11 @@ export function setupCrud(config: CrudConfig) {
       if (estado === 'borradores' && r.published) return false;
       if (!q) return true;
       const campos = [r[config.titleField], config.subtitleField ? r[config.subtitleField] : ''];
-      return campos.some((c) => String(c ?? '').toLowerCase().includes(q));
+      return campos.some((c) =>
+        String(c ?? '')
+          .toLowerCase()
+          .includes(q),
+      );
     });
   }
 
@@ -594,14 +615,17 @@ export function setupCrud(config: CrudConfig) {
         if (row) startEdit(row);
       }),
     );
-    listEl.querySelectorAll<HTMLElement>('[data-del]').forEach((b) =>
-      b.addEventListener('click', () => remove(b.dataset.del!)),
-    );
-    listEl.querySelectorAll<HTMLElement>('[data-toggle]').forEach((b) =>
-      b.addEventListener('click', () => togglePublicado(b.dataset.toggle!)),
-    );
+    listEl
+      .querySelectorAll<HTMLElement>('[data-del]')
+      .forEach((b) => b.addEventListener('click', () => remove(b.dataset.del!)));
+    listEl
+      .querySelectorAll<HTMLElement>('[data-toggle]')
+      .forEach((b) => b.addEventListener('click', () => togglePublicado(b.dataset.toggle!)));
 
-    if (editing) listEl.querySelector(`[data-fila="${editing.id}"]`)?.classList.add('ring-2', 'ring-primary/40');
+    if (editing)
+      listEl
+        .querySelector(`[data-fila="${editing.id}"]`)
+        ?.classList.add('ring-2', 'ring-primary/40');
   }
 
   async function load() {
@@ -629,7 +653,11 @@ export function setupCrud(config: CrudConfig) {
       const r = await fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: config.notify!.type, title: titulo, url: location.origin + ruta }),
+        body: JSON.stringify({
+          type: config.notify!.type,
+          title: titulo,
+          url: location.origin + ruta,
+        }),
       }).then((x) => x.json());
 
       if (r.ok && r.sent > 0) {
@@ -674,7 +702,8 @@ export function setupCrud(config: CrudConfig) {
     // Al encender, se pregunta antes de mandar correos.
     let avisar = false;
     if (nuevo && config.notify) {
-      dlgAvisar.querySelector('[data-nombre]')!.textContent = `«${String(row[config.titleField] ?? '')}»`;
+      dlgAvisar.querySelector('[data-nombre]')!.textContent =
+        `«${String(row[config.titleField] ?? '')}»`;
       dlgAvisar.showModal();
       avisar = await new Promise<string>((r) =>
         dlgAvisar.addEventListener('close', () => r(dlgAvisar.returnValue), { once: true }),
@@ -692,7 +721,10 @@ export function setupCrud(config: CrudConfig) {
 
   async function uploadImage(blob: Blob, nombre: string): Promise<string> {
     const ext = blob.type === 'image/webp' ? 'webp' : nombre.split('.').pop() || 'jpg';
-    const base = nombre.replace(/\.[^.]+$/, '').replace(/[^\w-]/g, '_').slice(0, 40);
+    const base = nombre
+      .replace(/\.[^.]+$/, '')
+      .replace(/[^\w-]/g, '_')
+      .slice(0, 40);
     const path = `${config.table}/${Date.now()}-${base}.${ext}`;
     const { error } = await supabase.storage.from('media').upload(path, blob, {
       contentType: blob.type || 'image/jpeg',
@@ -727,7 +759,8 @@ export function setupCrud(config: CrudConfig) {
     try {
       const payload: Record<string, any> = {};
       for (const f of config.fields) {
-        const el = form.querySelector(`[name="${f.name}"]`) as HTMLInputElement | HTMLTextAreaElement;
+        const el = form.querySelector(`[name="${f.name}"]`) as
+          HTMLInputElement | HTMLTextAreaElement;
         if (f.type === 'checkbox') payload[f.name] = (el as HTMLInputElement).checked;
         else if (f.type === 'image') {
           const blob = imagenesListas.get(f.name);
@@ -757,11 +790,18 @@ export function setupCrud(config: CrudConfig) {
       if (!id && config.notify && payload.published) {
         const notifyEl = form.querySelector('[name="__notify"]') as HTMLInputElement | null;
         if (notifyEl?.checked) {
-          await avisarSuscriptores(String(payload[config.titleField] ?? ''), rutaDe(res.data ?? {}));
+          await avisarSuscriptores(
+            String(payload[config.titleField] ?? ''),
+            rutaDe(res.data ?? {}),
+          );
         }
       }
 
-      toast(id ? 'Cambios guardados' : `${config.singular[0].toUpperCase()}${config.singular.slice(1)} ${CREADO}`);
+      toast(
+        id
+          ? 'Cambios guardados'
+          : `${config.singular[0].toUpperCase()}${config.singular.slice(1)} ${CREADO}`,
+      );
       resetForm();
       load();
     } catch (err: any) {
@@ -796,7 +836,10 @@ export function setupCrud(config: CrudConfig) {
           const pos = asc ? i : ids.length - 1 - i;
           const row = filas.find((r) => r.id === id);
           if (row) row[col] = pos;
-          return supabase.from(config.table).update({ [col]: pos }).eq('id', id);
+          return supabase
+            .from(config.table)
+            .update({ [col]: pos })
+            .eq('id', id);
         });
 
         const res = await Promise.all(cambios);

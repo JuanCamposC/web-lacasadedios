@@ -16,8 +16,7 @@ const SOLO_CORREO = /^[^<>@\s]+@[^<>@\s]+\.[^<>@\s]+$/;
 const CON_NOMBRE = /^[^<>]+<[^<>@\s]+@[^<>@\s]+\.[^<>@\s]+>$/;
 
 export type Remitente =
-  | { ok: true; from: string; porDefecto: boolean }
-  | { ok: false; valor: string };
+  { ok: true; from: string; porDefecto: boolean } | { ok: false; valor: string };
 
 export function resolverRemitente(): Remitente {
   const crudo = (process.env.CONTACT_FROM ?? '').trim();
