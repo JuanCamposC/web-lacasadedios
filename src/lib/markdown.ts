@@ -18,7 +18,14 @@ function escaparHtml(s: string): string {
 const ESQUEMA_SEGURO = /^(https?:|mailto:|tel:|\/|#)/i;
 
 const renderer = new marked.Renderer();
-const enlaceOriginal = renderer.link.bind(renderer);
+
+// Sin `.bind(renderer)`: `marked.use()` no usa ESTE objeto, copia sus métodos a
+// su propia instancia y es a esa a la que le asigna `.parser`. Atado al objeto
+// de aquí, `this.parser` quedaba `undefined` y CUALQUIER enlace con esquema
+// válido reventaba el render de la noticia entera. Se llama con `.call(this)`
+// para que reciba la instancia real que marked está usando.
+const enlaceOriginal = renderer.link;
+
 renderer.link = function ({ href, title, tokens }: any) {
   if (!href || !ESQUEMA_SEGURO.test(String(href).trim())) {
     // Enlace con esquema no permitido (javascript:, data:…): se deja el texto.
@@ -26,7 +33,7 @@ renderer.link = function ({ href, title, tokens }: any) {
   }
   // `marked` tipa Link con más campos de los que hacen falta aquí; se pasa
   // exactamente lo que el renderer original usa.
-  const html = enlaceOriginal({ href, title, tokens } as any);
+  const html = enlaceOriginal.call(this, { href, title, tokens } as any);
   // Los enlaces externos salen en pestaña nueva y sin pasar referente.
   return /^https?:/i.test(String(href)) && !String(href).includes('lacasadedios')
     ? html.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ')
