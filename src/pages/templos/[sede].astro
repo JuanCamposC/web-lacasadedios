@@ -1,0 +1,18 @@
+---
+// Una sola ruta para los cuatro templos. Antes eran cuatro archivos idénticos
+// de cinco líneas que solo cambiaban el slug: añadir un templo obligaba a crear
+// otro, y era fácil olvidarlo porque el listado sí se generaba solo.
+//
+// Las URLs no cambian: `getStaticPaths` las saca de los mismos slugs de
+// templos.ts que usaban los archivos anteriores.
+import TemploPage from '../../components/TemploPage.astro';
+import { templos } from '../../data/templos';
+
+export function getStaticPaths() {
+  return templos.map((t) => ({ params: { sede: t.slug } }));
+}
+
+const { sede } = Astro.params;
+---
+
+<TemploPage slug={sede!} />
