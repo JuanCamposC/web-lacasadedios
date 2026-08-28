@@ -12,6 +12,24 @@ function json(data: unknown, status = 200) {
   });
 }
 
+/**
+ * Traduce el rechazo del servidor a un motivo que el panel sepa explicar.
+ *
+ * Sin esto, cualquier fallo caía en «el servidor rechazó los envíos», que es
+ * cierto y no sirve de nada: manda a revisar cPanel cuando el problema puede
+ * ser una variable de entorno. El caso real que lo motivó: CONTACT_FROM
+ * apuntaba a una casilla que no existía y Exim rechazaba por verificación de
+ * remitente, no por nada del hosting.
+ */
+function clasificar(mensaje: string): string {
+  if (/sender verify|no such user|verification failed/i.test(mensaje)) {
+    return 'remitente_inexistente';
+  }
+  if (/535|authentication/i.test(mensaje)) return 'auth_invalida';
+  if (/max emails|exceeded|per hour/i.test(mensaje)) return 'limite_hosting';
+  return 'send_error';
+}
+
 function esc(s: unknown) {
   return String(s ?? '')
     .replace(/&/g, '&amp;')
@@ -99,6 +117,8 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
 
   let enviados = 0;
   let fallidos = 0;
+  // El primero manda: si fallan todos, fallan por lo mismo.
+  let primerFallo = '';
 
   try {
     // Se lanzan todos a la vez y el pool los encola de tres en tres: la
@@ -136,7 +156,9 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
           // La dirección no va a los registros: es un dato personal. Basta con
           // saber cuántos fallaron y con qué motivo los rechazaron.
           fallidos++;
-          console.error(`[notify] destinatario rechazado: ${e?.message ?? e}`);
+          const mensaje = String(e?.message ?? e);
+          if (!primerFallo) primerFallo = mensaje;
+          console.error(`[notify] destinatario rechazado: ${mensaje}`);
         }
       }),
     );
@@ -155,7 +177,7 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
 
   // Que no saliera NI UNO es un fallo; que fallen algunos, un aviso.
   if (!enviados && fallidos) {
-    return json({ ok: false, reason: 'send_error', sent: 0, fallidos });
+    return json({ ok: false, reason: clasificar(primerFallo), sent: 0, fallidos });
   }
   return json({ ok: true, sent: enviados, fallidos });
 };

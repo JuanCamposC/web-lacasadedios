@@ -20,6 +20,10 @@ const EXPLICACION: Record<string, string> = {
   unconfigured: 'El servidor no tiene configurada la conexión a la base.',
   db_error: 'No se pudo leer la lista de suscriptores.',
   send_error: 'El servidor de correo rechazó todos los envíos.',
+  remitente_inexistente:
+    'El remitente no existe como casilla en el servidor. Revisa CONTACT_FROM en Vercel, o crea esa dirección en cPanel.',
+  auth_invalida: 'La contraseña de SMTP_PASS no es correcta.',
+  limite_hosting: 'Se topó el límite de correos por hora del hosting. Espera o súbelo en cPanel.',
   exception: 'Error inesperado al enviar.',
 };
 
