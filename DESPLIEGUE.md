@@ -155,6 +155,21 @@ No hace falta que averigües nada de esto, pero por si algo falla:
   verifica limpio: no hay que desactivar comprobaciones.
 - El SPF del dominio (`+ip4:190.113.1.162 -all`) ya autoriza ese servidor.
 
+### Si falla
+
+El panel solo puede decir «el servidor de correo rechazó los envíos»: el detalle
+no viaja al navegador a propósito. Tienes dos formas de ver la respuesta literal
+del servidor:
+
+- **Vercel → el despliegue → Logs**, línea `[notify] destinatario rechazado:`.
+- **`node scripts/probar-smtp.mjs`**, que se conecta, autentica y traduce lo que
+  conteste Exim. Con una dirección como argumento, además manda un correo.
+
+Y una regla que ahorra mucho tiempo: **si el script funciona en tu equipo pero el
+sitio no envía, el problema no son las credenciales sino desde dónde se conecta**.
+Vercel envía desde IPs de AWS que cambian, y muchos hostings compartidos las
+bloquean. Eso no se arregla en cPanel: hay que preguntárselo a Netexplora.
+
 ### Lo que hay que tener en cuenta
 
 Es un hosting compartido, no un servicio de envío. Eso significa **un límite de
