@@ -1,0 +1,178 @@
+---
+// Alta y baja del segundo factor (TOTP).
+//
+// POR QUÉ EXISTE ESTA PÁGINA
+// Un factor TOTP solo puede darlo de alta su propio dueño: el panel de
+// Supabase no permite hacerlo por él, porque el secreto tiene que llegar al
+// teléfono de esa persona y a nadie más. Sin esta pantalla, `mfa.enroll()` no
+// se llamaría nunca, ninguna cuenta llegaría a aal2 y la comprobación del
+// middleware quedaría inerte.
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { Icon } from 'astro-icon/components';
+
+const supabase = Astro.locals.supabase;
+if (!supabase) return Astro.redirect('/admin/login');
+
+const { data: factores } = await supabase.auth.mfa.listFactors();
+const totp = factores?.totp?.[0] ?? null;
+const activo = totp?.status === 'verified';
+---
+
+<AdminLayout
+  title="Seguridad"
+  description="Verificación en dos pasos para entrar al panel"
+>
+  <div class="max-w-2xl space-y-6">
+    <div class="panel p-6">
+      <div class="flex items-start gap-4">
+        <div class={`tile ${activo ? 'tile-accent' : ''} shrink-0`}>
+          <Icon name={activo ? 'lucide:shield-check' : 'lucide:shield-alert'} class="h-6 w-6" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <h2 class="text-lg font-bold">Verificación en dos pasos</h2>
+          <p class="mt-1 text-sm text-base-content/70">
+            {activo
+              ? 'Está activa. Al entrar al panel se te pedirá el código de tu aplicación de autenticación además de la contraseña.'
+              : 'No está activa. Con solo la contraseña, quien la consiga entra al panel. Actívala: toma un minuto.'}
+          </p>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            {!activo && (
+              <button id="empezar" class="btn btn-primary btn-sm gap-2">
+                <Icon name="lucide:shield-plus" class="h-4 w-4" /> Activar
+              </button>
+            )}
+            {activo && (
+              <button id="quitar" class="btn btn-ghost btn-sm gap-2 text-error" data-factor={totp?.id}>
+                <Icon name="lucide:shield-off" class="h-4 w-4" /> Desactivar
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Alta. Oculto hasta que se pulsa «Activar»: el QR solo se genera cuando
+        hay alguien mirando la pantalla, no en cada carga de la página. */}
+    <div id="alta" class="panel hidden p-6">
+      <h3 class="font-bold">1 · Escanea el código</h3>
+      <p class="mt-1 text-sm text-base-content/70">
+        Con Google Authenticator, Microsoft Authenticator, 1Password o la que uses.
+      </p>
+
+      <div class="mt-4 flex flex-col items-center gap-3">
+        <div id="qr" class="rounded-xl bg-white p-3"></div>
+        <details class="text-sm">
+          <summary class="cursor-pointer text-base-content/60">No puedo escanear el código</summary>
+          <p class="mt-2 text-base-content/70">Escribe esta clave a mano en la aplicación:</p>
+          <code id="secreto" class="mt-1 block break-all rounded bg-base-200 p-2 font-mono text-xs"></code>
+        </details>
+      </div>
+
+      <h3 class="mt-6 font-bold">2 · Escribe el código que aparece</h3>
+      <form id="confirmar" class="mt-3 flex flex-wrap items-start gap-3">
+        <input
+          type="text"
+          name="code"
+          required
+          inputmode="numeric"
+          pattern="[0-9]{6}"
+          maxlength="6"
+          placeholder="000000"
+          class="input input-bordered w-36 text-center text-lg tracking-[0.3em]"
+        />
+        <button type="submit" class="btn btn-primary gap-2">
+          <Icon name="lucide:check" class="h-4 w-4" /> Confirmar
+        </button>
+        <button type="button" id="cancelar" class="btn btn-ghost">Cancelar</button>
+      </form>
+
+      <p id="aviso" class="mt-3 hidden text-sm"></p>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { createBrowserSupabase } from '../../lib/supabase';
+
+  function initSeguridad() {
+    const empezar = document.getElementById('empezar');
+    const quitar = document.getElementById('quitar');
+    const alta = document.getElementById('alta');
+    const qr = document.getElementById('qr');
+    const secreto = document.getElementById('secreto');
+    const confirmar = document.getElementById('confirmar') as HTMLFormElement | null;
+    const cancelar = document.getElementById('cancelar');
+    const aviso = document.getElementById('aviso');
+    if (!alta || alta.dataset.listo) return;
+    alta.dataset.listo = '1';
+
+    const supabase = createBrowserSupabase();
+    let factorId = '';
+
+    const decir = (texto: string, error = false) => {
+      if (!aviso) return;
+      aviso.textContent = texto;
+      aviso.className = `mt-3 text-sm ${error ? 'text-error' : 'text-success'}`;
+    };
+
+    empezar?.addEventListener('click', async () => {
+      // Un intento anterior sin confirmar deja un factor `unverified` colgando
+      // y Supabase rechaza el siguiente alta por nombre repetido. Se limpia.
+      const { data: previos } = await supabase.auth.mfa.listFactors();
+      for (const f of previos?.totp ?? []) {
+        if (f.status !== 'verified') await supabase.auth.mfa.unenroll({ factorId: f.id });
+      }
+
+      const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
+      if (error || !data) {
+        decir('No se pudo iniciar el alta: ' + (error?.message ?? 'error desconocido'), true);
+        alta.classList.remove('hidden');
+        return;
+      }
+
+      factorId = data.id;
+      // `qr_code` viene como SVG en un data: URI. La CSP permite data: en
+      // img-src justo para esto.
+      if (qr) qr.innerHTML = `<img src="${data.totp.qr_code}" alt="Código QR" width="180" height="180" />`;
+      if (secreto) secreto.textContent = data.totp.secret;
+      alta.classList.remove('hidden');
+      alta.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    confirmar?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = String(new FormData(confirmar).get('code') ?? '').trim();
+      const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+
+      if (error) {
+        decir('Código incorrecto o vencido. Prueba con el siguiente.', true);
+        return;
+      }
+      decir('Listo. La próxima vez que entres se te pedirá el código.');
+      setTimeout(() => window.location.reload(), 1200);
+    });
+
+    cancelar?.addEventListener('click', async () => {
+      if (factorId) await supabase.auth.mfa.unenroll({ factorId });
+      alta.classList.add('hidden');
+      factorId = '';
+    });
+
+    quitar?.addEventListener('click', async () => {
+      const id = (quitar as HTMLElement).dataset.factor;
+      if (!id) return;
+      if (!confirm('¿Desactivar la verificación en dos pasos? El panel quedará protegido solo por la contraseña.')) return;
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: id });
+      if (error) {
+        alert('No se pudo desactivar: ' + error.message);
+        return;
+      }
+      window.location.reload();
+    });
+  }
+
+  document.addEventListener('astro:page-load', initSeguridad);
+</script>

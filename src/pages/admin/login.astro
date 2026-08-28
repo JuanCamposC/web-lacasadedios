@@ -59,6 +59,41 @@ import '../../styles/global.css';
         </button>
       </form>
 
+      {/* Segundo paso. Aparece solo si la cuenta tiene un factor TOTP dado de
+          alta: la contraseña deja la sesión en aal1 y el código la sube a aal2,
+          que es lo que exige el middleware para entrar al panel. */}
+      <form id="mfa-form" class="hidden space-y-4">
+        <p class="text-sm text-white/70">
+          Abre tu aplicación de autenticación y escribe el código de seis dígitos.
+        </p>
+        <label class="block">
+          <span class="mb-1 block text-xs font-medium uppercase tracking-wider text-white/70">Código</span>
+          <div class="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 focus-within:border-white/50">
+            <Icon name="lucide:shield-check" class="h-4 w-4 text-white/50" />
+            <input
+              type="text"
+              name="code"
+              required
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxlength="6"
+              class="w-full bg-transparent py-2.5 text-center text-lg tracking-[0.4em] text-white placeholder-white/40 outline-none"
+              placeholder="000000"
+            />
+          </div>
+        </label>
+
+        <p id="mfa-error" class="hidden text-sm text-red-300"></p>
+
+        <button type="submit" id="mfa-submit" class="btn btn-primary w-full gap-2">
+          <Icon name="lucide:shield-check" class="h-5 w-5" /> Verificar
+        </button>
+        <button type="button" id="mfa-cancelar" class="btn btn-ghost btn-sm w-full text-white/60">
+          Usar otra cuenta
+        </button>
+      </form>
+
       <a href="/" class="mt-4 flex items-center justify-center gap-1 text-sm text-white/60 hover:text-white">
         <Icon name="lucide:arrow-left" class="h-4 w-4" /> Volver al sitio
       </a>
@@ -70,10 +105,39 @@ import '../../styles/global.css';
       const form = document.getElementById('login-form') as HTMLFormElement;
       const errorEl = document.getElementById('error') as HTMLParagraphElement;
       const submit = document.getElementById('submit') as HTMLButtonElement;
+      const mfaForm = document.getElementById('mfa-form') as HTMLFormElement;
+      const mfaError = document.getElementById('mfa-error') as HTMLParagraphElement;
+      const mfaSubmit = document.getElementById('mfa-submit') as HTMLButtonElement;
+      const mfaCancelar = document.getElementById('mfa-cancelar') as HTMLButtonElement;
       const supabase = createBrowserSupabase();
 
+      /** Muestra el paso del código y esconde el de contraseña. */
+      function pedirCodigo() {
+        form.classList.add('hidden');
+        mfaForm.classList.remove('hidden');
+        (mfaForm.querySelector('input[name="code"]') as HTMLInputElement | null)?.focus();
+      }
+
+      /**
+       * Decide a dónde va la sesión recién abierta. `nextLevel === 'aal2'`
+       * significa que la cuenta tiene un factor verificado; mientras
+       * `currentLevel` siga en aal1, falta el código y el middleware no dejará
+       * pasar al panel.
+       */
+      async function continuar() {
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (aal && aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
+          pedirCodigo();
+          return;
+        }
+        window.location.href = '/admin';
+      }
+
+      // Si ya hay sesión, no se salta directo al panel: puede estar a medias
+      // (aal1 con factor pendiente), y el middleware la devolvería aquí en
+      // bucle. `continuar` decide con el nivel real.
       supabase.auth.getSession().then(({ data }) => {
-        if (data.session) window.location.href = '/admin';
+        if (data.session) continuar();
       });
 
       form.addEventListener('submit', async (e) => {
@@ -95,7 +159,51 @@ import '../../styles/global.css';
           submit.textContent = 'Ingresar';
           return;
         }
+        await continuar();
+      });
+
+      mfaForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        mfaError.classList.add('hidden');
+        mfaSubmit.disabled = true;
+        mfaSubmit.textContent = 'Verificando…';
+
+        const code = String(new FormData(mfaForm).get('code') ?? '').trim();
+
+        // El factor TOTP verificado de la cuenta. Se toma el primero: el alta
+        // en /admin/seguridad solo permite uno.
+        const { data: factores, error: errorFactores } = await supabase.auth.mfa.listFactors();
+        const totp = factores?.totp?.[0];
+
+        if (errorFactores || !totp) {
+          mfaError.textContent = 'No se pudo leer el factor de verificación. Vuelve a ingresar.';
+          mfaError.classList.remove('hidden');
+          mfaSubmit.disabled = false;
+          mfaSubmit.textContent = 'Verificar';
+          return;
+        }
+
+        // `challengeAndVerify` hace el desafío y la comprobación en una llamada.
+        const { error } = await supabase.auth.mfa.challengeAndVerify({
+          factorId: totp.id,
+          code,
+        });
+
+        if (error) {
+          mfaError.textContent = 'Código incorrecto o vencido. Prueba con el siguiente.';
+          mfaError.classList.remove('hidden');
+          mfaSubmit.disabled = false;
+          mfaSubmit.textContent = 'Verificar';
+          (mfaForm.querySelector('input[name="code"]') as HTMLInputElement | null)?.select();
+          return;
+        }
+
         window.location.href = '/admin';
+      });
+
+      mfaCancelar.addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        window.location.reload();
       });
     </script>
   </body>
