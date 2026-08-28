@@ -1,0 +1,16 @@
+# Todo se guarda y se saca con LF, en cualquier sistema operativo.
+#
+# POR QUÉ: `core.autocrlf=true` es el valor por defecto de Git for Windows y
+# escribe CRLF al hacer checkout. Prettier espera LF, así que `npm run
+# format:check` fallaba con decenas de archivos que no tenían nada malo. En CI
+# no se veía —corre en Linux, donde el checkout ya es LF—, así que el fallo lo
+# sufría solo quien trabaja en Windows.
+#
+# No cambia nada de lo ya versionado: en el repositorio los archivos ya estaban
+# con LF. Solo cambia cómo se escriben en disco.
+* text=auto eol=lf
+
+# Imágenes: que Git no intente convertir nada dentro.
+*.png binary
+*.jpg binary
+*.ico binary
