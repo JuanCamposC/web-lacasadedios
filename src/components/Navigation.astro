@@ -189,23 +189,28 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
     con `astro:page-load`, igual que el del pie, que tampoco es inline. */
 }
 <script>
+  import {
+    aplicarTema,
+    guardarTema,
+    temaGuardado,
+    TEMA_OSCURO,
+    TEMA_POR_DEFECTO,
+  } from '../lib/tema';
+
   function initNav() {
-    const html = document.documentElement;
     const themeToggle = document.getElementById('theme-toggle') as HTMLInputElement | null;
 
-    let savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') savedTheme = 'churchdark';
-    if (savedTheme !== 'church' && savedTheme !== 'churchdark') savedTheme = 'church';
-    html.setAttribute('data-theme', savedTheme);
-    if (savedTheme === 'churchdark' && themeToggle) themeToggle.checked = true;
+    // La normalización y el guardado viven en src/lib/tema.ts, junto con el
+    // script inline del layout: antes estaban escritos dos veces.
+    const tema = temaGuardado();
+    aplicarTema(tema);
+    if (themeToggle) themeToggle.checked = tema === TEMA_OSCURO;
 
     if (themeToggle && !themeToggle.dataset.bound) {
       themeToggle.dataset.bound = '1';
-      themeToggle.addEventListener('change', () => {
-        const newTheme = themeToggle.checked ? 'churchdark' : 'church';
-        html.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-      });
+      themeToggle.addEventListener('change', () =>
+        guardarTema(themeToggle.checked ? TEMA_OSCURO : TEMA_POR_DEFECTO),
+      );
     }
 
     const nav = document.getElementById('site-nav');

@@ -1,4 +1,4 @@
-import { createBrowserClient, createServerClient } from '@supabase/ssr';
+import { createBrowserClient, createServerClient, parseCookieHeader } from '@supabase/ssr';
 import type { AstroCookies } from 'astro';
 
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL;
@@ -9,16 +9,6 @@ export const supabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
 /** Cliente para el navegador (login y CRUD del panel). Guarda la sesión en cookies. */
 export function createBrowserSupabase() {
   return createBrowserClient(SUPABASE_URL, SUPABASE_KEY);
-}
-
-function parseCookieHeader(header: string): { name: string; value: string }[] {
-  if (!header) return [];
-  return header.split(';').map((pair) => {
-    const idx = pair.indexOf('=');
-    const name = pair.slice(0, idx).trim();
-    const value = decodeURIComponent(pair.slice(idx + 1).trim());
-    return { name, value };
-  });
 }
 
 /** Cliente para el servidor (SSR + middleware), lee la sesión desde las cookies. */

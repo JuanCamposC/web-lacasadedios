@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro';
 import { templos } from '../data/templos';
 import { SITE, CONTACT, SOCIAL, hasPhone } from '../data/site';
 import { hashCsp } from '../lib/csp';
+import { SCRIPT_TEMA_INLINE } from '../lib/tema';
 
 // Fuentes auto-hospedadas y variables (sin depender del CDN de Google Fonts).
 // Solo el romano de cada familia: ~88 kB para las tres, menos de lo que pesaban
@@ -70,10 +71,9 @@ const orgJsonLd = {
    El del tema sigue siendo `is:inline` porque tiene que correr antes del
    primer fotograma. Convertido en módulo llegaría tarde y la página
    parpadearía en claro antes de saltar a oscuro. */
-const SCRIPT_TEMA = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark')t='churchdark';if(t!=='church'&&t!=='churchdark')t='church';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
 const JSON_LD = JSON.stringify(orgJsonLd);
 
-Astro.csp?.insertScriptHash({ hash: hashCsp(SCRIPT_TEMA), kind: 'element' });
+Astro.csp?.insertScriptHash({ hash: hashCsp(SCRIPT_TEMA_INLINE), kind: 'element' });
 Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
 ---
 
@@ -82,7 +82,7 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script is:inline set:html={SCRIPT_TEMA} />
+    <script is:inline set:html={SCRIPT_TEMA_INLINE} />
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     {

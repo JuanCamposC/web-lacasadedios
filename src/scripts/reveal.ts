@@ -89,7 +89,19 @@ function init() {
 
 // Astro View Transitions: se dispara en la carga inicial y tras cada navegación.
 document.addEventListener('astro:page-load', init);
-// Fallback si no hay View Transitions activas en la página.
+
+// NO QUITAR ESTE RESPALDO aunque parezca que duplica al de arriba.
+//
+// Es cierto que `astro:page-load` también dispara en la carga inicial… pero
+// solo donde hay un <ClientRouter />, y AdminLayout.astro no lo monta. En todo
+// el panel —que usa data-reveal y data-count en el tablero— ese evento no llega
+// nunca, y esta rama es lo único que inicializa las animaciones.
+//
+// Sí hay una llamada de más en las páginas públicas: ClientRouter emite
+// `astro:page-load` en el evento `load` (transitions/router.js), o sea después
+// de que este módulo ya haya corrido. No hace daño porque las dos funciones
+// filtran por `:not(.is-visible)` y `:not([data-counted])`; como mucho crea un
+// IntersectionObserver de más en la primera carga.
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
