@@ -61,5 +61,36 @@ if (!res.ok) {
 }
 
 console.log(`\n  ✓ Usuario creado: ${data.email}`);
-console.log(`    Entra en /admin/login con ese correo y la contraseña que elegiste.`);
+
+// Crear la cuenta ya no basta: las políticas RLS dejaron de mirar si estás
+// autenticado y miran si estás en `public.admins` (ver la migración
+// «ADMINISTRADORES EXPLÍCITOS» en supabase/schema.sql). Sin esta fila, la
+// persona entra al panel pero no puede publicar ni editar nada.
+const alta = await fetch(`${url}/rest/v1/admins`, {
+  method: 'POST',
+  headers: {
+    apikey: service,
+    Authorization: `Bearer ${service}`,
+    'Content-Type': 'application/json',
+    Prefer: 'resolution=ignore-duplicates,return=minimal',
+  },
+  body: JSON.stringify({ user_id: data.id, email: data.email }),
+});
+
+if (!alta.ok) {
+  const detalle = await alta.text().catch(() => '');
+  const faltaTabla = alta.status === 404 || /admins/i.test(detalle);
+  console.error(`\n  ✗ La cuenta existe, pero NO se pudo inscribir en public.admins.`);
+  console.error(
+    faltaTabla
+      ? `    Falta correr la migración «ADMINISTRADORES EXPLÍCITOS» de supabase/schema.sql.`
+      : `    Supabase respondió ${alta.status}: ${detalle.slice(0, 200)}`,
+  );
+  console.error(`    Hasta arreglarlo, esa cuenta entra al panel pero no puede editar nada.\n`);
+  process.exit(1);
+}
+
+console.log(`  ✓ Inscrito en public.admins (necesario para poder editar).`);
+console.log(`\n    Entra en /admin/login con ese correo y la contraseña que elegiste.`);
+console.log(`    Activa la verificación en dos pasos desde /admin/seguridad.`);
 console.log(`    Cambia la contraseña desde Supabase si la compartiste con alguien.\n`);
