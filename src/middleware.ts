@@ -23,6 +23,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   context.locals.supabase = supabase;
   context.locals.user = null;
 
+  const sinCache = path.startsWith('/admin') || path.startsWith('/api');
+
   // Protege el panel (excepto la página de login).
   if (isProtectedAdmin) {
     const {
@@ -51,5 +53,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
-  return next();
+  const response = await next();
+
+  // El panel y los endpoints no se guardan en ninguna caché. Las páginas de
+  // contenido sí —cada una fija su propio `s-maxage`—, y sin esta marca una
+  // respuesta con datos de sesión podría quedarse guardada en alguna capa
+  // intermedia y servirse a otra persona.
+  //
+  // vercel.json lo repite a nivel de CDN, a propósito: aquí se protege la
+  // respuesta de la función, allí cualquier cosa servida bajo esas rutas.
+  if (sinCache) {
+    response.headers.set('Cache-Control', 'no-store, must-revalidate');
+  }
+
+  return response;
 });

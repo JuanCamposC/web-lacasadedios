@@ -1,6 +1,13 @@
 ---
 export const prerender = false;
 
+// La página se arma en cada petición, pero su contenido cambia como mucho unas
+// veces al mes. Se deja que la CDN de Vercel la sirva ya hecha durante un
+// minuto y que siga sirviéndola hasta diez minutos más mientras la rehace por
+// detrás: durante una transmisión, cien visitas seguidas son una sola consulta
+// a la base en vez de cien.
+Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
+
 import Layout from '../../layouts/Layout.astro';
 import PageHero from '../../components/PageHero.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
