@@ -29,6 +29,21 @@ function json(data: unknown, status = 200) {
   });
 }
 
+/**
+ * Un solo sitio por donde salen los fallos.
+ *
+ * El detalle NO viaja al navegador: se escribe en los registros de la función.
+ * Devolverlo era cómodo para diagnosticar, pero este endpoint es público y sin
+ * autenticar, así que cualquiera podía leer estado interno del servidor: llegó a
+ * repetir el contenido literal de una variable de entorno mal pegada. Al
+ * navegador le basta el motivo —el pie ya traduce cada uno a una frase—; el
+ * detalle lo necesita quien mantiene el sitio, y ese mira los registros.
+ */
+function fallo(reason: string, detalle: string, status = 200) {
+  console.error(`[suscribir] ${reason}: ${detalle}`);
+  return json({ ok: false, reason }, status);
+}
+
 function esc(s: unknown) {
   return String(s ?? '')
     .replace(/&/g, '&amp;')
@@ -71,12 +86,8 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   const supabase = crearSupabaseServicio();
   if (!supabase) {
     // Sin la clave de servicio no se puede escribir: la tabla ya no acepta la
-    // clave anónima. Se dice cuál falta en vez de devolver un 500 mudo.
-    return json({
-      ok: false,
-      reason: 'sin_configurar',
-      detalle: 'Falta SUPABASE_SERVICE_ROLE_KEY en el entorno del servidor.',
-    });
+    // clave anónima. Se registra cuál falta en vez de dejar un 500 mudo.
+    return fallo('sin_configurar', 'Falta SUPABASE_SERVICE_ROLE_KEY en el entorno del servidor.');
   }
 
   // ── Freno por IP ──────────────────────────────────────────────────────────
@@ -92,11 +103,7 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
     const faltaMigracion = /registrar_intento_alta|subscribe_attempts/i.test(
       errorFreno.message ?? '',
     );
-    return json({
-      ok: false,
-      reason: faltaMigracion ? 'falta_migracion' : 'db_error',
-      detalle: errorFreno.message,
-    });
+    return fallo(faltaMigracion ? 'falta_migracion' : 'db_error', errorFreno.message);
   }
 
   if (typeof previos === 'number' && previos >= LIMITE) {
@@ -116,11 +123,7 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
     if (error.code === '23505') return json({ ok: true, estado: 'ya_estaba' });
 
     const faltaMigracion = /pending|confirmed_at/i.test(error.message ?? '');
-    return json({
-      ok: false,
-      reason: faltaMigracion ? 'falta_migracion' : 'db_error',
-      detalle: error.message,
-    });
+    return fallo(faltaMigracion ? 'falta_migracion' : 'db_error', error.message);
   }
 
   // ── Correo de confirmación ────────────────────────────────────────────────
@@ -134,19 +137,17 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   // En ambos casos la fila queda pendiente a propósito: confirmar es lo que da
   // permiso para escribir a esa persona, y sin correo saliente no hay permiso.
   if (!apiKey) {
-    return json({
-      ok: false,
-      reason: 'sin_proveedor_correo',
-      detalle: 'Falta RESEND_API_KEY: el alta quedó pendiente de confirmar.',
-    });
+    return fallo(
+      'sin_proveedor_correo',
+      'Falta RESEND_API_KEY: el alta quedó pendiente de confirmar.',
+    );
   }
 
   if (!remitente.ok) {
-    return json({
-      ok: false,
-      reason: 'from_invalido',
-      detalle: `CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
-    });
+    return fallo(
+      'from_invalido',
+      `CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
+    );
   }
 
   const base = process.env.SITE_URL || reqUrl.origin;
@@ -172,14 +173,10 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
     });
 
     if (errorEnvio) {
-      return json({
-        ok: false,
-        reason: 'send_error',
-        detalle: (errorEnvio as any)?.message ?? String(errorEnvio),
-      });
+      return fallo('send_error', (errorEnvio as any)?.message ?? String(errorEnvio));
     }
   } catch (e) {
-    return json({ ok: false, reason: 'send_error', detalle: (e as Error).message });
+    return fallo('send_error', (e as Error).message);
   }
 
   return json({ ok: true, estado: 'confirmacion_enviada' });

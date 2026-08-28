@@ -70,6 +70,12 @@ Cuando termine, comprueba en el sitio:
 - [ ] `/admin/login` deja entrar y se puede editar una noticia. Si entra pero no
       deja guardar, falta el paso 1.
 
+> **Si algo falla, el motivo exacto está en Vercel** → el despliegue → pestaña
+> **Logs**, en una línea que empieza por `[suscribir]`. Al navegador solo le
+> llega el motivo en una frase; el detalle se queda en el servidor a propósito,
+> porque el formulario es público y llegó a repetir el contenido de una variable
+> de entorno mal pegada.
+
 ---
 
 ## 4 · Activar la verificación en dos pasos
