@@ -114,22 +114,57 @@ llegan a consultar la base.
 
 ---
 
-## 6 · Terminar la configuración del correo (pendiente de antes)
+## 6 · Configurar el correo saliente · **sin tocar el DNS**
 
-Sigue sin resolverse desde agosto. Sin esto no sale ningún correo, ni el de
-confirmación del boletín ni los avisos.
+Sin esto no sale ningún correo: ni la confirmación del boletín, ni el formulario
+de contacto, ni los avisos al publicar.
 
-En **Netexplora** (no en NIC, que solo delega), añade los tres registros que pide
-Resend:
+> **Cambió el plan.** Antes esto pedía verificar el dominio en Resend con tres
+> registros DNS. Ya no: el correo sale por el servidor que la iglesia **ya**
+> tiene. No se toca ni un registro, y el que decía «añade `include:amazonses.com`
+> al SPF» estaba de más — y era peor, porque autorizaba a todo Amazon SES a
+> enviar como el dominio.
 
-| Tipo | Nombre | Valor |
-|---|---|---|
-| MX | `send` | el que indique Resend |
-| TXT | `send` | el SPF que indique Resend |
-| TXT | `resend._domainkey` | la clave DKIM |
+### Lo que hay que hacer
 
-Y **añade `include:amazonses.com` al SPF que ya existe**: hoy termina en `-all`,
-que rechaza todo lo que no esté listado.
+1. En **cPanel de Netexplora → Cuentas de correo**, crea o elige una casilla
+   para esto. `boletin@lacasadedios.cl` va bien: si algún día hay que cambiar
+   la contraseña, no arrastra el correo de nadie.
+2. En **Vercel → Settings → Environment Variables**, añade las cuatro:
+
+| Variable | Valor |
+|---|---|
+| `SMTP_HOST` | `mail.lacasadedios.cl` |
+| `SMTP_PORT` | `465` |
+| `SMTP_USER` | la casilla completa, con arroba |
+| `SMTP_PASS` | su contraseña — **secreta** |
+
+`CONTACT_FROM` es opcional: si se deja vacío se usa `SMTP_USER`, que es lo más
+seguro. Muchos servidores rechazan un remitente que no sea la cuenta que se
+autenticó.
+
+3. **Redespliega.** Vercel inyecta las variables al construir: cambiarlas no
+   basta.
+
+### Lo que ya está comprobado
+
+No hace falta que averigües nada de esto, pero por si algo falla:
+
+- `mail.lacasadedios.cl` responde en **465 y 587**; el 25 está cerrado.
+- El certificado es de Let's Encrypt para `*.lacasadedios.cl`, así que TLS
+  verifica limpio: no hay que desactivar comprobaciones.
+- El SPF del dominio (`+ip4:190.113.1.162 -all`) ya autoriza ese servidor.
+
+### Lo que hay que tener en cuenta
+
+Es un hosting compartido, no un servicio de envío. Eso significa **un límite de
+correos por hora** —pregúntaselo a Netexplora, suelen ser unos cientos— y ningún
+panel de rebotes: si una dirección ya no existe, el aviso llega a la casilla, no
+a un tablero.
+
+El envío del boletín va de tres en tres y avisa en el panel cuántos salieron y
+cuántos no. Si algún día la lista pasa de unos cientos, esto se queda corto y
+tocará volver a un servicio de envío con dominio verificado.
 
 ---
 
@@ -159,5 +194,8 @@ Dime qué prefieres y lo agrego:
 | `PUBLIC_SUPABASE_ANON_KEY` | No | Igual |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Sí** | **No se puede suscribir nadie** |
 | `SITE_URL` | No | Los enlaces de los correos apuntan mal |
-| `RESEND_API_KEY` | **Sí** | No sale ningún correo |
-| `CONTACT_FROM` | No | Se usa el remitente de prueba de Resend |
+| `SMTP_HOST` | No | No sale ningún correo |
+| `SMTP_PORT` | No | Se asume 465 |
+| `SMTP_USER` | No | No sale ningún correo |
+| `SMTP_PASS` | **Sí** | No sale ningún correo |
+| `CONTACT_FROM` | No | Se usa `SMTP_USER` como remitente |

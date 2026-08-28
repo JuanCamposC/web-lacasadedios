@@ -3,7 +3,7 @@ import { SITE } from '../data/site';
 /**
  * Resuelve y valida el remitente de los correos (`CONTACT_FROM`).
  *
- * POR QUÉ EXISTE: Resend exige el formato `correo@dominio.cl` o
+ * POR QUÉ EXISTE: el servidor exige el formato `correo@dominio.cl` o
  * `Nombre <correo@dominio.cl>`, y rechaza el envío entero si no calza. El
  * error más común es dejar comillas alrededor del valor al pegarlo en el panel
  * de Vercel: quedan DENTRO del valor y lo invalidan, sin ninguna pista.
@@ -22,9 +22,12 @@ export function resolverRemitente(): Remitente {
   const crudo = (process.env.CONTACT_FROM ?? '').trim();
 
   if (!crudo) {
-    // Sin configurar: remitente de pruebas de Resend. Sirve para desarrollo,
-    // no para producción (ver README).
-    return { ok: true, from: `${SITE.name} <onboarding@resend.dev>`, porDefecto: true };
+    // Sin configurar: la propia casilla con la que se autentica el SMTP. No es
+    // solo una comodidad — muchos servidores rechazan, o marcan como suplantación,
+    // un `From` que no coincide con la cuenta que abrió la sesión.
+    const casilla = (process.env.SMTP_USER ?? '').trim();
+    if (!casilla) return { ok: false, valor: '' };
+    return { ok: true, from: `${SITE.name} <${casilla}>`, porDefecto: true };
   }
 
   // Comillas envolventes: error de copiar y pegar, no intención del usuario.

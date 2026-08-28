@@ -264,14 +264,24 @@ El registro público está desactivado: solo entra quien se cree a mano.
 PUBLIC_SUPABASE_URL=https://<tu-proyecto>.supabase.co
 PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...   # o la anon key (pública)
 SITE_URL=https://web-lacasadedios.vercel.app
-RESEND_API_KEY=re_...                          # correo del formulario y del boletín
-CONTACT_FROM=La Casa de Dios <hola@lacasadedios.cl>
+SMTP_HOST=mail.lacasadedios.cl                 # correo del formulario y del boletín
+SMTP_PORT=465
+SMTP_USER=boletin@lacasadedios.cl
+SMTP_PASS=...                                  # SECRETA
+CONTACT_FROM=La Casa de Dios <boletin@lacasadedios.cl>
 ```
 
 > No se usa la `service_role` / clave secreta: toda la escritura pasa por la
 > sesión autenticada + las políticas RLS.
 
-**Sin `RESEND_API_KEY` el formulario de contacto no finge un envío exitoso**:
+El correo sale por SMTP con una casilla del propio dominio, no por un servicio
+de envío. Los servicios exigen verificar un dominio con registros DNS, y el
+sitio vive en un dominio de Vercel al que no se le pueden añadir; el servidor
+de la iglesia, en cambio, ya está autorizado en el SPF del dominio, así que no
+hay que tocar el DNS. A cambio hereda el límite de envíos por hora del hosting
+compartido: sobra para una lista de decenas, se queda corto para miles.
+
+**Sin las variables `SMTP_*` el formulario de contacto no finge un envío**:
 avisa a la persona que escriba directamente al correo de la iglesia.
 
 ## 🌐 Despliegue (Vercel)

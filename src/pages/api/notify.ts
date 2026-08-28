@@ -1,12 +1,9 @@
 import type { APIRoute } from 'astro';
-import { Resend } from 'resend';
+import { crearTransporteLote } from '../../lib/smtp';
 import { SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 
 export const prerender = false;
-
-/** Resend acepta hasta 100 correos por llamada al envío por lotes. */
-const TAMANO_LOTE = 100;
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -20,12 +17,6 @@ function esc(s: unknown) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
-}
-
-function trozos<T>(arr: T[], n: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
-  return out;
 }
 
 export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
@@ -44,8 +35,8 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   const url = String(body?.url ?? '').trim();
   if (!title) return json({ ok: false, reason: 'bad_request' }, 400);
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return json({ ok: false, reason: 'no_email_provider' });
+  const transporte = crearTransporteLote();
+  if (!transporte) return json({ ok: false, reason: 'no_email_provider' });
 
   // `token` viene de la migración de baja (ver supabase/schema.sql). Si la
   // migración todavía no se corrió, la consulta falla y se dice por qué en
@@ -106,54 +97,65 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
     </p>
   </div>`;
 
+  let enviados = 0;
+  let fallidos = 0;
+
   try {
-    const resend = new Resend(apiKey);
-    let enviados = 0;
-
-    // Un correo por persona, en lotes de 100. Antes iba un solo mensaje con
-    // todos en copia oculta: era imposible poner un enlace de baja propio para
-    // cada uno, y los proveedores penalizan el envío masivo sin esa salida.
-    for (const lote of trozos(destinatarios, TAMANO_LOTE)) {
-      const mensajes = lote.map((s: any) => {
+    // Se lanzan todos a la vez y el pool los encola de tres en tres: la
+    // concurrencia la decide el transporte (ver crearTransporteLote), no este
+    // bucle. Un correo por persona, nunca copia oculta: cada uno lleva su
+    // propio enlace de baja, y sin esa salida los proveedores penalizan.
+    //
+    // Un rechazo individual YA NO aborta el resto. Con el envío por lotes que
+    // había antes, un solo destinatario malo dejaba sin aviso a toda la lista
+    // que venía detrás; ahora se apunta y se sigue.
+    await Promise.all(
+      destinatarios.map(async (s: any) => {
         const urlBaja = `${base}/baja?t=${encodeURIComponent(s.token)}`;
-        return {
-          from,
-          to: s.email,
-          subject: `${SITE.name} — ${title}`,
-          html: cuerpo(urlBaja),
-          headers: {
-            // Cabecera estándar: pone el botón «Cancelar suscripción» en Gmail
-            // y Outlook, y es lo que miran para no marcar el envío como spam.
-            //
-            // A propósito SIN `List-Unsubscribe-Post`: la baja en un clic exige
-            // que la URL acepte POST sin cabecera Origin, y Astro bloquea eso
-            // por protección CSRF. Desactivar esa protección para todo el sitio
-            // por una lista de decenas de personas no compensa; así el botón
-            // igual aparece y abre la página de baja.
-            'List-Unsubscribe': `<${urlBaja}>`,
-          },
-        };
-      });
-
-      const { error } = await resend.batch.send(mensajes);
-      if (error) {
-        // El detalle de Resend es lo único que dice si el dominio no está
-        // verificado, si el remitente no corresponde o si se topó el límite.
-        // Este endpoint ya exige sesión de administrador, así que devolverlo
-        // no expone nada a un visitante — y sin él, el panel solo podía decir
-        // «no se pudo enviar», que no ayuda a nadie.
-        return json({
-          ok: false,
-          reason: 'send_error',
-          sent: enviados,
-          detalle: (error as any)?.message ?? String(error),
-        });
-      }
-      enviados += mensajes.length;
-    }
-
-    return json({ ok: true, sent: enviados });
+        try {
+          await transporte.sendMail({
+            from,
+            to: s.email,
+            subject: `${SITE.name} — ${title}`,
+            html: cuerpo(urlBaja),
+            headers: {
+              // Cabecera estándar: pone el botón «Cancelar suscripción» en
+              // Gmail y Outlook, y es lo que miran para no marcar el envío
+              // como spam.
+              //
+              // A propósito SIN `List-Unsubscribe-Post`: la baja en un clic
+              // exige que la URL acepte POST sin cabecera Origin, y Astro lo
+              // bloquea por protección CSRF. Desactivar esa protección en todo
+              // el sitio por una lista de decenas de personas no compensa; así
+              // el botón igual aparece y abre la página de baja.
+              'List-Unsubscribe': `<${urlBaja}>`,
+            },
+          });
+          enviados++;
+        } catch (e: any) {
+          // La dirección no va a los registros: es un dato personal. Basta con
+          // saber cuántos fallaron y con qué motivo los rechazaron.
+          fallidos++;
+          console.error(`[notify] destinatario rechazado: ${e?.message ?? e}`);
+        }
+      }),
+    );
   } catch (e: any) {
-    return json({ ok: false, reason: 'exception', detalle: e?.message ?? String(e) });
+    return json({
+      ok: false,
+      reason: 'exception',
+      sent: enviados,
+      detalle: e?.message ?? String(e),
+    });
+  } finally {
+    // El pool deja conexiones abiertas si no se cierra, y la función se
+    // congelaría con ellas dentro.
+    transporte.close();
   }
+
+  // Que no saliera NI UNO es un fallo; que fallen algunos, un aviso.
+  if (!enviados && fallidos) {
+    return json({ ok: false, reason: 'send_error', sent: 0, fallidos });
+  }
+  return json({ ok: true, sent: enviados, fallidos });
 };

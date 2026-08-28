@@ -13,13 +13,13 @@ import { toast } from './ui';
 // Siempre se dice QUÉ falló. La versión anterior tenía un comodín «no se pudo
 // enviar» que se tragaba la causa real y dejaba sin pistas.
 const EXPLICACION: Record<string, string> = {
-  no_email_provider: 'Falta configurar RESEND_API_KEY en Vercel.',
+  no_email_provider: 'Faltan SMTP_HOST, SMTP_USER o SMTP_PASS en Vercel.',
   from_invalido: 'La variable CONTACT_FROM está mal escrita en Vercel.',
   falta_migracion: 'Falta correr la migración de baja del boletín en Supabase.',
   unauthorized: 'Tu sesión expiró. Vuelve a entrar al panel.',
   unconfigured: 'El servidor no tiene configurada la conexión a la base.',
   db_error: 'No se pudo leer la lista de suscriptores.',
-  send_error: 'Resend rechazó el envío.',
+  send_error: 'El servidor de correo rechazó todos los envíos.',
   exception: 'Error inesperado al enviar.',
 };
 
@@ -36,7 +36,12 @@ export async function avisarSuscriptores(ctx: Contexto, titulo: string, ruta: st
     }).then((x) => x.json());
 
     if (r.ok && r.sent > 0) {
-      return toast(`Avisamos a ${r.sent} suscriptor${r.sent === 1 ? '' : 'es'}`);
+      const hecho = `Avisamos a ${r.sent} suscriptor${r.sent === 1 ? '' : 'es'}`;
+      // Un envío a medias se dice. Si no, «avisamos a 40» esconde que otros
+      // cinco quedaron fuera, y nadie va a mirar los registros por su cuenta.
+      return r.fallidos
+        ? toast(`${hecho}. ${r.fallidos} no salieron: mira los registros.`, 'error')
+        : toast(hecho);
     }
     if (r.ok) {
       return toast('Guardado. Todavía no hay nadie suscrito al boletín.');

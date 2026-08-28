@@ -11,7 +11,7 @@
  * que la persona confirme desde su bandeja.
  */
 import type { APIRoute } from 'astro';
-import { Resend } from 'resend';
+import { crearTransporte } from '../../lib/smtp';
 import { SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 import { crearSupabaseServicio } from '../../lib/supabaseAdmin';
@@ -133,7 +133,7 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   }
 
   // ── Correo de confirmación ────────────────────────────────────────────────
-  const apiKey = process.env.RESEND_API_KEY;
+  const transporte = crearTransporte();
   const remitente = resolverRemitente();
 
   // Los dos fallos van por separado y no en una disyunción: `remitente.valor`
@@ -142,10 +142,10 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   //
   // En ambos casos la fila queda pendiente a propósito: confirmar es lo que da
   // permiso para escribir a esa persona, y sin correo saliente no hay permiso.
-  if (!apiKey) {
+  if (!transporte) {
     return fallo(
       'sin_proveedor_correo',
-      'Falta RESEND_API_KEY: el alta quedó pendiente de confirmar.',
+      'Faltan SMTP_HOST, SMTP_USER o SMTP_PASS: el alta quedó pendiente de confirmar.',
     );
   }
 
@@ -170,21 +170,20 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   </div>`;
 
   try {
-    const resend = new Resend(apiKey);
-    const { error: errorEnvio } = await resend.emails.send({
+    // nodemailer lanza si el envío falla: no hay un error que mirar en el
+    // resultado, todo el camino de fallo pasa por el catch.
+    await transporte.sendMail({
       from: remitente.from,
       to: email,
       subject: `${SITE.name} — Confirma tu suscripción`,
       html,
     });
-
-    if (errorEnvio) {
-      return fallo('send_error', (errorEnvio as any)?.message ?? String(errorEnvio));
-    }
   } catch (e) {
     return fallo('send_error', (e as Error).message);
+  } finally {
+    transporte.close();
   }
 
-  console.info('[suscribir] confirmacion_enviada: Resend aceptó el envío');
+  console.info('[suscribir] confirmacion_enviada: el servidor de correo aceptó el envío');
   return json({ ok: true, estado: 'confirmacion_enviada' });
 };

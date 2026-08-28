@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { Resend } from 'resend';
+import { crearTransporte } from '../../lib/smtp';
 import { CONTACT, SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 
@@ -65,8 +65,8 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     return done(false, { reason: 'invalid', status: 400 });
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
+  const transporte = crearTransporte();
+  if (!transporte) {
     // Sin proveedor de correo no se finge un envío exitoso: se le dice a la
     // persona que escriba directamente.
     return done(false, { reason: 'no_email_provider', email: CONTACT.email, status: 200 });
@@ -85,8 +85,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   ];
 
   try {
-    const resend = new Resend(apiKey);
-    const { error } = await resend.emails.send({
+    await transporte.sendMail({
       from,
       to: CONTACT.email,
       replyTo: email,
@@ -107,9 +106,12 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       </div>`,
     });
 
-    if (error) return done(false, { reason: 'send_error', status: 502 });
     return done(true);
   } catch {
-    return done(false, { reason: 'exception', status: 500 });
+    // nodemailer lanza: aquí caen tanto el rechazo del servidor como que no
+    // se pueda ni conectar. La persona ve el mismo mensaje en los dos casos.
+    return done(false, { reason: 'send_error', status: 502 });
+  } finally {
+    transporte.close();
   }
 };
