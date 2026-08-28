@@ -118,9 +118,15 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
     .single();
 
   if (error) {
-    // 23505 = correo ya presente. No se revela si estaba confirmado o
-    // pendiente: eso permitiría comprobar quién está suscrito.
-    if (error.code === '23505') return json({ ok: true, estado: 'ya_estaba' });
+    // 23505 = correo ya presente. Al navegador se le responde lo mismo que a un
+    // alta nueva: distinguirlas permitiría comprobar desde fuera quién está en
+    // la lista. En los registros sí se separan —sin la dirección, que es un dato
+    // personal— porque si no, un «dice que lo envió y no llega» es indistinguible
+    // de un fallo de entrega.
+    if (error.code === '23505') {
+      console.info('[suscribir] ya_estaba: la dirección ya figuraba, no se envía correo');
+      return json({ ok: true, estado: 'ya_estaba' });
+    }
 
     const faltaMigracion = /pending|confirmed_at/i.test(error.message ?? '');
     return fallo(faltaMigracion ? 'falta_migracion' : 'db_error', error.message);
@@ -179,5 +185,6 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
     return fallo('send_error', (e as Error).message);
   }
 
+  console.info('[suscribir] confirmacion_enviada: Resend aceptó el envío');
   return json({ ok: true, estado: 'confirmacion_enviada' });
 };
