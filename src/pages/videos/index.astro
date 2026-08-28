@@ -100,12 +100,18 @@ const videosJsonLd =
               <Reveal delay={(i % 3) * 80} class="h-full">
                 <div class="panel panel-sm panel-lift flex h-full flex-col overflow-hidden">
                   <div class="aspect-video overflow-hidden bg-black">
+                    {/* Este `allow` no basta por sí solo: la cabecera
+                         Permissions-Policy de vercel.json es el techo, y si allí
+                         una función no incluye "https://www.youtube-nocookie.com"
+                         el navegador la deniega aunque el iframe la pida. Así se
+                         rompió el botón de pantalla completa: la cabecera decía
+                         `fullscreen=(self)` y el reproductor es otro origen. */}
                     <iframe
                       class="h-full w-full"
                       src={`https://www.youtube-nocookie.com/embed/${v.vid}`}
                       title={v.title}
                       loading="lazy"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture"
                       allowfullscreen
                     />
                   </div>
