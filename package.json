@@ -21,7 +21,7 @@
     "@fontsource-variable/fraunces": "^5.3.0",
     "@formkit/auto-animate": "^0.10.0",
     "@iconify-json/lucide": "^1.2.117",
-    "@supabase/ssr": "^0.12.3",
+    "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.110.7",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.1.1",
