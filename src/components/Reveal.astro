@@ -4,11 +4,13 @@ interface Props {
   delay?: number;
   class?: string;
   as?: keyof HTMLElementTagNameMap;
+  /** Cualquier otro atributo se reenvía tal cual al elemento. */
+  [dato: string]: unknown;
 }
-const { delay, class: className = '', as = 'div' } = Astro.props;
+const { delay, class: className = '', as = 'div', ...resto } = Astro.props;
 const Tag = as as any;
 ---
 
-<Tag data-reveal data-reveal-delay={delay} class={className}>
+<Tag data-reveal data-reveal-delay={delay} class={className} {...resto}>
   <slot />
 </Tag>

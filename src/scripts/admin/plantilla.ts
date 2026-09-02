@@ -48,6 +48,19 @@ function campoHtml(f: CrudConfig['fields'][number]): string {
           ${help}
         </div>`;
 
+  // Desplegable de opciones fijas. Cuando es obligatorio arranca en una
+  // opción vacía y deshabilitada: obliga a elegir a conciencia en vez de
+  // dejar pasar la primera de la lista sin mirarla.
+  if (f.type === 'select') {
+    const vacia = f.required
+      ? '<option value="" disabled selected>Elige una opción</option>'
+      : '<option value="">Sin especificar</option>';
+    const opciones = (f.options ?? [])
+      .map((o) => `<option value="${esc(o.value)}">${esc(o.label)}</option>`)
+      .join('');
+    return `<label class="block">${label}<select name="${f.name}" ${req} class="select select-bordered w-full">${vacia}${opciones}</select>${help}</label>`;
+  }
+
   if (f.type === 'checkbox')
     return `<label class="flex cursor-pointer items-start gap-3 rounded border border-base-300 bg-base-200/50 p-3">
           <input type="checkbox" name="${f.name}" checked class="toggle toggle-primary toggle-sm mt-0.5" />

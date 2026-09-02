@@ -33,6 +33,8 @@ export interface EventItem {
   location: string | null;
   description: string | null;
   image_url: string | null;
+  /** Templo al que pertenece, o 'general' (ver src/data/etiquetas.ts). */
+  templo: string;
   published: boolean;
 }
 
@@ -43,6 +45,8 @@ export interface NewsItem {
   excerpt: string | null;
   body: string | null;
   image_url: string | null;
+  /** Templo al que pertenece, o 'general' (ver src/data/etiquetas.ts). */
+  templo: string;
   published: boolean;
   published_at: string;
 }
@@ -52,6 +56,8 @@ export interface VideoItem {
   title: string;
   youtube_url: string;
   description: string | null;
+  /** Templo al que pertenece, o 'general' (ver src/data/etiquetas.ts). */
+  templo: string;
   published: boolean;
   sort_order: number;
   created_at: string;

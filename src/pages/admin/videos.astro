@@ -12,6 +12,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   <script>
     import { setupCrud } from '../../scripts/adminCrud';
+    import { etiquetas } from '../../data/etiquetas';
     setupCrud({
       table: 'videos',
       singular: 'video',
@@ -30,6 +31,14 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           help: 'Pega la URL del video (youtube.com/watch?v=… o youtu.be/…).',
         },
         { name: 'description', label: 'Descripción', type: 'textarea' },
+        {
+          name: 'templo',
+          label: 'Templo',
+          type: 'select',
+          required: true,
+          options: etiquetas,
+          help: 'A qué templo pertenece. «General» si vale para todos.',
+        },
         { name: 'published', label: 'Publicado', type: 'checkbox' },
       ],
     });

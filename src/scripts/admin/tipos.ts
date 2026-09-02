@@ -12,9 +12,13 @@ export type Field = {
     | 'datetime-local'
     | 'number'
     | 'checkbox'
+    /** desplegable de opciones fijas; requiere `options` */
+    | 'select'
     | 'image';
   required?: boolean;
   help?: string;
+  /** Opciones del desplegable. Solo tiene sentido con `type: 'select'`. */
+  options?: { value: string; label: string }[];
 };
 
 export type CrudConfig = {

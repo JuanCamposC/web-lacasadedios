@@ -12,6 +12,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   <script>
     import { setupCrud } from '../../scripts/adminCrud';
+    import { etiquetas } from '../../data/etiquetas';
     setupCrud({
       table: 'news',
       singular: 'noticia',
@@ -35,6 +36,14 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           help: 'Usa los botones para dar formato. Se ve tal cual en el sitio.',
         },
         { name: 'image_url', label: 'Imagen (opcional)', type: 'image' },
+        {
+          name: 'templo',
+          label: 'Templo',
+          type: 'select',
+          required: true,
+          options: etiquetas,
+          help: 'A qué templo pertenece. «General» si vale para todos.',
+        },
         { name: 'published', label: 'Publicado', type: 'checkbox' },
       ],
     });

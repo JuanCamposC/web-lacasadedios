@@ -12,6 +12,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
   <script>
     import { setupCrud } from '../../scripts/adminCrud';
+    import { etiquetas } from '../../data/etiquetas';
     setupCrud({
       table: 'events',
       singular: 'evento',
@@ -25,6 +26,14 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         { name: 'location', label: 'Lugar', type: 'text' },
         { name: 'description', label: 'Descripción', type: 'textarea' },
         { name: 'image_url', label: 'Imagen (opcional)', type: 'image' },
+        {
+          name: 'templo',
+          label: 'Templo',
+          type: 'select',
+          required: true,
+          options: etiquetas,
+          help: 'A qué templo pertenece. «General» si vale para todos.',
+        },
         { name: 'published', label: 'Publicado', type: 'checkbox' },
       ],
     });

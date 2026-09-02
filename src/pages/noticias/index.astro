@@ -11,6 +11,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate
 import Layout from '../../layouts/Layout.astro';
 import PageHero from '../../components/PageHero.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import FiltroTemplos from '../../components/FiltroTemplos.astro';
 import Reveal from '../../components/Reveal.astro';
 import EmptyState from '../../components/EmptyState.astro';
 import { Icon } from 'astro-icon/components';
@@ -50,6 +51,8 @@ const url = (n: NewsItem) => `/noticias/${n.slug ?? n.id}`;
 
   <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Noticias' }]} />
 
+  <FiltroTemplos plural="noticias" />
+
   <section class="section bg-base-100">
     <div class="wrap">
       {
@@ -66,7 +69,7 @@ const url = (n: NewsItem) => `/noticias/${n.slug ?? n.id}`;
         ) : (
           <>
             {/* Destacada */}
-            <Reveal>
+            <Reveal data-etiqueta={destacada.templo}>
               <a
                 href={url(destacada)}
                 class="panel panel-lift group grid overflow-hidden md:grid-cols-2"
@@ -116,7 +119,7 @@ const url = (n: NewsItem) => `/noticias/${n.slug ?? n.id}`;
             {resto.length > 0 && (
               <div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {resto.map((n, i) => (
-                  <Reveal delay={(i % 3) * 80} class="h-full">
+                  <Reveal delay={(i % 3) * 80} class="h-full" data-etiqueta={n.templo}>
                     <a
                       href={url(n)}
                       class="panel panel-sm panel-lift group flex h-full flex-col overflow-hidden"
