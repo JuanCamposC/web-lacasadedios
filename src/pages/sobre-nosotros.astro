@@ -175,25 +175,25 @@ const initials = (name: string) =>
     </div>
   </nav>
 
-  <!-- Declaración de fe (banda oscura) -->
-  <section id="fe" class="section-dark section">
+  <!-- Declaración de fe -->
+  <section id="fe" class="section bg-base-100">
     <div class="wrap">
-      <SectionHeading eyebrow="Nuestras creencias" title="Declaración de fe" invert tone="accent" />
+      <SectionHeading eyebrow="Nuestras creencias" title="Declaración de fe" />
       <div class="mt-12 grid gap-6 md:grid-cols-3">
         {
           credo.map((c, i) => (
             <Reveal delay={(i % 3) * 90} class="h-full">
-              <div class="panel-invert h-full p-7">
-                <div class="mb-3 tile tile-accent">
+              <div class="panel panel-sm h-full p-7">
+                <div class="mb-3 tile">
                   <Icon name={c.icon} class="h-6 w-6" />
                 </div>
-                <h3 class="text-xl font-bold text-white">{c.title}</h3>
+                <h3 class="card-title text-xl">{c.title}</h3>
                 {c.ref && (
-                  <span class="mt-1 inline-block rounded-full border border-white/20 px-2 py-0.5 text-xs text-white/70">
+                  <span class="mt-1 inline-block rounded-full border border-base-300 px-2 py-0.5 text-xs text-base-content/60">
                     {c.ref}
                   </span>
                 )}
-                <p class="mt-2 text-white/75">{c.text}</p>
+                <p class="mt-2 text-base-content/70">{c.text}</p>
               </div>
             </Reveal>
           ))
@@ -203,15 +203,15 @@ const initials = (name: string) =>
   </section>
 
   <!-- Estructura de liderazgo -->
-  <section id="estructura" class="section bg-base-100">
+  <section id="estructura" class="section bg-base-200">
     <div class="wrap">
-      <SectionHeading eyebrow="Cómo servimos" title="Estructura de liderazgo" tone="primary" />
+      <SectionHeading eyebrow="Cómo servimos" title="Estructura de liderazgo" />
       <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {
           liderazgo.map((l, i) => (
             <Reveal delay={(i % 4) * 80} class="h-full">
               <div class="panel panel-sm h-full p-7 text-center">
-                <div class="mx-auto mb-3 tile tile-lg tile-accent">
+                <div class="mx-auto mb-3 tile tile-lg">
                   <Icon name={l.icon} class="h-7 w-7" />
                 </div>
                 <h3 class="card-title justify-center text-xl">{l.title}</h3>
@@ -225,7 +225,7 @@ const initials = (name: string) =>
   </section>
 
   <!-- Sacramentos -->
-  <section id="sacramentos" class="section bg-base-200">
+  <section id="sacramentos" class="section bg-base-100">
     <div class="wrap">
       <SectionHeading eyebrow="Las dos ordenanzas" title="Sacramentos" />
       <div class="mx-auto mt-12 grid max-w-4xl gap-5 md:grid-cols-2">
@@ -233,7 +233,7 @@ const initials = (name: string) =>
           sacramentos.map((s, i) => (
             <Reveal delay={(i % 2) * 90} class="h-full">
               <div class="panel panel-sm flex h-full items-start gap-5 p-7">
-                <div class="tile tile-accent">
+                <div class="tile">
                   <Icon name={s.icon} class="h-6 w-6" />
                 </div>
                 <div>
@@ -249,7 +249,7 @@ const initials = (name: string) =>
   </section>
 
   <!-- Misión y Visión -->
-  <section id="mision" class="section bg-base-100">
+  <section id="mision" class="section bg-base-200">
     <div class="wrap">
       <div class="grid gap-6 md:grid-cols-2">
         <Reveal>
@@ -269,7 +269,7 @@ const initials = (name: string) =>
           <div
             class="h-full rounded-xl border border-base-300 bg-gradient-to-br from-accent/10 to-base-100 p-8"
           >
-            <div class="mb-4 tile tile-accent">
+            <div class="mb-4 tile">
               <Icon name="lucide:eye" class="h-6 w-6" />
             </div>
             <h2 class="card-title text-3xl">Visión</h2>
@@ -284,7 +284,7 @@ const initials = (name: string) =>
   </section>
 
   <!-- Historia -->
-  <section id="historia" class="section bg-base-200">
+  <section id="historia" class="section bg-base-100">
     <div class="wrap">
       <div class="grid items-center gap-10 lg:grid-cols-12">
         <Reveal class="lg:col-span-5">
@@ -320,13 +320,13 @@ const initials = (name: string) =>
             {HISTORIA.hitos.map((h, i) => (
               <li data-reveal data-reveal-delay={Math.min(i, 5) * 70} class="relative">
                 <span class="absolute -left-[1.85rem] top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary ring-4 ring-base-200 sm:-left-[2.35rem]" />
-                <span class="eyebrow text-accent">{h.year}</span>
+                <span class="eyebrow text-primary">{h.year}</span>
                 <h3 class="mt-1 font-display text-xl">{h.title}</h3>
                 <p class="mt-1 text-base-content/75">{h.text}</p>
                 {h.templo && (
                   <a
                     href={`/templos/${h.templo}`}
-                    class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-accent"
+                    class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-secondary"
                   >
                     <Icon name="lucide:map-pin" class="h-4 w-4" /> Ver el templo
                   </a>
@@ -340,7 +340,7 @@ const initials = (name: string) =>
   </section>
 
   <!-- Valores -->
-  <section id="valores" class="section bg-base-100">
+  <section id="valores" class="section bg-base-200">
     <div class="wrap">
       <SectionHeading eyebrow="Nuestros principios" title="Valores" />
       <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
@@ -362,7 +362,7 @@ const initials = (name: string) =>
   </section>
 
   <!-- Pastores y líderes -->
-  <section id="liderazgo" class="section bg-base-200">
+  <section id="liderazgo" class="section bg-base-100">
     <div class="wrap">
       <SectionHeading
         eyebrow="Nuestro equipo"
@@ -382,7 +382,7 @@ const initials = (name: string) =>
                 </div>
                 <div class="min-w-0">
                   <h4 class="font-bold leading-tight">{p.name}</h4>
-                  <p class="text-sm text-accent">{p.place}</p>
+                  <p class="text-sm text-primary">{p.place}</p>
                 </div>
               </a>
             </Reveal>
