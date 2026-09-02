@@ -18,8 +18,11 @@
   class="m-auto w-[min(30rem,92vw)] rounded-xl border border-base-300 bg-base-100 p-0 text-base-content shadow-2xl backdrop:bg-black/55 backdrop:backdrop-blur-sm"
   aria-labelledby="aviso-titulo"
 >
-  <div class="relative">
-    <img id="aviso-img" alt="" class="hidden max-h-56 w-full rounded-t-xl object-cover" />
+  <div class="relative" id="aviso-marco">
+    <img id="aviso-img" alt="" class="hidden w-full object-cover" />
+    <div id="aviso-sobre" class="absolute inset-0 hidden p-5">
+      <a id="aviso-cta-img" class="btn btn-primary whitespace-nowrap" data-ancla="abajo-centro"></a>
+    </div>
     <button
       type="button"
       id="aviso-cerrar"
@@ -30,7 +33,7 @@
     </button>
   </div>
 
-  <div class="p-6 sm:p-7">
+  <div class="p-6 sm:p-7" id="aviso-cuerpo">
     <h2 id="aviso-titulo" class="font-display text-2xl leading-tight"></h2>
     <p id="aviso-texto" class="mt-3 whitespace-pre-line text-base-content/75"></p>
     <div class="mt-6 flex flex-wrap gap-3">
@@ -53,6 +56,8 @@
     popup_starts_at: string | null;
     popup_ends_at: string | null;
     popup_version: number;
+    popup_layout: string;
+    popup_cta_pos: string;
   }
 
   const CLAVE = 'aviso-visto';
@@ -97,7 +102,7 @@
       // Una consulta por sesión, no una por navegación.
       if (yaConsultado === undefined) {
         const filas = await restLeer<Aviso>(
-          'settings?id=eq.1&select=popup_enabled,popup_title,popup_body,popup_cta_label,popup_cta_url,popup_image_url,popup_starts_at,popup_ends_at,popup_version',
+          'settings?id=eq.1&select=popup_enabled,popup_title,popup_body,popup_cta_label,popup_cta_url,popup_image_url,popup_starts_at,popup_ends_at,popup_version,popup_layout,popup_cta_pos',
         );
         yaConsultado = filas[0] ?? null;
       }
@@ -106,24 +111,46 @@
     }
 
     const a = yaConsultado;
-    if (!a || !a.popup_enabled || !a.popup_title) return;
+    if (!a || !a.popup_enabled) return;
+    const soloImagen = a.popup_layout === 'imagen';
+    // Cada modo tiene su requisito mínimo: sin eso no habría nada que ver.
+    if (soloImagen ? !a.popup_image_url : !a.popup_title) return;
     if (!enVentana(a) || vistoAntes(a.popup_version)) return;
 
-    (document.getElementById('aviso-titulo') as HTMLElement).textContent = a.popup_title;
+    const cuerpo = document.getElementById('aviso-cuerpo') as HTMLElement;
+    cuerpo.classList.toggle('hidden', soloImagen);
+    (document.getElementById('aviso-titulo') as HTMLElement).textContent = a.popup_title ?? '';
     (document.getElementById('aviso-texto') as HTMLElement).textContent = a.popup_body ?? '';
 
     const img = document.getElementById('aviso-img') as HTMLImageElement;
     if (a.popup_image_url) {
       img.src = a.popup_image_url;
       img.classList.remove('hidden');
+      img.classList.toggle('rounded-t-xl', !soloImagen);
+      img.classList.toggle('rounded-xl', soloImagen);
+      img.classList.toggle('max-h-56', !soloImagen);
     } else {
       img.classList.add('hidden');
     }
 
+    const hayBoton = Boolean(a.popup_cta_url && a.popup_cta_label);
+
+    // Botón flotante sobre la imagen (modo imagen).
+    const sobre = document.getElementById('aviso-sobre') as HTMLElement;
+    const ctaImg = document.getElementById('aviso-cta-img') as HTMLAnchorElement;
+    sobre.classList.toggle('hidden', !(soloImagen && hayBoton));
+    if (soloImagen && hayBoton) {
+      ctaImg.href = a.popup_cta_url!;
+      ctaImg.textContent = a.popup_cta_label!;
+      // La posición la resuelve el CSS a partir del atributo (ver global.css).
+      ctaImg.setAttribute('data-ancla', a.popup_cta_pos || 'abajo-centro');
+    }
+
+    // Botón normal (modo título y texto).
     const cta = document.getElementById('aviso-cta') as HTMLAnchorElement;
-    if (a.popup_cta_url && a.popup_cta_label) {
-      cta.href = a.popup_cta_url;
-      cta.textContent = a.popup_cta_label;
+    if (!soloImagen && hayBoton) {
+      cta.href = a.popup_cta_url!;
+      cta.textContent = a.popup_cta_label!;
       cta.classList.remove('hidden');
     } else {
       cta.classList.add('hidden');
@@ -138,6 +165,7 @@
     // Escape cierra el <dialog> por su cuenta; hay que apuntar el visto igual.
     dlg.addEventListener('close', () => marcarVisto(a.popup_version), { once: true });
     cta.addEventListener('click', cerrar, { once: true });
+    ctaImg.addEventListener('click', cerrar, { once: true });
 
     // Tocar el fondo cierra. <dialog> no lo hace solo: el clic en el backdrop
     // llega con el propio diálogo como destino, porque el ::backdrop no es un

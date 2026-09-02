@@ -748,6 +748,27 @@
     summary.cartel-seccion::after { transition: none; }
   }
 
+  /* Aviso emergente en modo imagen: dónde se posa el botón.
+
+     Va en CSS y no con utilidades de Tailwind porque el valor sale de la
+     base de datos. Tailwind lee el código fuente para decidir qué genera, y
+     una clase que solo existe dentro de una cadena en tiempo de ejecución no
+     llega nunca a la hoja de estilos: el botón aparecía sin posicionar.
+
+     Se compone del atributo: «vertical-horizontal». */
+  [data-ancla] { position: absolute; }
+  [data-ancla^='arriba'] { top: 0; }
+  [data-ancla^='centro'] { top: 50%; }
+  [data-ancla^='abajo'] { bottom: 0; }
+  [data-ancla$='izquierda'] { left: 0; }
+  [data-ancla$='centro'] { left: 50%; }
+  [data-ancla$='derecha'] { right: 0; }
+  [data-ancla='arriba-centro'],
+  [data-ancla='abajo-centro'] { transform: translateX(-50%); }
+  [data-ancla='centro-izquierda'],
+  [data-ancla='centro-derecha'] { transform: translateY(-50%); }
+  [data-ancla='centro-centro'] { transform: translate(-50%, -50%); }
+
   .cartel-seccion {
     display: flex;
     align-items: baseline;

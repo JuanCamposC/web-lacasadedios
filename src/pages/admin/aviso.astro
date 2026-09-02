@@ -3,6 +3,7 @@ export const prerender = false;
 
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { Icon } from 'astro-icon/components';
+import { templos } from '../../data/templos';
 
 const supabase = Astro.locals.supabase;
 if (!supabase) return Astro.redirect('/admin/login');
@@ -10,7 +11,7 @@ if (!supabase) return Astro.redirect('/admin/login');
 const { data } = await supabase
   .from('settings')
   .select(
-    'popup_enabled, popup_title, popup_body, popup_cta_label, popup_cta_url, popup_image_url, popup_starts_at, popup_ends_at, popup_version',
+    'popup_enabled, popup_title, popup_body, popup_cta_label, popup_cta_url, popup_image_url, popup_starts_at, popup_ends_at, popup_version, popup_layout, popup_cta_pos',
   )
   .eq('id', 1)
   .maybeSingle();
@@ -25,9 +26,58 @@ const s = data ?? {
   popup_starts_at: null,
   popup_ends_at: null,
   popup_version: 1,
+  popup_layout: 'normal',
+  popup_cta_pos: 'abajo-centro',
 };
 
-/** timestamptz → el formato que espera <input type="datetime-local">. */
+/* ── Imágenes ya subidas ───────────────────────────────────────────────────
+   Se listan las carpetas donde el panel guarda las imágenes de cada sección
+   (ver `subirImagen` en src/scripts/admin/upload.ts, que usa el nombre de la
+   tabla como carpeta). Así se puede reutilizar la foto de un evento sin
+   volver a subirla ni ir a buscar la dirección a mano. */
+const CARPETAS = ['avisos', 'events', 'news', 'videos'];
+
+const disponibles: { url: string; nombre: string }[] = [];
+for (const carpeta of CARPETAS) {
+  const { data: archivos } = await supabase.storage
+    .from('media')
+    .list(carpeta, { limit: 24, sortBy: { column: 'created_at', order: 'desc' } });
+  for (const a of archivos ?? []) {
+    if (a.name.startsWith('.')) continue; // marcador de carpeta vacía
+    disponibles.push({
+      url: supabase.storage.from('media').getPublicUrl(`${carpeta}/${a.name}`).data.publicUrl,
+      nombre: a.name,
+    });
+  }
+}
+
+/* Destinos internos para el botón, además de «otro enlace». */
+const destinos = [
+  { href: '/eventos', label: 'Eventos' },
+  { href: '/noticias', label: 'Noticias' },
+  { href: '/horarios', label: 'Horarios de cultos' },
+  { href: '/templos', label: 'Nuestros templos' },
+  { href: '/videos', label: 'Videos' },
+  { href: '/en-vivo', label: 'En vivo' },
+  { href: '/contacto', label: 'Contacto' },
+  { href: '/sobre-nosotros', label: 'Nosotros' },
+  ...templos.map((t) => ({ href: `/templos/${t.slug}`, label: `Templo · ${t.short}` })),
+];
+
+const esInterno = destinos.some((d) => d.href === s.popup_cta_url);
+
+const POSICIONES = [
+  'arriba-izquierda',
+  'arriba-centro',
+  'arriba-derecha',
+  'centro-izquierda',
+  'centro-centro',
+  'centro-derecha',
+  'abajo-izquierda',
+  'abajo-centro',
+  'abajo-derecha',
+];
+
 const paraInput = (iso: string | null) => {
   if (!iso) return '';
   const d = new Date(iso);
@@ -41,8 +91,8 @@ const paraInput = (iso: string | null) => {
   description="Un mensaje que aparece una vez al entrar al sitio."
   active="aviso"
 >
-  <div class="grid max-w-4xl gap-6 lg:grid-cols-5">
-    <form id="aviso-form" class="panel space-y-5 p-5 lg:col-span-3">
+  <div class="grid gap-6 xl:grid-cols-5">
+    <form id="aviso-form" class="panel space-y-5 p-5 xl:col-span-3">
       <label
         id="aviso-switch"
         class={`flex cursor-pointer items-center justify-between gap-4 rounded border p-4 transition-colors ${
@@ -72,33 +122,121 @@ const paraInput = (iso: string | null) => {
         />
       </label>
 
-      <label class="block">
-        <span class="mb-1.5 block text-sm font-medium"
-          >Título <span class="text-error">*</span></span
-        >
-        <input
-          type="text"
-          name="popup_title"
-          value={s.popup_title ?? ''}
-          placeholder="Aniversario de la congregación"
-          class="input input-bordered w-full"
-        />
-        <span class="mt-1 block text-xs text-base-content/55">
-          Sin título no se muestra nada, aunque esté encendido.
-        </span>
-      </label>
+      {/* ── Cómo se ve ───────────────────────────────────────────────── */}
+      <fieldset class="rounded border border-base-300 p-4">
+        <legend class="px-2 text-sm font-medium">Cómo se ve</legend>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class="flex cursor-pointer items-start gap-3 rounded border border-base-300 p-3">
+            <input
+              type="radio"
+              name="popup_layout"
+              value="normal"
+              class="radio radio-primary radio-sm mt-0.5"
+              checked={s.popup_layout !== 'imagen'}
+            />
+            <span>
+              <span class="block text-sm font-medium">Título y texto</span>
+              <span class="block text-xs text-base-content/55">
+                La imagen arriba, y debajo lo que escribas.
+              </span>
+            </span>
+          </label>
+          <label class="flex cursor-pointer items-start gap-3 rounded border border-base-300 p-3">
+            <input
+              type="radio"
+              name="popup_layout"
+              value="imagen"
+              class="radio radio-primary radio-sm mt-0.5"
+              checked={s.popup_layout === 'imagen'}
+            />
+            <span>
+              <span class="block text-sm font-medium">Solo la imagen</span>
+              <span class="block text-xs text-base-content/55">
+                El afiche a pantalla completa, con el botón encima.
+              </span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
 
-      <label class="block">
-        <span class="mb-1.5 block text-sm font-medium">Texto</span>
-        <textarea
-          name="popup_body"
-          rows="4"
-          placeholder="Te esperamos el viernes 26 de septiembre a las 19:00 en el templo de San Miguel."
-          class="textarea textarea-bordered w-full">{s.popup_body ?? ''}</textarea
-        >
-      </label>
+      {/* ── Imagen ───────────────────────────────────────────────────── */}
+      <div>
+        <span class="mb-1.5 block text-sm font-medium">Imagen</span>
+        <input type="hidden" name="popup_image_url" value={s.popup_image_url ?? ''} />
 
-      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="btn btn-outline btn-sm gap-2">
+            <Icon name="lucide:upload" class="h-4 w-4" /> Subir una imagen
+            <input type="file" id="aviso-archivo" accept="image/*" class="hidden" />
+          </label>
+          <button type="button" id="aviso-quitar-img" class="btn btn-ghost btn-sm gap-2">
+            <Icon name="lucide:x" class="h-4 w-4" /> Quitar
+          </button>
+          <span id="aviso-subiendo" class="hidden text-xs text-base-content/55"
+            >Preparando y subiendo…</span
+          >
+        </div>
+
+        {
+          disponibles.length > 0 && (
+            <>
+              <span class="mt-4 block text-xs text-base-content/55">
+                O elige una de las que ya subiste:
+              </span>
+              <div class="mt-2 grid max-h-64 grid-cols-3 gap-2 overflow-y-auto rounded border border-base-300 p-2 sm:grid-cols-4">
+                {disponibles.map((img) => (
+                  <button
+                    type="button"
+                    class="group relative aspect-video overflow-hidden rounded border-2 border-transparent transition hover:border-primary"
+                    data-elegir={img.url}
+                    title={img.nombre}
+                  >
+                    <img src={img.url} alt="" loading="lazy" class="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </>
+          )
+        }
+        {
+          disponibles.length === 0 && (
+            <span class="mt-2 block text-xs text-base-content/55">
+              Todavía no hay imágenes subidas. Sube una con el botón de arriba.
+            </span>
+          )
+        }
+      </div>
+
+      {/* ── Texto ────────────────────────────────────────────────────── */}
+      <div data-solo-normal class="space-y-5">
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium"
+            >Título <span class="text-error">*</span></span
+          >
+          <input
+            type="text"
+            name="popup_title"
+            value={s.popup_title ?? ''}
+            placeholder="Aniversario de la congregación"
+            class="input input-bordered w-full"
+          />
+        </label>
+
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium">Texto</span>
+          <textarea
+            name="popup_body"
+            rows="3"
+            placeholder="Te esperamos el viernes 26 de septiembre a las 19:00 en San Miguel."
+            class="textarea textarea-bordered w-full">{s.popup_body ?? ''}</textarea
+          >
+        </label>
+      </div>
+
+      {/* ── Botón ────────────────────────────────────────────────────── */}
+      <fieldset class="space-y-4 rounded border border-base-300 p-4">
+        <legend class="px-2 text-sm font-medium">Botón</legend>
+
         <label class="block">
           <span class="mb-1.5 block text-sm font-medium">Texto del botón</span>
           <input
@@ -108,36 +246,64 @@ const paraInput = (iso: string | null) => {
             placeholder="Ver el evento"
             class="input input-bordered w-full"
           />
+          <span class="mt-1 block text-xs text-base-content/55">
+            Déjalo vacío para un aviso sin botón.
+          </span>
         </label>
+
         <label class="block">
-          <span class="mb-1.5 block text-sm font-medium">Enlace del botón</span>
+          <span class="mb-1.5 block text-sm font-medium">A dónde lleva</span>
+          <select id="aviso-destino" class="select select-bordered w-full">
+            <option value="">Elige una página del sitio</option>
+            {
+              destinos.map((d) => (
+                <option value={d.href} selected={s.popup_cta_url === d.href}>
+                  {d.label}
+                </option>
+              ))
+            }
+            <option value="__otro" selected={!!s.popup_cta_url && !esInterno}>
+              Otro enlace…
+            </option>
+          </select>
+        </label>
+
+        <label class="block" id="aviso-otro-wrap">
+          <span class="mb-1.5 block text-sm font-medium">Dirección</span>
           <input
             type="text"
-            name="popup_cta_url"
-            value={s.popup_cta_url ?? ''}
-            placeholder="/eventos"
+            id="aviso-otro"
+            value={esInterno ? '' : (s.popup_cta_url ?? '')}
+            placeholder="https://…"
             class="input input-bordered w-full"
           />
         </label>
-      </div>
-      <p class="-mt-2 text-xs text-base-content/55">
-        El botón solo aparece si rellenas los dos. Déjalos vacíos para un aviso sin acción.
-      </p>
+        <input type="hidden" name="popup_cta_url" value={s.popup_cta_url ?? ''} />
 
-      <label class="block">
-        <span class="mb-1.5 block text-sm font-medium">Imagen (opcional)</span>
-        <input
-          type="text"
-          name="popup_image_url"
-          value={s.popup_image_url ?? ''}
-          placeholder="https://…"
-          class="input input-bordered w-full"
-        />
-        <span class="mt-1 block text-xs text-base-content/55">
-          Pega la dirección de una imagen ya subida en Eventos o Noticias.
-        </span>
-      </label>
+        <div data-solo-imagen>
+          <span class="mb-2 block text-sm font-medium">Dónde va sobre la imagen</span>
+          <div
+            class="grid w-32 grid-cols-3 gap-1"
+            role="radiogroup"
+            aria-label="Posición del botón"
+          >
+            {
+              POSICIONES.map((pos) => (
+                <button
+                  type="button"
+                  data-pos={pos}
+                  aria-label={pos.replace('-', ' ')}
+                  aria-pressed={s.popup_cta_pos === pos}
+                  class="aspect-square rounded border border-base-300 transition hover:border-primary"
+                />
+              ))
+            }
+          </div>
+          <input type="hidden" name="popup_cta_pos" value={s.popup_cta_pos ?? 'abajo-centro'} />
+        </div>
+      </fieldset>
 
+      {/* ── Cuándo ───────────────────────────────────────────────────── */}
       <div class="grid gap-4 sm:grid-cols-2">
         <label class="block">
           <span class="mb-1.5 block text-sm font-medium">Empieza a mostrarse</span>
@@ -159,8 +325,7 @@ const paraInput = (iso: string | null) => {
         </label>
       </div>
       <p class="-mt-2 text-xs text-base-content/55">
-        Opcionales. Con las dos fechas puedes dejarlo preparado hoy y olvidarte: se enciende y se
-        apaga solo.
+        Opcionales. Con las dos fechas lo dejas preparado hoy y se enciende y apaga solo.
       </p>
 
       <label
@@ -170,7 +335,7 @@ const paraInput = (iso: string | null) => {
         <span>
           <span class="block text-sm font-medium">Volver a mostrarlo a quien ya lo cerró</span>
           <span class="block text-xs text-base-content/55">
-            Marca esto si cambiaste el texto. Si no, quien ya lo vio no verá la versión nueva.
+            Marca esto si cambiaste el contenido. Si no, quien ya lo vio no verá lo nuevo.
           </span>
         </span>
       </label>
@@ -183,7 +348,44 @@ const paraInput = (iso: string | null) => {
       <input type="hidden" name="popup_version" value={s.popup_version ?? 1} />
     </form>
 
-    <aside class="space-y-4 lg:col-span-2">
+    {/* ── Vista previa ───────────────────────────────────────────────── */}
+    <aside class="space-y-4 xl:col-span-2">
+      <div class="panel sticky top-4 p-5">
+        <h2 class="flex items-center gap-2 text-base font-bold">
+          <Icon name="lucide:eye" class="h-4 w-4 text-primary" /> Vista previa
+        </h2>
+        <p class="mt-1 text-xs text-base-content/55">
+          Se actualiza mientras escribes. Es el aviso real, a menor tamaño.
+        </p>
+
+        <div class="mt-4 rounded-lg bg-base-300/60 p-4">
+          <div
+            id="vista-previa"
+            class="mx-auto overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-lg"
+          >
+            <div id="vp-imagen-wrap" class="relative hidden">
+              <img id="vp-img" alt="" class="w-full object-cover" />
+              <div id="vp-cta-flotante" class="absolute inset-0 hidden p-4">
+                <span
+                  id="vp-cta-img"
+                  class="btn btn-primary btn-sm pointer-events-none whitespace-nowrap"
+                  data-ancla="abajo-centro"></span>
+              </div>
+            </div>
+            <div id="vp-cuerpo" class="p-4">
+              <h3 id="vp-titulo" class="font-display text-lg leading-tight"></h3>
+              <p id="vp-texto" class="mt-2 whitespace-pre-line text-sm text-base-content/70"></p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <span id="vp-cta" class="btn btn-primary btn-sm hidden"></span>
+                <span class="btn btn-ghost btn-sm">Ahora no</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p id="vp-aviso" class="mt-3 hidden text-xs text-warning"></p>
+      </div>
+
       <div class="panel p-5">
         <h2 class="flex items-center gap-2 text-base font-bold">
           <Icon name="lucide:info" class="h-4 w-4 text-primary" /> Cómo se comporta
@@ -191,11 +393,7 @@ const paraInput = (iso: string | null) => {
         <ul class="mt-4 space-y-3 text-sm text-base-content/75">
           <li class="flex items-start gap-2">
             <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
-            Sale una vez por persona. Al cerrarlo no vuelve a aparecer.
-          </li>
-          <li class="flex items-start gap-2">
-            <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
-            Se cierra con Escape, con la equis o tocando fuera.
+            Sale una vez por persona. Se cierra con Escape, con la equis o tocando fuera.
           </li>
           <li class="flex items-start gap-2">
             <Icon name="lucide:alert-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
@@ -214,14 +412,146 @@ const paraInput = (iso: string | null) => {
 
   <script>
     import { createBrowserSupabase } from '../../lib/supabase';
+    import { prepararImagen, subirImagen } from '../../scripts/admin/upload';
+
     const supabase = createBrowserSupabase();
     const form = document.getElementById('aviso-form') as HTMLFormElement;
-    const msg = document.getElementById('aviso-msg')!;
-    const btn = document.getElementById('aviso-save') as HTMLButtonElement;
-    const caja = document.getElementById('aviso-switch')!;
-    const check = form.querySelector('[name="popup_enabled"]') as HTMLInputElement;
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+    const campo = (n: string) => form.querySelector(`[name="${n}"]`) as HTMLInputElement;
 
-    const pintarEstado = () => {
+    /* ── Destino del botón ──────────────────────────────────────────────── */
+    const destino = $<HTMLSelectElement>('aviso-destino');
+    const otro = $<HTMLInputElement>('aviso-otro');
+    const otroWrap = $('aviso-otro-wrap');
+
+    const sincronizarDestino = () => {
+      const esOtro = destino.value === '__otro';
+      otroWrap.classList.toggle('hidden', !esOtro);
+      campo('popup_cta_url').value = esOtro ? otro.value.trim() : destino.value;
+    };
+
+    /* ── Imagen ─────────────────────────────────────────────────────────── */
+    const archivo = $<HTMLInputElement>('aviso-archivo');
+    const subiendo = $('aviso-subiendo');
+
+    $('aviso-quitar-img').addEventListener('click', () => {
+      campo('popup_image_url').value = '';
+      pintar();
+    });
+
+    document.querySelectorAll<HTMLElement>('[data-elegir]').forEach((b) =>
+      b.addEventListener('click', () => {
+        campo('popup_image_url').value = b.dataset.elegir ?? '';
+        pintar();
+      }),
+    );
+
+    archivo.addEventListener('change', async () => {
+      const f = archivo.files?.[0];
+      if (!f) return;
+      subiendo.classList.remove('hidden');
+      try {
+        // Mismo camino que las imágenes de eventos y noticias: se reduce en el
+        // navegador antes de subir, para no guardar los 6 MB del teléfono.
+        const blob = await prepararImagen(f);
+        campo('popup_image_url').value = await subirImagen(supabase, 'avisos', blob, f.name);
+        pintar();
+      } catch (e) {
+        mensaje('No se pudo subir la imagen: ' + (e as Error).message, false);
+      } finally {
+        subiendo.classList.add('hidden');
+        archivo.value = '';
+      }
+    });
+
+    /* ── Vista previa ───────────────────────────────────────────────────── */
+    function pintar() {
+      const modo =
+        (form.querySelector('[name="popup_layout"]:checked') as HTMLInputElement)?.value ??
+        'normal';
+      const url = campo('popup_image_url').value.trim();
+      const titulo = campo('popup_title').value.trim();
+      const texto = campo('popup_body').value.trim();
+      const etiqueta = campo('popup_cta_label').value.trim();
+      const enlace = campo('popup_cta_url').value.trim();
+      const pos = campo('popup_cta_pos').value;
+      const soloImagen = modo === 'imagen';
+
+      form
+        .querySelectorAll<HTMLElement>('[data-solo-normal]')
+        .forEach((el) => el.classList.toggle('hidden', soloImagen));
+      form
+        .querySelectorAll<HTMLElement>('[data-solo-imagen]')
+        .forEach((el) => el.classList.toggle('hidden', !soloImagen));
+
+      $('vp-imagen-wrap').classList.toggle('hidden', !url);
+      if (url) $<HTMLImageElement>('vp-img').src = url;
+
+      $('vp-cuerpo').classList.toggle('hidden', soloImagen);
+      $('vp-titulo').textContent = titulo || 'Sin título todavía';
+      $('vp-texto').textContent = texto;
+
+      const cta = $('vp-cta');
+      cta.textContent = etiqueta;
+      cta.classList.toggle('hidden', !etiqueta || !enlace);
+
+      const flotante = $('vp-cta-flotante');
+      const ctaImg = $('vp-cta-img');
+      const conBoton = soloImagen && !!etiqueta && !!enlace;
+      flotante.classList.toggle('hidden', !conBoton);
+      if (conBoton) {
+        ctaImg.textContent = etiqueta;
+        ctaImg.setAttribute('data-ancla', pos || 'abajo-centro');
+      }
+
+      document.querySelectorAll<HTMLElement>('[data-pos]').forEach((b) => {
+        const on = b.dataset.pos === pos;
+        b.setAttribute('aria-pressed', String(on));
+        b.className = `aspect-square rounded border transition ${
+          on ? 'border-primary bg-primary' : 'border-base-300 hover:border-primary'
+        }`;
+      });
+
+      // El aviso no se muestra si le falta lo mínimo. Se dice aquí y no al
+      // guardar, que es cuando ya es tarde para darse cuenta.
+      const falta = soloImagen && !url ? 'En modo «solo imagen» hace falta una imagen.' : '';
+      const vpAviso = $('vp-aviso');
+      vpAviso.textContent = falta;
+      vpAviso.classList.toggle('hidden', !falta);
+    }
+
+    document.querySelectorAll<HTMLElement>('[data-pos]').forEach((b) =>
+      b.addEventListener('click', () => {
+        campo('popup_cta_pos').value = b.dataset.pos ?? 'abajo-centro';
+        pintar();
+      }),
+    );
+
+    destino.addEventListener('change', () => {
+      sincronizarDestino();
+      pintar();
+    });
+    otro.addEventListener('input', () => {
+      sincronizarDestino();
+      pintar();
+    });
+    form.addEventListener('input', pintar);
+    form.addEventListener('change', pintar);
+
+    /* ── Guardar ────────────────────────────────────────────────────────── */
+    const msg = $('aviso-msg');
+    const btn = $<HTMLButtonElement>('aviso-save');
+    const check = campo('popup_enabled');
+    const caja = $('aviso-switch');
+
+    function mensaje(texto: string, bien: boolean) {
+      msg.textContent = texto;
+      msg.className = bien
+        ? 'rounded bg-success/10 px-3 py-2 text-sm text-success'
+        : 'rounded bg-error/10 px-3 py-2 text-sm text-error';
+    }
+
+    check.addEventListener('change', () => {
       const on = check.checked;
       caja.className = `flex cursor-pointer items-center justify-between gap-4 rounded border p-4 transition-colors ${
         on ? 'border-primary/45 bg-primary/5' : 'border-base-300 bg-base-200/50'
@@ -229,44 +559,47 @@ const paraInput = (iso: string | null) => {
       caja.querySelector('.tile')!.className = on
         ? 'tile tile-lg bg-primary/15 text-primary'
         : 'tile tile-lg tile-muted';
-    };
-    check.addEventListener('change', pintarEstado);
+    });
 
-    const texto = (fd: FormData, k: string) => String(fd.get(k) || '').trim() || null;
-    const fecha = (fd: FormData, k: string) => {
-      const v = String(fd.get(k) || '').trim();
-      return v ? new Date(v).toISOString() : null;
-    };
+    const vacio = (v: string) => v.trim() || null;
+    const fecha = (v: string) => (v.trim() ? new Date(v).toISOString() : null);
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const fd = new FormData(form);
-      const encendido = check.checked;
-      const titulo = texto(fd, 'popup_title');
+      sincronizarDestino();
 
-      // Encender sin título dejaría un aviso que nunca aparece y nadie sabría
-      // por qué. Se avisa aquí en vez de dejar que se guarde en silencio.
-      if (encendido && !titulo) {
-        msg.textContent = 'Ponle un título: sin él el aviso no se muestra.';
-        msg.className = 'rounded bg-error/10 px-3 py-2 text-sm text-error';
-        return;
+      const modo =
+        (form.querySelector('[name="popup_layout"]:checked') as HTMLInputElement)?.value ??
+        'normal';
+      const titulo = vacio(campo('popup_title').value);
+      const imagen = vacio(campo('popup_image_url').value);
+
+      // Encender un aviso que nunca se mostrará dejaría a alguien mirando el
+      // sitio sin entender por qué no pasa nada.
+      if (check.checked && modo === 'imagen' && !imagen) {
+        return mensaje('En modo «solo imagen» hace falta una imagen.', false);
+      }
+      if (check.checked && modo === 'normal' && !titulo) {
+        return mensaje('Ponle un título: sin él el aviso no se muestra.', false);
       }
 
       btn.disabled = true;
       msg.className = 'hidden text-sm';
 
-      const version = Number(fd.get('popup_version') || 1);
+      const version = Number(campo('popup_version').value || 1);
       const repetir = (form.querySelector('[name="repetir"]') as HTMLInputElement).checked;
 
       const payload = {
-        popup_enabled: encendido,
+        popup_enabled: check.checked,
+        popup_layout: modo,
         popup_title: titulo,
-        popup_body: texto(fd, 'popup_body'),
-        popup_cta_label: texto(fd, 'popup_cta_label'),
-        popup_cta_url: texto(fd, 'popup_cta_url'),
-        popup_image_url: texto(fd, 'popup_image_url'),
-        popup_starts_at: fecha(fd, 'popup_starts_at'),
-        popup_ends_at: fecha(fd, 'popup_ends_at'),
+        popup_body: vacio(campo('popup_body').value),
+        popup_cta_label: vacio(campo('popup_cta_label').value),
+        popup_cta_url: vacio(campo('popup_cta_url').value),
+        popup_cta_pos: campo('popup_cta_pos').value || 'abajo-centro',
+        popup_image_url: imagen,
+        popup_starts_at: fecha(campo('popup_starts_at').value),
+        popup_ends_at: fecha(campo('popup_ends_at').value),
         popup_version: repetir ? version + 1 : version,
         updated_at: new Date().toISOString(),
       };
@@ -274,23 +607,21 @@ const paraInput = (iso: string | null) => {
       const { error } = await supabase.from('settings').update(payload).eq('id', 1);
       btn.disabled = false;
 
-      if (error) {
-        msg.textContent = 'No se pudo guardar: ' + error.message;
-        msg.className = 'rounded bg-error/10 px-3 py-2 text-sm text-error';
-        return;
-      }
+      if (error) return mensaje('No se pudo guardar: ' + error.message, false);
 
-      (form.querySelector('[name="popup_version"]') as HTMLInputElement).value = String(
-        payload.popup_version,
-      );
+      campo('popup_version').value = String(payload.popup_version);
       (form.querySelector('[name="repetir"]') as HTMLInputElement).checked = false;
-
-      msg.textContent = encendido
-        ? repetir
-          ? 'Guardado. Vuelve a mostrarse a todo el mundo, también a quien ya lo había cerrado.'
-          : 'Guardado. El aviso está encendido.'
-        : 'Guardado. El aviso está apagado.';
-      msg.className = 'rounded bg-success/10 px-3 py-2 text-sm text-success';
+      mensaje(
+        !payload.popup_enabled
+          ? 'Guardado. El aviso está apagado.'
+          : repetir
+            ? 'Guardado. Vuelve a mostrarse a todo el mundo, también a quien ya lo cerró.'
+            : 'Guardado. El aviso está encendido.',
+        true,
+      );
     });
+
+    sincronizarDestino();
+    pintar();
   </script>
 </AdminLayout>
