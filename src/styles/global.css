@@ -204,12 +204,17 @@
   }
 
   /* Antetítulo */
+  /* El antetítulo dejó de ser una etiqueta diminuta: sube de 0.78 a 0.95rem
+     para que se lea como parte del encabezado y no como un pie de foto. El
+     interletraje baja de 0.22 a 0.16em porque a este tamaño el anterior
+     desarmaba la palabra. El color lo pone SectionHeading, que ahora usa el
+     azul primario por defecto en vez del bronce. */
   .eyebrow {
     display: inline-block;
     font-family: var(--font-data);
-    font-size: 0.78rem;
+    font-size: 0.95rem;
     font-weight: 700;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
   }
 
@@ -246,6 +251,54 @@
     margin-inline: auto;
     width: 100%;
     max-width: 48rem;
+  }
+
+  /* Pantallas grandes.
+
+     No había NI UNA regla por encima de 1536px: el contenido se detenía en
+     72rem, así que en un monitor de 2560px la página quedaba en una cinta
+     con ~700px de vacío a cada lado. Se ensancha el contenedor y se sube el
+     tamaño base, que es lo que evita que el texto se vea diminuto a esa
+     distancia de lectura.
+
+     El tamaño va en porcentaje y no en px a propósito: en px se ignoraría el
+     tamaño de letra que la persona haya configurado en su navegador. Como
+     todo el sistema está en rem, subir la raíz escala márgenes, tipografía y
+     componentes a la vez, sin tocar una sola regla más. */
+  @media (width >= 96rem) {
+    :root {
+      font-size: 106.25%;
+    }
+    .wrap {
+      max-width: 84rem;
+    }
+    .wrap-narrow {
+      max-width: 54rem;
+    }
+  }
+  @media (width >= 120rem) {
+    :root {
+      font-size: 112.5%;
+    }
+  }
+
+  /* Índice de secciones de Nosotros.
+
+     Se desplaza en móvil y se reparte en líneas desde `md`. El degradado del
+     borde derecho es lo que distingue «hay más a la derecha» de «esto está
+     roto»: sin él, el último chip parecía cortado. La lista lleva relleno al
+     final para que ese último llegue a salir del degradado al desplazarse. */
+  .indice {
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent 100%);
+  }
+  .indice::-webkit-scrollbar {
+    display: none;
+  }
+  @media (width >= 48rem) {
+    .indice {
+      mask-image: none;
+    }
   }
 
   /* Banda oscura (independiente del tema claro/oscuro).
