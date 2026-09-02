@@ -59,6 +59,20 @@ export default defineConfig({
   ],
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      // Astro incrusta en el HTML los scripts de menos de 4 kB. Suena a mejora
+      // y rompía la navegación: ClientRouter, cuando detecta un
+      // <script type="module"> en línea, inyecta en cada navegación un
+      // <script src="data:application/javascript,"> vacío (ver runScripts en
+      // astro/dist/transitions/router.js) y la CSP con hashes lo bloquea. No
+      // se puede arreglar permitiendo el esquema data: en script-src: eso es una vía de
+      // XSS conocida y anularía justo lo que protegen los hashes.
+      //
+      // Devolver false solo para JavaScript deja los scripts en archivos
+      // aparte —que Astro sí sabe hashear— y undefined para el resto
+      // conserva el umbral de siempre en las imágenes pequeñas.
+      assetsInlineLimit: (ruta) => (ruta.endsWith('.js') ? false : undefined),
+    },
     optimizeDeps: {
       // Estas dependencias solo se importan desde /admin, así que Vite no las
       // descubría al arrancar: las encontraba al entrar por primera vez al
