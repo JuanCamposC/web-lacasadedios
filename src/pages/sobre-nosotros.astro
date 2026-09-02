@@ -14,11 +14,13 @@ import { SITE } from '../data/site';
 // Contenido tomado de lacasadedios.cl/nosotros
 
 const secciones = [
+  { href: '#fe', label: 'Declaración de fe' },
+  { href: '#estructura', label: 'Estructura de liderazgo' },
+  { href: '#sacramentos', label: 'Sacramentos' },
   { href: '#mision', label: 'Misión y visión' },
   { href: '#historia', label: 'Historia' },
   { href: '#valores', label: 'Valores' },
-  { href: '#liderazgo', label: 'Pastores y líderes' },
-  { href: '#fe', label: 'Declaración de fe' },
+  { href: '#liderazgo', label: 'Pastores' },
 ];
 
 const valores = [
@@ -72,29 +74,15 @@ const liderazgo = [
   },
 ];
 
-const personas = [
+// Solo los pastores. Los ancianos y el obrero se muestran en la ficha de su
+// templo (ver `leader` en src/data/templos.ts), que es donde tienen contexto.
+const pastores = [
+  { name: 'Pastor Arturo Salas Olguín', place: 'Iglesia Matriz', slug: 'san-miguel' },
+  { name: 'Pastor Alberto Gutiérrez Plaza', place: 'Iglesia de Limache', slug: 'limache' },
   {
-    group: 'Pastores',
-    people: [
-      { name: 'Pastor Arturo Salas Olguín', place: 'Iglesia Matriz', slug: 'san-miguel' },
-      { name: 'Pastor Alberto Gutiérrez Plaza', place: 'Iglesia de Limache', slug: 'limache' },
-      {
-        name: 'Pastor Manuel Silva Salas',
-        place: 'Iglesia de Santiago Centro',
-        slug: 'santiago-centro',
-      },
-    ],
-  },
-  {
-    group: 'Ancianos',
-    people: [
-      { name: 'Hermano Rubén Salas Orellana', place: 'San Miguel', slug: 'san-miguel' },
-      { name: 'Hermano Marcos Pezoa Pavez', place: 'San Miguel', slug: 'san-miguel' },
-    ],
-  },
-  {
-    group: 'Obreros',
-    people: [{ name: 'Hermano Juan Enrique Plaza Morales', place: 'Coya', slug: 'coya' }],
+    name: 'Pastor Manuel Silva Salas',
+    place: 'Iglesia de Santiago Centro',
+    slug: 'santiago-centro',
   },
 ];
 
@@ -159,23 +147,106 @@ const initials = (name: string) =>
   <!-- Índice de la página -->
   <nav
     aria-label="Secciones de la página"
-    class="sticky top-16 z-30 border-b border-base-300 bg-base-100/90 px-4 py-3 backdrop-blur-md"
+    class="sticky top-16 z-30 border-b border-base-300 bg-base-100/90 backdrop-blur-md"
   >
-    <ul class="wrap flex items-center gap-2 overflow-x-auto pb-1">
-      {
-        secciones.map((s) => (
-          <li class="shrink-0">
-            <a
-              href={s.href}
-              class="rounded-full border border-base-300 px-4 py-1.5 text-sm font-medium transition hover:border-primary hover:text-primary"
-            >
-              {s.label}
-            </a>
-          </li>
-        ))
-      }
-    </ul>
+    {
+      /* El desplazamiento vive aquí y no en el `.wrap`: así los chips llegan
+         hasta el borde de la pantalla en vez de cortarse contra un ancho
+         centrado, que era lo que hacía parecer roto el último. Desde `md`
+         dejan de desplazarse y se reparten en varias líneas. */
+    }
+    <div class="indice wrap overflow-x-auto px-4 py-3">
+      <ul
+        class="flex w-max items-center gap-2 pe-8 md:w-full md:flex-wrap md:justify-center md:pe-0"
+      >
+        {
+          secciones.map((s) => (
+            <li class="shrink-0">
+              <a
+                href={s.href}
+                class="rounded-full border border-base-300 px-4 py-1.5 text-sm font-medium transition hover:border-primary hover:text-primary"
+              >
+                {s.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
   </nav>
+
+  <!-- Declaración de fe (banda oscura) -->
+  <section id="fe" class="section-dark section">
+    <div class="wrap">
+      <SectionHeading eyebrow="Nuestras creencias" title="Declaración de fe" invert tone="accent" />
+      <div class="mt-12 grid gap-6 md:grid-cols-3">
+        {
+          credo.map((c, i) => (
+            <Reveal delay={(i % 3) * 90} class="h-full">
+              <div class="panel-invert h-full p-7">
+                <div class="mb-3 tile tile-accent">
+                  <Icon name={c.icon} class="h-6 w-6" />
+                </div>
+                <h3 class="text-xl font-bold text-white">{c.title}</h3>
+                {c.ref && (
+                  <span class="mt-1 inline-block rounded-full border border-white/20 px-2 py-0.5 text-xs text-white/70">
+                    {c.ref}
+                  </span>
+                )}
+                <p class="mt-2 text-white/75">{c.text}</p>
+              </div>
+            </Reveal>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Estructura de liderazgo -->
+  <section id="estructura" class="section bg-base-100">
+    <div class="wrap">
+      <SectionHeading eyebrow="Cómo servimos" title="Estructura de liderazgo" tone="primary" />
+      <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {
+          liderazgo.map((l, i) => (
+            <Reveal delay={(i % 4) * 80} class="h-full">
+              <div class="panel panel-sm h-full p-7 text-center">
+                <div class="mx-auto mb-3 tile tile-lg tile-accent">
+                  <Icon name={l.icon} class="h-7 w-7" />
+                </div>
+                <h3 class="card-title justify-center text-xl">{l.title}</h3>
+                <p class="mt-1 text-sm text-base-content/70">{l.text}</p>
+              </div>
+            </Reveal>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Sacramentos -->
+  <section id="sacramentos" class="section bg-base-200">
+    <div class="wrap">
+      <SectionHeading eyebrow="Las dos ordenanzas" title="Sacramentos" />
+      <div class="mx-auto mt-12 grid max-w-4xl gap-5 md:grid-cols-2">
+        {
+          sacramentos.map((s, i) => (
+            <Reveal delay={(i % 2) * 90} class="h-full">
+              <div class="panel panel-sm flex h-full items-start gap-5 p-7">
+                <div class="tile tile-accent">
+                  <Icon name={s.icon} class="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 class="card-title text-xl">{s.title}</h3>
+                  <p class="mt-1 text-base-content/70">{s.text}</p>
+                </div>
+              </div>
+            </Reveal>
+          ))
+        }
+      </div>
+    </div>
+  </section>
 
   <!-- Misión y Visión -->
   <section id="mision" class="section bg-base-100">
@@ -290,106 +361,30 @@ const initials = (name: string) =>
     </div>
   </section>
 
-  <!-- Estructura de liderazgo -->
-  <section class="section bg-base-200">
-    <div class="wrap">
-      <SectionHeading eyebrow="Cómo servimos" title="Estructura de liderazgo" tone="primary" />
-      <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {
-          liderazgo.map((l, i) => (
-            <Reveal delay={(i % 4) * 80} class="h-full">
-              <div class="panel panel-sm h-full p-7 text-center">
-                <div class="mx-auto mb-3 tile tile-lg tile-accent">
-                  <Icon name={l.icon} class="h-7 w-7" />
-                </div>
-                <h3 class="card-title justify-center text-xl">{l.title}</h3>
-                <p class="mt-1 text-sm text-base-content/70">{l.text}</p>
-              </div>
-            </Reveal>
-          ))
-        }
-      </div>
-    </div>
-  </section>
-
   <!-- Pastores y líderes -->
-  <section id="liderazgo" class="section bg-base-100">
+  <section id="liderazgo" class="section bg-base-200">
     <div class="wrap">
       <SectionHeading
         eyebrow="Nuestro equipo"
-        title="Pastores y líderes"
-        subtitle="Quienes sirven al pueblo de Dios en cada templo."
+        title="Pastores"
+        subtitle="Quienes pastorean cada templo de la congregación."
       />
-      <div class="mt-12 space-y-12">
+      <div class="mx-auto mt-12 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {
-          personas.map((grupo) => (
-            <div>
-              <h3 class="mb-6 text-center font-display text-2xl text-primary">{grupo.group}</h3>
-              <div class="mx-auto grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {grupo.people.map((p, i) => (
-                  <Reveal delay={(i % 3) * 80} class="h-full">
-                    <a
-                      href={`/templos/${p.slug}`}
-                      class="panel panel-sm panel-lift flex h-full items-center gap-4 p-5"
-                    >
-                      <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary font-data text-lg font-bold text-primary-content">
-                        {initials(p.name)}
-                      </div>
-                      <div class="min-w-0">
-                        <h4 class="font-bold leading-tight">{p.name}</h4>
-                        <p class="text-sm text-accent">{p.place}</p>
-                      </div>
-                    </a>
-                  </Reveal>
-                ))}
-              </div>
-            </div>
-          ))
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- Declaración de fe (banda oscura) -->
-  <section id="fe" class="section-dark section">
-    <div class="wrap">
-      <SectionHeading eyebrow="Nuestras creencias" title="Declaración de fe" invert tone="accent" />
-      <div class="mt-12 grid gap-6 md:grid-cols-3">
-        {
-          credo.map((c, i) => (
-            <Reveal delay={(i % 3) * 90} class="h-full">
-              <div class="panel-invert h-full p-7">
-                <div class="mb-3 tile tile-accent">
-                  <Icon name={c.icon} class="h-6 w-6" />
+          pastores.map((p, i) => (
+            <Reveal delay={(i % 3) * 80} class="h-full">
+              <a
+                href={`/templos/${p.slug}`}
+                class="panel panel-sm panel-lift flex h-full items-center gap-4 p-5"
+              >
+                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary font-data text-lg font-bold text-primary-content">
+                  {initials(p.name)}
                 </div>
-                <h3 class="text-xl font-bold text-white">{c.title}</h3>
-                {c.ref && (
-                  <span class="mt-1 inline-block rounded-full border border-white/20 px-2 py-0.5 text-xs text-white/70">
-                    {c.ref}
-                  </span>
-                )}
-                <p class="mt-2 text-white/75">{c.text}</p>
-              </div>
-            </Reveal>
-          ))
-        }
-      </div>
-
-      <!-- Sacramentos -->
-      <h3 class="mt-16 text-center font-display text-2xl text-white">Sacramentos</h3>
-      <div class="mx-auto mt-8 grid max-w-4xl gap-5 md:grid-cols-2">
-        {
-          sacramentos.map((s, i) => (
-            <Reveal delay={(i % 2) * 90} class="h-full">
-              <div class="panel-invert flex h-full items-start gap-5 p-7">
-                <div class="tile tile-accent">
-                  <Icon name={s.icon} class="h-6 w-6" />
+                <div class="min-w-0">
+                  <h4 class="font-bold leading-tight">{p.name}</h4>
+                  <p class="text-sm text-accent">{p.place}</p>
                 </div>
-                <div>
-                  <h4 class="text-xl font-bold text-white">{s.title}</h4>
-                  <p class="mt-1 text-white/75">{s.text}</p>
-                </div>
-              </div>
+              </a>
             </Reveal>
           ))
         }
