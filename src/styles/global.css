@@ -719,6 +719,35 @@
   }
 
   /* ── Variante extendida: la semana completa en /horarios ────────────────── */
+  /* Los días de la semana son <details>. El marcador nativo se quita y se
+     sustituye por una flecha propia, que gira al abrir: el triángulo del
+     navegador no hereda la tipografía del cartel y desentonaba. */
+  summary.cartel-seccion {
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+  summary.cartel-seccion::-webkit-details-marker {
+    display: none;
+  }
+  summary.cartel-seccion::after {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-inline-start: auto;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    opacity: 0.55;
+    transform: rotate(45deg) translate(-0.1rem, -0.1rem);
+    transition: transform 0.18s ease;
+  }
+  [data-dia][open] > summary.cartel-seccion::after {
+    transform: rotate(-135deg) translate(-0.15rem, -0.15rem);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    summary.cartel-seccion::after { transition: none; }
+  }
+
   .cartel-seccion {
     display: flex;
     align-items: baseline;

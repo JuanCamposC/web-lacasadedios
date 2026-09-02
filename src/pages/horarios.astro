@@ -72,6 +72,41 @@ const semana = weekSchedule();
   </section>
 
   <!-- El cartel: la semana completa -->
+  {
+    /* Lo primero: qué hay HOY y cuál es la próxima reunión.
+
+       Se rellena en el navegador y no en el servidor porque estas páginas van
+       con caché de CDN: un «hoy» renderizado arriba llegaría caducado al
+       segundo visitante. Y se calcula en hora de Chile a propósito —no en la
+       del visitante—, que es la que rige los cultos.
+
+       Sin JavaScript no aparece nada de esto y la semana completa se ve igual
+       que siempre: es un añadido, no un requisito. */
+  }
+  <section class="section-sm section bg-base-100">
+    <div class="wrap">
+      <div class="hidden" data-ahora>
+        <div class="grid gap-5 md:grid-cols-2">
+          <div class="panel p-6 sm:p-7">
+            <span class="eyebrow text-primary" data-ahora-dia></span>
+            <ul class="mt-4 flex flex-col gap-3" data-ahora-hoy></ul>
+            <p class="mt-4 hidden text-base-content/70" data-ahora-sinhoy>
+              Hoy no hay reuniones. La próxima está aquí al lado.
+            </p>
+          </div>
+          <div class="panel p-6 sm:p-7">
+            <span class="eyebrow text-primary">Próxima reunión</span>
+            <p class="mt-4 font-display text-2xl leading-tight" data-ahora-prox></p>
+            <p class="mt-1 text-base-content/70" data-ahora-cuando></p>
+            <a class="btn btn-primary btn-sm mt-5 gap-2" data-ahora-enlace>
+              <Icon name="lucide:map-pin" class="h-4 w-4" /> Cómo llegar
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="section bg-base-200">
     <div class="wrap">
       <Reveal>
@@ -83,16 +118,23 @@ const semana = weekSchedule();
 
           {
             semana.map((dia) => (
-              <div data-dia data-dia-indice={dia.dayIndex}>
-                <div class="cartel-seccion">
+              <details data-dia data-dia-indice={dia.dayIndex} open>
+                <summary class="cartel-seccion">
                   <h2>{dia.day}</h2>
                   <span class="cartel-conteo" data-conteo>
                     {dia.services.length} {dia.services.length === 1 ? 'reunión' : 'reuniones'}
                   </span>
-                </div>
+                </summary>
                 <ul class="cartel-lista">
                   {dia.services.map((s) => (
-                    <li class="cartel-linea" data-servicio data-templo={s.templo.slug}>
+                    <li
+                      class="cartel-linea"
+                      data-servicio
+                      data-templo={s.templo.slug}
+                      data-hora={s.time}
+                      data-nombre={s.name}
+                      data-sede={s.templo.short}
+                    >
                       <span class="cartel-hora">{s.time}</span>
                       <span class="cartel-nombre">{s.name}</span>
                       <a class="cartel-lugar" href={`/templos/${s.templo.slug}`}>
@@ -101,7 +143,7 @@ const semana = weekSchedule();
                     </li>
                   ))}
                 </ul>
-              </div>
+              </details>
             ))
           }
 
@@ -144,26 +186,148 @@ const semana = weekSchedule();
 <script>
   const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
+  /**
+   * El momento actual EN CHILE, no en el reloj de quien mira.
+   *
+   * Los cultos son a una hora concreta en Santiago: para alguien que abra la
+   * página desde otro huso, «hoy» y «la próxima» tienen que seguir siendo las
+   * de la iglesia. Y se calcula aquí y no en el servidor porque estas páginas
+   * van con caché de CDN — un «hoy» renderizado arriba llegaría caducado al
+   * segundo visitante.
+   */
+  function ahoraEnChile() {
+    const partes = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Santiago',
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(new Date());
+    const v = Object.fromEntries(partes.map((x) => [x.type, x.value]));
+    const INDICE: Record<string, number> = {
+      Sun: 0,
+      Mon: 1,
+      Tue: 2,
+      Wed: 3,
+      Thu: 4,
+      Fri: 5,
+      Sat: 6,
+    };
+    // `hour` llega como "24" a medianoche en algunos motores.
+    const hora = Number(v.hour) % 24;
+    return { dia: INDICE[v.weekday] ?? 0, minutos: hora * 60 + Number(v.minute) };
+  }
+
+  /** "19:30" → 1170. Null si el dato viene mal escrito. */
+  function aMinutos(hhmm: string): number | null {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
+    if (!m) return null;
+    return Number(m[1]) * 60 + Number(m[2]);
+  }
+
+  function faltan(minutos: number): string {
+    if (minutos <= 0) return 'está empezando';
+    if (minutos < 60) return `en ${minutos} min`;
+    const h = Math.floor(minutos / 60);
+    if (h < 24) return `en ${h} h${minutos % 60 ? ` ${minutos % 60} min` : ''}`;
+    const d = Math.round(h / 24);
+    return d === 1 ? 'mañana' : `en ${d} días`;
+  }
+
   function initHorarios() {
     const cartel = document.querySelector<HTMLElement>('[data-cartel-semana]');
     if (!cartel || cartel.dataset.listo) return;
     cartel.dataset.listo = '1';
 
-    const dias = Array.from(cartel.querySelectorAll<HTMLElement>('[data-dia]'));
+    const dias = Array.from(cartel.querySelectorAll<HTMLDetailsElement>('[data-dia]'));
+    const ahora = ahoraEnChile();
 
-    /* ── Hoy ─────────────────────────────────────────────────────────── */
-    const hoy = new Date().getDay();
-    const etiqueta = cartel.querySelector<HTMLElement>('[data-hoy]');
-    const diaHoy = dias.find((d) => Number(d.dataset.diaIndice) === hoy);
+    const reuniones = dias.flatMap((dia) => {
+      const diaIndice = Number(dia.dataset.diaIndice);
+      return Array.from(dia.querySelectorAll<HTMLElement>('[data-servicio]')).map((fila) => ({
+        diaIndice,
+        minutos: aMinutos(fila.dataset.hora ?? '') ?? 0,
+        nombre: fila.dataset.nombre ?? '',
+        sede: fila.dataset.sede ?? '',
+        slug: fila.dataset.templo ?? '',
+        hora: fila.dataset.hora ?? '',
+      }));
+    });
 
-    if (diaHoy) diaHoy.classList.add('es-hoy');
-    if (etiqueta) {
-      etiqueta.textContent = diaHoy ? `Hoy · ${DIAS[hoy]}` : `Hoy ${DIAS[hoy]} · sin reunión`;
+    /* ── Panel de arriba ─────────────────────────────────────────────────── */
+    const panel = document.querySelector<HTMLElement>('[data-ahora]');
+    const elDia = document.querySelector<HTMLElement>('[data-ahora-dia]');
+    const elHoy = document.querySelector<HTMLElement>('[data-ahora-hoy]');
+    const elSinHoy = document.querySelector<HTMLElement>('[data-ahora-sinhoy]');
+    const elProx = document.querySelector<HTMLElement>('[data-ahora-prox]');
+    const elCuando = document.querySelector<HTMLElement>('[data-ahora-cuando]');
+    const elEnlace = document.querySelector<HTMLAnchorElement>('[data-ahora-enlace]');
+
+    function pintarAhora(slug: string) {
+      if (!panel || !elDia || !elHoy || !elProx || !elCuando || !elEnlace) return;
+      const suyas = reuniones.filter((r) => slug === 'all' || r.slug === slug);
+
+      elDia.textContent = `Hoy · ${DIAS[ahora.dia]}`;
+      const hoy = suyas.filter((r) => r.diaIndice === ahora.dia);
+      elHoy.replaceChildren();
+
+      // Se construye con createElement y textContent, no con innerHTML: los
+      // nombres salen de datos editables y concatenar HTML aquí sería una vía
+      // de inyección por muy propio que parezca el contenido.
+      hoy.forEach((r) => {
+        const li = document.createElement('li');
+        li.className = 'flex items-baseline gap-3';
+        const pasada = r.minutos < ahora.minutos;
+
+        const hora = document.createElement('span');
+        hora.className = `font-data text-lg font-bold ${pasada ? 'text-base-content/35' : 'text-primary'}`;
+        hora.textContent = r.hora;
+
+        const texto = document.createElement('span');
+        texto.className = pasada ? 'text-base-content/35 line-through' : '';
+        texto.textContent = r.nombre;
+
+        const sede = document.createElement('span');
+        sede.className = 'text-base-content/60';
+        sede.textContent = ` · ${r.sede}`;
+        texto.appendChild(sede);
+
+        li.append(hora, texto);
+        elHoy.appendChild(li);
+      });
+      elSinHoy?.classList.toggle('hidden', hoy.length > 0);
+
+      // La próxima: la de hoy si queda alguna, y si no se avanza día a día
+      // hasta dar la vuelta a la semana.
+      let proxima: (typeof suyas)[number] | null = null;
+      let espera = Infinity;
+      for (const r of suyas) {
+        const d = (r.diaIndice - ahora.dia + 7) % 7;
+        let mins = d * 1440 + r.minutos - ahora.minutos;
+        if (mins < 0) mins += 7 * 1440; // ya pasó hoy: toca la semana que viene
+        if (mins < espera) {
+          espera = mins;
+          proxima = r;
+        }
+      }
+
+      if (proxima) {
+        elProx.textContent = `${proxima.nombre} · ${proxima.sede}`;
+        elCuando.textContent = `${DIAS[proxima.diaIndice]} a las ${proxima.hora} — ${faltan(espera)}`;
+        elEnlace.href = `/templos/${proxima.slug}`;
+        elEnlace.classList.remove('hidden');
+      } else {
+        elProx.textContent = 'Ese templo no tiene reuniones cargadas.';
+        elCuando.textContent = '';
+        elEnlace.classList.add('hidden');
+      }
+      panel.classList.remove('hidden');
     }
 
-    /* ── Filtro por templo ───────────────────────────────────────────── */
+    /* ── Filtro por templo ───────────────────────────────────────────────── */
     const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('.filtro-chip'));
     const vacio = document.getElementById('sin-resultados');
+    const etiqueta = cartel.querySelector<HTMLElement>('[data-hoy]');
     const activo = 'border-primary bg-primary text-primary-content';
     const inactivo = 'border-base-300 bg-base-100 hover:border-primary hover:text-primary';
 
@@ -181,23 +345,33 @@ const semana = weekSchedule();
         const conteo = dia.querySelector<HTMLElement>('[data-conteo]');
         if (conteo) conteo.textContent = `${n} ${n === 1 ? 'reunión' : 'reuniones'}`;
         dia.classList.toggle('hidden', n === 0);
+
+        const esHoy = Number(dia.dataset.diaIndice) === ahora.dia;
+        dia.classList.toggle('es-hoy', esHoy);
+        // Solo hoy queda desplegado; el resto está a un clic. En el HTML todos
+        // vienen con `open`, así que sin JavaScript se sigue viendo la semana
+        // entera y nadie se queda sin la información.
+        dia.open = esHoy;
         visibles += n;
       });
 
       vacio?.classList.toggle('hidden', visibles > 0);
+      if (etiqueta) etiqueta.textContent = `Hoy · ${DIAS[ahora.dia]}`;
 
       chips.forEach((c) => {
         const on = c.dataset.filter === slug;
         c.setAttribute('aria-pressed', String(on));
         c.className = `filtro-chip shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition ${on ? activo : inactivo}`;
       });
+
+      pintarAhora(slug);
     };
 
     chips.forEach((c) => c.addEventListener('click', () => aplicar(c.dataset.filter || 'all')));
 
     // Permite llegar filtrado desde otra página: /horarios?templo=limache
     const pedido = new URLSearchParams(location.search).get('templo');
-    if (pedido && chips.some((c) => c.dataset.filter === pedido)) aplicar(pedido);
+    aplicar(pedido && chips.some((c) => c.dataset.filter === pedido) ? pedido : 'all');
   }
 
   document.addEventListener('astro:page-load', initHorarios);
