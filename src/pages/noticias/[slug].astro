@@ -61,6 +61,31 @@ const cuerpoHtml = renderMarkdown(item.body);
 
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 
+/**
+ * Texto del botón de WhatsApp, editable desde la tabla `settings`.
+ *
+ * Facebook NO admite mensaje propio: retiró el parámetro `quote` hace años y
+ * arma la vista previa con las etiquetas Open Graph de la página, o sea con el
+ * «Resumen breve» de cada noticia. Por eso esta plantilla solo afecta a
+ * WhatsApp, que es el único de los dos que acepta texto.
+ */
+const PLANTILLA_POR_DEFECTO =
+  'Hola, acabo de leer esta noticia que me bendijo. {titulo} — {enlace}';
+
+let plantilla = PLANTILLA_POR_DEFECTO;
+if (supabase) {
+  const { data: ajustes } = await supabase
+    .from('settings')
+    .select('share_whatsapp')
+    .eq('id', 1)
+    .maybeSingle();
+  if (ajustes?.share_whatsapp) plantilla = ajustes.share_whatsapp;
+}
+
+const textoWhatsapp = plantilla
+  .replaceAll('{titulo}', item?.title ?? '')
+  .replaceAll('{enlace}', canonical);
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'NewsArticle',
@@ -166,7 +191,7 @@ const jsonLd = {
       <div class="mt-12 flex flex-wrap items-center gap-3 border-t border-base-300 pt-8">
         <span class="text-sm font-medium text-base-content/60">Compartir:</span>
         <a
-          href={`https://wa.me/?text=${encodeURIComponent(item.title + ' — ' + canonical)}`}
+          href={`https://wa.me/?text=${encodeURIComponent(textoWhatsapp)}`}
           target="_blank"
           rel="noopener noreferrer"
           class="btn btn-sm btn-ghost gap-1.5"

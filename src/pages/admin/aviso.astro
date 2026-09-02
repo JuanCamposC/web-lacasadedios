@@ -1,0 +1,296 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { Icon } from 'astro-icon/components';
+
+const supabase = Astro.locals.supabase;
+if (!supabase) return Astro.redirect('/admin/login');
+
+const { data } = await supabase
+  .from('settings')
+  .select(
+    'popup_enabled, popup_title, popup_body, popup_cta_label, popup_cta_url, popup_image_url, popup_starts_at, popup_ends_at, popup_version',
+  )
+  .eq('id', 1)
+  .maybeSingle();
+
+const s = data ?? {
+  popup_enabled: false,
+  popup_title: '',
+  popup_body: '',
+  popup_cta_label: '',
+  popup_cta_url: '',
+  popup_image_url: '',
+  popup_starts_at: null,
+  popup_ends_at: null,
+  popup_version: 1,
+};
+
+/** timestamptz → el formato que espera <input type="datetime-local">. */
+const paraInput = (iso: string | null) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+---
+
+<AdminLayout
+  title="Aviso emergente"
+  description="Un mensaje que aparece una vez al entrar al sitio."
+  active="aviso"
+>
+  <div class="grid max-w-4xl gap-6 lg:grid-cols-5">
+    <form id="aviso-form" class="panel space-y-5 p-5 lg:col-span-3">
+      <label
+        id="aviso-switch"
+        class={`flex cursor-pointer items-center justify-between gap-4 rounded border p-4 transition-colors ${
+          s.popup_enabled ? 'border-primary/45 bg-primary/5' : 'border-base-300 bg-base-200/50'
+        }`}
+      >
+        <span class="flex items-center gap-3">
+          <span
+            class={s.popup_enabled
+              ? 'tile tile-lg bg-primary/15 text-primary'
+              : 'tile tile-lg tile-muted'}
+          >
+            <Icon name="lucide:megaphone" class="h-6 w-6" />
+          </span>
+          <span>
+            <span class="block font-semibold">Aviso encendido</span>
+            <span class="block text-sm text-base-content/60">
+              Aparece una vez por persona al entrar al sitio.
+            </span>
+          </span>
+        </span>
+        <input
+          type="checkbox"
+          name="popup_enabled"
+          class="toggle toggle-primary"
+          checked={s.popup_enabled}
+        />
+      </label>
+
+      <label class="block">
+        <span class="mb-1.5 block text-sm font-medium"
+          >Título <span class="text-error">*</span></span
+        >
+        <input
+          type="text"
+          name="popup_title"
+          value={s.popup_title ?? ''}
+          placeholder="Aniversario de la congregación"
+          class="input input-bordered w-full"
+        />
+        <span class="mt-1 block text-xs text-base-content/55">
+          Sin título no se muestra nada, aunque esté encendido.
+        </span>
+      </label>
+
+      <label class="block">
+        <span class="mb-1.5 block text-sm font-medium">Texto</span>
+        <textarea
+          name="popup_body"
+          rows="4"
+          placeholder="Te esperamos el viernes 26 de septiembre a las 19:00 en el templo de San Miguel."
+          class="textarea textarea-bordered w-full">{s.popup_body ?? ''}</textarea
+        >
+      </label>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium">Texto del botón</span>
+          <input
+            type="text"
+            name="popup_cta_label"
+            value={s.popup_cta_label ?? ''}
+            placeholder="Ver el evento"
+            class="input input-bordered w-full"
+          />
+        </label>
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium">Enlace del botón</span>
+          <input
+            type="text"
+            name="popup_cta_url"
+            value={s.popup_cta_url ?? ''}
+            placeholder="/eventos"
+            class="input input-bordered w-full"
+          />
+        </label>
+      </div>
+      <p class="-mt-2 text-xs text-base-content/55">
+        El botón solo aparece si rellenas los dos. Déjalos vacíos para un aviso sin acción.
+      </p>
+
+      <label class="block">
+        <span class="mb-1.5 block text-sm font-medium">Imagen (opcional)</span>
+        <input
+          type="text"
+          name="popup_image_url"
+          value={s.popup_image_url ?? ''}
+          placeholder="https://…"
+          class="input input-bordered w-full"
+        />
+        <span class="mt-1 block text-xs text-base-content/55">
+          Pega la dirección de una imagen ya subida en Eventos o Noticias.
+        </span>
+      </label>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium">Empieza a mostrarse</span>
+          <input
+            type="datetime-local"
+            name="popup_starts_at"
+            value={paraInput(s.popup_starts_at)}
+            class="input input-bordered w-full"
+          />
+        </label>
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium">Deja de mostrarse</span>
+          <input
+            type="datetime-local"
+            name="popup_ends_at"
+            value={paraInput(s.popup_ends_at)}
+            class="input input-bordered w-full"
+          />
+        </label>
+      </div>
+      <p class="-mt-2 text-xs text-base-content/55">
+        Opcionales. Con las dos fechas puedes dejarlo preparado hoy y olvidarte: se enciende y se
+        apaga solo.
+      </p>
+
+      <label
+        class="flex cursor-pointer items-start gap-3 rounded border border-base-300 bg-base-200/50 p-3"
+      >
+        <input type="checkbox" name="repetir" class="toggle toggle-primary toggle-sm mt-0.5" />
+        <span>
+          <span class="block text-sm font-medium">Volver a mostrarlo a quien ya lo cerró</span>
+          <span class="block text-xs text-base-content/55">
+            Marca esto si cambiaste el texto. Si no, quien ya lo vio no verá la versión nueva.
+          </span>
+        </span>
+      </label>
+
+      <p id="aviso-msg" class="hidden rounded px-3 py-2 text-sm"></p>
+
+      <button type="submit" id="aviso-save" class="btn btn-primary w-full gap-2">
+        <Icon name="lucide:save" class="h-5 w-5" /> Guardar
+      </button>
+      <input type="hidden" name="popup_version" value={s.popup_version ?? 1} />
+    </form>
+
+    <aside class="space-y-4 lg:col-span-2">
+      <div class="panel p-5">
+        <h2 class="flex items-center gap-2 text-base font-bold">
+          <Icon name="lucide:info" class="h-4 w-4 text-primary" /> Cómo se comporta
+        </h2>
+        <ul class="mt-4 space-y-3 text-sm text-base-content/75">
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            Sale una vez por persona. Al cerrarlo no vuelve a aparecer.
+          </li>
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            Se cierra con Escape, con la equis o tocando fuera.
+          </li>
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:alert-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            «Una vez» es por navegador: quien entre desde el teléfono y desde el computador lo verá dos
+            veces.
+          </li>
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:alert-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            No lo dejes encendido semanas. Google penaliza los avisos que tapan el contenido nada más
+            entrar.
+          </li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    import { createBrowserSupabase } from '../../lib/supabase';
+    const supabase = createBrowserSupabase();
+    const form = document.getElementById('aviso-form') as HTMLFormElement;
+    const msg = document.getElementById('aviso-msg')!;
+    const btn = document.getElementById('aviso-save') as HTMLButtonElement;
+    const caja = document.getElementById('aviso-switch')!;
+    const check = form.querySelector('[name="popup_enabled"]') as HTMLInputElement;
+
+    const pintarEstado = () => {
+      const on = check.checked;
+      caja.className = `flex cursor-pointer items-center justify-between gap-4 rounded border p-4 transition-colors ${
+        on ? 'border-primary/45 bg-primary/5' : 'border-base-300 bg-base-200/50'
+      }`;
+      caja.querySelector('.tile')!.className = on
+        ? 'tile tile-lg bg-primary/15 text-primary'
+        : 'tile tile-lg tile-muted';
+    };
+    check.addEventListener('change', pintarEstado);
+
+    const texto = (fd: FormData, k: string) => String(fd.get(k) || '').trim() || null;
+    const fecha = (fd: FormData, k: string) => {
+      const v = String(fd.get(k) || '').trim();
+      return v ? new Date(v).toISOString() : null;
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const encendido = check.checked;
+      const titulo = texto(fd, 'popup_title');
+
+      // Encender sin título dejaría un aviso que nunca aparece y nadie sabría
+      // por qué. Se avisa aquí en vez de dejar que se guarde en silencio.
+      if (encendido && !titulo) {
+        msg.textContent = 'Ponle un título: sin él el aviso no se muestra.';
+        msg.className = 'rounded bg-error/10 px-3 py-2 text-sm text-error';
+        return;
+      }
+
+      btn.disabled = true;
+      msg.className = 'hidden text-sm';
+
+      const version = Number(fd.get('popup_version') || 1);
+      const repetir = (form.querySelector('[name="repetir"]') as HTMLInputElement).checked;
+
+      const payload = {
+        popup_enabled: encendido,
+        popup_title: titulo,
+        popup_body: texto(fd, 'popup_body'),
+        popup_cta_label: texto(fd, 'popup_cta_label'),
+        popup_cta_url: texto(fd, 'popup_cta_url'),
+        popup_image_url: texto(fd, 'popup_image_url'),
+        popup_starts_at: fecha(fd, 'popup_starts_at'),
+        popup_ends_at: fecha(fd, 'popup_ends_at'),
+        popup_version: repetir ? version + 1 : version,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase.from('settings').update(payload).eq('id', 1);
+      btn.disabled = false;
+
+      if (error) {
+        msg.textContent = 'No se pudo guardar: ' + error.message;
+        msg.className = 'rounded bg-error/10 px-3 py-2 text-sm text-error';
+        return;
+      }
+
+      (form.querySelector('[name="popup_version"]') as HTMLInputElement).value = String(
+        payload.popup_version,
+      );
+      (form.querySelector('[name="repetir"]') as HTMLInputElement).checked = false;
+
+      msg.textContent = encendido
+        ? repetir
+          ? 'Guardado. Vuelve a mostrarse a todo el mundo, también a quien ya lo había cerrado.'
+          : 'Guardado. El aviso está encendido.'
+        : 'Guardado. El aviso está apagado.';
+      msg.className = 'rounded bg-success/10 px-3 py-2 text-sm text-success';
+    });
+  </script>
+</AdminLayout>

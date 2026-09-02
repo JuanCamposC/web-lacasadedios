@@ -2,6 +2,7 @@
 import { ClientRouter } from 'astro:transitions';
 import Navigation from '../components/Navigation.astro';
 import Footer from '../components/Footer.astro';
+import Popup from '../components/Popup.astro';
 import { templos } from '../data/templos';
 import { SITE, CONTACT, SOCIAL, hasPhone } from '../data/site';
 import { hashCsp } from '../lib/csp';
@@ -133,6 +134,13 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
       <slot />
     </main>
     <Footer />
+
+    {
+      /* Aviso emergente. Va aquí y no solo en la portada porque la gente
+         llega por enlaces directos a una noticia o a un evento tan a menudo
+         como por la puerta principal. */
+    }
+    <Popup />
 
     <a
       id="live-pill"

@@ -10,7 +10,7 @@ interface Props {
   title?: string;
   /** Bajada bajo el título, para orientar sin tener que adivinar. */
   description?: string;
-  active?: 'inicio' | 'eventos' | 'noticias' | 'videos' | 'suscriptores' | 'en-vivo';
+  active?: 'inicio' | 'eventos' | 'noticias' | 'videos' | 'suscriptores' | 'en-vivo' | 'aviso';
 }
 const { title = 'Panel', description, active } = Astro.props;
 const user = Astro.locals.user;
@@ -21,6 +21,7 @@ const links = [
   { href: '/admin/noticias', label: 'Noticias', key: 'noticias', icon: 'lucide:newspaper' },
   { href: '/admin/videos', label: 'Videos', key: 'videos', icon: 'lucide:youtube' },
   { href: '/admin/en-vivo', label: 'En vivo', key: 'en-vivo', icon: 'lucide:radio' },
+  { href: '/admin/aviso', label: 'Aviso', key: 'aviso', icon: 'lucide:megaphone' },
   { href: '/admin/suscriptores', label: 'Correos', key: 'suscriptores', icon: 'lucide:mail' },
   { href: '/admin/seguridad', label: 'Seguridad', key: 'seguridad', icon: 'lucide:shield-check' },
 ];

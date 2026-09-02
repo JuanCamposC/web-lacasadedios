@@ -1,0 +1,164 @@
+---
+/**
+ * Aviso emergente configurable desde el panel.
+ *
+ * POR QUÉ SE LEE EN EL NAVEGADOR
+ * Las páginas públicas llevan caché de CDN (`s-maxage` en vercel.json): si el
+ * aviso se renderizara en el servidor, encenderlo o apagarlo tardaría en verse
+ * lo que tarde en caducar la caché. Leyéndolo aquí, el cambio es inmediato y
+ * además no obliga a que ninguna página deje de ser estática.
+ *
+ * Se usa `restLeer` y no el cliente de Supabase por lo mismo que la pastilla de
+ * «En vivo»: son 215 kB de JavaScript menos en cada página.
+ */
+---
+
+<dialog
+  id="aviso"
+  class="m-auto w-[min(30rem,92vw)] rounded-xl border border-base-300 bg-base-100 p-0 text-base-content shadow-2xl backdrop:bg-black/55 backdrop:backdrop-blur-sm"
+  aria-labelledby="aviso-titulo"
+>
+  <div class="relative">
+    <img id="aviso-img" alt="" class="hidden max-h-56 w-full rounded-t-xl object-cover" />
+    <button
+      type="button"
+      id="aviso-cerrar"
+      class="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-base-100/85 text-xl leading-none text-base-content shadow-sm transition hover:bg-base-100"
+      aria-label="Cerrar aviso"
+    >
+      &times;
+    </button>
+  </div>
+
+  <div class="p-6 sm:p-7">
+    <h2 id="aviso-titulo" class="font-display text-2xl leading-tight"></h2>
+    <p id="aviso-texto" class="mt-3 whitespace-pre-line text-base-content/75"></p>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a id="aviso-cta" class="btn btn-primary hidden"></a>
+      <button type="button" id="aviso-luego" class="btn btn-ghost">Ahora no</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  import { restLeer } from '../lib/rest';
+
+  interface Aviso {
+    popup_enabled: boolean;
+    popup_title: string | null;
+    popup_body: string | null;
+    popup_cta_label: string | null;
+    popup_cta_url: string | null;
+    popup_image_url: string | null;
+    popup_starts_at: string | null;
+    popup_ends_at: string | null;
+    popup_version: number;
+  }
+
+  const CLAVE = 'aviso-visto';
+
+  /**
+   * Qué versión cerró ya esta persona. Si el panel sube `popup_version`, el
+   * número deja de coincidir y el aviso vuelve a salir: sin eso, cambiar el
+   * texto no serviría de nada para quien ya lo hubiera cerrado.
+   */
+  function vistoAntes(version: number): boolean {
+    try {
+      return localStorage.getItem(CLAVE) === String(version);
+    } catch {
+      // Modo privado o almacenamiento bloqueado: se prefiere no mostrarlo a
+      // mostrarlo en cada navegación, que sería mucho más molesto.
+      return true;
+    }
+  }
+
+  function marcarVisto(version: number) {
+    try {
+      localStorage.setItem(CLAVE, String(version));
+    } catch {
+      /* sin almacenamiento: vale para esta visita */
+    }
+  }
+
+  function enVentana(a: Aviso): boolean {
+    const ahora = Date.now();
+    if (a.popup_starts_at && ahora < Date.parse(a.popup_starts_at)) return false;
+    if (a.popup_ends_at && ahora > Date.parse(a.popup_ends_at)) return false;
+    return true;
+  }
+
+  let yaConsultado: Aviso | null | undefined;
+
+  async function mostrarAviso() {
+    const dlg = document.getElementById('aviso') as HTMLDialogElement | null;
+    if (!dlg || dlg.open) return;
+
+    try {
+      // Una consulta por sesión, no una por navegación.
+      if (yaConsultado === undefined) {
+        const filas = await restLeer<Aviso>(
+          'settings?id=eq.1&select=popup_enabled,popup_title,popup_body,popup_cta_label,popup_cta_url,popup_image_url,popup_starts_at,popup_ends_at,popup_version',
+        );
+        yaConsultado = filas[0] ?? null;
+      }
+    } catch {
+      return; // sin conexión: el sitio funciona igual, simplemente no hay aviso
+    }
+
+    const a = yaConsultado;
+    if (!a || !a.popup_enabled || !a.popup_title) return;
+    if (!enVentana(a) || vistoAntes(a.popup_version)) return;
+
+    (document.getElementById('aviso-titulo') as HTMLElement).textContent = a.popup_title;
+    (document.getElementById('aviso-texto') as HTMLElement).textContent = a.popup_body ?? '';
+
+    const img = document.getElementById('aviso-img') as HTMLImageElement;
+    if (a.popup_image_url) {
+      img.src = a.popup_image_url;
+      img.classList.remove('hidden');
+    } else {
+      img.classList.add('hidden');
+    }
+
+    const cta = document.getElementById('aviso-cta') as HTMLAnchorElement;
+    if (a.popup_cta_url && a.popup_cta_label) {
+      cta.href = a.popup_cta_url;
+      cta.textContent = a.popup_cta_label;
+      cta.classList.remove('hidden');
+    } else {
+      cta.classList.add('hidden');
+    }
+
+    const cerrar = () => {
+      marcarVisto(a.popup_version);
+      dlg.close();
+    };
+    document.getElementById('aviso-cerrar')?.addEventListener('click', cerrar, { once: true });
+    document.getElementById('aviso-luego')?.addEventListener('click', cerrar, { once: true });
+    // Escape cierra el <dialog> por su cuenta; hay que apuntar el visto igual.
+    dlg.addEventListener('close', () => marcarVisto(a.popup_version), { once: true });
+    cta.addEventListener('click', cerrar, { once: true });
+
+    // Tocar el fondo cierra. <dialog> no lo hace solo: el clic en el backdrop
+    // llega con el propio diálogo como destino, porque el ::backdrop no es un
+    // elemento aparte. Comparar contra el rectángulo evita cerrar cuando el
+    // clic cae dentro pero sobre un hueco sin contenido.
+    dlg.addEventListener('click', (ev) => {
+      const r = dlg.getBoundingClientRect();
+      const fuera =
+        ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom;
+      if (fuera) cerrar();
+    });
+
+    // `showModal` da foco atrapado, cierre con Escape y fondo inerte de serie.
+    // Un div encima sería una trampa para quien navega con teclado.
+    dlg.showModal();
+  }
+
+  document.addEventListener('astro:page-load', mostrarAviso);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mostrarAviso);
+  } else {
+    mostrarAviso();
+  }
+</script>
