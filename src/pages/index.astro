@@ -5,93 +5,108 @@ import Layout from '../layouts/Layout.astro';
 import Reveal from '../components/Reveal.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import TemploCard from '../components/TemploCard.astro';
-import Cartel from '../components/Cartel.astro';
 import CtaBand from '../components/CtaBand.astro';
-import { templos, totalServices } from '../data/templos';
+import { templos } from '../data/templos';
 import { SITE, SOCIAL } from '../data/site';
 import { IMG } from '../assets/images';
 
-const sedes = templos.map((t) => t.short).join(' · ');
-const regiones = [...new Set(templos.map((t) => t.region))].length;
 const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
 const instagram = SOCIAL.find((s) => s.key === 'instagram')!;
 ---
 
 <Layout>
-  <!-- ══ Hero: el cartel ══════════════════════════════════════════════════
-	     La pregunta que más recibe una iglesia es «¿a qué hora se reúnen?».
-	     El hero la responde antes que cualquier otra cosa.
-	     La fotografía queda de fondo, no de sujeto: las imágenes actuales son
-	     de stock y muestran una congregación que no es esta.
-	  ══════════════════════════════════════════════════════════════════════ -->
-  <section class="section-dark relative -mt-16 flex min-h-[72vh] items-center overflow-hidden">
+  <!-- ══ Portada ═════════════════════════════════════════════════════════
+       Del diseño recibido en Figma (archivo «Header», nodo 1:2). Cuatro
+       adaptaciones que conviene conocer antes de tocarlo:
+
+       · El velo es #2F4156 al 90 %, no el azul noche del resto del sitio. Eso
+         obliga al dorado: el bronce de la paleta sobre ese azul da 1,58:1 y
+         sería ilegible. El diseño trae #C8994F (4,04:1); aquí se usa el
+         `--color-accent` que `.on-dark` ya define (#D0A35C), que está a 13/255
+         de aquel —imperceptible— y da 4,51:1, con lo que cumple AA también
+         para texto normal y no para texto grande solamente.
+
+       · El diseño está maquetado con posiciones absolutas sobre un lienzo de
+         2304 px. Aquí es una rejilla dentro de `.wrap`, para que el texto quede
+         alineado con la barra de navegación y con las secciones de abajo en
+         vez de flotar a un porcentaje fijo.
+
+       · Los dos botones no están en el diseño. Sin ellos la portada abre sin
+         ninguna salida salvo el menú, así que van a la derecha, sobre la
+         filigrana: dónde y cuándo, que son las dos preguntas de quien llega
+         por primera vez.
+
+       · El logotipo pasa a SVG. El del diseño es el mismo dibujo que
+         marca/logo-blanco.png (proporción 4,437 contra 4,420) pero vectorial,
+         que a este tamaño se nota.
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section
+    class="on-dark relative -mt-16 flex min-h-[85vh] items-center overflow-hidden lg:min-h-[clamp(32rem,42vw,52rem)]"
+  >
     <Image
-      src={IMG.congregacion}
+      src={IMG.heroCongregados}
       alt=""
       aria-hidden="true"
       widths={[768, 1280, 1600]}
       sizes="100vw"
       loading="eager"
-      class="absolute inset-0 h-full w-full object-cover opacity-[0.22]"
+      class="absolute inset-0 h-full w-full object-cover"
     />
-    <div class="absolute inset-0 bg-gradient-to-br from-[#0a1730]/70 via-[#0a1730]/85 to-[#0a1730]">
-    </div>
-    <div class="grid-texture absolute inset-0" aria-hidden="true"></div>
-    <!-- Corte limpio hacia la página, con un filete de bronce que lo hace
-		     deliberado. Antes había un degradado hacia base-100 que se leía como
-		     una mancha clara: un borde nítido es más fiel al lenguaje impreso. -->
+
+    <!-- Velo plano, no degradado: es lo que define el diseño. Al 90 % la
+         fotografía casi no se ve, y esa es la intención. -->
+    <div class="absolute inset-0 bg-[#2f4156]/90"></div>
+
+    <!-- Filigrana de marca, sangrando por arriba y por abajo como en el
+         diseño. Se esconde por debajo de `lg`: a ese ancho se cruza con el
+         texto en vez de acompañarlo. -->
+    <img
+      src="/marca/filigrana.svg"
+      alt=""
+      aria-hidden="true"
+      class="pointer-events-none absolute left-[49%] top-1/2 hidden h-[169%] w-auto -translate-y-1/2 lg:block"
+    />
+
     <div class="rule absolute inset-x-0 bottom-0" aria-hidden="true"></div>
 
     <div
-      class="wrap relative z-10 grid items-center gap-12 px-4 pb-20 pt-24 md:pb-24 md:pt-28 lg:grid-cols-12 lg:gap-16"
+      class="wrap relative z-10 grid items-center gap-10 px-4 pb-20 pt-28 lg:grid-cols-12 lg:gap-8"
     >
-      <div class="lg:col-span-6">
+      <div class="lg:col-span-8">
         <p class="entra eyebrow text-accent" style="--i:0">Iglesia Evangélica</p>
 
         <h1 class="entra mt-5" style="--i:1">
           <img
-            src="/marca/logo-blanco.png"
+            src="/marca/logo-blanco.svg"
             alt={SITE.name}
-            width="1220"
-            height="276"
+            width="819"
+            height="185"
             fetchpriority="high"
-            class="h-14 w-auto md:h-16 lg:h-20"
+            class="h-16 w-auto md:h-20 lg:h-28"
           />
         </h1>
 
-        <p
-          class="entra mt-7 font-display text-[clamp(1.4rem,3vw,2.15rem)] font-normal leading-[1.25] text-white"
-          style="--i:2"
-        >
-          {sedes}
-        </p>
-
-        <p class="entra versiculo mt-6 max-w-lg text-lg text-white/65 md:text-xl" style="--i:3">
+        <p class="entra versiculo mt-8 max-w-xl text-lg text-white md:text-xl" style="--i:2">
           «{SITE.verse.text}»
         </p>
         <p
-          class="entra font-data mt-2 text-xs uppercase tracking-[0.18em] text-white/40"
-          style="--i:4"
+          class="entra font-data mt-3 text-base uppercase tracking-[0.12em] text-accent md:text-lg"
+          style="--i:3"
         >
           {SITE.verse.ref}
         </p>
-
-        <div class="entra mt-9 flex flex-wrap gap-3" style="--i:5">
-          <a href="/templos" class="btn btn-primary gap-2">
-            <Icon name="lucide:map-pin" class="h-5 w-5" /> Dónde estamos
-          </a>
-          <a href="/horarios" class="btn gap-2 btn-invert">
-            <Icon name="lucide:calendar-days" class="h-5 w-5" /> Toda la semana
-          </a>
-        </div>
       </div>
 
-      <div class="lg:col-span-6">
-        <Cartel
-          animar
-          titulo="Nos reunimos"
-          pie={`${templos.length} templos · ${regiones} regiones · ${totalServices()} reuniones cada semana`}
-        />
+      <div
+        class="entra flex flex-wrap gap-3 lg:col-span-4 lg:flex-col lg:items-stretch"
+        style="--i:4"
+      >
+        <a href="/templos" class="btn btn-primary gap-2">
+          <Icon name="lucide:map-pin" class="h-5 w-5" /> Dónde estamos
+        </a>
+        <a href="/horarios" class="btn gap-2 btn-invert">
+          <Icon name="lucide:calendar-days" class="h-5 w-5" /> Cuándo nos reunimos
+        </a>
       </div>
     </div>
   </section>
