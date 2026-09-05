@@ -16,15 +16,19 @@ const instagram = SOCIAL.find((s) => s.key === 'instagram')!;
 
 <Layout>
   <!-- ══ Portada ═════════════════════════════════════════════════════════
-       Del diseño recibido en Figma (archivo «Header», nodo 1:2). Cuatro
-       adaptaciones que conviene conocer antes de tocarlo:
+       Del diseño recibido en Figma (archivo «Header», nodos 1:2 y 15:23).
+       Cuatro adaptaciones que conviene conocer antes de tocarlo:
 
-       · El velo es #2F4156 al 90 %, no el azul noche del resto del sitio. Eso
-         obliga al dorado: el bronce de la paleta sobre ese azul da 1,58:1 y
-         sería ilegible. El diseño trae #C8994F (4,04:1); aquí se usa el
-         `--color-accent` que `.on-dark` ya define (#D0A35C), que está a 13/255
-         de aquel —imperceptible— y da 4,51:1, con lo que cumple AA también
-         para texto normal y no para texto grande solamente.
+       · El velo del diseño es #2F4156, un gris pizarra que no está en la
+         paleta. Se cambia por el azul noche de la casa (#0A1730), el mismo
+         que usan las portadas interiores, el cartel y el pie: así la página
+         entera es un solo azul. Baja al 88 % —el diseño pedía 90— para que la
+         fotografía no desaparezca del todo con un azul más oscuro.
+         El dorado no es el #C8994F del diseño sino el `--color-accent` que
+         `.on-dark` ya define (#D0A35C): está a 13/255 de aquel —imperceptible—
+         y sobre este velo da 7,7:1, o 5,5:1 en el peor caso imaginable (que la
+         foto de debajo fuese blanca). Cumple AA para texto normal, no solo
+         para texto grande. El bronce del tema, #7D5518, daría 1,58:1 aquí.
 
        · El diseño está maquetado con posiciones absolutas sobre un lienzo de
          2304 px. Aquí es una rejilla dentro de `.wrap`, para que el texto quede
@@ -53,18 +57,19 @@ const instagram = SOCIAL.find((s) => s.key === 'instagram')!;
       class="absolute inset-0 h-full w-full object-cover"
     />
 
-    <!-- Velo plano, no degradado: es lo que define el diseño. Al 90 % la
-         fotografía casi no se ve, y esa es la intención. -->
-    <div class="absolute inset-0 bg-[#2f4156]/90"></div>
+    <!-- Velo plano, no degradado: la forma es la del diseño; el color, el de
+         la casa (ver la nota de arriba). -->
+    <div class="absolute inset-0 bg-[#0a1730]/88"></div>
 
-    <!-- Filigrana de marca, sangrando por arriba y por abajo como en el
-         diseño. Se esconde por debajo de `lg`: a ese ancho se cruza con el
-         texto en vez de acompañarlo. -->
+    <!-- Filigrana de marca, sangrando por arriba y por abajo. Las dos medidas
+         salen de los marcos de Figma: en móvil arranca al 53 % y mide el 116 %
+         del alto; en escritorio, al 49 % y el 169 %. Que el logotipo la pise
+         está en el diseño y no estorba: es un tono sobre tono al 20 %. -->
     <img
       src="/marca/filigrana.svg"
       alt=""
       aria-hidden="true"
-      class="pointer-events-none absolute left-[49%] top-1/2 hidden h-[169%] w-auto -translate-y-1/2 lg:block"
+      class="pointer-events-none absolute left-[53%] top-1/2 h-[116%] w-auto -translate-y-1/2 lg:left-[49%] lg:h-[169%]"
     />
 
     <div class="rule absolute inset-x-0 bottom-0" aria-hidden="true"></div>
@@ -82,7 +87,7 @@ const instagram = SOCIAL.find((s) => s.key === 'instagram')!;
             width="819"
             height="185"
             fetchpriority="high"
-            class="h-16 w-auto md:h-20 lg:h-28"
+            class="h-14 w-auto sm:h-16 md:h-20 lg:h-28"
           />
         </h1>
 

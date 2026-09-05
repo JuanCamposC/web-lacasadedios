@@ -1,0 +1,103 @@
+---
+import { Icon } from 'astro-icon/components';
+import { SITE } from '../data/site';
+
+/**
+ * Alta en el boletín.
+ *
+ * Vivía dentro del pie. Salió de ahí cuando el pie pasó a seguir el diseño de
+ * Figma (nodo 23:50), que no contempla formulario: en vez de perderlo, queda
+ * como banda propia justo encima. El azul estandarte lo separa del azul noche
+ * del pie sin sacarlo de la paleta.
+ */
+---
+
+<section class="on-dark bg-secondary text-white" aria-labelledby="boletin-titulo">
+  <div class="mx-auto max-w-3xl px-6 py-8 text-center sm:py-14">
+    <div class="tile tile-accent mx-auto mb-4 hidden sm:inline-flex">
+      <Icon name="lucide:mail-plus" class="h-6 w-6" />
+    </div>
+    <h2 id="boletin-titulo" class="font-display text-xl sm:text-2xl md:text-3xl">
+      Recibe nuestras novedades
+    </h2>
+    <p class="mx-auto mt-2 hidden max-w-lg text-sm opacity-70 sm:block sm:text-base">
+      Suscríbete y entérate de eventos, prédicas y noticias de {SITE.name}.
+    </p>
+    <form
+      id="newsletter-form"
+      class="mx-auto mt-4 flex max-w-md flex-col gap-2.5 sm:mt-6 sm:flex-row sm:gap-3"
+    >
+      <label for="newsletter-email" class="sr-only">Correo electrónico</label>
+      <input
+        id="newsletter-email"
+        type="email"
+        name="email"
+        required
+        placeholder="tucorreo@ejemplo.cl"
+        class="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-white placeholder-white/40 outline-none focus:border-white/50"
+      />
+      <button type="submit" id="newsletter-btn" class="btn btn-primary w-full gap-2 sm:w-auto">
+        <Icon name="lucide:send" class="h-4 w-4" /> Suscribirme
+      </button>
+    </form>
+    <p id="newsletter-msg" role="status" aria-live="polite" class="mt-3 hidden text-sm"></p>
+  </div>
+</section>
+
+<script>
+  // El alta ya no se inserta desde el navegador: la tabla dejó de aceptar la
+  // clave anónima. Va contra /api/suscribir, que valida el correo, frena por IP
+  // y manda el correo de confirmación. Ver src/pages/api/suscribir.ts.
+  const MENSAJES: Record<string, string> = {
+    correo_invalido: 'Revisa el correo: no parece una dirección válida.',
+    demasiados_intentos: 'Demasiados intentos. Prueba de nuevo en un rato.',
+    sin_configurar: 'El boletín no está configurado todavía. Escríbenos y te agregamos.',
+    falta_migracion: 'El boletín no está configurado todavía. Escríbenos y te agregamos.',
+    sin_proveedor_correo: 'Te anotamos, pero no pudimos enviarte el correo de confirmación.',
+    from_invalido: 'Te anotamos, pero no pudimos enviarte el correo de confirmación.',
+    send_error: 'Te anotamos, pero no pudimos enviarte el correo de confirmación.',
+  };
+
+  function initBoletin() {
+    const form = document.getElementById('newsletter-form') as HTMLFormElement | null;
+    const msg = document.getElementById('newsletter-msg');
+    const btn = document.getElementById('newsletter-btn') as HTMLButtonElement | null;
+    if (!form || !msg || !btn || form.dataset.listo) return;
+    form.dataset.listo = '1';
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.className = 'mt-3 hidden text-sm';
+      btn.disabled = true;
+      const email = String(new FormData(form).get('email') || '').trim();
+
+      let data: Record<string, unknown> = {};
+      try {
+        const res = await fetch('/api/suscribir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        data = await res.json();
+      } catch {
+        data = { ok: false, reason: 'red' };
+      }
+      btn.disabled = false;
+
+      if (!data.ok) {
+        msg.textContent =
+          MENSAJES[String(data.reason)] ?? 'No se pudo suscribir. Inténtalo más tarde.';
+        msg.className = 'mt-3 text-sm text-red-300';
+        return;
+      }
+
+      form.reset();
+      // No se distingue el alta nueva del correo ya presente: decir «ya estabas
+      // suscrito» permitiría comprobar desde fuera quién está en la lista.
+      msg.textContent = 'Revisa tu correo y confirma la suscripción.';
+      msg.className = 'mt-3 text-sm text-green-300';
+    });
+  }
+
+  document.addEventListener('astro:page-load', initBoletin);
+</script>

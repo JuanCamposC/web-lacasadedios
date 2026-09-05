@@ -1,221 +1,108 @@
 ---
 import { Icon } from 'astro-icon/components';
 import { FOOTER_NAV } from '../data/nav';
-import { SITE, CONTACT, SOCIAL, hasPhone } from '../data/site';
+import { SITE, CONTACT, SOCIAL } from '../data/site';
 
 const year = new Date().getFullYear();
 
-// En móvil el pie medía más de una pantalla y media. En vez de repetir el mapa
-// completo del sitio —que ya está a un toque en el menú superior— se muestran
-// seis destinos en fichas. Las columnas completas siguen en el HTML para
-// pantallas grandes y para el rastreo de buscadores.
-const atajosMovil = [
-  { href: '/templos', label: 'Templos' },
-  { href: '/horarios', label: 'Horarios' },
-  { href: '/eventos', label: 'Eventos' },
-  { href: '/noticias', label: 'Noticias' },
-  { href: '/videos', label: 'Videos' },
-  { href: '/contacto', label: 'Contacto' },
+/**
+ * Pie de página, según el diseño de Figma (archivo «Header», nodos 23:50 web y
+ * 44:56 móvil). Los dos marcos traen los mismos siete elementos en el mismo
+ * orden —logotipo, bajada, filete, cinco enlaces, tres círculos, versículo y
+ * copyright—, así que aquí hay una sola maqueta centrada que se estrecha, no
+ * dos.
+ *
+ * CUATRO ADAPTACIONES, todas conversadas:
+ *
+ * · Color. El diseño pinta el pie de #2F4156; aquí es `bg-neutral` (#0A1730),
+ *   el azul noche de la paleta, el mismo que ahora lleva el velo de la
+ *   portada. El diseño quiere que cabecera y pie sean el mismo azul, y lo
+ *   siguen siendo.
+ *
+ * · Filete. En el diseño es una línea blanca de 2 px al 81 % del lienzo. Aquí
+ *   es `.rule`, el filete de bronce que ya usa el resto del sitio, al ancho de
+ *   `.wrap`: mismo papel, lengua del sitio.
+ *
+ * · Círculos. En el diseño son más oscuros que el fondo (#233040 al 90 % sobre
+ *   #2F4156). Sobre el azul noche eso quedaría casi negro, así que se invierte
+ *   la relación con `bg-white/10`, que es lo que el sitio ya usaba. Miden 44 px
+ *   como mínimo porque por debajo de eso dejan de ser tocables con el pulgar.
+ *
+ * · «COMUNIDAD» del diseño no existe como página; queda «Horarios», que es lo
+ *   que más se busca. El mapa completo de tres columnas desaparece: la barra de
+ *   arriba ya lleva a todo.
+ *
+ * El boletín se fue a `Boletin.astro`, la banda de encima.
+ */
+
+/** Los tres círculos del diseño: las dos redes y el correo. */
+const CIRCULOS = [
+  ...SOCIAL.map((s) => ({ href: s.href, label: s.label, icon: s.icon, externo: true })),
+  {
+    href: `mailto:${CONTACT.email}`,
+    label: `Escríbenos a ${CONTACT.email}`,
+    icon: 'lucide:mail',
+    externo: false,
+  },
 ];
 ---
 
 <footer class="on-dark bg-neutral text-neutral-content">
-  <!-- Boletín. Compacto en móvil: sin placa de icono, sin bajada y con la
-       mitad de aire vertical. -->
-  <div class="border-b border-white/10">
-    <div class="mx-auto max-w-3xl px-6 py-8 text-center sm:py-14">
-      <div class="tile tile-accent mx-auto mb-4 hidden sm:inline-flex">
-        <Icon name="lucide:mail-plus" class="h-6 w-6" />
-      </div>
-      <h2 class="font-display text-xl sm:text-2xl md:text-3xl">Recibe nuestras novedades</h2>
-      <p class="mx-auto mt-2 hidden max-w-lg text-sm opacity-70 sm:block sm:text-base">
-        Suscríbete y entérate de eventos, prédicas y noticias de {SITE.name}.
-      </p>
-      <form
-        id="newsletter-form"
-        class="mx-auto mt-4 flex max-w-md flex-col gap-2.5 sm:mt-6 sm:flex-row sm:gap-3"
-      >
-        <label for="newsletter-email" class="sr-only">Correo electrónico</label>
-        <input
-          id="newsletter-email"
-          type="email"
-          name="email"
-          required
-          placeholder="tucorreo@ejemplo.cl"
-          class="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-white placeholder-white/40 outline-none focus:border-white/50"
-        />
-        <button type="submit" id="newsletter-btn" class="btn btn-primary w-full gap-2 sm:w-auto">
-          <Icon name="lucide:send" class="h-4 w-4" /> Suscribirme
-        </button>
-      </form>
-      <p id="newsletter-msg" role="status" aria-live="polite" class="mt-3 hidden text-sm"></p>
-    </div>
-  </div>
+  <div class="wrap px-4 py-12 text-center sm:py-16">
+    <a href="/" class="inline-block" aria-label={`${SITE.name} — inicio`}>
+      <img
+        src="/marca/logo-blanco.svg"
+        alt={SITE.name}
+        width="819"
+        height="185"
+        loading="lazy"
+        class="h-8 w-auto sm:h-11 lg:h-14"
+      />
+    </a>
 
-  <!-- Contenido -->
-  <div class="mx-auto max-w-6xl px-6 py-9 sm:py-14">
-    <div class="grid gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-12">
-      <!-- Marca + contacto -->
-      <div class="sm:col-span-2 lg:col-span-3">
-        <img
-          src="/marca/logo-blanco.png"
-          alt={SITE.name}
-          class="h-8 w-auto sm:h-9"
-          width="1220"
-          height="276"
-        />
-        <p class="mb-4 mt-3 hidden max-w-xs text-sm opacity-70 sm:block">{SITE.intro}</p>
+    <p class="mx-auto mt-6 max-w-2xl text-sm opacity-80 sm:text-base">{SITE.intro}</p>
 
-        <div class="mt-4 flex flex-col gap-2 text-sm opacity-80 sm:mt-0">
-          <a
-            href={`mailto:${CONTACT.email}`}
-            class="inline-flex items-center gap-2 hover:opacity-100"
-          >
-            <Icon name="lucide:mail" class="h-4 w-4 shrink-0 text-accent" />
-            <span class="break-all">{CONTACT.email}</span>
-          </a>
-          {
-            hasPhone && (
+    <div class="rule mt-8 sm:mt-10" aria-hidden="true"></div>
+
+    <nav class="mt-8 sm:mt-10" aria-label="Enlaces del sitio">
+      <ul class="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 sm:gap-x-14">
+        {
+          FOOTER_NAV.map((l) => (
+            <li>
               <a
-                href={`tel:${CONTACT.phoneHref}`}
-                class="inline-flex items-center gap-2 hover:opacity-100"
+                href={l.href}
+                class="font-data text-sm font-bold uppercase tracking-[0.14em] transition hover:text-accent sm:text-base"
               >
-                <Icon name="lucide:phone" class="h-4 w-4 shrink-0 text-accent" /> {CONTACT.phone}
+                {l.label}
               </a>
-            )
-          }
-        </div>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
 
-        <div class="mt-5 flex gap-3">
-          {
-            SOCIAL.map((s) => (
-              <a
-                href={s.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={s.label}
-                class="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-accent"
-              >
-                <Icon name={s.icon} class="h-5 w-5" />
-              </a>
-            ))
-          }
-        </div>
-      </div>
-
-      <!-- Móvil: seis destinos en fichas, en lugar del mapa completo -->
-      <nav class="sm:hidden" aria-label="Enlaces del sitio">
-        <ul class="flex flex-wrap gap-2">
-          {
-            atajosMovil.map((l) => (
-              <li>
-                <a
-                  href={l.href}
-                  class="inline-flex rounded-full border border-white/20 px-3.5 py-1.5 text-sm transition hover:border-accent hover:text-accent"
-                >
-                  {l.label}
-                </a>
-              </li>
-            ))
-          }
-        </ul>
-      </nav>
-
-      <!-- Escritorio: el mapa completo -->
+    <ul class="mt-8 flex items-center justify-center gap-6 sm:mt-10 sm:gap-8">
       {
-        FOOTER_NAV.map((col) => (
-          <nav class="hidden sm:block lg:col-span-3" aria-label={col.title}>
-            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wider opacity-90">
-              {col.title}
-            </h3>
-            <ul class="flex flex-col gap-2 text-sm opacity-80">
-              {col.items.map((l) => (
-                <li>
-                  <a href={l.href} class="hover:text-accent hover:opacity-100">
-                    {l.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+        CIRCULOS.map((c) => (
+          <li>
+            <a
+              href={c.href}
+              aria-label={c.label}
+              target={c.externo ? '_blank' : undefined}
+              rel={c.externo ? 'noopener noreferrer' : undefined}
+              class="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-accent sm:h-12 sm:w-12"
+            >
+              <Icon name={c.icon} class="h-5 w-5 sm:h-6 sm:w-6" />
+            </a>
+          </li>
         ))
       }
-    </div>
+    </ul>
 
-    <div class="mt-8 border-t border-white/10 pt-5 sm:mt-12 sm:pt-6">
-      <!-- El versículo ya abre la portada: repetirlo aquí solo alarga el pie -->
-      <p class="hidden text-center text-xs italic opacity-50 sm:block">
-        «{SITE.verse.text}» — {SITE.verse.ref}
-      </p>
-      <div
-        class="flex flex-col items-center justify-between gap-2 text-sm opacity-70 sm:mt-3 sm:flex-row"
-      >
-        <span>© {year} {SITE.name}.</span>
-        <a
-          href="/admin"
-          class="inline-flex items-center gap-1 opacity-70 transition hover:text-accent hover:opacity-100"
-        >
-          <Icon name="lucide:lock" class="h-3.5 w-3.5" /> Ingresar
-        </a>
-      </div>
-    </div>
+    <p class="mx-auto mt-8 max-w-3xl text-xs italic opacity-60 sm:mt-10 sm:text-sm">
+      «{SITE.verse.text}» — {SITE.verse.ref}
+    </p>
+
+    <p class="mt-6 text-sm opacity-70 sm:mt-8">© {year} {SITE.name}</p>
   </div>
 </footer>
-
-<script>
-  // El alta ya no se inserta desde el navegador: la tabla dejó de aceptar la
-  // clave anónima. Va contra /api/suscribir, que valida el correo, frena por IP
-  // y manda el correo de confirmación. Ver src/pages/api/suscribir.ts.
-  const MENSAJES: Record<string, string> = {
-    correo_invalido: 'Revisa el correo: no parece una dirección válida.',
-    demasiados_intentos: 'Demasiados intentos. Prueba de nuevo en un rato.',
-    sin_configurar: 'El boletín no está configurado todavía. Escríbenos y te agregamos.',
-    falta_migracion: 'El boletín no está configurado todavía. Escríbenos y te agregamos.',
-    sin_proveedor_correo: 'Te anotamos, pero no pudimos enviarte el correo de confirmación.',
-    from_invalido: 'Te anotamos, pero no pudimos enviarte el correo de confirmación.',
-    send_error: 'Te anotamos, pero no pudimos enviarte el correo de confirmación.',
-  };
-
-  function initBoletin() {
-    const form = document.getElementById('newsletter-form') as HTMLFormElement | null;
-    const msg = document.getElementById('newsletter-msg');
-    const btn = document.getElementById('newsletter-btn') as HTMLButtonElement | null;
-    if (!form || !msg || !btn || form.dataset.listo) return;
-    form.dataset.listo = '1';
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      msg.className = 'mt-3 hidden text-sm';
-      btn.disabled = true;
-      const email = String(new FormData(form).get('email') || '').trim();
-
-      let data: Record<string, unknown> = {};
-      try {
-        const res = await fetch('/api/suscribir', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-        data = await res.json();
-      } catch {
-        data = { ok: false, reason: 'red' };
-      }
-      btn.disabled = false;
-
-      if (!data.ok) {
-        msg.textContent =
-          MENSAJES[String(data.reason)] ?? 'No se pudo suscribir. Inténtalo más tarde.';
-        msg.className = 'mt-3 text-sm text-red-300';
-        return;
-      }
-
-      form.reset();
-      // No se distingue el alta nueva del correo ya presente: decir «ya estabas
-      // suscrito» permitiría comprobar desde fuera quién está en la lista.
-      msg.textContent = 'Revisa tu correo y confirma la suscripción.';
-      msg.className = 'mt-3 text-sm text-green-300';
-    });
-  }
-
-  document.addEventListener('astro:page-load', initBoletin);
-</script>

@@ -1,6 +1,7 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import Navigation from '../components/Navigation.astro';
+import Boletin from '../components/Boletin.astro';
 import Footer from '../components/Footer.astro';
 import Popup from '../components/Popup.astro';
 import { templos } from '../data/templos';
@@ -133,6 +134,7 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
     <main id="contenido" class="pt-16">
       <slot />
     </main>
+    <Boletin />
     <Footer />
 
     {

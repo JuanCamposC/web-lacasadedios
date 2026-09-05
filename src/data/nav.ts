@@ -89,35 +89,22 @@ export const MAIN_NAV: NavEntry[] = [
   { href: '/en-vivo', label: 'En vivo' },
 ];
 
-/** Columnas del pie de página. */
-export const FOOTER_NAV: { title: string; items: NavLink[] }[] = [
-  {
-    title: 'La iglesia',
-    items: [
-      { href: '/sobre-nosotros', label: 'Quiénes somos' },
-      { href: '/sobre-nosotros#historia', label: 'Historia' },
-      { href: '/sobre-nosotros#liderazgo', label: 'Pastores y líderes' },
-      { href: '/sobre-nosotros#fe', label: 'Declaración de fe' },
-    ],
-  },
-  {
-    title: 'Templos',
-    items: [
-      { href: '/templos', label: 'Todos los templos' },
-      { href: '/horarios', label: 'Horarios de cultos' },
-      ...sedes.map(({ href, label }) => ({ href, label })),
-    ],
-  },
-  {
-    title: 'Comunidad',
-    items: [
-      { href: '/eventos', label: 'Eventos' },
-      { href: '/noticias', label: 'Noticias' },
-      { href: '/videos', label: 'Videos' },
-      { href: '/en-vivo', label: 'En vivo' },
-      { href: '/contacto', label: 'Contacto' },
-    ],
-  },
+/**
+ * Enlaces del pie.
+ *
+ * Eran catorce en tres columnas. El diseño de Figma (nodo 23:50) deja cinco en
+ * una fila y no se pierde nada: la barra de arriba sigue llevando a todo, y un
+ * mapa del sitio repetido al pie es de las cosas que menos se tocan.
+ *
+ * El quinto del diseño decía «Comunidad», que no es ninguna página. Queda
+ * Horarios, que es lo que de verdad se busca en la web de una iglesia.
+ */
+export const FOOTER_NAV: NavLink[] = [
+  { href: '/', label: 'Inicio' },
+  { href: '/sobre-nosotros', label: 'Nosotros' },
+  { href: '/templos', label: 'Templos' },
+  { href: '/horarios', label: 'Horarios' },
+  { href: '/noticias', label: 'Noticias' },
 ];
 
 /** ¿La ruta actual corresponde a esta entrada? */
