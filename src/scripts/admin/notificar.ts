@@ -27,6 +27,7 @@ const EXPLICACION: Record<string, string> = {
   limite_hosting: 'Se topó el límite de correos por hora del hosting. Espera o súbelo en cPanel.',
   exception: 'Error inesperado al enviar.',
   no_en_vivo: 'La transmisión no está encendida. Enciende el interruptor, guarda y reintenta.',
+  sin_correo_admin: 'Tu cuenta del panel no tiene correo asociado, así que no hay dónde mandarla.',
 };
 
 /**
@@ -42,6 +43,11 @@ export function resumenAviso(r: any): { ok: boolean; texto: string } {
   // protección contra escribirle dos veces a la lista por la misma transmisión.
   if (r?.ok && r.reason === 'ya_avisado') {
     return { ok: true, texto: 'Guardado. Ya se había avisado de esta transmisión.' };
+  }
+  if (r?.ok && r.prueba) {
+    return r.sent
+      ? { ok: true, texto: 'Prueba enviada a tu correo. Ábrela en el teléfono antes de mandarla.' }
+      : { ok: false, texto: 'La prueba no salió. Mira los registros del servidor.' };
   }
   if (r?.ok && r.sent > 0) {
     const hecho = `Avisamos a ${r.sent} suscriptor${r.sent === 1 ? '' : 'es'}`;
@@ -60,16 +66,13 @@ export function resumenAviso(r: any): { ok: boolean; texto: string } {
   };
 }
 
-export async function avisarSuscriptores(ctx: Contexto, titulo: string, ruta: string) {
+/** Llama a /api/notify y cuenta lo que pasó. La única forma de avisar. */
+export async function pedirAviso(cuerpo: Record<string, unknown>): Promise<void> {
   try {
     const r = await fetch('/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: ctx.config.notify!.type,
-        title: titulo,
-        url: location.origin + ruta,
-      }),
+      body: JSON.stringify(cuerpo),
     }).then((x) => x.json());
 
     const { ok, texto } = resumenAviso(r);
@@ -79,6 +82,26 @@ export async function avisarSuscriptores(ctx: Contexto, titulo: string, ruta: st
     console.error('[aviso a suscriptores]', e);
     toast('Guardado, pero no se pudo contactar al servidor para avisar.', 'error');
   }
+}
+
+/**
+ * Aviso al publicar.
+ *
+ * Recibe la FILA entera y no solo el título: de ahí salen también la bajada y
+ * la imagen, que son las que hacen que el correo dé ganas de entrar. Un correo
+ * con título y botón pelados se parece demasiado a una notificación de sistema.
+ */
+export async function avisarSuscriptores(ctx: Contexto, row: Fila) {
+  const { titleField, subtitleField, notify } = ctx.config;
+  await pedirAviso({
+    type: notify!.type,
+    title: String(row[titleField] ?? ''),
+    url: location.origin + rutaDe(ctx, row),
+    // Los videos no tienen imagen y una noticia puede ir sin bajada: el
+    // servidor descarta lo que llegue vacío.
+    excerpt: subtitleField ? String(row[subtitleField] ?? '') : '',
+    image: String(row.image_url ?? ''),
+  });
 }
 
 /** URL pública del elemento (ficha propia si la tiene, listado si no). */

@@ -299,19 +299,74 @@ Environment Variables* añade las mismas variables y vuelve a desplegar.
 
 ## 📣 Boletín: cómo funciona el aviso
 
-1. Alguien deja su correo en el pie del sitio → fila en `subscribers`.
-2. Al **publicar** una noticia, evento o video —al crearlo, o al encender el
+1. Alguien deja su correo en el pie del sitio → fila `pending` en `subscribers`
+   y correo de confirmación desde [`/api/suscribir`](src/pages/api/suscribir.ts).
+2. Al confirmar desde su bandeja, [`/confirmar`](src/pages/confirmar.astro)
+   marca la fila y pide la **bienvenida** a
+   [`/api/bienvenida`](src/pages/api/bienvenida.ts). Se manda una sola por
+   persona: la columna `welcomed_at` lo garantiza aunque recargue la página.
+3. Al **publicar** una noticia, evento o video —al crearlo, o al encender el
    interruptor desde la lista— el panel pregunta si avisar y llama a
-   [`/api/notify`](src/pages/api/notify.ts).
-3. Se envía **un correo por persona**, en lotes de 100 (`resend.batch.send`),
-   cada uno con su propio enlace de baja y la cabecera `List-Unsubscribe`.
+   [`/api/notify`](src/pages/api/notify.ts) con el título, la bajada y la imagen.
+4. Al encender la **transmisión en vivo** sale el mismo aviso, y de cada
+   transmisión se avisa una sola vez (`settings.live_notified_url`).
+5. Se envía **un correo por persona**, tres conexiones en paralelo
+   (`crearTransporteLote`), cada uno con su propio enlace de baja y la cabecera
+   `List-Unsubscribe`.
 
 > Antes iba un único mensaje con todos en copia oculta. Así era imposible dar a
 > cada persona su enlace de baja, y Gmail y Outlook penalizan el envío masivo
 > sin esa salida.
 
-El enlace lleva a [`/baja`](src/pages/baja.astro), que no se indexa ni entra al
-sitemap: solo se llega con el token personal del correo.
+Todos los correos salen de la misma plantilla,
+[`src/lib/correo-plantilla.ts`](src/lib/correo-plantilla.ts), que genera a la vez
+el HTML y la versión en texto plano. **No la edites como si fuera una página
+web**: el archivo abre con las seis reglas que impone el correo, y las pruebas
+de [`correo-plantilla.test.ts`](src/lib/correo-plantilla.test.ts) fijan las que
+ya nos mordieron.
+
+El botón **«Enviarme una prueba»** del panel de *En vivo* manda el correo real a
+la casilla de quien esté dentro, sin tocar la lista ni marcar la transmisión
+como avisada. Úsalo siempre antes de escribirle a todo el mundo.
+
+El enlace de baja lleva a [`/baja`](src/pages/baja.astro), que no se indexa ni
+entra al sitemap: solo se llega con el token personal del correo.
+
+### 📮 Dos casillas, no una
+
+`BOLETIN_FROM` es el remitente del boletín; `CONTACT_FROM`, el del formulario de
+contacto. Si alguien marca como no deseado un aviso del boletín, el castigo cae
+sobre la dirección que lo mandó: con una sola casilla, eso arrastra también los
+correos del formulario, que son los que no pueden fallar.
+
+Si `BOLETIN_FROM` está vacío se usa `CONTACT_FROM` y todo funciona igual, solo
+que sin la separación. Para activarla hay que **crear la casilla en cPanel
+primero** y luego poner la variable en Vercel.
+
+### ⛔ SPF, DKIM y DMARC: bloqueado hasta salir de Netexplora
+
+Esto es lo que de verdad decide si los correos llegan a la bandeja o a spam, y
+**hoy no se puede tocar**: el DNS de `lacasadedios.cl` lo controla Netexplora
+(`ns308`/`ns309.netexplora.com`). El día que el dominio pase a Cloudflare, esto
+es lo primero, antes de mandar un solo boletín más:
+
+| Registro | Qué hacer |
+| --- | --- |
+| **SPF** | Ya debería existir, porque se envía por el propio servidor de la iglesia. Comprobar que el `TXT` de la raíz empiece por `v=spf1` e incluya ese servidor, y que termine en `~all`. |
+| **DKIM** | Lo genera el servidor de correo; la clave no se inventa. En cPanel, *Email Deliverability* muestra el `TXT` exacto que hay que publicar (`default._domainkey`) y si ya está puesto. |
+| **DMARC** | Es una política que se elige. Empezar en modo observación y no en bloqueo. |
+
+Para DMARC, el registro exacto con el que empezar — en `_dmarc.lacasadedios.cl`,
+tipo `TXT`:
+
+```
+v=DMARC1; p=none; rua=mailto:dmarc@lacasadedios.cl; fo=1
+```
+
+`p=none` no rechaza nada: solo pide informes para ver qué se está enviando en
+nombre del dominio. Después de unas semanas de informes limpios se pasa a
+`p=quarantine` y más tarde a `p=reject`. Poner `p=reject` de entrada es la forma
+más rápida de que dejen de llegar los correos de la propia iglesia.
 
 ### ⛔ Migración obligatoria antes del próximo aviso
 

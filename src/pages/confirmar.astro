@@ -77,6 +77,40 @@ const t = TEXTOS[estado];
           )
         }
       </EmptyState>
+
+      {
+        /* El token viaja en un atributo y no dentro del script porque el sitio
+           publica su CSP con hashes: un `<script>` con datos incrustados
+           cambiaría de hash en cada visita y quedaría bloqueado. */
+        estado === 'listo' && <span hidden data-bienvenida={token} />
+      }
     </div>
   </section>
 </Layout>
+
+<script>
+  /**
+   * Bienvenida.
+   *
+   * Se pide desde aquí y no al pintar la página para no hacer esperar a nadie
+   * mientras sale un correo. Si falla, falla en silencio: la suscripción ya
+   * quedó confirmada, que es lo que la persona vino a hacer, y el servidor se
+   * encarga de que no salgan dos.
+   */
+  function pedirBienvenida() {
+    const marca = document.querySelector<HTMLElement>('[data-bienvenida]');
+    const t = marca?.dataset.bienvenida;
+    if (!t || marca.dataset.pedida) return;
+    marca.dataset.pedida = '1';
+
+    fetch('/api/bienvenida', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ t }),
+    }).catch(() => {
+      /* sin conexión: no hay nada que decirle a quien ya está suscrito */
+    });
+  }
+
+  document.addEventListener('astro:page-load', pedirBienvenida);
+</script>

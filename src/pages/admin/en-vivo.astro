@@ -96,9 +96,16 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
 
       <p id="live-msg" class="hidden rounded px-3 py-2 text-sm"></p>
 
-      <button type="submit" id="live-save" class="btn btn-primary w-full gap-2">
-        <Icon name="lucide:save" class="h-5 w-5" /> Guardar
-      </button>
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <button type="submit" id="live-save" class="btn btn-primary flex-1 gap-2">
+          <Icon name="lucide:save" class="h-5 w-5" /> Guardar
+        </button>
+        <!-- No hace falta guardar antes: la prueba usa lo que hay escrito en el
+             formulario, no lo que está en la base. -->
+        <button type="button" id="live-prueba" class="btn btn-outline gap-2">
+          <Icon name="lucide:mail-check" class="h-5 w-5" /> Enviarme una prueba
+        </button>
+      </div>
     </form>
 
     <aside class="space-y-4 lg:col-span-2">
@@ -139,7 +146,7 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
 
   <script>
     import { createBrowserSupabase } from '../../lib/supabase';
-    import { resumenAviso } from '../../scripts/admin/notificar';
+    import { resumenAviso, pedirAviso } from '../../scripts/admin/notificar';
     const supabase = createBrowserSupabase();
     const form = document.getElementById('live-form') as HTMLFormElement;
     const msg = document.getElementById('live-msg')!;
@@ -158,6 +165,23 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
       placa.className = on ? 'tile tile-lg bg-error/15 text-error' : 'tile tile-lg tile-muted';
     };
     check.addEventListener('change', pintarEstado);
+
+    // Prueba: el mismo correo, a la casilla de quien está en el panel. No toca
+    // la lista ni deja la transmisión marcada como avisada, así que se puede
+    // repetir hasta que el correo se vea bien.
+    const btnPrueba = document.getElementById('live-prueba') as HTMLButtonElement;
+    btnPrueba.addEventListener('click', async () => {
+      btnPrueba.disabled = true;
+      const titulo =
+        String(new FormData(form).get('live_title') || '').trim() || 'Transmisión en vivo';
+      await pedirAviso({
+        type: 'vivo',
+        title: titulo,
+        url: location.origin + '/en-vivo',
+        prueba: true,
+      });
+      btnPrueba.disabled = false;
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { crearTransporteLote } from '../../lib/smtp';
-import { SITE } from '../../data/site';
+import { CONTACT, SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 import { construirCorreo } from '../../lib/correo-plantilla';
 
@@ -47,6 +47,26 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   const url = String(body?.url ?? '').trim();
   if (!title) return json({ ok: false, reason: 'bad_request' }, 400);
 
+  /**
+   * Prueba: el correo sale igual, pero solo a quien lo pide.
+   *
+   * No toca la lista ni deja marcada la transmisión como avisada, así que se
+   * puede repetir. Es la única forma de ver el correo de verdad —en el móvil,
+   * en Gmail, con las imágenes bloqueadas— antes de mandárselo a todo el mundo.
+   */
+  const esPrueba = body?.prueba === true;
+
+  // El extracto y la imagen son opcionales: los videos no tienen imagen y una
+  // noticia puede ir sin bajada.
+  const extracto = String(body?.excerpt ?? '')
+    .trim()
+    .slice(0, 400);
+  const imagenCruda = String(body?.image ?? '').trim();
+  // Solo https y solo si es una dirección de verdad. Una ruta relativa o un
+  // `data:` no se ven en ningún cliente de correo, y dejarlos pasar da un
+  // correo roto en vez de un correo sin imagen.
+  const imagen = /^https:\/\/[^\s"'<>]+$/i.test(imagenCruda) ? imagenCruda : '';
+
   const esVivo = type === 'vivo';
 
   /**
@@ -61,7 +81,7 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
    * y el aviso sale solo: no hay nada que acordarse de reiniciar.
    */
   let marcaVivo = '';
-  if (esVivo) {
+  if (esVivo && !esPrueba) {
     const { data: aj, error: errAj } = await supabase
       .from('settings')
       .select('live_enabled, live_url, live_notified_url')
@@ -88,30 +108,40 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   const transporte = crearTransporteLote();
   if (!transporte) return json({ ok: false, reason: 'no_email_provider' });
 
-  // `token` viene de la migración de baja (ver supabase/schema.sql). Si la
-  // migración todavía no se corrió, la consulta falla y se dice por qué en
-  // vez de enviar correos sin enlace de baja.
-  //
-  // `pending` viene de la migración de doble opt-in: solo se escribe a quien
-  // confirmó su correo desde su propia bandeja. Enviar a los pendientes sería
-  // escribir a direcciones que nadie verificó, que es justo lo que dispara las
-  // quejas de spam y arrastra la reputación del dominio.
-  const { data: subs, error: errorSubs } = await supabase
-    .from('subscribers')
-    .select('email, token')
-    .eq('pending', false);
+  // En la prueba el único destinatario es quien la pidió, con un token
+  // inventado: el enlace de baja tiene que aparecer en el correo —es lo que se
+  // va a revisar— pero no debe dar de baja a nadie de verdad al pulsarlo.
+  let destinatarios: { email: string; token: string }[];
 
-  if (errorSubs) {
-    const faltaColumna = /token|pending/i.test(errorSubs.message ?? '');
-    return json({
-      ok: false,
-      reason: faltaColumna ? 'falta_migracion' : 'db_error',
-      detalle: errorSubs.message,
-    });
+  if (esPrueba) {
+    if (!user.email) return json({ ok: false, reason: 'sin_correo_admin' });
+    destinatarios = [{ email: user.email, token: 'prueba' }];
+  } else {
+    // `token` viene de la migración de baja (ver supabase/schema.sql). Si la
+    // migración todavía no se corrió, la consulta falla y se dice por qué en
+    // vez de enviar correos sin enlace de baja.
+    //
+    // `pending` viene de la migración de doble opt-in: solo se escribe a quien
+    // confirmó su correo desde su propia bandeja. Enviar a los pendientes sería
+    // escribir a direcciones que nadie verificó, que es justo lo que dispara
+    // las quejas de spam y arrastra la reputación del dominio.
+    const { data: subs, error: errorSubs } = await supabase
+      .from('subscribers')
+      .select('email, token')
+      .eq('pending', false);
+
+    if (errorSubs) {
+      const faltaColumna = /token|pending/i.test(errorSubs.message ?? '');
+      return json({
+        ok: false,
+        reason: faltaColumna ? 'falta_migracion' : 'db_error',
+        detalle: errorSubs.message,
+      });
+    }
+
+    destinatarios = (subs ?? []).filter((s: any) => s.email && s.token);
+    if (!destinatarios.length) return json({ ok: true, sent: 0 });
   }
-
-  const destinatarios = (subs ?? []).filter((s: any) => s.email && s.token);
-  if (!destinatarios.length) return json({ ok: true, sent: 0 });
 
   // El rótulo de arriba dice de qué va el correo en dos palabras; el título es
   // el del contenido. Antes iban juntos en una frase («Publicamos una nueva
@@ -132,29 +162,38 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
     ? 'Estamos transmitiendo en este momento. Acompáñanos desde donde estés.'
     : 'Acabamos de publicarlo en el sitio.';
   const textoBoton = esVivo ? 'Ver la transmisión' : 'Verlo en el sitio';
-  const asunto = esVivo ? `${SITE.name} — En vivo ahora: ${title}` : `${SITE.name} — ${title}`;
+  const base0 = esVivo ? `${SITE.name} — En vivo ahora: ${title}` : `${SITE.name} — ${title}`;
+  const asunto = esPrueba ? `[PRUEBA] ${base0}` : base0;
 
-  const remitente = resolverRemitente();
+  // El boletín sale de su propia casilla, para que una queja de spam no
+  // arrastre a los correos del formulario de contacto. Ver resolverRemitente.
+  const remitente = resolverRemitente('BOLETIN_FROM');
   if (!remitente.ok) {
     return json({
       ok: false,
       reason: 'from_invalido',
-      detalle: `CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
+      detalle: `BOLETIN_FROM/CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
     });
   }
   const from = remitente.from;
   const base = process.env.SITE_URL || reqUrl.origin;
   const link = url || base;
 
+  // La respuesta va a la casilla de contacto: quien conteste un boletín espera
+  // que lo lea una persona, no la casilla desde la que sale el envío masivo.
+  const responderA = CONTACT.email;
+
   // Se arma por destinatario porque cada uno lleva SU enlace de baja.
   const cuerpo = (urlBaja: string) =>
     construirCorreo({
       base,
-      preencabezado: esVivo ? entradilla : `${rotulo}: ${title}`,
+      preencabezado: extracto || (esVivo ? entradilla : `${rotulo}: ${title}`),
       eyebrow: rotulo,
       titulo: title,
       bloques: [
-        { tipo: 'parrafo', texto: entradilla },
+        // La imagen va antes del texto: es lo que hace que se lea lo demás.
+        ...(imagen ? [{ tipo: 'imagen' as const, url: imagen, alt: title }] : []),
+        { tipo: 'parrafo', texto: extracto || entradilla },
         { tipo: 'boton', texto: textoBoton, url: link },
       ],
       pie: {
@@ -184,6 +223,7 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
         try {
           await transporte.sendMail({
             from,
+            replyTo: responderA,
             to: s.email,
             subject: asunto,
             text: texto,
@@ -231,8 +271,9 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   }
 
   // La transmisión se marca DESPUÉS de enviar y solo si salió alguno: si el
-  // envío falla entero, el siguiente intento debe volver a intentarlo.
-  if (esVivo && enviados && marcaVivo) {
+  // envío falla entero, el siguiente intento debe volver a intentarlo. Una
+  // prueba nunca marca nada: para eso es una prueba.
+  if (esVivo && !esPrueba && enviados && marcaVivo) {
     const { error } = await supabase
       .from('settings')
       .update({ live_notified_url: marcaVivo })
@@ -242,5 +283,5 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
     if (error) console.error(`[notify] no se pudo marcar la transmisión avisada: ${error.message}`);
   }
 
-  return json({ ok: true, sent: enviados, fallidos });
+  return json({ ok: true, sent: enviados, fallidos, prueba: esPrueba });
 };

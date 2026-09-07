@@ -77,7 +77,9 @@ export type Bloque =
   /** Pares dato/valor, para el correo interno del formulario. */
   | { tipo: 'ficha'; filas: [string, string][] }
   /** Texto ajeno reproducido tal cual, con sus saltos de línea. */
-  | { tipo: 'cita'; texto: string };
+  | { tipo: 'cita'; texto: string }
+  /** Imagen de la noticia o del evento. Dirección absoluta y accesible sin sesión. */
+  | { tipo: 'imagen'; url: string; alt: string };
 
 export interface Correo {
   /** Dirección absoluta del sitio, para el logotipo. Sin barra final. */
@@ -143,6 +145,18 @@ function citaHtml(texto: string): string {
     </table>`;
 }
 
+/**
+ * 536 px = los 600 del correo menos los 32 de relleno a cada lado.
+ *
+ * El atributo `width` no es decorativo: Outlook no entiende `max-width` y sin
+ * él estira la imagen a su tamaño original, que en una foto de noticia puede
+ * ser de 2000 px y rompe la maqueta entera. El `height:auto` del estilo
+ * conserva la proporción en todo lo demás.
+ */
+function imagenHtml(url: string, alt: string): string {
+  return `<img src="${esc(url)}" width="536" alt="${esc(alt)}" style="display:block;width:100%;max-width:536px;height:auto;border:0;margin:0 0 20px;font-family:${PALO};font-size:14px;color:${TINTA_SUAVE}">`;
+}
+
 function bloqueHtml(b: Bloque): string {
   switch (b.tipo) {
     case 'parrafo':
@@ -155,6 +169,8 @@ function bloqueHtml(b: Bloque): string {
       return fichaHtml(b.filas);
     case 'cita':
       return citaHtml(b.texto);
+    case 'imagen':
+      return imagenHtml(b.url, b.alt);
   }
 }
 
@@ -176,6 +192,10 @@ function bloqueTexto(b: Bloque): string {
         .split('\n')
         .map((l) => `> ${l}`)
         .join('\n');
+    // En texto plano la imagen no existe. Se omite en vez de dejar una
+    // dirección suelta que nadie va a pegar en el navegador.
+    case 'imagen':
+      return '';
   }
 }
 

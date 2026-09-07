@@ -16,7 +16,7 @@ import { cargar, pintar } from './admin/list';
 import { initImagenes } from './admin/upload';
 import { initMarkdown } from './admin/markdown-editor';
 import { initArrastre } from './admin/sortable';
-import { avisarSuscriptores, rutaDe } from './admin/notificar';
+import { avisarSuscriptores } from './admin/notificar';
 import { preguntar, toast } from './admin/ui';
 import type { Contexto, CrudConfig, Estado } from './admin/tipos';
 
@@ -115,7 +115,7 @@ export function setupCrud(config: CrudConfig) {
     toast(nuevo ? 'Publicado: ya se ve en el sitio' : 'Pasó a borrador: ya no se ve en el sitio');
 
     if (avisar) {
-      await avisarSuscriptores(ctx, String(row[ctx.config.titleField] ?? ''), rutaDe(ctx, row));
+      await avisarSuscriptores(ctx, row);
     }
   }
 
@@ -155,11 +155,9 @@ export function setupCrud(config: CrudConfig) {
       if (!id && config.notify && payload.published) {
         const notifyEl = ctx.form.querySelector('[name="__notify"]') as HTMLInputElement | null;
         if (notifyEl?.checked) {
-          await avisarSuscriptores(
-            ctx,
-            String(payload[config.titleField] ?? ''),
-            rutaDe(ctx, (res as any).data ?? {}),
-          );
+          // La fila recién creada trae el identificador y la imagen ya subida;
+          // el payload cubre el caso de que la base no devuelva nada.
+          await avisarSuscriptores(ctx, { ...payload, ...((res as any).data ?? {}) });
         }
       }
 

@@ -103,6 +103,30 @@ describe('construirCorreo', () => {
     expect(html).toContain('.png');
     expect(html).not.toContain('.svg');
   });
+
+  // Sin el atributo `width`, Outlook estira la foto a su tamaño original —una
+  // imagen de noticia puede venir a 2000 px— y revienta la maqueta.
+  it('la imagen lleva ancho en atributo, no solo en CSS', () => {
+    const { html } = construirCorreo({
+      ...minimo,
+      bloques: [{ tipo: 'imagen', url: 'https://x.cl/foto.jpg', alt: 'Bautismos' }],
+    });
+    expect(html).toMatch(/<img src="https:\/\/x\.cl\/foto\.jpg" width="536"/);
+    expect(html).toContain('alt="Bautismos"');
+  });
+
+  it('la imagen no deja rastro en el texto plano', () => {
+    const { texto } = construirCorreo({
+      ...minimo,
+      bloques: [
+        { tipo: 'imagen', url: 'https://x.cl/foto.jpg', alt: 'Bautismos' },
+        { tipo: 'parrafo', texto: 'Después de la foto.' },
+      ],
+    });
+    expect(texto).not.toContain('foto.jpg');
+    // Y no queda un hueco de tres saltos donde estaba la imagen.
+    expect(texto).not.toMatch(/\n{3}/);
+  });
 });
 
 describe('esc', () => {
