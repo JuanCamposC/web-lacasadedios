@@ -14,8 +14,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.7.3",
-    "@astrojs/vercel": "^11.0.3",
+    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/vercel": "^11.0.10",
     "@fontsource-variable/archivo": "^5.3.0",
     "@fontsource-variable/archivo-narrow": "^5.3.0",
     "@fontsource-variable/fraunces": "^5.3.0",
@@ -24,7 +24,7 @@
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.7",
     "@tailwindcss/vite": "^4.3.3",
-    "astro": "^7.1.1",
+    "astro": "^7.3.1",
     "astro-icon": "^1.1.5",
     "daisyui": "^5.6.18",
     "marked": "^18.0.9",
