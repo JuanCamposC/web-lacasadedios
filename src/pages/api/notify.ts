@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { crearTransporteLote } from '../../lib/smtp';
 import { SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
+import { construirCorreo } from '../../lib/correo-plantilla';
 
 export const prerender = false;
 
@@ -28,13 +29,6 @@ function clasificar(mensaje: string): string {
   if (/535|authentication/i.test(mensaje)) return 'auth_invalida';
   if (/max emails|exceeded|per hour/i.test(mensaje)) return 'limite_hosting';
   return 'send_error';
-}
-
-function esc(s: unknown) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
 
 export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
@@ -119,18 +113,24 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   const destinatarios = (subs ?? []).filter((s: any) => s.email && s.token);
   if (!destinatarios.length) return json({ ok: true, sent: 0 });
 
-  const label =
-    type === 'evento'
-      ? 'un nuevo evento'
+  // El rótulo de arriba dice de qué va el correo en dos palabras; el título es
+  // el del contenido. Antes iban juntos en una frase («Publicamos una nueva
+  // noticia:») y el título quedaba de segundón.
+  const rotulo = esVivo
+    ? 'En vivo ahora'
+    : type === 'evento'
+      ? 'Nuevo evento'
       : type === 'noticia'
-        ? 'una nueva noticia'
+        ? 'Nueva noticia'
         : type === 'video'
-          ? 'un nuevo video'
-          : 'una novedad';
+          ? 'Nuevo video'
+          : 'Novedad';
 
   // La transmisión no se «publica», está pasando. El correo lo dice así, y el
   // botón lleva a verla en vez de a leerla.
-  const entradilla = esVivo ? 'Estamos transmitiendo en vivo ahora:' : `Publicamos ${label}:`;
+  const entradilla = esVivo
+    ? 'Estamos transmitiendo en este momento. Acompáñanos desde donde estés.'
+    : 'Acabamos de publicarlo en el sitio.';
   const textoBoton = esVivo ? 'Ver la transmisión' : 'Verlo en el sitio';
   const asunto = esVivo ? `${SITE.name} — En vivo ahora: ${title}` : `${SITE.name} — ${title}`;
 
@@ -146,18 +146,22 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   const base = process.env.SITE_URL || reqUrl.origin;
   const link = url || base;
 
-  const cuerpo = (
-    urlBaja: string,
-  ) => `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;color:#17202e">
-    <h2 style="color:#14295c;margin:0 0 4px">${esc(SITE.name)}</h2>
-    <p style="color:#64748b;margin:0 0 20px">${esc(entradilla)}</p>
-    <p style="font-size:1.15rem;font-weight:600;margin:0 0 20px">${esc(title)}</p>
-    <p><a href="${esc(link)}" style="display:inline-block;background:#14295c;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">${esc(textoBoton)}</a></p>
-    <p style="color:#64748b;font-size:.8rem;margin-top:28px;border-top:1px solid #e2e8f0;padding-top:14px">
-      Recibes este correo porque te suscribiste al boletín de ${esc(SITE.name)}.<br />
-      <a href="${esc(urlBaja)}" style="color:#64748b">Darte de baja</a>
-    </p>
-  </div>`;
+  // Se arma por destinatario porque cada uno lleva SU enlace de baja.
+  const cuerpo = (urlBaja: string) =>
+    construirCorreo({
+      base,
+      preencabezado: esVivo ? entradilla : `${rotulo}: ${title}`,
+      eyebrow: rotulo,
+      titulo: title,
+      bloques: [
+        { tipo: 'parrafo', texto: entradilla },
+        { tipo: 'boton', texto: textoBoton, url: link },
+      ],
+      pie: {
+        texto: `Recibes este correo porque te suscribiste al boletín de ${SITE.name}.`,
+        enlace: { texto: 'Darte de baja', url: urlBaja },
+      },
+    });
 
   let enviados = 0;
   let fallidos = 0;
@@ -176,12 +180,14 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
     await Promise.all(
       destinatarios.map(async (s: any) => {
         const urlBaja = `${base}/baja?t=${encodeURIComponent(s.token)}`;
+        const { html, texto } = cuerpo(urlBaja);
         try {
           await transporte.sendMail({
             from,
             to: s.email,
             subject: asunto,
-            html: cuerpo(urlBaja),
+            text: texto,
+            html,
             headers: {
               // Cabecera estándar: pone el botón «Cancelar suscripción» en
               // Gmail y Outlook, y es lo que miran para no marcar el envío

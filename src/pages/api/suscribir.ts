@@ -14,6 +14,7 @@ import type { APIRoute } from 'astro';
 import { crearTransporte } from '../../lib/smtp';
 import { SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
+import { construirCorreo } from '../../lib/correo-plantilla';
 import { crearSupabaseServicio } from '../../lib/supabaseAdmin';
 
 export const prerender = false;
@@ -42,13 +43,6 @@ function json(data: unknown, status = 200) {
 function fallo(reason: string, detalle: string, status = 200) {
   console.error(`[suscribir] ${reason}: ${detalle}`);
   return json({ ok: false, reason }, status);
-}
-
-function esc(s: unknown) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
 
 /**
@@ -159,15 +153,21 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   const base = process.env.SITE_URL || reqUrl.origin;
   const enlace = `${base}/confirmar?t=${encodeURIComponent(String(fila.token))}`;
 
-  const html = `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;color:#17202e">
-    <h2 style="color:#14295c;margin:0 0 4px">${esc(SITE.name)}</h2>
-    <p style="color:#64748b;margin:0 0 20px">Confirma tu suscripción al boletín</p>
-    <p style="margin:0 0 20px">Alguien —esperamos que tú— dejó este correo para recibir nuestras novedades. Confírmalo con el botón y quedas dentro.</p>
-    <p><a href="${esc(enlace)}" style="display:inline-block;background:#14295c;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">Confirmar mi suscripción</a></p>
-    <p style="color:#64748b;font-size:.8rem;margin-top:28px;border-top:1px solid #e2e8f0;padding-top:14px">
-      Si no fuiste tú, no hagas nada: sin confirmar no te llegará ningún boletín.
-    </p>
-  </div>`;
+  const { html, texto } = construirCorreo({
+    base,
+    preencabezado: 'Un clic y quedas dentro. Si no fuiste tú, ignora este correo.',
+    eyebrow: 'Boletín',
+    titulo: 'Confirma tu suscripción',
+    bloques: [
+      {
+        tipo: 'parrafo',
+        texto:
+          'Alguien —esperamos que tú— dejó este correo para recibir nuestras novedades. Confírmalo con el botón y quedas dentro.',
+      },
+      { tipo: 'boton', texto: 'Confirmar mi suscripción', url: enlace },
+    ],
+    pie: { texto: 'Si no fuiste tú, no hagas nada: sin confirmar no te llegará ningún boletín.' },
+  });
 
   try {
     // nodemailer lanza si el envío falla: no hay un error que mirar en el
@@ -176,6 +176,7 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
       from: remitente.from,
       to: email,
       subject: `${SITE.name} — Confirma tu suscripción`,
+      text: texto,
       html,
     });
   } catch (e) {

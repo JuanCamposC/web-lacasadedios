@@ -1,7 +1,8 @@
 import type { APIRoute } from 'astro';
 import { crearTransporte } from '../../lib/smtp';
-import { CONTACT, SITE } from '../../data/site';
+import { CONTACT } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
+import { construirCorreo } from '../../lib/correo-plantilla';
 
 export const prerender = false;
 
@@ -10,13 +11,6 @@ function json(data: unknown, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
-}
-
-function esc(s: unknown) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
 
 const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
@@ -76,13 +70,25 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   if (!remitente.ok)
     return done(false, { reason: 'from_invalido', email: CONTACT.email, status: 500 });
   const from = remitente.from;
+  // El asunto sube a título del correo, así que aquí no se repite.
   const filas: [string, string][] = [
     ['Nombre', nombre],
     ['Correo', email],
     ['Teléfono', telefono || '—'],
     ['Templo', templo || 'Consulta general'],
-    ['Asunto', asunto],
   ];
+
+  const { html, texto } = construirCorreo({
+    base: process.env.SITE_URL || new URL(request.url).origin,
+    preencabezado: `${nombre} escribió desde el formulario: ${asunto}`,
+    eyebrow: 'Formulario de contacto',
+    titulo: asunto,
+    bloques: [
+      { tipo: 'ficha', filas },
+      { tipo: 'cita', texto: mensaje },
+    ],
+    pie: { texto: `Responde a este correo para contestarle directamente a ${nombre}.` },
+  });
 
   try {
     await transporte.sendMail({
@@ -90,20 +96,8 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       to: CONTACT.email,
       replyTo: email,
       subject: `Contacto web — ${asunto} (${nombre})`,
-      html: `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:auto;color:#0f172a">
-        <h2 style="color:#14295c;margin:0 0 4px">${esc(SITE.name)}</h2>
-        <p style="color:#64748b;margin:0 0 20px">Nuevo mensaje desde el formulario de contacto.</p>
-        <table style="width:100%;border-collapse:collapse;font-size:.95rem">
-          ${filas
-            .map(
-              ([k, v]) =>
-                `<tr><td style="padding:6px 12px 6px 0;color:#64748b;white-space:nowrap;vertical-align:top">${esc(k)}</td><td style="padding:6px 0;font-weight:600">${esc(v)}</td></tr>`,
-            )
-            .join('')}
-        </table>
-        <div style="margin-top:20px;padding:16px;background:#f1f5f9;border-radius:10px;white-space:pre-wrap">${esc(mensaje)}</div>
-        <p style="color:#64748b;font-size:.8rem;margin-top:24px">Responde a este correo para contestarle directamente a ${esc(nombre)}.</p>
-      </div>`,
+      text: texto,
+      html,
     });
 
     return done(true);
