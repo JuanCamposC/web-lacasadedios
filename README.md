@@ -257,7 +257,9 @@ El registro público está desactivado: solo entra quien se cree a mano.
 
 1. Crea un proyecto en [supabase.com](https://supabase.com).
 2. Ejecuta [`supabase/schema.sql`](supabase/schema.sql) en el *SQL Editor*
-   (crea tablas, RLS y el bucket de imágenes).
+   (crea tablas, RLS y el bucket de imágenes). El archivo entero se puede
+   volver a correr cuando se añade una migración: cada política lleva delante
+   su `drop policy if exists` y las siembras solo escriben con la tabla vacía.
 3. Copia [`.env.example`](.env.example) a `.env` y completa:
 
 ```
@@ -317,9 +319,8 @@ El aviso necesita la columna `token` y la función `baja_suscriptor`. **Hasta qu
 se corra, `/api/notify` no envía nada** y el panel avisa con «Falta correr la
 migración de baja del boletín en Supabase».
 
-Copia el bloque final de [`supabase/schema.sql`](supabase/schema.sql)
-—«BAJA DEL BOLETÍN»— en *Supabase → SQL Editor → Run*. Es idempotente: se puede
-ejecutar más de una vez sin romper nada.
+Copia [`supabase/schema.sql`](supabase/schema.sql) entero en *Supabase → SQL
+Editor → Run*: es idempotente, se puede ejecutar las veces que haga falta.
 
 La baja se resuelve con una función `security definer` y no con una política de
 borrado abierta: con una política, cualquiera podría vaciar la tabla omitiendo
