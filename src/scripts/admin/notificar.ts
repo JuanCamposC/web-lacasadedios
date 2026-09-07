@@ -15,7 +15,8 @@ import { toast } from './ui';
 const EXPLICACION: Record<string, string> = {
   no_email_provider: 'Faltan SMTP_HOST, SMTP_USER o SMTP_PASS en Vercel.',
   from_invalido: 'La variable CONTACT_FROM está mal escrita en Vercel.',
-  falta_migracion: 'Falta correr la migración de baja del boletín en Supabase.',
+  falta_migracion:
+    'Falta correr una migración en Supabase. Copia supabase/schema.sql en el editor SQL.',
   unauthorized: 'Tu sesión expiró. Vuelve a entrar al panel.',
   unconfigured: 'El servidor no tiene configurada la conexión a la base.',
   db_error: 'No se pudo leer la lista de suscriptores.',
@@ -25,7 +26,39 @@ const EXPLICACION: Record<string, string> = {
   auth_invalida: 'La contraseña de SMTP_PASS no es correcta.',
   limite_hosting: 'Se topó el límite de correos por hora del hosting. Espera o súbelo en cPanel.',
   exception: 'Error inesperado al enviar.',
+  no_en_vivo: 'La transmisión no está encendida. Enciende el interruptor, guarda y reintenta.',
 };
+
+/**
+ * Traduce la respuesta de /api/notify a una frase.
+ *
+ * Vive aparte porque hay dos sitios que avisan y no comparten interfaz: el
+ * panel de listados, que habla por avisos flotantes, y el de «En vivo», que
+ * escribe en el recuadro de su propio formulario. La frase debe ser la misma en
+ * los dos; lo único distinto es dónde se pinta.
+ */
+export function resumenAviso(r: any): { ok: boolean; texto: string } {
+  // `ya_avisado` llega con ok:true a propósito: no pasó nada malo, es la
+  // protección contra escribirle dos veces a la lista por la misma transmisión.
+  if (r?.ok && r.reason === 'ya_avisado') {
+    return { ok: true, texto: 'Guardado. Ya se había avisado de esta transmisión.' };
+  }
+  if (r?.ok && r.sent > 0) {
+    const hecho = `Avisamos a ${r.sent} suscriptor${r.sent === 1 ? '' : 'es'}`;
+    // Un envío a medias se dice. Si no, «avisamos a 40» esconde que otros
+    // cinco quedaron fuera, y nadie va a mirar los registros por su cuenta.
+    return r.fallidos
+      ? { ok: false, texto: `${hecho}. ${r.fallidos} no salieron: mira los registros.` }
+      : { ok: true, texto: hecho };
+  }
+  if (r?.ok) return { ok: true, texto: 'Guardado. Todavía no hay nadie suscrito al boletín.' };
+
+  const causa = EXPLICACION[r?.reason] ?? `Fallo desconocido (${r?.reason ?? 'sin código'}).`;
+  return {
+    ok: false,
+    texto: `Guardado, pero no se avisó. ${causa}${r?.detalle ? ' ' + r.detalle : ''}`,
+  };
+}
 
 export async function avisarSuscriptores(ctx: Contexto, titulo: string, ruta: string) {
   try {
@@ -39,21 +72,9 @@ export async function avisarSuscriptores(ctx: Contexto, titulo: string, ruta: st
       }),
     }).then((x) => x.json());
 
-    if (r.ok && r.sent > 0) {
-      const hecho = `Avisamos a ${r.sent} suscriptor${r.sent === 1 ? '' : 'es'}`;
-      // Un envío a medias se dice. Si no, «avisamos a 40» esconde que otros
-      // cinco quedaron fuera, y nadie va a mirar los registros por su cuenta.
-      return r.fallidos
-        ? toast(`${hecho}. ${r.fallidos} no salieron: mira los registros.`, 'error')
-        : toast(hecho);
-    }
-    if (r.ok) {
-      return toast('Guardado. Todavía no hay nadie suscrito al boletín.');
-    }
-
-    const causa = EXPLICACION[r.reason] ?? `Fallo desconocido (${r.reason ?? 'sin código'}).`;
-    console.error('[aviso a suscriptores]', r);
-    toast(`Guardado, pero no se avisó. ${causa}${r.detalle ? ' ' + r.detalle : ''}`, 'error');
+    const { ok, texto } = resumenAviso(r);
+    if (!ok) console.error('[aviso a suscriptores]', r);
+    toast(texto, ok ? undefined : 'error');
   } catch (e) {
     console.error('[aviso a suscriptores]', e);
     toast('Guardado, pero no se pudo contactar al servidor para avisar.', 'error');

@@ -62,7 +62,11 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
           class="input input-bordered w-full"
         />
         <span class="mt-1 block text-xs text-base-content/55">
-          Sirve tanto <code>watch?v=…</code> como <code>youtu.be/…</code>.
+          Sirve <code>youtube.com/live/…</code> —lo que entrega «Compartir» en una transmisión—, <code
+            >watch?v=…</code
+          > y <code>youtu.be/…</code>. NO sirve
+          <code>/@canal/live</code>: esa dirección no lleva el identificador dentro y el reproductor
+          no se puede incrustar.
         </span>
       </label>
 
@@ -77,6 +81,17 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
           placeholder="Culto dominical"
           class="input input-bordered w-full"
         />
+      </label>
+
+      <label class="flex items-start gap-3 rounded border border-base-300 bg-base-200/40 p-3">
+        <input type="checkbox" name="avisar" class="checkbox checkbox-sm mt-0.5" checked />
+        <span class="text-sm">
+          <span class="block font-medium">Avisar por correo a los suscriptores</span>
+          <span class="block text-base-content/60">
+            Solo al encender. De cada transmisión se avisa una vez: volver a guardar para corregir
+            el título no reenvía nada.
+          </span>
+        </span>
       </label>
 
       <p id="live-msg" class="hidden rounded px-3 py-2 text-sm"></p>
@@ -101,6 +116,15 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
             La página <a href="/en-vivo" class="link link-primary">/en-vivo</a> reproduce la transmisión.
           </li>
           <li class="flex items-start gap-2">
+            <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            Quien entre al sitio ve un aviso emergente con el enlace. Si además hay un aviso programado,
+            el del vivo va primero y el otro sale detrás.
+          </li>
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            Si dejas marcada la casilla, sale un correo a los suscriptores del boletín.
+          </li>
+          <li class="flex items-start gap-2">
             <Icon name="lucide:alert-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
             Acuérdate de apagarlo al terminar: si no, el sitio sigue anunciando un vivo que ya acabó.
           </li>
@@ -115,6 +139,7 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
 
   <script>
     import { createBrowserSupabase } from '../../lib/supabase';
+    import { resumenAviso } from '../../scripts/admin/notificar';
     const supabase = createBrowserSupabase();
     const form = document.getElementById('live-form') as HTMLFormElement;
     const msg = document.getElementById('live-msg')!;
@@ -145,17 +170,50 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
         live_title: String(fd.get('live_title') || '').trim() || null,
         updated_at: new Date().toISOString(),
       };
+      const bien = 'rounded bg-success/10 px-3 py-2 text-sm text-success';
+      const mal = 'rounded bg-error/10 px-3 py-2 text-sm text-error';
+
       const { error } = await supabase.from('settings').update(payload).eq('id', 1);
-      btn.disabled = false;
       if (error) {
         msg.textContent = 'No se pudo guardar: ' + error.message;
-        msg.className = 'rounded bg-error/10 px-3 py-2 text-sm text-error';
-      } else {
-        msg.textContent = payload.live_enabled
-          ? 'Listo: el sitio ya anuncia la transmisión.'
-          : 'Listo: el sitio ya no anuncia ninguna transmisión.';
-        msg.className = 'rounded bg-success/10 px-3 py-2 text-sm text-success';
+        msg.className = mal;
+        btn.disabled = false;
+        return;
       }
+
+      msg.textContent = payload.live_enabled
+        ? 'Listo: el sitio ya anuncia la transmisión.'
+        : 'Listo: el sitio ya no anuncia ninguna transmisión.';
+      msg.className = bien;
+
+      // El correo va DESPUÉS de guardar y no a la vez: el servidor lee de la
+      // tabla para saber qué se está emitiendo y para comprobar si esta
+      // transmisión ya se avisó, así que primero tiene que estar escrita.
+      const avisar = (form.querySelector('[name="avisar"]') as HTMLInputElement).checked;
+      if (payload.live_enabled && avisar) {
+        msg.textContent = 'Guardado. Enviando el aviso por correo…';
+        try {
+          const r = await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'vivo',
+              title: payload.live_title || 'Transmisión en vivo',
+              url: location.origin + '/en-vivo',
+            }),
+          }).then((x) => x.json());
+          const { ok, texto } = resumenAviso(r);
+          if (!ok) console.error('[aviso en vivo]', r);
+          msg.textContent = texto;
+          msg.className = ok ? bien : mal;
+        } catch (e) {
+          console.error('[aviso en vivo]', e);
+          msg.textContent = 'Guardado, pero no se pudo contactar al servidor para avisar.';
+          msg.className = mal;
+        }
+      }
+
+      btn.disabled = false;
     });
   </script>
 </AdminLayout>

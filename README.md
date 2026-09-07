@@ -339,5 +339,5 @@ Estos puntos esperan información de la iglesia; el código ya está preparado:
 
 ## 📱 Redes
 
-- Instagram: [@joseveneslacasadedios](https://instagram.com/joseveneslacasadedios)
+- Instagram: [@joveneslacasadedios](https://instagram.com/joveneslacasadedios)
 - YouTube: [Conociendo la Palabra](https://www.youtube.com/@casadediosconociendolapalabrad)

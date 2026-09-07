@@ -53,6 +53,44 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   const url = String(body?.url ?? '').trim();
   if (!title) return json({ ok: false, reason: 'bad_request' }, 400);
 
+  const esVivo = type === 'vivo';
+
+  /**
+   * La transmisión tiene dos reglas que las publicaciones no tienen.
+   *
+   * PRIMERA: el enlace no se toma del cuerpo de la petición sino de la tabla.
+   * Es la única fuente que sabe qué se está emitiendo de verdad.
+   *
+   * SEGUNDA: no se avisa dos veces de la misma transmisión. Sin esto, corregir
+   * una errata en el título y volver a guardar le escribiría otra vez a toda la
+   * lista. Cuando empiece la siguiente el enlace cambiará, dejará de coincidir,
+   * y el aviso sale solo: no hay nada que acordarse de reiniciar.
+   */
+  let marcaVivo = '';
+  if (esVivo) {
+    const { data: aj, error: errAj } = await supabase
+      .from('settings')
+      .select('live_enabled, live_url, live_notified_url')
+      .eq('id', 1)
+      .maybeSingle();
+
+    if (errAj) {
+      const faltaColumna = /live_notified_url/i.test(errAj.message ?? '');
+      return json({
+        ok: false,
+        reason: faltaColumna ? 'falta_migracion' : 'db_error',
+        detalle: errAj.message,
+      });
+    }
+    if (!aj?.live_enabled) return json({ ok: false, reason: 'no_en_vivo' });
+
+    marcaVivo = aj.live_url ?? '';
+    if (marcaVivo && marcaVivo === aj.live_notified_url) {
+      // No es un fallo: es la protección funcionando.
+      return json({ ok: true, sent: 0, reason: 'ya_avisado' });
+    }
+  }
+
   const transporte = crearTransporteLote();
   if (!transporte) return json({ ok: false, reason: 'no_email_provider' });
 
@@ -90,6 +128,12 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
           ? 'un nuevo video'
           : 'una novedad';
 
+  // La transmisión no se «publica», está pasando. El correo lo dice así, y el
+  // botón lleva a verla en vez de a leerla.
+  const entradilla = esVivo ? 'Estamos transmitiendo en vivo ahora:' : `Publicamos ${label}:`;
+  const textoBoton = esVivo ? 'Ver la transmisión' : 'Verlo en el sitio';
+  const asunto = esVivo ? `${SITE.name} — En vivo ahora: ${title}` : `${SITE.name} — ${title}`;
+
   const remitente = resolverRemitente();
   if (!remitente.ok) {
     return json({
@@ -106,9 +150,9 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
     urlBaja: string,
   ) => `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;color:#17202e">
     <h2 style="color:#14295c;margin:0 0 4px">${esc(SITE.name)}</h2>
-    <p style="color:#64748b;margin:0 0 20px">Publicamos ${label}:</p>
+    <p style="color:#64748b;margin:0 0 20px">${esc(entradilla)}</p>
     <p style="font-size:1.15rem;font-weight:600;margin:0 0 20px">${esc(title)}</p>
-    <p><a href="${esc(link)}" style="display:inline-block;background:#14295c;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">Verlo en el sitio</a></p>
+    <p><a href="${esc(link)}" style="display:inline-block;background:#14295c;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">${esc(textoBoton)}</a></p>
     <p style="color:#64748b;font-size:.8rem;margin-top:28px;border-top:1px solid #e2e8f0;padding-top:14px">
       Recibes este correo porque te suscribiste al boletín de ${esc(SITE.name)}.<br />
       <a href="${esc(urlBaja)}" style="color:#64748b">Darte de baja</a>
@@ -136,7 +180,7 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
           await transporte.sendMail({
             from,
             to: s.email,
-            subject: `${SITE.name} — ${title}`,
+            subject: asunto,
             html: cuerpo(urlBaja),
             headers: {
               // Cabecera estándar: pone el botón «Cancelar suscripción» en
@@ -179,5 +223,18 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   if (!enviados && fallidos) {
     return json({ ok: false, reason: clasificar(primerFallo), sent: 0, fallidos });
   }
+
+  // La transmisión se marca DESPUÉS de enviar y solo si salió alguno: si el
+  // envío falla entero, el siguiente intento debe volver a intentarlo.
+  if (esVivo && enviados && marcaVivo) {
+    const { error } = await supabase
+      .from('settings')
+      .update({ live_notified_url: marcaVivo })
+      .eq('id', 1);
+    // No se le devuelve al panel: los correos YA salieron, y decir que falló
+    // invitaría a reintentar y a escribir dos veces. Queda en los registros.
+    if (error) console.error(`[notify] no se pudo marcar la transmisión avisada: ${error.message}`);
+  }
+
   return json({ ok: true, sent: enviados, fallidos });
 };

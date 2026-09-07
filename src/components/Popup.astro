@@ -1,6 +1,6 @@
 ---
 /**
- * Aviso emergente configurable desde el panel.
+ * Avisos emergentes: la transmisión en vivo y el aviso configurable del panel.
  *
  * POR QUÉ SE LEE EN EL NAVEGADOR
  * Las páginas públicas llevan caché de CDN (`s-maxage` en vercel.json): si el
@@ -10,8 +10,35 @@
  *
  * Se usa `restLeer` y no el cliente de Supabase por lo mismo que la pastilla de
  * «En vivo»: son 215 kB de JavaScript menos en cada página.
+ *
+ * POR QUÉ LOS DOS AVISOS VIVEN EN EL MISMO ARCHIVO
+ * Porque compiten por la pantalla y hay que ordenarlos. Una transmisión está
+ * pasando AHORA y se acaba; un aviso programado puede esperar medio minuto. Así
+ * que el del vivo abre primero y el otro sale detrás, al cerrarse el primero.
+ * Separarlos en dos componentes obligaría a coordinarlos desde fuera, que es
+ * peor. Además, una sola consulta sirve a los dos.
  */
 ---
+
+<dialog
+  id="vivo"
+  class="m-auto w-[min(26rem,92vw)] rounded-xl border border-base-300 bg-base-100 p-0 text-base-content shadow-2xl backdrop:bg-black/55 backdrop:backdrop-blur-sm"
+  aria-labelledby="vivo-titulo"
+>
+  <div class="p-6 sm:p-7">
+    <p class="flex items-center gap-2 text-sm font-semibold text-red-600">
+      <span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-red-600" aria-hidden="true"
+      ></span>
+      En vivo ahora
+    </p>
+    <h2 id="vivo-titulo" class="mt-3 font-display text-2xl leading-tight"></h2>
+    <p class="mt-2 text-base-content/70">Estamos transmitiendo en este momento.</p>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a id="vivo-cta" href="/en-vivo" class="btn btn-primary">Ver la transmisión</a>
+      <button type="button" id="vivo-luego" class="btn btn-ghost">Ahora no</button>
+    </div>
+  </div>
+</dialog>
 
 <dialog
   id="aviso"
@@ -46,7 +73,7 @@
 <script>
   import { restLeer } from '../lib/rest';
 
-  interface Aviso {
+  interface Ajustes {
     popup_enabled: boolean;
     popup_title: string | null;
     popup_body: string | null;
@@ -58,18 +85,31 @@
     popup_version: number;
     popup_layout: string;
     popup_cta_pos: string;
+    live_enabled: boolean;
+    live_url: string | null;
+    live_title: string | null;
   }
 
+  const CAMPOS =
+    'popup_enabled,popup_title,popup_body,popup_cta_label,popup_cta_url,popup_image_url,' +
+    'popup_starts_at,popup_ends_at,popup_version,popup_layout,popup_cta_pos,' +
+    'live_enabled,live_url,live_title';
+
+  /** Lo mínimo para el aviso de transmisión, que existe desde la primera migración. */
+  const CAMPOS_VIVO = 'live_enabled,live_url,live_title';
+
   const CLAVE = 'aviso-visto';
+  const CLAVE_VIVO = 'vivo-visto';
 
   /**
-   * Qué versión cerró ya esta persona. Si el panel sube `popup_version`, el
-   * número deja de coincidir y el aviso vuelve a salir: sin eso, cambiar el
-   * texto no serviría de nada para quien ya lo hubiera cerrado.
+   * Qué versión cerró ya esta persona. Si el panel sube `popup_version` —o si
+   * empieza otra transmisión, que cambia el enlace—, la marca deja de coincidir
+   * y el aviso vuelve a salir: sin eso, cambiar el texto no serviría de nada
+   * para quien ya lo hubiera cerrado.
    */
-  function vistoAntes(version: number): boolean {
+  function vistoAntes(clave: string, marca: string): boolean {
     try {
-      return localStorage.getItem(CLAVE) === String(version);
+      return localStorage.getItem(clave) === marca;
     } catch {
       // Modo privado o almacenamiento bloqueado: se prefiere no mostrarlo a
       // mostrarlo en cada navegación, que sería mucho más molesto.
@@ -77,45 +117,90 @@
     }
   }
 
-  function marcarVisto(version: number) {
+  function marcarVisto(clave: string, marca: string) {
     try {
-      localStorage.setItem(CLAVE, String(version));
+      localStorage.setItem(clave, marca);
     } catch {
       /* sin almacenamiento: vale para esta visita */
     }
   }
 
-  function enVentana(a: Aviso): boolean {
+  function enVentana(a: Ajustes): boolean {
     const ahora = Date.now();
     if (a.popup_starts_at && ahora < Date.parse(a.popup_starts_at)) return false;
     if (a.popup_ends_at && ahora > Date.parse(a.popup_ends_at)) return false;
     return true;
   }
 
-  let yaConsultado: Aviso | null | undefined;
+  /**
+   * Tocar el fondo cierra. <dialog> no lo hace solo: el clic en el backdrop
+   * llega con el propio diálogo como destino, porque el ::backdrop no es un
+   * elemento aparte. Comparar contra el rectángulo evita cerrar cuando el clic
+   * cae dentro pero sobre un hueco sin contenido.
+   */
+  function fuera(dlg: HTMLDialogElement, ev: MouseEvent): boolean {
+    const r = dlg.getBoundingClientRect();
+    return (
+      ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom
+    );
+  }
 
-  async function mostrarAviso() {
+  /** Se resuelve cuando el diálogo se cierra, sea como sea que se cierre. */
+  function alCerrar(dlg: HTMLDialogElement): Promise<void> {
+    return new Promise((listo) => dlg.addEventListener('close', () => listo(), { once: true }));
+  }
+
+  const pausa = (ms: number) => new Promise((listo) => setTimeout(listo, ms));
+
+  let yaConsultado: Ajustes | null | undefined;
+  let corriendo = false;
+
+  /**
+   * Aviso de transmisión.
+   *
+   * La marca de «ya visto» es el propio enlace de YouTube: cuando empieza la
+   * transmisión siguiente el enlace cambia, deja de coincidir con lo guardado y
+   * el aviso sale solo. No hay ningún contador que acordarse de subir.
+   */
+  async function mostrarVivo(a: Ajustes): Promise<boolean> {
+    const dlg = document.getElementById('vivo') as HTMLDialogElement | null;
+    if (!dlg || dlg.open || !a.live_enabled) return false;
+
+    const marca = a.live_url || a.live_title || 'vivo';
+    if (vistoAntes(CLAVE_VIVO, marca)) return false;
+
+    (document.getElementById('vivo-titulo') as HTMLElement).textContent =
+      a.live_title || 'Estamos transmitiendo';
+
+    const cerrar = () => {
+      marcarVisto(CLAVE_VIVO, marca);
+      dlg.close();
+    };
+    document.getElementById('vivo-luego')?.addEventListener('click', cerrar, { once: true });
+    // Ir a verla también cuenta como visto: si no, volvería a saltar al llegar
+    // a /en-vivo, encima del propio reproductor.
+    document
+      .getElementById('vivo-cta')
+      ?.addEventListener('click', () => marcarVisto(CLAVE_VIVO, marca), { once: true });
+    // Escape cierra el <dialog> por su cuenta; hay que apuntar el visto igual.
+    dlg.addEventListener('close', () => marcarVisto(CLAVE_VIVO, marca), { once: true });
+    dlg.addEventListener('click', (ev) => {
+      if (fuera(dlg, ev)) cerrar();
+    });
+
+    dlg.showModal();
+    await alCerrar(dlg);
+    return true;
+  }
+
+  function mostrarAviso(a: Ajustes) {
     const dlg = document.getElementById('aviso') as HTMLDialogElement | null;
-    if (!dlg || dlg.open) return;
+    if (!dlg || dlg.open || !a.popup_enabled) return;
 
-    try {
-      // Una consulta por sesión, no una por navegación.
-      if (yaConsultado === undefined) {
-        const filas = await restLeer<Aviso>(
-          'settings?id=eq.1&select=popup_enabled,popup_title,popup_body,popup_cta_label,popup_cta_url,popup_image_url,popup_starts_at,popup_ends_at,popup_version,popup_layout,popup_cta_pos',
-        );
-        yaConsultado = filas[0] ?? null;
-      }
-    } catch {
-      return; // sin conexión: el sitio funciona igual, simplemente no hay aviso
-    }
-
-    const a = yaConsultado;
-    if (!a || !a.popup_enabled) return;
     const soloImagen = a.popup_layout === 'imagen';
     // Cada modo tiene su requisito mínimo: sin eso no habría nada que ver.
     if (soloImagen ? !a.popup_image_url : !a.popup_title) return;
-    if (!enVentana(a) || vistoAntes(a.popup_version)) return;
+    if (!enVentana(a) || vistoAntes(CLAVE, String(a.popup_version))) return;
 
     const cuerpo = document.getElementById('aviso-cuerpo') as HTMLElement;
     cuerpo.classList.toggle('hidden', soloImagen);
@@ -156,26 +241,18 @@
       cta.classList.add('hidden');
     }
 
+    const marca = String(a.popup_version);
     const cerrar = () => {
-      marcarVisto(a.popup_version);
+      marcarVisto(CLAVE, marca);
       dlg.close();
     };
     document.getElementById('aviso-cerrar')?.addEventListener('click', cerrar, { once: true });
     document.getElementById('aviso-luego')?.addEventListener('click', cerrar, { once: true });
-    // Escape cierra el <dialog> por su cuenta; hay que apuntar el visto igual.
-    dlg.addEventListener('close', () => marcarVisto(a.popup_version), { once: true });
+    dlg.addEventListener('close', () => marcarVisto(CLAVE, marca), { once: true });
     cta.addEventListener('click', cerrar, { once: true });
     ctaImg.addEventListener('click', cerrar, { once: true });
-
-    // Tocar el fondo cierra. <dialog> no lo hace solo: el clic en el backdrop
-    // llega con el propio diálogo como destino, porque el ::backdrop no es un
-    // elemento aparte. Comparar contra el rectángulo evita cerrar cuando el
-    // clic cae dentro pero sobre un hueco sin contenido.
     dlg.addEventListener('click', (ev) => {
-      const r = dlg.getBoundingClientRect();
-      const fuera =
-        ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom;
-      if (fuera) cerrar();
+      if (fuera(dlg, ev)) cerrar();
     });
 
     // `showModal` da foco atrapado, cierre con Escape y fondo inerte de serie.
@@ -183,10 +260,43 @@
     dlg.showModal();
   }
 
-  document.addEventListener('astro:page-load', mostrarAviso);
+  async function secuencia() {
+    // Sin esto, dos navegaciones seguidas arrancarían dos secuencias, y la
+    // segunda intentaría abrir un diálogo con el primero todavía en pantalla.
+    if (corriendo) return;
+    corriendo = true;
+    try {
+      // Una consulta por sesión, no una por navegación.
+      if (yaConsultado === undefined) {
+        let filas = await restLeer<Ajustes>('settings?id=eq.1&select=' + CAMPOS);
+        // Si faltan las columnas del aviso —migraciones 0005 y 0006 sin correr—
+        // PostgREST rechaza la consulta entera y no vuelve nada. El aviso de
+        // transmisión no tiene por qué caerse con ellas: se reintenta pidiendo
+        // solo lo suyo, que existe desde el principio.
+        if (!filas.length) {
+          filas = await restLeer<Ajustes>('settings?id=eq.1&select=' + CAMPOS_VIVO);
+        }
+        yaConsultado = filas[0] ?? null;
+      }
+      const a = yaConsultado;
+      if (!a) return;
+
+      const huboVivo = await mostrarVivo(a);
+      // Dos ventanas seguidas sin respiro se leen como un parpadeo o como un
+      // fallo. Medio segundo basta para que se entiendan como dos cosas.
+      if (huboVivo) await pausa(500);
+      mostrarAviso(a);
+    } catch {
+      // Sin conexión: el sitio funciona igual, simplemente no hay avisos.
+    } finally {
+      corriendo = false;
+    }
+  }
+
+  document.addEventListener('astro:page-load', secuencia);
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mostrarAviso);
+    document.addEventListener('DOMContentLoaded', secuencia);
   } else {
-    mostrarAviso();
+    secuencia();
   }
 </script>
