@@ -350,11 +350,15 @@ Esto es lo que de verdad decide si los correos llegan a la bandeja o a spam, y
 (`ns308`/`ns309.netexplora.com`). El día que el dominio pase a Cloudflare, esto
 es lo primero, antes de mandar un solo boletín más:
 
-| Registro | Qué hacer |
-| --- | --- |
-| **SPF** | Ya debería existir, porque se envía por el propio servidor de la iglesia. Comprobar que el `TXT` de la raíz empiece por `v=spf1` e incluya ese servidor, y que termine en `~all`. |
-| **DKIM** | Lo genera el servidor de correo; la clave no se inventa. En cPanel, *Email Deliverability* muestra el `TXT` exacto que hay que publicar (`default._domainkey`) y si ya está puesto. |
-| **DMARC** | Es una política que se elige. Empezar en modo observación y no en bloqueo. |
+**Ojo: SPF y DKIM cambian de fuente con la migración.** Hoy los manda el
+servidor de correo de la iglesia; cuando el correo pase a Google Workspace, los
+manda Google. La tabla cubre los dos casos porque el cambio no es simultáneo.
+
+| Registro | Hoy (correo en cPanel) | Después (Google Workspace) |
+| --- | --- | --- |
+| **SPF** | Ya debería existir: se envía por el propio servidor de la iglesia. Comprobar que el `TXT` de la raíz empiece por `v=spf1`, incluya ese servidor y termine en `~all`. | Pasa a autorizar a Google, en la línea de `v=spf1 include:_spf.google.com ~all`. **No borrar el viejo antes de mover el correo**, ni dejarlo después: en el primer caso deja de salir nada, en el segundo Google no queda autorizado. |
+| **DKIM** | Lo genera el servidor; la clave no se inventa. *Email Deliverability* de cPanel muestra el `TXT` exacto (`default._domainkey`) y si está puesto. | Lo genera la consola de administración: *Apps → Google Workspace → Gmail → Autenticar correo*. Hay que generarlo y activarlo a mano; no viene puesto. |
+| **DMARC** | Es una política que se elige, no la da nadie. Empezar en observación, nunca en bloqueo. | Igual. |
 
 Para DMARC, el registro exacto con el que empezar — en `_dmarc.lacasadedios.cl`,
 tipo `TXT`:
@@ -367,6 +371,20 @@ v=DMARC1; p=none; rua=mailto:dmarc@lacasadedios.cl; fo=1
 nombre del dominio. Después de unas semanas de informes limpios se pasa a
 `p=quarantine` y más tarde a `p=reject`. Poner `p=reject` de entrada es la forma
 más rápida de que dejen de llegar los correos de la propia iglesia.
+
+### ⚠️ HSTS: comprobar los subdominios ANTES de apuntar el dominio
+
+[`vercel.json`](vercel.json) manda
+`Strict-Transport-Security: max-age=31536000; includeSubDomains`. Hoy solo lo ve
+el dominio de Vercel y no molesta a nadie. **En cuanto `lacasadedios.cl` apunte
+a Vercel, todo subdominio tendrá que servirse por HTTPS durante un año** para
+cualquiera que haya visitado el sitio: el navegador se negará a abrir por HTTP
+`webmail.lacasadedios.cl` o `mail.lacasadedios.cl`.
+
+Antes de mover el dominio, comprobar que cada subdominio en uso responde por
+HTTPS con un certificado válido. La cabecera no lleva `preload`, así que al
+menos el dominio no queda en la lista que los navegadores traen de fábrica y el
+daño se limita a quien ya visitó el sitio.
 
 ### ⛔ Migración obligatoria antes del próximo aviso
 
