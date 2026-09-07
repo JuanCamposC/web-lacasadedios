@@ -7,6 +7,7 @@
 --  42710 y, por la transacción del editor, no aplicaba nada. Ahora cada
 --  política lleva delante su `drop policy if exists`, y las dos inserciones
 --  de siembra solo escriben con la tabla vacía.
+-- ============================================================================
 
 -- ── Tablas ──────────────────────────────────────────────────────────────────
 create table if not exists public.events (

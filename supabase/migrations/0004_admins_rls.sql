@@ -24,7 +24,6 @@ alter table public.admins enable row level security;
 -- Cada quien puede comprobar si está en la lista; nadie puede modificarla desde
 -- el cliente. Las altas van con la clave de servicio (scripts/crear-admin.mjs).
 drop policy if exists "admins read self" on public.admins;
-drop policy if exists "admins read self" on public.admins;
 create policy "admins read self" on public.admins for select
   using (auth.uid() = user_id);
 

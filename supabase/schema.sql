@@ -7,6 +7,7 @@
 --  42710 y, por la transacción del editor, no aplicaba nada. Ahora cada
 --  política lleva delante su `drop policy if exists`, y las dos inserciones
 --  de siembra solo escriben con la tabla vacía.
+-- ============================================================================
 
 -- ── Tablas ──────────────────────────────────────────────────────────────────
 create table if not exists public.events (
@@ -295,7 +296,6 @@ alter table public.admins enable row level security;
 
 -- Cada quien puede comprobar si está en la lista; nadie puede modificarla desde
 -- el cliente. Las altas van con la clave de servicio (scripts/crear-admin.mjs).
-drop policy if exists "admins read self" on public.admins;
 drop policy if exists "admins read self" on public.admins;
 create policy "admins read self" on public.admins for select
   using (auth.uid() = user_id);
