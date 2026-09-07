@@ -7,11 +7,26 @@ import { youtubeId } from './supabase';
  * ese texto acabaría en el atributo.
  */
 describe('youtubeId', () => {
-  it('reconoce las cuatro formas de URL', () => {
+  it('reconoce las formas de URL', () => {
     expect(youtubeId('https://youtu.be/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
     expect(youtubeId('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
     expect(youtubeId('https://www.youtube.com/embed/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
     expect(youtubeId('https://www.youtube.com/shorts/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+  });
+
+  // La que daba el fallo: el botón «Compartir» de un directo entrega /live/.
+  it('reconoce la URL de una transmisión en directo', () => {
+    expect(youtubeId('https://www.youtube.com/live/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+    expect(youtubeId('https://youtube.com/live/dQw4w9WgXcQ?feature=share')).toBe('dQw4w9WgXcQ');
+  });
+
+  it('reconoce el dominio sin cookies, que es el que sirve nuestros iframes', () => {
+    expect(youtubeId('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+  });
+
+  // Apunta a «lo que esté en directo ahora»: no hay identificador que sacar.
+  it('devuelve null con la dirección de directo del canal', () => {
+    expect(youtubeId('https://www.youtube.com/@casadediosconociendolapalabrad/live')).toBeNull();
   });
 
   it('tolera parámetros de más detrás del identificador', () => {

@@ -46,8 +46,8 @@ export const SOCIAL: SocialLink[] = [
   {
     key: 'instagram',
     label: 'Instagram',
-    handle: '@jovenescasadedios._',
-    href: 'https://instagram.com/jovenescasadedios._',
+    handle: '@joseveneslacasadedios',
+    href: 'https://instagram.com/joseveneslacasadedios',
     icon: 'lucide:instagram',
   },
   {

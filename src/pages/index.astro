@@ -64,12 +64,18 @@ const instagram = SOCIAL.find((s) => s.key === 'instagram')!;
     <!-- Filigrana de marca, sangrando por arriba y por abajo. Las dos medidas
          salen de los marcos de Figma: en móvil arranca al 53 % y mide el 116 %
          del alto; en escritorio, al 49 % y el 169 %. Que el logotipo la pise
-         está en el diseño y no estorba: es un tono sobre tono al 20 %. -->
+         está en el diseño y no estorba.
+
+         COLOR: el archivo venía en #022542 al 20 %, que sobre el velo gris del
+         diseño se leía. Sobre el azul noche quedó a 1,02:1 —invisible—, así que
+         pasa al azul vivo de la paleta (#23448F) al 60 %: 1,45:1, un dibujo que
+         se ve sin competir con el logotipo, que encima da 12,3:1. La opacidad
+         va aquí y no en el SVG para poder graduarla sin abrir el archivo. -->
     <img
       src="/marca/filigrana.svg"
       alt=""
       aria-hidden="true"
-      class="pointer-events-none absolute left-[53%] top-1/2 h-[116%] w-auto -translate-y-1/2 lg:left-[49%] lg:h-[169%]"
+      class="pointer-events-none absolute left-[53%] top-1/2 h-[116%] w-auto -translate-y-1/2 opacity-60 lg:left-[49%] lg:h-[169%]"
     />
 
     <div class="rule absolute inset-x-0 bottom-0" aria-hidden="true"></div>
