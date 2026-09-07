@@ -1,0 +1,129 @@
+---
+import { Icon } from 'astro-icon/components';
+import { enlaceGoogleCalendar } from '../lib/ics';
+import type { EventItem } from '../lib/supabase';
+
+/**
+ * Compartir un evento y agendarlo.
+ *
+ * DOS ENLACES DE CALENDARIO, NO UNO. El `.ics` lo entienden Apple Calendar,
+ * Outlook y casi todo; en un iPhone se abre solo. En Android se descarga un
+ * archivo que hay que ir a buscar, y ahí vale más el enlace de Google, que abre
+ * el evento ya rellenado. Como no se puede adivinar desde el servidor cuál toca,
+ * se ofrecen los dos con el nombre del destino, que es lo que la gente reconoce.
+ *
+ * EL DESPLEGABLE SE ABRE HACIA ABAJO, EMPUJANDO. La ficha del evento lleva
+ * `overflow-hidden` por el zoom de la foto: un menú flotante quedaría cortado
+ * por el borde de la tarjeta. Un `<details>` normal crece dentro y además
+ * funciona sin JavaScript.
+ */
+interface Props {
+  evento: EventItem;
+  /** Dirección absoluta del sitio, sin barra final. */
+  sitio: string;
+}
+const { evento, sitio } = Astro.props;
+
+const enlace = `${sitio}/eventos#e-${evento.id}`;
+const google = enlaceGoogleCalendar({
+  id: evento.id,
+  titulo: evento.title,
+  inicio: evento.event_date,
+  descripcion: evento.description,
+  lugar: evento.location,
+  url: enlace,
+});
+
+const opcion =
+  'inline-flex items-center gap-1.5 rounded-lg border border-base-300 px-3 py-1.5 text-sm transition hover:border-primary hover:text-primary';
+---
+
+<div class="mt-auto pt-5">
+  <div class="flex flex-wrap items-center gap-1 border-t border-base-300 pt-4">
+    <button
+      type="button"
+      class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
+      data-compartir
+      data-url={enlace}
+      data-titulo={evento.title}
+    >
+      <Icon name="lucide:share-2" class="h-4 w-4" />
+      <span data-rotulo>Compartir</span>
+    </button>
+
+    <details class="group/cal">
+      <summary
+        class="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content [&::-webkit-details-marker]:hidden"
+      >
+        <Icon name="lucide:calendar-plus" class="h-4 w-4" />
+        Agregar al calendario
+        <Icon
+          name="lucide:chevron-down"
+          class="h-3.5 w-3.5 transition-transform group-open/cal:rotate-180"
+        />
+      </summary>
+      <div class="mt-2 flex flex-wrap gap-2">
+        <a href={google} target="_blank" rel="noopener noreferrer" class={opcion}>
+          <Icon name="lucide:calendar" class="h-4 w-4 text-accent" /> Google Calendar
+        </a>
+        <a href={`/api/evento.ics?id=${evento.id}`} class={opcion}>
+          <Icon name="lucide:download" class="h-4 w-4 text-accent" /> Apple, Outlook u otro
+        </a>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+  /**
+   * Compartir.
+   *
+   * En el teléfono abre la hoja del sistema, con WhatsApp, Instagram y lo que
+   * la persona tenga instalado; en el escritorio, donde casi ningún navegador
+   * la trae, copia el enlace. Un solo botón en vez de tres iconos de redes:
+   * cabe mejor en la ficha y no obliga a adivinar por dónde comparte cada uno.
+   *
+   * Va por delegación en el documento: hay un botón por evento y no tiene
+   * sentido colgar un escuchador de cada uno.
+   */
+  function initCompartirEventos() {
+    if (document.body.dataset.compartirEventos) return;
+    document.body.dataset.compartirEventos = '1';
+
+    document.addEventListener('click', async (ev) => {
+      const btn = (ev.target as HTMLElement)?.closest?.('[data-compartir]') as HTMLElement | null;
+      if (!btn) return;
+
+      const url = btn.dataset.url ?? location.href;
+      const title = btn.dataset.titulo ?? '';
+      const rotulo = btn.querySelector('[data-rotulo]');
+
+      const avisar = (texto: string) => {
+        if (!rotulo) return;
+        const antes = rotulo.textContent;
+        rotulo.textContent = texto;
+        setTimeout(() => (rotulo.textContent = antes), 1800);
+      };
+
+      if (navigator.share) {
+        try {
+          await navigator.share({ title, text: title, url });
+          return;
+        } catch {
+          // Cancelar la hoja del sistema también llega aquí: no se hace nada
+          // más, porque copiar el enlace sin que lo pidan sería una sorpresa.
+          return;
+        }
+      }
+
+      try {
+        await navigator.clipboard.writeText(url);
+        avisar('¡Copiado!');
+      } catch {
+        avisar('No se pudo copiar');
+      }
+    });
+  }
+
+  document.addEventListener('astro:page-load', initCompartirEventos);
+</script>

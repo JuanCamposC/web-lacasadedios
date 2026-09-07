@@ -28,6 +28,18 @@ import { SITE } from '../data/site';
  *  6. VERSIÓN EN TEXTO PLANO SIEMPRE. Un correo que solo trae HTML puntúa peor
  *     en los filtros de spam. Por eso `construirCorreo` devuelve las dos: se
  *     escriben del mismo contenido, así que no pueden desincronizarse.
+ *  7. EL MODO OSCURO NO SE PUEDE PROHIBIR. Gmail en el teléfono invierte
+ *     colores sin preguntar y no hay declaración que se lo impida; Apple Mail y
+ *     Outlook.com sí hacen caso. Por eso hay tres capas: `color-scheme: only
+ *     light`, una consulta `prefers-color-scheme` con `!important` —compite
+ *     contra estilos en línea, que si no ganan siempre— y los atributos
+ *     `data-ogsc`/`data-ogsb` de Outlook.com.
+ *
+ *     Y por eso el logotipo lleva el azul INCRUSTADO en los píxeles
+ *     (`logo-correo.png`, generado por scripts/logo-correo.mjs): ningún cliente
+ *     invierte el contenido de una imagen. Si la banda se aclara, la placa
+ *     azul con las letras blancas sigue ahí. Es la única defensa que no depende
+ *     de que el cliente colabore.
  *
  * La tipografía del sitio no se puede usar: las fuentes web no cargan en
  * ningún cliente serio. Se conserva la PAREJA, que es lo que se reconoce —
@@ -100,11 +112,11 @@ export interface Correo {
 // ── Bloques en HTML ──────────────────────────────────────────────────────────
 
 function parrafoHtml(texto: string): string {
-  return `<p style="margin:0 0 16px;font-family:${PALO};font-size:16px;line-height:25px;color:${TINTA}">${esc(texto)}</p>`;
+  return `<p class="txt" style="margin:0 0 16px;font-family:${PALO};font-size:16px;line-height:25px;color:${TINTA}">${esc(texto)}</p>`;
 }
 
 function destacadoHtml(texto: string): string {
-  return `<p style="margin:0 0 20px;font-family:${SERIFA};font-size:21px;line-height:29px;color:${NOCHE}">${esc(texto)}</p>`;
+  return `<p class="tit" style="margin:0 0 20px;font-family:${SERIFA};font-size:21px;line-height:29px;color:${NOCHE}">${esc(texto)}</p>`;
 }
 
 /**
@@ -115,7 +127,7 @@ function destacadoHtml(texto: string): string {
 function botonHtml(texto: string, url: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 20px">
       <tr>
-        <td bgcolor="${AZUL}" style="border-radius:6px">
+        <td class="cta" bgcolor="${AZUL}" style="border-radius:6px;background-color:${AZUL}">
           <a href="${esc(url)}" style="display:inline-block;padding:13px 28px;font-family:${PALO};font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none">${esc(texto)}</a>
         </td>
       </tr>
@@ -127,8 +139,8 @@ function fichaHtml(filas: [string, string][]): string {
     .map(
       ([k, v]) =>
         `<tr>
-          <td style="padding:7px 16px 7px 0;font-family:${PALO};font-size:14px;color:${TINTA_SUAVE};white-space:nowrap;vertical-align:top">${esc(k)}</td>
-          <td style="padding:7px 0;font-family:${PALO};font-size:15px;font-weight:bold;color:${TINTA};vertical-align:top">${esc(v)}</td>
+          <td class="suave" style="padding:7px 16px 7px 0;font-family:${PALO};font-size:14px;color:${TINTA_SUAVE};white-space:nowrap;vertical-align:top">${esc(k)}</td>
+          <td class="txt" style="padding:7px 0;font-family:${PALO};font-size:15px;font-weight:bold;color:${TINTA};vertical-align:top">${esc(v)}</td>
         </tr>`,
     )
     .join('');
@@ -139,8 +151,8 @@ function citaHtml(texto: string): string {
   // El filete a la izquierda es el mismo recurso que `.cita` en el sitio.
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px">
       <tr>
-        <td bgcolor="${BRONCE}" width="3" style="width:3px;font-size:0;line-height:0">&nbsp;</td>
-        <td bgcolor="${PAPEL_HONDO}" style="padding:16px 18px;font-family:${PALO};font-size:15px;line-height:24px;color:${TINTA};white-space:pre-wrap">${esc(texto)}</td>
+        <td class="filete" bgcolor="${BRONCE}" width="3" style="width:3px;font-size:0;line-height:0;background-color:${BRONCE}">&nbsp;</td>
+        <td class="pie txt" bgcolor="${PAPEL_HONDO}" style="padding:16px 18px;background-color:${PAPEL_HONDO};font-family:${PALO};font-size:15px;line-height:24px;color:${TINTA};white-space:pre-wrap">${esc(texto)}</td>
       </tr>
     </table>`;
 }
@@ -205,11 +217,11 @@ export function construirCorreo(c: Correo): { html: string; texto: string } {
   const sitio = c.base.replace(/\/+$/, '');
 
   const eyebrowHtml = c.eyebrow
-    ? `<p style="margin:0 0 10px;font-family:${PALO};font-size:12px;font-weight:bold;letter-spacing:1.6px;text-transform:uppercase;color:${BRONCE}">${esc(c.eyebrow)}</p>`
+    ? `<p class="oro" style="margin:0 0 10px;font-family:${PALO};font-size:12px;font-weight:bold;letter-spacing:1.6px;text-transform:uppercase;color:${BRONCE}">${esc(c.eyebrow)}</p>`
     : '';
 
   const pieHtml = c.pie
-    ? `<p style="margin:0;font-family:${PALO};font-size:13px;line-height:20px;color:${TINTA_SUAVE}">${esc(c.pie.texto)}${
+    ? `<p class="suave" style="margin:0;font-family:${PALO};font-size:13px;line-height:20px;color:${TINTA_SUAVE}">${esc(c.pie.texto)}${
         c.pie.enlace
           ? ` <a href="${esc(c.pie.enlace.url)}" style="color:${TINTA_SUAVE};text-decoration:underline">${esc(c.pie.enlace.texto)}</a>.`
           : ''
@@ -228,6 +240,35 @@ export function construirCorreo(c: Correo): { html: string; texto: string } {
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
 <title>${esc(c.titulo)}</title>
+<style>
+  /* Modo oscuro. Tres capas, porque ningún cliente respeta las tres.
+     La defensa de verdad NO está aquí: está en que el logotipo lleve el azul
+     incrustado en los píxeles (ver logo-correo.png). Esto es el refuerzo. */
+  :root { color-scheme: only light; supported-color-schemes: only light; }
+
+  /* Apple Mail y Outlook.com sí miran la consulta. Va con !important porque
+     compite contra estilos en línea, que de otro modo ganan siempre. */
+  @media (prefers-color-scheme: dark) {
+    .banda  { background-color: ${NOCHE} !important; }
+    .filete { background-color: ${BRONCE} !important; }
+    .cuerpo { background-color: ${PAPEL} !important; }
+    .pie    { background-color: ${PAPEL_HONDO} !important; }
+    .tit    { color: ${NOCHE} !important; }
+    .txt    { color: ${TINTA} !important; }
+    .suave  { color: ${TINTA_SUAVE} !important; }
+    .oro    { color: ${BRONCE} !important; }
+    .cta    { background-color: ${AZUL} !important; }
+    .cta a  { color: #ffffff !important; }
+  }
+
+  /* Outlook.com marca con estos atributos lo que ha cambiado por su cuenta. */
+  [data-ogsb] .cuerpo { background-color: ${PAPEL} !important; }
+  [data-ogsb] .pie    { background-color: ${PAPEL_HONDO} !important; }
+  [data-ogsc] .tit    { color: ${NOCHE} !important; }
+  [data-ogsc] .txt    { color: ${TINTA} !important; }
+  [data-ogsc] .suave  { color: ${TINTA_SUAVE} !important; }
+  [data-ogsc] .oro    { color: ${BRONCE} !important; }
+</style>
 </head>
 <body style="margin:0;padding:0;background-color:${PAPEL_HONDO};-webkit-text-size-adjust:100%">
 <div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;color:${PAPEL_HONDO}">${esc(c.preencabezado)}${relleno}</div>
@@ -239,26 +280,26 @@ export function construirCorreo(c: Correo): { html: string; texto: string } {
 
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
           <tr>
-            <td bgcolor="${NOCHE}" align="center" style="padding:30px 32px">
+            <td class="banda" bgcolor="${NOCHE}" align="center" style="padding:24px 32px;background-color:${NOCHE}">
               <a href="${esc(sitio)}" style="text-decoration:none">
-                <img src="${esc(sitio)}/marca/logo-blanco.png" width="176" height="40" alt="${esc(SITE.name)}" style="display:block;border:0;width:176px;height:40px;font-family:${SERIFA};font-size:20px;color:#ffffff">
+                <img src="${esc(sitio)}/marca/logo-correo.png" width="240" height="72" alt="${esc(SITE.name)}" style="display:block;border:0;width:240px;height:72px;font-family:${SERIFA};font-size:20px;color:#ffffff">
               </a>
             </td>
           </tr>
           <tr>
-            <td bgcolor="${BRONCE}" style="height:3px;font-size:0;line-height:0">&nbsp;</td>
+            <td class="filete" bgcolor="${BRONCE}" style="height:3px;font-size:0;line-height:0;background-color:${BRONCE}">&nbsp;</td>
           </tr>
           <tr>
-            <td bgcolor="${PAPEL}" style="padding:32px">
+            <td class="cuerpo" bgcolor="${PAPEL}" style="padding:32px;background-color:${PAPEL}">
               ${eyebrowHtml}
-              <h1 style="margin:0 0 18px;font-family:${SERIFA};font-size:27px;line-height:34px;font-weight:normal;color:${NOCHE}">${esc(c.titulo)}</h1>
+              <h1 class="tit" style="margin:0 0 18px;font-family:${SERIFA};font-size:27px;line-height:34px;font-weight:normal;color:${NOCHE}">${esc(c.titulo)}</h1>
               ${c.bloques.map(bloqueHtml).join('\n              ')}
             </td>
           </tr>
           <tr>
-            <td bgcolor="${PAPEL_HONDO}" style="padding:22px 32px 26px">
+            <td class="pie" bgcolor="${PAPEL_HONDO}" style="padding:22px 32px 26px;background-color:${PAPEL_HONDO}">
               ${pieHtml}
-              <p style="margin:${c.pie ? '14px' : '0'} 0 0;font-family:${PALO};font-size:13px;line-height:20px;color:${TINTA_SUAVE}">
+              <p class="suave" style="margin:${c.pie ? '14px' : '0'} 0 0;font-family:${PALO};font-size:13px;line-height:20px;color:${TINTA_SUAVE}">
                 ${esc(SITE.legalName)}<br>
                 <a href="${esc(sitio)}" style="color:${TINTA_SUAVE};text-decoration:underline">${esc(sitio.replace(/^https?:\/\//, ''))}</a>
               </p>

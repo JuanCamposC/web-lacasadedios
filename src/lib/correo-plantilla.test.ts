@@ -58,7 +58,7 @@ describe('construirCorreo', () => {
       bloques: [{ tipo: 'boton', texto: 'Confirmar', url: base + '/confirmar' }],
     });
     // Outlook ignora `background` en CSS; sin el atributo no hay botón.
-    expect(html).toMatch(/<td bgcolor="#23448f"/);
+    expect(html).toMatch(/<td class="cta" bgcolor="#23448f"/);
     expect(html).toContain('/confirmar');
   });
 
@@ -94,7 +94,7 @@ describe('construirCorreo', () => {
 
   it('quita la barra final de la dirección del sitio', () => {
     const { html } = construirCorreo({ ...minimo, base: base + '/' });
-    expect(html).toContain(`${base}/marca/logo-blanco.png`);
+    expect(html).toContain(`${base}/marca/logo-correo.png`);
     expect(html).not.toContain('//marca/');
   });
 
@@ -102,6 +102,57 @@ describe('construirCorreo', () => {
     const { html } = construirCorreo(minimo);
     expect(html).toContain('.png');
     expect(html).not.toContain('.svg');
+  });
+
+  /**
+   * Modo oscuro. Gmail en el teléfono invierte colores sin preguntar, así que
+   * lo único que no depende de la buena voluntad del cliente es que el azul
+   * vaya dentro de los píxeles del logotipo. Lo demás es refuerzo, pero tiene
+   * que estar.
+   */
+  describe('modo oscuro', () => {
+    it('usa la placa con el fondo incrustado, no el logotipo transparente', () => {
+      const { html } = construirCorreo(minimo);
+      expect(html).toContain('/marca/logo-correo.png');
+      expect(html).not.toContain('logo-blanco.png');
+    });
+
+    it('declara que el correo es solo claro', () => {
+      const { html } = construirCorreo(minimo);
+      expect(html).toContain('<meta name="color-scheme" content="light">');
+      expect(html).toContain('color-scheme: only light');
+    });
+
+    it('reafirma los colores con !important, que es lo que vence a los estilos en línea', () => {
+      const { html } = construirCorreo(minimo);
+      expect(html).toContain('@media (prefers-color-scheme: dark)');
+      expect(html).toMatch(/\.banda\s*\{\s*background-color:\s*#0a1730\s*!important/);
+      expect(html).toContain('[data-ogsc]');
+      expect(html).toContain('[data-ogsb]');
+    });
+
+    it('cada zona de color lleva su clase, o la consulta no la alcanza', () => {
+      const { html } = construirCorreo({
+        ...minimo,
+        eyebrow: 'Novedad',
+        bloques: [
+          { tipo: 'destacado', texto: 'Título' },
+          { tipo: 'boton', texto: 'Ver', url: base },
+          { tipo: 'ficha', filas: [['Nombre', 'Ana']] },
+          { tipo: 'cita', texto: 'Hola' },
+        ],
+        pie: { texto: 'Pie' },
+      });
+      for (const clase of ['banda', 'filete', 'cuerpo', 'pie', 'tit', 'txt', 'suave', 'oro', 'cta'])
+        expect(html).toContain(`class="${clase}`);
+    });
+
+    // Outlook ignora `background` en CSS y algunos clientes ignoran el atributo:
+    // hay que poner los dos o la banda sale blanca en alguno.
+    it('el fondo de la banda va en atributo Y en CSS', () => {
+      const { html } = construirCorreo(minimo);
+      expect(html).toMatch(/class="banda" bgcolor="#0a1730"[^>]*background-color:#0a1730/);
+    });
   });
 
   // Sin el atributo `width`, Outlook estira la foto a su tamaño original —una
