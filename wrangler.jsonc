@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lacasadedios",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-09-10",
+
+  // `nodejs_compat` da acceso a los módulos de Node que el sitio ya usa:
+  // `node:crypto` para los hashes de la CSP (src/lib/csp.ts) y lo que arrastre
+  // nodemailer. Sin esto, esos import fallan al arrancar el Worker.
+  "compatibility_flags": ["nodejs_compat"],
+
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+
+    // Por defecto, Workers redirige /horarios → /horarios/ con un 307. El sitio
+    // genera las URL canónicas SIN barra final (ver Layout.astro), así que esa
+    // redirección dejaba la canónica y la dirección servida en desacuerdo, y
+    // cobraba un viaje de ida y vuelta en cada visita a una página estática.
+    // En Vercel no pasaba. `drop-trailing-slash` restaura ese comportamiento.
+    "html_handling": "drop-trailing-slash"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

@@ -30,5 +30,5 @@ pnpm-debug.log*
 #claude
 .claude/
 
-# wrangler (pagina de construccion)
-mantenimiento/.wrangler/
+# wrangler: estado local de miniflare (cachés y bases SQLite de desarrollo)
+.wrangler/

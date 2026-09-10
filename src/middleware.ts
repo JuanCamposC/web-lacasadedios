@@ -1,5 +1,6 @@
 import { defineMiddleware } from 'astro:middleware';
 import { createServerSupabase, supabaseConfigured } from './lib/supabase';
+import { conSeguridad } from './lib/cabeceras';
 
 // Rutas servidas bajo demanda que usan Supabase. Las demás páginas son
 // estáticas y NO deben tocar el cliente (evita leer headers en prerender).
@@ -8,15 +9,20 @@ const SSR_PREFIXES = ['/admin', '/eventos', '/noticias', '/videos', '/en-vivo', 
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname;
   const isSSR = SSR_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
-  if (!isSSR) return next();
+
+  // Las cabeceras de seguridad van en TODA respuesta que salga de aquí, también
+  // en las de las rutas que no usan Supabase (/contacto, /baja, /confirmar).
+  // En Cloudflare, `public/_headers` solo cubre lo estático: lo que arma el
+  // Worker sale sin nada si no se le pone acá. Ver src/lib/cabeceras.ts.
+  if (!isSSR) return conSeguridad(await next());
 
   const isProtectedAdmin = path.startsWith('/admin') && path !== '/admin/login';
 
   // Sin configuración de Supabase: no intentes usarlo (evita 500). El admin
   // se manda al login, que mostrará el aviso de configuración pendiente.
   if (!supabaseConfigured) {
-    if (isProtectedAdmin) return context.redirect('/admin/login');
-    return next();
+    if (isProtectedAdmin) return conSeguridad(context.redirect('/admin/login'));
+    return conSeguridad(await next());
   }
 
   const supabase = createServerSupabase(context.cookies, context.request);
@@ -30,7 +36,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return context.redirect('/admin/login');
+    if (!user) return conSeguridad(context.redirect('/admin/login'));
     context.locals.user = user;
 
     // ── Segundo factor ──────────────────────────────────────────────────────
@@ -49,7 +55,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // JWT por nuestra cuenta, que es justo donde se cuelan los errores.
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal && aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
-      return context.redirect('/admin/login?mfa=1');
+      return conSeguridad(context.redirect('/admin/login?mfa=1'));
     }
   }
 
@@ -60,11 +66,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // respuesta con datos de sesión podría quedarse guardada en alguna capa
   // intermedia y servirse a otra persona.
   //
-  // vercel.json lo repite a nivel de CDN, a propósito: aquí se protege la
+  // public/_headers lo repite para lo estático, a propósito: aquí se protege la
   // respuesta de la función, allí cualquier cosa servida bajo esas rutas.
   if (sinCache) {
     response.headers.set('Cache-Control', 'no-store, must-revalidate');
   }
 
-  return response;
+  return conSeguridad(response);
 });

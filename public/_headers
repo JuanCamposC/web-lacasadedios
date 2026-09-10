@@ -1,0 +1,47 @@
+# Cabeceras de respuesta en Cloudflare Workers.
+#
+# Reemplaza al bloque "headers" de vercel.json, que Cloudflare no lee. El
+# adaptador AÑADE aquí abajo el Cache-Control inmutable de /_astro/* al
+# compilar, así que este archivo no es lo último que se sirve: mira dist/_headers
+# para ver el resultado final.
+#
+# La CSP NO va acá: Astro la calcula por página, con el hash de cada script y de
+# cada bloque <style>, y la emite en un <meta> (ver security.csp en
+# astro.config.mjs). Ponerla también como cabecera sería una segunda política
+# que se aplicaría ADEMÁS de aquella —los navegadores intersectan— y bastaría un
+# hash de menos para romper la página.
+
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: accelerometer=(), autoplay=(self "https://www.youtube-nocookie.com"), camera=(), display-capture=(), encrypted-media=(self "https://www.youtube-nocookie.com"), fullscreen=(self "https://www.youtube-nocookie.com" "https://www.google.com"), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(self "https://www.youtube-nocookie.com"), usb=(), xr-spatial-tracking=()
+  Cross-Origin-Opener-Policy: same-origin
+
+# HSTS SIN `includeSubDomains`, a diferencia de vercel.json.
+#
+# POR QUÉ SE QUITA: `webmail`, `cpanel`, `whm`, `webdisk` y `ftp` siguen
+# apuntando a Netexplora, y su certificado comodín vence el 4 de noviembre de
+# 2026 sin poder renovarse (la validación pasa ahora por Cloudflare). Con
+# `includeSubDomains`, cualquiera que hubiera visitado el sitio quedaría
+# obligado a HTTPS en esos subdominios durante un año, y al vencer el
+# certificado el navegador se negaría a abrirlos: sin escapatoria, porque HSTS
+# no se puede saltar.
+#
+# Se puede volver a poner cuando Netexplora se cancele y esos subdominios
+# desaparezcan del DNS.
+  Strict-Transport-Security: max-age=31536000
+
+/admin
+  Cache-Control: no-store, must-revalidate
+  X-Robots-Tag: noindex, nofollow
+
+/admin/*
+  Cache-Control: no-store, must-revalidate
+  X-Robots-Tag: noindex, nofollow
+
+/api/*
+  Cache-Control: no-store, must-revalidate
+
+/marca/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400

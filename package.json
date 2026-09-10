@@ -14,8 +14,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^14.3.1",
     "@astrojs/sitemap": "^3.7.3",
-    "@astrojs/vercel": "^11.0.3",
     "@fontsource-variable/archivo": "^5.3.0",
     "@fontsource-variable/archivo-narrow": "^5.3.0",
     "@fontsource-variable/fraunces": "^5.3.0",
@@ -24,7 +24,7 @@
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.7",
     "@tailwindcss/vite": "^4.3.3",
-    "astro": "^7.1.1",
+    "astro": "^7.3.2",
     "astro-icon": "^1.1.5",
     "daisyui": "^5.6.18",
     "marked": "^18.0.9",
@@ -40,9 +40,11 @@
     "prettier": "^3.9.6",
     "prettier-plugin-astro": "^0.14.1",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "wrangler": "^4.131.0"
   },
   "overrides": {
-    "path-to-regexp": "^6.3.0"
+    "path-to-regexp": "^6.3.0",
+    "smol-toml": "^1.8.0"
   }
 }

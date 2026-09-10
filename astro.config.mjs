@@ -1,7 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
-import vercel from '@astrojs/vercel';
+import cloudflare from '@astrojs/cloudflare';
 import icon from 'astro-icon';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -51,7 +51,24 @@ export default defineConfig({
       },
     },
   },
-  adapter: vercel(),
+  // Cloudflare Workers. Dos opciones que no son el valor por defecto:
+  //
+  // · `imageService: { build: 'compile' }` optimiza las imágenes DURANTE la
+  //   compilación, con sharp, igual que hacía Vercel. En Workers no hay sharp,
+  //   así que la alternativa sería servirlas sin tocar o pagar el servicio de
+  //   imágenes de Cloudflare. Como todas las fotos son fijas y viven en el
+  //   repositorio, compilarlas una vez es gratis y más rápido para el visitante.
+  //   `runtime: 'passthrough'` dice que en producción no se transforma nada.
+  //
+  // · `prerenderEnvironment: 'node'` — por defecto el adaptador prerenderiza en
+  //   workerd, el mismo runtime de producción. Acá no sirve: la compilación usa
+  //   `createHash` de `node:crypto` (src/lib/csp.ts) y sharp, que son de Node.
+  //   Solo afecta a la compilación; lo que corre en producción sigue siendo
+  //   workerd.
+  adapter: cloudflare({
+    imageService: { build: 'compile', runtime: 'passthrough' },
+    prerenderEnvironment: 'node',
+  }),
   integrations: [
     // /baja solo se alcanza con un enlace personal: fuera del sitemap.
     sitemap({ filter: (page) => !page.includes('/baja') }),
