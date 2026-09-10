@@ -24,7 +24,11 @@
   // Base de datos. El id se rellena al crearla con `wrangler d1 create`.
   // En local, wrangler usa una SQLite de miniflare y no mira este id.
   "d1_databases": [
-    { "binding": "DB", "database_name": "lacasadedios", "database_id": "por-crear" },
+    {
+      "binding": "DB",
+      "database_name": "lacasadedios",
+      "database_id": "665b6cdc-0a66-4229-935d-af66fd0cc322",
+    },
   ],
 
   "observability": {
