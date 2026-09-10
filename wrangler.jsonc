@@ -31,6 +31,11 @@
     },
   ],
 
+  // Archivos: imágenes, documentos y los estudios en audio, todo en un bucket
+  // con prefijos. Uno solo y no varios porque el tramo gratuito es por cuenta,
+  // y así hay un único dominio público que servir.
+  "r2_buckets": [{ "binding": "MEDIOS", "bucket_name": "lacasadedios-medios" }],
+
   // Identidad de Cloudflare Access. NO son secretos: el dominio del equipo es
   // público y el AUD viaja dentro de cada token. Van acá y no en variables de
   // entorno para que no se puedan olvidar: sin ellos, src/lib/access.ts falla

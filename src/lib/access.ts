@@ -57,11 +57,18 @@ const HOLGURA = 60;
 const PLAZO_MS = 60 * 60 * 1000;
 let guardadas: { claves: Map<string, CryptoKey>; vence: number } | null = null;
 
-function b64url(texto: string): Uint8Array {
+/**
+ * El tipo de retorno lleva `<ArrayBuffer>` a propósito y no es ceremonia:
+ * TypeScript 6 distingue `Uint8Array<ArrayBufferLike>` —que podría estar
+ * respaldado por memoria compartida— de `Uint8Array<ArrayBuffer>`, y
+ * `crypto.subtle.verify` solo acepta el segundo. Reservar el búfer explícito
+ * fija el tipo concreto.
+ */
+function b64url(texto: string): Uint8Array<ArrayBuffer> {
   const base = texto.replace(/-/g, '+').replace(/_/g, '/');
   const relleno = base + '='.repeat((4 - (base.length % 4)) % 4);
   const binario = atob(relleno);
-  const salida = new Uint8Array(binario.length);
+  const salida = new Uint8Array(new ArrayBuffer(binario.length));
   for (let i = 0; i < binario.length; i++) salida[i] = binario.charCodeAt(i);
   return salida;
 }
