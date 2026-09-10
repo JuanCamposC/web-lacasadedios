@@ -16,13 +16,13 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     setupCrud({
       table: 'videos',
       singular: 'video',
-      titleField: 'title',
+      titleField: 'titulo',
       subtitleField: 'youtube_url',
-      orderBy: { column: 'sort_order', ascending: true },
-      orderable: { column: 'sort_order' },
+      orderBy: { column: 'orden', ascending: true },
+      orderable: { column: 'orden' },
       notify: { type: 'video', urlBase: '/videos' },
       fields: [
-        { name: 'title', label: 'Título', type: 'text', required: true },
+        { name: 'titulo', label: 'Título', type: 'text', required: true },
         {
           name: 'youtube_url',
           label: 'Link de YouTube',
@@ -30,7 +30,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           required: true,
           help: 'Pega la URL del video (youtube.com/watch?v=… o youtu.be/…).',
         },
-        { name: 'description', label: 'Descripción', type: 'textarea' },
+        { name: 'descripcion', label: 'Descripción', type: 'textarea' },
         {
           name: 'templo',
           label: 'Templo',
@@ -39,7 +39,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           options: etiquetas,
           help: 'A qué templo pertenece. «General» si vale para todos.',
         },
-        { name: 'published', label: 'Publicado', type: 'checkbox' },
+        { name: 'publicado', label: 'Publicado', type: 'checkbox' },
       ],
     });
   </script>

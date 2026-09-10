@@ -76,7 +76,7 @@ export async function construirPayload(ctx: Contexto): Promise<Record<string, an
       const blob = ctx.imagenesListas.get(f.name);
       if (blob) {
         const nombre = (el as HTMLInputElement).files?.[0]?.name ?? 'imagen.webp';
-        payload[f.name] = await subirImagen(ctx.supabase, ctx.config.table, blob, nombre);
+        payload[f.name] = await subirImagen(ctx.recurso, blob);
       } else if (ctx.editing) payload[f.name] = ctx.editing[f.name] ?? null;
     } else if (f.type === 'datetime-local') {
       payload[f.name] = el.value ? new Date(el.value).toISOString() : null;

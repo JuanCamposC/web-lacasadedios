@@ -1,4 +1,5 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Api } from './api';
+import type { Recurso } from '../../lib/panel';
 
 export type Field = {
   name: string;
@@ -65,7 +66,9 @@ export type Fila = Record<string, any>;
  */
 export interface Contexto {
   config: CrudConfig;
-  supabase: SupabaseClient;
+  api: Api;
+  /** La tabla de esta pantalla, ya comprobada contra la lista blanca. */
+  recurso: Recurso;
   root: HTMLElement;
 
   /** Textos derivados del singular, con concordancia de género. */

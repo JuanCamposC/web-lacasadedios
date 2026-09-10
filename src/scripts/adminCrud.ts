@@ -9,7 +9,8 @@
  * La API pública no cambió: las páginas siguen llamando a `setupCrud(config)`.
  */
 import autoAnimate from '@formkit/auto-animate';
-import { createBrowserSupabase } from '../lib/supabase';
+import { api } from './admin/api';
+import { esRecurso } from '../lib/panel';
 import { plantilla } from './admin/plantilla';
 import { construirPayload, resetForm, startEdit } from './admin/form';
 import { cargar, pintar } from './admin/list';
@@ -23,9 +24,17 @@ import type { Contexto, CrudConfig, Estado } from './admin/tipos';
 export type { Field, CrudConfig } from './admin/tipos';
 
 export function setupCrud(config: CrudConfig) {
-  const supabase = createBrowserSupabase();
   const root = document.getElementById('crud-root');
   if (!root) return;
+
+  // El nombre de la tabla viene de la configuracion de cada pantalla. Se
+  // comprueba contra la lista blanca aca tambien, aunque el servidor lo repita:
+  // asi un error de configuracion se ve al abrir el panel y no al guardar.
+  if (!esRecurso(config.table)) {
+    root.innerHTML = 'Recurso desconocido: ' + config.table;
+    return;
+  }
+  const recurso = config.table;
 
   const plural = config.plural ?? `${config.singular}s`;
   // Concordancia de género a partir de la palabra: noticia → nueva/creada,
@@ -34,15 +43,12 @@ export function setupCrud(config: CrudConfig) {
   const articulo = femenino ? 'Nueva' : 'Nuevo';
   const creado = femenino ? 'creada' : 'creado';
 
-  supabase.auth.getSession().then(({ data }) => {
-    if (!data.session) window.location.href = '/admin/login';
-  });
-
   root.innerHTML = plantilla(config, plural, articulo);
 
   const ctx: Contexto = {
     config,
-    supabase,
+    api,
+    recurso,
     root,
     plural,
     articulo,
@@ -104,13 +110,13 @@ export function setupCrud(config: CrudConfig) {
       avisar = await preguntar(ctx.dlgAvisar, String(row[ctx.config.titleField] ?? ''));
     }
 
-    const { error } = await ctx.supabase
-      .from(ctx.config.table)
-      .update({ published: nuevo })
-      .eq('id', id);
-    if (error) return toast('No se pudo cambiar el estado: ' + error.message, 'error');
+    try {
+      await ctx.api.actualizar(ctx.recurso, id, { publicado: nuevo });
+    } catch (e) {
+      return toast('No se pudo cambiar el estado: ' + (e as Error).message, 'error');
+    }
 
-    row.published = nuevo;
+    row.publicado = nuevo ? 1 : 0;
     ctx.pintar();
     toast(nuevo ? 'Publicado: ya se ve en el sitio' : 'Pasó a borrador: ya no se ve en el sitio');
 
@@ -125,8 +131,11 @@ export function setupCrud(config: CrudConfig) {
 
     if (!(await preguntar(ctx.dlgBorrar, nombre))) return;
 
-    const { error } = await ctx.supabase.from(ctx.config.table).delete().eq('id', id);
-    if (error) return toast('No se pudo borrar: ' + error.message, 'error');
+    try {
+      await ctx.api.borrar(ctx.recurso, id);
+    } catch (e) {
+      return toast('No se pudo borrar: ' + (e as Error).message, 'error');
+    }
 
     ctx.filas = ctx.filas.filter((r) => r.id !== id);
     if (ctx.editing?.id === id) ctx.resetForm();
@@ -143,21 +152,22 @@ export function setupCrud(config: CrudConfig) {
       const payload = await construirPayload(ctx);
       const id = (ctx.form.querySelector('[name="id"]') as HTMLInputElement).value;
 
-      // `.select()` en el alta: hace falta la fila creada para enlazar al
-      // elemento concreto en el correo, no al listado.
-      const res = id
-        ? await supabase.from(config.table).update(payload).eq('id', id)
-        : await supabase.from(config.table).insert(payload).select().single();
-
-      if (res.error) throw res.error;
+      // Al crear hace falta el id de vuelta para enlazar al elemento concreto
+      // en el correo de aviso, no al listado.
+      let creadoId = id;
+      if (id) {
+        await api.actualizar(recurso, id, payload);
+      } else {
+        creadoId = await api.crear(recurso, payload);
+      }
 
       // Aviso a suscriptores al CREAR contenido ya publicado.
-      if (!id && config.notify && payload.published) {
+      if (!id && config.notify && payload.publicado) {
         const notifyEl = ctx.form.querySelector('[name="__notify"]') as HTMLInputElement | null;
         if (notifyEl?.checked) {
-          // La fila recién creada trae el identificador y la imagen ya subida;
-          // el payload cubre el caso de que la base no devuelva nada.
-          await avisarSuscriptores(ctx, { ...payload, ...((res as any).data ?? {}) });
+          // El id lo devuelve el servidor al crear: hace falta para enlazar al
+          // elemento concreto en el correo, no al listado.
+          await avisarSuscriptores(ctx, { ...payload, id: creadoId });
         }
       }
 

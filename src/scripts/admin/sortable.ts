@@ -26,22 +26,20 @@ export function initArrastre(ctx: Contexto) {
       const col = ctx.config.orderable!.column;
       const asc = ctx.config.orderBy.ascending;
 
-      const cambios = ids.map((id, i) => {
-        const pos = asc ? i : ids.length - 1 - i;
+      // El servidor asigna la posicion segun el orden del arreglo, asi que
+      // basta con mandarle los identificadores en el orden en que quedaron.
+      const enOrden = asc ? ids : [...ids].reverse();
+      enOrden.forEach((id, i) => {
         const row = ctx.filas.find((r) => r.id === id);
-        if (row) row[col] = pos;
-        return ctx.supabase
-          .from(ctx.config.table)
-          .update({ [col]: pos })
-          .eq('id', id);
+        if (row) row[col] = i;
       });
 
-      const res = await Promise.all(cambios);
-      if (res.some((r) => r.error)) {
-        toast('No se pudo guardar el nuevo orden', 'error');
-        ctx.load();
-      } else {
+      try {
+        await ctx.api.reordenar(enOrden);
         toast('Orden guardado');
+      } catch (e) {
+        toast('No se pudo guardar el nuevo orden: ' + (e as Error).message, 'error');
+        ctx.load();
       }
     },
   });

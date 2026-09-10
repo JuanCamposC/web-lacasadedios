@@ -16,16 +16,16 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     setupCrud({
       table: 'events',
       singular: 'evento',
-      titleField: 'title',
-      subtitleField: 'location',
-      orderBy: { column: 'event_date', ascending: false },
+      titleField: 'titulo',
+      subtitleField: 'lugar',
+      orderBy: { column: 'fecha', ascending: false },
       notify: { type: 'evento', urlBase: '/eventos' },
       fields: [
-        { name: 'title', label: 'Título', type: 'text', required: true },
-        { name: 'event_date', label: 'Fecha y hora', type: 'datetime-local', required: true },
-        { name: 'location', label: 'Lugar', type: 'text' },
-        { name: 'description', label: 'Descripción', type: 'textarea' },
-        { name: 'image_url', label: 'Imagen (opcional)', type: 'image' },
+        { name: 'titulo', label: 'Título', type: 'text', required: true },
+        { name: 'fecha', label: 'Fecha y hora', type: 'datetime-local', required: true },
+        { name: 'lugar', label: 'Lugar', type: 'text' },
+        { name: 'descripcion', label: 'Descripción', type: 'textarea' },
+        { name: 'imagen_clave', label: 'Imagen (opcional)', type: 'image' },
         {
           name: 'templo',
           label: 'Templo',
@@ -34,7 +34,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           options: etiquetas,
           help: 'A qué templo pertenece. «General» si vale para todos.',
         },
-        { name: 'published', label: 'Publicado', type: 'checkbox' },
+        { name: 'publicado', label: 'Publicado', type: 'checkbox' },
       ],
     });
   </script>

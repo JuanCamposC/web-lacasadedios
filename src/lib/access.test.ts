@@ -221,3 +221,75 @@ describe('identidadDeAccess', () => {
     expect(await identidadDeAccess(peticion)).toBeNull();
   });
 });
+
+describe('permitirPanel', () => {
+  const publica = new URL('https://lacasadedios.cl/admin');
+  const local = new URL('http://localhost:4321/admin');
+  const sinToken = () => new Request('https://lacasadedios.cl/admin');
+
+  afterEach(() => {
+    delete process.env.PANEL_ABIERTO;
+  });
+
+  it('deja entrar con un token de Access válido', async () => {
+    const { permitirPanel } = await moduloLimpio();
+    process.env.ACCESS_TEAM_DOMAIN = EQUIPO;
+    process.env.ACCESS_AUD = AUD;
+    const peticion = new Request('https://lacasadedios.cl/admin', {
+      headers: { 'Cf-Access-Jwt-Assertion': await firmar(cargaValida()) },
+    });
+    const r = await permitirPanel(peticion, publica);
+    expect(r.permitido).toBe(true);
+    expect(r.motivo).toBe('access');
+    expect(r.identidad?.correo).toBe('sistemas@lacasadedios.cl');
+  });
+
+  it('NIEGA en un dominio público sin token', async () => {
+    // Este es el caso que importa: el panel desplegado donde Access no llega.
+    const { permitirPanel } = await moduloLimpio();
+    const r = await permitirPanel(sinToken(), publica);
+    expect(r.permitido).toBe(false);
+    expect(r.motivo).toBe('denegado');
+  });
+
+  it('NIEGA con un token firmado por otro', async () => {
+    const { permitirPanel } = await moduloLimpio();
+    process.env.ACCESS_TEAM_DOMAIN = EQUIPO;
+    process.env.ACCESS_AUD = AUD;
+    const peticion = new Request('https://lacasadedios.cl/admin', {
+      headers: { 'Cf-Access-Jwt-Assertion': await firmar(cargaValida(), intruso.privateKey) },
+    });
+    expect((await permitirPanel(peticion, publica)).permitido).toBe(false);
+  });
+
+  it('deja entrar en localhost, donde no hay Access delante', async () => {
+    const { permitirPanel } = await moduloLimpio();
+    const r = await permitirPanel(sinToken(), local);
+    expect(r.permitido).toBe(true);
+    expect(r.motivo).toBe('local');
+  });
+
+  it('un dominio que solo CONTIENE «localhost» no cuela', async () => {
+    // localhost.atacante.cl resolvería a lo que el atacante quiera.
+    const { permitirPanel } = await moduloLimpio();
+    for (const trampa of [
+      'https://localhost.atacante.cl/admin',
+      'https://milocalhost/admin',
+      'https://127.0.0.1.atacante.cl/admin',
+    ]) {
+      const r = await permitirPanel(sinToken(), new URL(trampa));
+      expect(r.permitido).toBe(false);
+    }
+  });
+
+  it('PANEL_ABIERTO=1 abre a propósito; cualquier otro valor no', async () => {
+    const { permitirPanel } = await moduloLimpio();
+    process.env.PANEL_ABIERTO = '1';
+    expect((await permitirPanel(sinToken(), publica)).motivo).toBe('abierto-a-proposito');
+
+    for (const valor of ['0', 'true', 'sí', '']) {
+      process.env.PANEL_ABIERTO = valor;
+      expect((await permitirPanel(sinToken(), publica)).permitido).toBe(false);
+    }
+  });
+});

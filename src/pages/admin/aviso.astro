@@ -454,7 +454,7 @@ const paraInput = (iso: string | null) => {
         // Mismo camino que las imágenes de eventos y noticias: se reduce en el
         // navegador antes de subir, para no guardar los 6 MB del teléfono.
         const blob = await prepararImagen(f);
-        campo('popup_image_url').value = await subirImagen(supabase, 'avisos', blob, f.name);
+        campo('popup_image_url').value = await subirImagen('varios', blob);
         pintar();
       } catch (e) {
         mensaje('No se pudo subir la imagen: ' + (e as Error).message, false);

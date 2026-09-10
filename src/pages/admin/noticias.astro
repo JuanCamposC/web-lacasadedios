@@ -17,25 +17,25 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       table: 'news',
       singular: 'noticia',
       plural: 'noticias',
-      titleField: 'title',
-      subtitleField: 'excerpt',
-      orderBy: { column: 'published_at', ascending: false },
+      titleField: 'titulo',
+      subtitleField: 'bajada',
+      orderBy: { column: 'publicado_en', ascending: false },
       notify: { type: 'noticia', urlBase: '/noticias', porItem: true },
       fields: [
-        { name: 'title', label: 'Título', type: 'text', required: true },
+        { name: 'titulo', label: 'Título', type: 'text', required: true },
         {
-          name: 'excerpt',
+          name: 'bajada',
           label: 'Resumen breve',
           type: 'text',
           help: 'Una o dos líneas para la tarjeta.',
         },
         {
-          name: 'body',
+          name: 'cuerpo',
           label: 'Cuerpo',
           type: 'markdown',
           help: 'Usa los botones para dar formato. Se ve tal cual en el sitio.',
         },
-        { name: 'image_url', label: 'Imagen (opcional)', type: 'image' },
+        { name: 'imagen_clave', label: 'Imagen (opcional)', type: 'image' },
         {
           name: 'templo',
           label: 'Templo',
@@ -44,7 +44,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           options: etiquetas,
           help: 'A qué templo pertenece. «General» si vale para todos.',
         },
-        { name: 'published', label: 'Publicado', type: 'checkbox' },
+        { name: 'publicado', label: 'Publicado', type: 'checkbox' },
       ],
     });
   </script>

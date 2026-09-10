@@ -120,16 +120,16 @@ export function pintar(ctx: Contexto) {
 
 /** Trae las filas de la tabla y repinta. */
 export async function cargar(ctx: Contexto) {
-  const { data, error } = await ctx.supabase
-    .from(ctx.config.table)
-    .select('*')
-    .order(ctx.config.orderBy.column, { ascending: ctx.config.orderBy.ascending });
-
-  if (error) {
-    ctx.listEl.innerHTML = `<div class="alert alert-error text-sm">No se pudo cargar: ${esc(error.message)}</div>`;
+  // El orden ya lo decide el servidor (ver ORDEN en src/lib/panel.ts): así la
+  // lista del panel y la del sitio no pueden discrepar.
+  let filas;
+  try {
+    filas = await ctx.api.listar(ctx.recurso);
+  } catch (e) {
+    ctx.listEl.innerHTML = `<div class="alert alert-error text-sm">No se pudo cargar: ${esc((e as Error).message)}</div>`;
     return;
   }
-  ctx.filas = data ?? [];
+  ctx.filas = filas as Contexto['filas'];
   ctx.pintar();
   if (ctx.avisoOrden) ctx.avisoOrden.classList.toggle('hidden', ctx.filas.length < 2);
 }

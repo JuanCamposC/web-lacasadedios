@@ -1,4 +1,3 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Contexto } from './tipos';
 import { esc, pesoLegible } from './ui';
 
@@ -87,22 +86,29 @@ export function initImagenes(ctx: Contexto) {
   });
 }
 
-/** Sube el blob al bucket `media` y devuelve su URL pública. */
-export async function subirImagen(
-  supabase: SupabaseClient,
-  tabla: string,
-  blob: Blob,
-  nombre: string,
-): Promise<string> {
-  const ext = blob.type === 'image/webp' ? 'webp' : nombre.split('.').pop() || 'jpg';
-  const base = nombre
-    .replace(/\.[^.]+$/, '')
-    .replace(/[^\w-]/g, '_')
-    .slice(0, 40);
-  const path = `${tabla}/${Date.now()}-${base}.${ext}`;
-  const { error } = await supabase.storage.from('media').upload(path, blob, {
-    contentType: blob.type || 'image/jpeg',
-  });
-  if (error) throw error;
-  return supabase.storage.from('media').getPublicUrl(path).data.publicUrl;
+/**
+ * Sube el blob a R2 y devuelve su CLAVE, no una dirección.
+ *
+ * En la base se guarda la clave; la dirección la arma `urlMedio()` con el
+ * dominio del bucket. Guardar la dirección ataría cada fila a un dominio que
+ * todavía puede cambiar.
+ *
+ * El nombre del archivo NO viaja: la clave la inventa el servidor con un UUID.
+ * Un nombre no aporta nada útil y sí puede traer sorpresas.
+ */
+export async function subirImagen(recurso: string, blob: Blob): Promise<string> {
+  const formulario = new FormData();
+  formulario.append('archivo', blob);
+  formulario.append('recurso', recurso);
+
+  const respuesta = await fetch('/api/admin/subir', { method: 'POST', body: formulario });
+  const datos = (await respuesta.json().catch(() => null)) as {
+    clave?: string;
+    error?: string;
+  } | null;
+
+  if (!respuesta.ok || !datos?.clave) {
+    throw new Error(datos?.error ?? `no se pudo subir (${respuesta.status})`);
+  }
+  return datos.clave;
 }

@@ -187,3 +187,51 @@ export async function identidadDeAccess(request: Request): Promise<Identidad | n
   if (!token) return null;
   return verificarToken(token, process.env.ACCESS_TEAM_DOMAIN ?? '', process.env.ACCESS_AUD ?? '');
 }
+
+/** Por qué se dejó entrar —o no— al panel. Se usa para avisar en pantalla. */
+export type Motivo = 'access' | 'local' | 'abierto-a-proposito' | 'denegado';
+
+export interface Acceso {
+  permitido: boolean;
+  identidad: Identidad | null;
+  motivo: Motivo;
+}
+
+/**
+ * ¿Puede esta petición entrar al panel?
+ *
+ * El panel NO tiene pantalla de login. Quien autentica es Cloudflare Access,
+ * en el borde, antes de que la petición llegue al Worker; acá solo se verifica
+ * su firma. Por eso no hay contraseñas ni segundo factor en este código: los
+ * pone Google, a través de Access.
+ *
+ * ── CERRADO POR OMISIÓN ─────────────────────────────────────────────────────
+ * Si no hay token válido, NO se entra. Las dos excepciones son estrechas y
+ * deliberadas:
+ *
+ *   · `localhost` — en desarrollo no hay Access delante de nada, y sin esto el
+ *     panel sería imposible de trabajar. Un atacante no puede fingir ser
+ *     localhost: el nombre lo pone el propio servidor al recibir la petición.
+ *
+ *   · `PANEL_ABIERTO` — una variable que hay que poner a mano. Existe para
+ *     poder abrir el panel a propósito y por un rato, no por descuido: la
+ *     diferencia entre las dos es que esto exige que alguien lo escriba.
+ *
+ * Lo que NO se hace es dejar entrar «si no se pudo comprobar». Ese es el fallo
+ * que no se ve hasta que alguien lo encuentra.
+ */
+export async function permitirPanel(request: Request, url: URL): Promise<Acceso> {
+  const identidad = await identidadDeAccess(request);
+  if (identidad) return { permitido: true, identidad, motivo: 'access' };
+
+  const anfitrion = url.hostname;
+  if (anfitrion === 'localhost' || anfitrion === '127.0.0.1' || anfitrion === '[::1]') {
+    return { permitido: true, identidad: null, motivo: 'local' };
+  }
+
+  if ((process.env.PANEL_ABIERTO ?? '') === '1') {
+    return { permitido: true, identidad: null, motivo: 'abierto-a-proposito' };
+  }
+
+  return { permitido: false, identidad: null, motivo: 'denegado' };
+}
