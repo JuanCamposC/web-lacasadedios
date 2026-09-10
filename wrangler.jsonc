@@ -31,6 +31,15 @@
     },
   ],
 
+  // Identidad de Cloudflare Access. NO son secretos: el dominio del equipo es
+  // público y el AUD viaja dentro de cada token. Van acá y no en variables de
+  // entorno para que no se puedan olvidar: sin ellos, src/lib/access.ts falla
+  // cerrado y el panel queda inaccesible para todos.
+  "vars": {
+    "ACCESS_TEAM_DOMAIN": "lacasadedios.cloudflareaccess.com",
+    "ACCESS_AUD": "c6d6fb65388b5b61c2e2b0e2f7f5d5f7410d1898bfe3a71158f98142f039b890",
+  },
+
   "observability": {
     "enabled": true,
   },
