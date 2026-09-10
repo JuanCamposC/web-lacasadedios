@@ -57,6 +57,7 @@ export async function baseDeDatos(): Promise<Base> {
 /** El bucket de archivos, o un error claro. */
 export async function almacen(): Promise<R2Bucket> {
   const { MEDIOS } = await bindings();
-  if (!MEDIOS) throw new Error('Falta la binding R2 «MEDIOS». Revisa r2_buckets en wrangler.jsonc.');
+  if (!MEDIOS)
+    throw new Error('Falta la binding R2 «MEDIOS». Revisa r2_buckets en wrangler.jsonc.');
   return MEDIOS;
 }

@@ -2,7 +2,7 @@
 export const prerender = false;
 
 // La página se arma en cada petición, pero su contenido cambia como mucho unas
-// veces al mes. Se deja que la CDN de Vercel la sirva ya hecha durante un
+// veces al mes. Se deja que la CDN de Cloudflare la sirva ya hecha durante un
 // minuto y que siga sirviéndola hasta diez minutos más mientras la rehace por
 // detrás: durante una transmisión, cien visitas seguidas son una sola consulta
 // a la base en vez de cien.
@@ -18,21 +18,18 @@ import CtaBand from '../../components/CtaBand.astro';
 import { Icon } from 'astro-icon/components';
 import { IMG } from '../../assets/images';
 import { YOUTUBE_CHANNEL } from '../../data/site';
-import { youtubeId, type VideoItem } from '../../lib/supabase';
+import { youtubeId } from '../../lib/youtube';
 
-const supabase = Astro.locals.supabase;
-let videos: VideoItem[] = [];
-if (supabase) {
-  const { data } = await supabase
-    .from('videos')
-    .select('*')
-    .eq('published', true)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: false });
-  videos = data ?? [];
-}
+import { baseDeDatos } from '../../lib/base';
+import { videosPublicados } from '../../lib/datos';
 
-const withId = videos.map((v) => ({ ...v, vid: youtubeId(v.youtube_url) })).filter((v) => v.vid);
+const videos = await videosPublicados(await baseDeDatos());
+
+// Un video cuya dirección no deja sacar el identificador no se puede incrustar,
+// así que no se muestra en vez de dejar un hueco negro en la parrilla.
+const withId = videos
+  .map((v) => ({ ...v, vid: youtubeId(v.youtube_url) }))
+  .filter((v): v is (typeof videos)[number] & { vid: string } => Boolean(v.vid));
 
 // VideoObject: hace que las prédicas puedan aparecer en la pestaña Videos de
 // Google con miniatura, en vez de como un enlace más.
@@ -42,10 +39,10 @@ const videosJsonLd =
         '@context': 'https://schema.org',
         '@graph': withId.map((v) => ({
           '@type': 'VideoObject',
-          name: v.title,
-          ...(v.description ? { description: v.description } : {}),
+          name: v.titulo,
+          ...(v.descripcion ? { description: v.descripcion } : {}),
           thumbnailUrl: `https://i.ytimg.com/vi/${v.vid}/hqdefault.jpg`,
-          uploadDate: v.created_at,
+          uploadDate: v.creado_en,
           embedUrl: `https://www.youtube.com/embed/${v.vid}`,
           contentUrl: `https://www.youtube.com/watch?v=${v.vid}`,
         })),
@@ -104,7 +101,7 @@ const videosJsonLd =
                 <div class="panel panel-sm panel-lift flex h-full flex-col overflow-hidden">
                   <div class="aspect-video overflow-hidden bg-black">
                     {/* Este `allow` no basta por sí solo: la cabecera
-                         Permissions-Policy de vercel.json es el techo, y si allí
+                         Permissions-Policy de public/_headers es el techo, y si allí
                          una función no incluye "https://www.youtube-nocookie.com"
                          el navegador la deniega aunque el iframe la pida. Así se
                          rompió el botón de pantalla completa: la cabecera decía
@@ -112,16 +109,16 @@ const videosJsonLd =
                     <iframe
                       class="h-full w-full"
                       src={`https://www.youtube-nocookie.com/embed/${v.vid}`}
-                      title={v.title}
+                      title={v.titulo}
                       loading="lazy"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture"
                       allowfullscreen
                     />
                   </div>
                   <div class="flex flex-1 flex-col p-5">
-                    <h2 class="card-title text-lg leading-snug">{v.title}</h2>
-                    {v.description && (
-                      <p class="mt-1 text-sm text-base-content/75">{v.description}</p>
+                    <h2 class="card-title text-lg leading-snug">{v.titulo}</h2>
+                    {v.descripcion && (
+                      <p class="mt-1 text-sm text-base-content/75">{v.descripcion}</p>
                     )}
                   </div>
                 </div>

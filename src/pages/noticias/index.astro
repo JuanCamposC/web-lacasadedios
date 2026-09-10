@@ -2,7 +2,7 @@
 export const prerender = false;
 
 // La página se arma en cada petición, pero su contenido cambia como mucho unas
-// veces al mes. Se deja que la CDN de Vercel la sirva ya hecha durante un
+// veces al mes. Se deja que la CDN de Cloudflare la sirva ya hecha durante un
 // minuto y que siga sirviéndola hasta diez minutos más mientras la rehace por
 // detrás: durante una transmisión, cien visitas seguidas son una sola consulta
 // a la base en vez de cien.
@@ -17,23 +17,24 @@ import EmptyState from '../../components/EmptyState.astro';
 import { Icon } from 'astro-icon/components';
 import { IMG } from '../../assets/images';
 import { markdownAResumen } from '../../lib/markdown';
-import type { NewsItem } from '../../lib/supabase';
+import { baseDeDatos } from '../../lib/base';
+import { noticiasPublicadas } from '../../lib/datos';
+import { urlMedio } from '../../lib/medios';
 
-const supabase = Astro.locals.supabase;
-let news: NewsItem[] = [];
-if (supabase) {
-  const { data } = await supabase
-    .from('news')
-    .select('*')
-    .eq('published', true)
-    .order('published_at', { ascending: false });
-  news = data ?? [];
-}
+// El filtro de publicado y el tope viven en `noticiasPublicadas`, no acá: ver
+// la explicación en src/lib/datos.ts. Esta página solo pide y muestra.
+const filas = await noticiasPublicadas(await baseDeDatos());
+
+// La imagen se resuelve una vez y no en cada punto de la plantilla: en la base
+// hay una CLAVE de R2, no una dirección. Si todavía no hay dominio de medios
+// configurado esto queda en null, y la plantilla enseña el respaldo de siempre.
+const news = filas.map((n) => ({ ...n, imagen: urlMedio(n.imagen_clave) }));
+type Fila = (typeof news)[number];
 
 const [destacada, ...resto] = news;
 const fmtDate = (d: string) =>
   new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
-const url = (n: NewsItem) => `/noticias/${n.slug ?? n.id}`;
+const url = (n: Fila) => `/noticias/${n.slug ?? n.id}`;
 ---
 
 <Layout
@@ -75,10 +76,10 @@ const url = (n: NewsItem) => `/noticias/${n.slug ?? n.id}`;
                 class="panel panel-lift group grid overflow-hidden md:grid-cols-2"
               >
                 <div class="relative h-56 overflow-hidden md:h-full md:min-h-[20rem]">
-                  {destacada.image_url ? (
+                  {destacada.imagen ? (
                     <img
-                      src={destacada.image_url}
-                      alt={destacada.title}
+                      src={destacada.imagen}
+                      alt={destacada.titulo}
                       class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                       loading="eager"
                     />
@@ -94,14 +95,14 @@ const url = (n: NewsItem) => `/noticias/${n.slug ?? n.id}`;
                 <div class="flex flex-col justify-center p-7 sm:p-10">
                   <span class="flex items-center gap-1.5 text-xs text-base-content/60">
                     <Icon name="lucide:calendar" class="h-3.5 w-3.5" />{' '}
-                    {fmtDate(destacada.published_at)}
+                    {fmtDate(destacada.publicado_en)}
                   </span>
                   <h2 class="mt-2 font-display text-2xl leading-tight md:text-3xl">
-                    {destacada.title}
+                    {destacada.titulo}
                   </h2>
-                  {(destacada.excerpt || destacada.body) && (
+                  {(destacada.bajada || destacada.cuerpo) && (
                     <p class="mt-3 clamp-3 text-base-content/75">
-                      {destacada.excerpt ?? markdownAResumen(destacada.body, 190)}
+                      {destacada.bajada ?? markdownAResumen(destacada.cuerpo, 190)}
                     </p>
                   )}
                   <span class="mt-5 inline-flex items-center gap-2 font-medium text-primary group-hover:text-accent">
@@ -125,10 +126,10 @@ const url = (n: NewsItem) => `/noticias/${n.slug ?? n.id}`;
                       class="panel panel-sm panel-lift group flex h-full flex-col overflow-hidden"
                     >
                       <div class="relative h-44 overflow-hidden">
-                        {n.image_url ? (
+                        {n.imagen ? (
                           <img
-                            src={n.image_url}
-                            alt={n.title}
+                            src={n.imagen}
+                            alt={n.titulo}
                             class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                             loading="lazy"
                           />
@@ -141,12 +142,12 @@ const url = (n: NewsItem) => `/noticias/${n.slug ?? n.id}`;
                       <div class="flex flex-1 flex-col p-6">
                         <div class="flex items-center gap-1.5 text-xs text-base-content/60">
                           <Icon name="lucide:calendar" class="h-3.5 w-3.5" />{' '}
-                          {fmtDate(n.published_at)}
+                          {fmtDate(n.publicado_en)}
                         </div>
-                        <h2 class="card-title mt-1 text-xl leading-snug">{n.title}</h2>
-                        {(n.excerpt || n.body) && (
+                        <h2 class="card-title mt-1 text-xl leading-snug">{n.titulo}</h2>
+                        {(n.bajada || n.cuerpo) && (
                           <p class="mt-2 clamp-3 text-sm text-base-content/75">
-                            {n.excerpt ?? markdownAResumen(n.body, 140)}
+                            {n.bajada ?? markdownAResumen(n.cuerpo, 140)}
                           </p>
                         )}
                         <span class="mt-4 inline-flex items-center gap-1.5 pt-1 text-sm font-medium text-primary group-hover:text-accent">

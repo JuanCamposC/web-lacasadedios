@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { youtubeId } from './supabase';
+import { youtubeId } from './youtube';
 
 /**
  * El identificador sale de una URL que se pega a mano en el panel y termina

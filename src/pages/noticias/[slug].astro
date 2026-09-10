@@ -2,7 +2,7 @@
 export const prerender = false;
 
 // La página se arma en cada petición, pero su contenido cambia como mucho unas
-// veces al mes. Se deja que la CDN de Vercel la sirva ya hecha durante un
+// veces al mes. Se deja que la CDN de Cloudflare la sirva ya hecha durante un
 // minuto y que siga sirviéndola hasta diez minutos más mientras la rehace por
 // detrás: durante una transmisión, cien visitas seguidas son una sola consulta
 // a la base en vez de cien.
@@ -15,41 +15,33 @@ import CtaBand from '../../components/CtaBand.astro';
 import { Icon } from 'astro-icon/components';
 import { IMG } from '../../assets/images';
 import { renderMarkdown, markdownAResumen } from '../../lib/markdown';
-import type { NewsItem } from '../../lib/supabase';
+import { baseDeDatos } from '../../lib/base';
+import { noticiaPorSlug, noticiaPorId, noticiasPublicadas, ajustes } from '../../lib/datos';
+import { urlMedio } from '../../lib/medios';
 
 const { slug } = Astro.params;
-const supabase = Astro.locals.supabase;
+const base = await baseDeDatos();
 
-let item: NewsItem | null = null;
-let otras: NewsItem[] = [];
-
-// El slug es opcional en la base. Si el parámetro tiene forma de UUID se busca
-// por id; si no, por slug. (Consultar `id` con un valor no-UUID hace fallar la
-// consulta completa en Postgres, no devuelve vacío.)
+// El slug es opcional en la base, así que la dirección puede traer un slug o un
+// id. Se distinguen por la forma: los ids son UUID.
 const esUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug ?? '');
 
-if (supabase && slug) {
-  const { data } = await supabase
-    .from('news')
-    .select('*')
-    .eq('published', true)
-    .eq(esUuid ? 'id' : 'slug', slug)
-    .maybeSingle();
-  item = (data as NewsItem) ?? null;
+const fila = slug
+  ? esUuid
+    ? await noticiaPorId(base, slug)
+    : await noticiaPorSlug(base, slug)
+  : null;
 
-  if (item) {
-    const { data: resto } = await supabase
-      .from('news')
-      .select('*')
-      .eq('published', true)
-      .neq('id', item.id)
-      .order('published_at', { ascending: false })
-      .limit(3);
-    otras = (resto as NewsItem[]) ?? [];
-  }
-}
+if (!fila) return Astro.redirect('/noticias', 302);
 
-if (!item) return Astro.redirect('/noticias', 302);
+const item = { ...fila, imagen: urlMedio(fila.imagen_clave) };
+
+// Se piden cuatro para poder descartar la actual y quedarse con tres, sin una
+// segunda consulta ni un `where id <>` que complique el índice.
+const otras = (await noticiasPublicadas(base, { limite: 4 }))
+  .filter((n) => n.id !== item.id)
+  .slice(0, 3)
+  .map((n) => ({ ...n, imagen: urlMedio(n.imagen_clave) }));
 
 const fmtDate = (d: string) =>
   new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
@@ -57,12 +49,12 @@ const fmtDate = (d: string) =>
 // El cuerpo se escribe en Markdown desde el panel y se convierte a HTML aquí,
 // en el servidor: el visitante no descarga ninguna librería para leerlo. El
 // texto se escapa antes de interpretarlo (ver src/lib/markdown.ts).
-const cuerpoHtml = renderMarkdown(item.body);
+const cuerpoHtml = renderMarkdown(item.cuerpo);
 
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 
 /**
- * Texto del botón de WhatsApp, editable desde la tabla `settings`.
+ * Texto del botón de WhatsApp, editable desde la tabla `ajustes`.
  *
  * Facebook NO admite mensaje propio: retiró el parámetro `quote` hace años y
  * arma la vista previa con las etiquetas Open Graph de la página, o sea con el
@@ -72,46 +64,39 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 const PLANTILLA_POR_DEFECTO =
   'Hola, acabo de leer esta noticia que me bendijo. {titulo} — {enlace}';
 
-let plantilla = PLANTILLA_POR_DEFECTO;
-if (supabase) {
-  const { data: ajustes } = await supabase
-    .from('settings')
-    .select('share_whatsapp')
-    .eq('id', 1)
-    .maybeSingle();
-  if (ajustes?.share_whatsapp) plantilla = ajustes.share_whatsapp;
-}
+const config = await ajustes(base);
+const plantilla = config?.compartir_whatsapp || PLANTILLA_POR_DEFECTO;
 
 const textoWhatsapp = plantilla
-  .replaceAll('{titulo}', item?.title ?? '')
+  .replaceAll('{titulo}', item.titulo)
   .replaceAll('{enlace}', canonical);
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'NewsArticle',
-  headline: item.title,
-  datePublished: item.published_at,
-  description: item.excerpt ?? undefined,
-  image: item.image_url ?? undefined,
+  headline: item.titulo,
+  datePublished: item.publicado_en,
+  description: item.bajada ?? undefined,
+  image: item.imagen ?? undefined,
   mainEntityOfPage: canonical,
   publisher: { '@type': 'Organization', name: 'La Casa de Dios' },
 };
 ---
 
 <Layout
-  title={`${item.title} · La Casa de Dios`}
-  description={item.excerpt ?? markdownAResumen(item.body)}
-  image={item.image_url ?? undefined}
+  title={`${item.titulo} · La Casa de Dios`}
+  description={item.bajada ?? markdownAResumen(item.cuerpo)}
+  image={item.imagen ?? undefined}
 >
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
 
   <!-- Cabecera del artículo -->
   <header class="relative overflow-hidden bg-base-200 pt-16">
     {
-      item.image_url && (
+      item.imagen && (
         <>
           <img
-            src={item.image_url}
+            src={item.imagen}
             alt=""
             aria-hidden="true"
             class="absolute inset-0 h-full w-full object-cover opacity-20"
@@ -133,11 +118,11 @@ const jsonLd = {
       }
       <p class="eyebrow mt-6 block text-accent">Noticias</p>
       <h1 class="mt-2 font-display leading-[1.1] text-[clamp(2rem,5.5vw,3.25rem)]">
-        {item.title}
+        {item.titulo}
       </h1>
       <p class="mt-4 flex items-center gap-2 text-sm text-base-content/60">
         <Icon name="lucide:calendar" class="h-4 w-4" />
-        <time datetime={item.published_at}>{fmtDate(item.published_at)}</time>
+        <time datetime={item.publicado_en}>{fmtDate(item.publicado_en)}</time>
       </p>
     </div>
   </header>
@@ -146,7 +131,7 @@ const jsonLd = {
     items={[
       { label: 'Inicio', href: '/' },
       { label: 'Noticias', href: '/noticias' },
-      { label: item.title },
+      { label: item.titulo },
     ]}
   />
 
@@ -154,25 +139,20 @@ const jsonLd = {
   <article class="section bg-base-100">
     <div class="wrap-narrow">
       {
-        item.image_url && (
+        item.imagen && (
           <Reveal class="mb-10 block overflow-hidden rounded-xl">
-            <img
-              src={item.image_url}
-              alt={item.title}
-              class="w-full object-cover"
-              loading="eager"
-            />
+            <img src={item.imagen} alt={item.titulo} class="w-full object-cover" loading="eager" />
           </Reveal>
         )
       }
 
       {
-        item.excerpt && (
+        item.bajada && (
           <p
             data-reveal
             class="mb-8 border-l-4 border-accent pl-5 text-xl font-light leading-relaxed text-base-content/85"
           >
-            {item.excerpt}
+            {item.bajada}
           </p>
         )
       }
@@ -181,7 +161,7 @@ const jsonLd = {
         cuerpoHtml ? (
           <div data-reveal data-reveal-delay="60" class="prose-lcd" set:html={cuerpoHtml} />
         ) : (
-          !item.excerpt && (
+          !item.bajada && (
             <p class="prose-lcd italic opacity-60">Esta noticia todavía no tiene contenido.</p>
           )
         )
@@ -233,9 +213,9 @@ const jsonLd = {
                   class="panel panel-sm panel-lift group flex h-full flex-col overflow-hidden"
                 >
                   <div class="h-36 overflow-hidden bg-base-300">
-                    {n.image_url ? (
+                    {n.imagen ? (
                       <img
-                        src={n.image_url}
+                        src={n.imagen}
                         alt=""
                         class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                         loading="lazy"
@@ -247,8 +227,8 @@ const jsonLd = {
                     )}
                   </div>
                   <div class="flex flex-1 flex-col p-5">
-                    <span class="text-xs text-base-content/55">{fmtDate(n.published_at)}</span>
-                    <h3 class="mt-1 font-bold leading-snug clamp-3">{n.title}</h3>
+                    <span class="text-xs text-base-content/55">{fmtDate(n.publicado_en)}</span>
+                    <h3 class="mt-1 font-bold leading-snug clamp-3">{n.titulo}</h3>
                   </div>
                 </a>
               </Reveal>

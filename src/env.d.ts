@@ -45,3 +45,14 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/**
+ * `cloudflare:workers` es un módulo del runtime de Cloudflare: existe al
+ * ejecutar, no al compilar, así que TypeScript no lo encuentra por su cuenta.
+ * Se declara lo mínimo que el sitio usa. Los tipos completos vendrían de
+ * `@cloudflare/workers-types`, pero referenciarlos globalmente pisa los del DOM
+ * y rompe todo el código de navegador —comprobado—, así que se declara a mano.
+ */
+declare module 'cloudflare:workers' {
+  export const env: Record<string, unknown>;
+}

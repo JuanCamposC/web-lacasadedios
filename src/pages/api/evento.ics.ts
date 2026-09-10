@@ -1,16 +1,16 @@
 import type { APIRoute } from 'astro';
 import { construirIcs } from '../../lib/ics';
-import type { EventItem } from '../../lib/supabase';
+import { baseDeDatos } from '../../lib/base';
+import { eventoPorId } from '../../lib/datos';
 
 export const prerender = false;
 
 /**
  * Archivo de calendario de un evento: `/api/evento.ics?id=<uuid>`.
  *
- * Sin sesión y sin clave de servicio: se usa el cliente normal, así que la
- * política RLS `public read events` se encarga de que solo salgan los eventos
- * publicados. Un identificador de un borrador devuelve 404, igual que uno
- * inventado.
+ * El filtro de publicado va en la consulta, no en la base: D1 no tiene RLS.
+ * Un identificador de un borrador devuelve 404, igual que uno inventado. Que
+ * ese filtro esté puesto lo garantiza `eventoPorId`, no un permiso.
  *
  * El nombre del archivo sale del título porque es lo que la persona ve en su
  * carpeta de descargas: «culto-de-aniversario.ics» dice algo, «evento.ics» no.
@@ -30,31 +30,21 @@ function nombreArchivo(titulo: string): string {
   return `${limpio || 'evento'}.ics`;
 }
 
-export const GET: APIRoute = async ({ url, locals, site }) => {
+export const GET: APIRoute = async ({ url, site }) => {
   const id = (url.searchParams.get('id') ?? '').trim();
   if (!ES_UUID.test(id)) return new Response('Evento no encontrado', { status: 404 });
 
-  const supabase = (locals as any).supabase;
-  if (!supabase) return new Response('No disponible', { status: 503 });
-
-  const { data } = await supabase
-    .from('events')
-    .select('id, title, event_date, description, location')
-    .eq('id', id)
-    .eq('published', true)
-    .maybeSingle();
-
-  const evento = data as EventItem | null;
+  const evento = await eventoPorId(await baseDeDatos(), id);
   if (!evento) return new Response('Evento no encontrado', { status: 404 });
 
   const base = (process.env.SITE_URL || site?.toString() || url.origin).replace(/\/+$/, '');
 
   const ics = construirIcs({
     id: evento.id,
-    titulo: evento.title,
-    inicio: evento.event_date,
-    descripcion: evento.description,
-    lugar: evento.location,
+    titulo: evento.titulo,
+    inicio: evento.fecha,
+    descripcion: evento.descripcion,
+    lugar: evento.lugar,
     url: `${base}/eventos#e-${evento.id}`,
   });
 
@@ -63,7 +53,7 @@ export const GET: APIRoute = async ({ url, locals, site }) => {
       'Content-Type': 'text/calendar; charset=utf-8',
       // `attachment` es lo que hace que iOS ofrezca abrirlo en Calendario en
       // vez de enseñar el texto plano en el navegador.
-      'Content-Disposition': `attachment; filename="${nombreArchivo(evento.title)}"`,
+      'Content-Disposition': `attachment; filename="${nombreArchivo(evento.titulo)}"`,
       // Un evento cambia como mucho un par de veces; que lo sirva la CDN.
       'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600',
     },

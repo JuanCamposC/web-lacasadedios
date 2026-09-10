@@ -1,7 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import { enlaceGoogleCalendar } from '../lib/ics';
-import type { EventItem } from '../lib/supabase';
+import type { Evento } from '../lib/datos';
 
 /**
  * Compartir un evento y agendarlo.
@@ -18,7 +18,7 @@ import type { EventItem } from '../lib/supabase';
  * funciona sin JavaScript.
  */
 interface Props {
-  evento: EventItem;
+  evento: Evento;
   /** Dirección absoluta del sitio, sin barra final. */
   sitio: string;
 }
@@ -27,10 +27,10 @@ const { evento, sitio } = Astro.props;
 const enlace = `${sitio}/eventos#e-${evento.id}`;
 const google = enlaceGoogleCalendar({
   id: evento.id,
-  titulo: evento.title,
-  inicio: evento.event_date,
-  descripcion: evento.description,
-  lugar: evento.location,
+  titulo: evento.titulo,
+  inicio: evento.fecha,
+  descripcion: evento.descripcion,
+  lugar: evento.lugar,
   url: enlace,
 });
 
@@ -45,7 +45,7 @@ const opcion =
       class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
       data-compartir
       data-url={enlace}
-      data-titulo={evento.title}
+      data-titulo={evento.titulo}
     >
       <Icon name="lucide:share-2" class="h-4 w-4" />
       <span data-rotulo>Compartir</span>

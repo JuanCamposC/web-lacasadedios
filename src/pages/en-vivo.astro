@@ -2,7 +2,7 @@
 export const prerender = false;
 
 // La página se arma en cada petición, pero su contenido cambia como mucho unas
-// veces al mes. Se deja que la CDN de Vercel la sirva ya hecha durante un
+// veces al mes. Se deja que la CDN de Cloudflare la sirva ya hecha durante un
 // minuto y que siga sirviéndola hasta diez minutos más mientras la rehace por
 // detrás: durante una transmisión, cien visitas seguidas son una sola consulta
 // a la base en vez de cien.
@@ -15,21 +15,14 @@ import EmptyState from '../components/EmptyState.astro';
 import { Icon } from 'astro-icon/components';
 import { IMG } from '../assets/images';
 import { YOUTUBE_CHANNEL } from '../data/site';
-import { youtubeId, type SiteSettings } from '../lib/supabase';
+import { youtubeId } from '../lib/youtube';
+import { baseDeDatos } from '../lib/base';
+import { ajustes } from '../lib/datos';
 
-const supabase = Astro.locals.supabase;
-let settings: SiteSettings | null = null;
-if (supabase) {
-  const { data } = await supabase
-    .from('settings')
-    .select('live_enabled, live_url, live_title')
-    .eq('id', 1)
-    .maybeSingle();
-  settings = (data as SiteSettings) ?? null;
-}
-const live = settings?.live_enabled ?? false;
-const vid = live && settings?.live_url ? youtubeId(settings.live_url) : null;
-const title = settings?.live_title || 'Transmisión en vivo';
+const settings = await ajustes(await baseDeDatos());
+const live = settings?.vivo_activo === 1;
+const vid = live && settings?.vivo_url ? youtubeId(settings.vivo_url) : null;
+const title = settings?.vivo_titulo || 'Transmisión en vivo';
 ---
 
 <Layout
@@ -79,14 +72,14 @@ const title = settings?.live_title || 'Transmisión en vivo';
               <Icon name="lucide:youtube" class="h-4 w-4" /> Verlo en YouTube
             </a>
           </div>
-        ) : live && settings?.live_url ? (
+        ) : live && settings?.vivo_url ? (
           <EmptyState
             icon="lucide:radio"
             title={title}
             text="Estamos transmitiendo en vivo en este momento."
           >
             <a
-              href={settings.live_url}
+              href={settings.vivo_url}
               target="_blank"
               rel="noopener noreferrer"
               class="btn btn-primary gap-2"

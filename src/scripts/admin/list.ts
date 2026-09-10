@@ -1,4 +1,4 @@
-import { youtubeId } from '../../lib/supabase';
+import { youtubeId } from '../../lib/youtube';
 import type { Contexto, Fila } from './tipos';
 import { esc, fechaCorta } from './ui';
 

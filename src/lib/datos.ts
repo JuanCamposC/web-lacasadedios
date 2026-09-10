@@ -60,6 +60,8 @@ export interface Video {
   youtube_url: string;
   descripcion: string | null;
   templo: string;
+  /** La usa el dato estructurado de YouTube como fecha de publicación. */
+  creado_en: string;
 }
 
 export interface Estudio {
@@ -161,6 +163,27 @@ export function eventosProximos(base: Base, filtro: Filtro = {}): Promise<Evento
   );
 }
 
+/**
+ * Eventos que ya pasaron, del más reciente hacia atrás.
+ *
+ * Va aparte de `eventosProximos` en vez de traerlo todo y partirlo en
+ * JavaScript, que es lo que hacía la página antes. Con dos consultas acotadas,
+ * un archivo de diez años de eventos no llega a viajar por la red para que el
+ * navegador se quede con seis.
+ */
+export function eventosPasados(base: Base, filtro: Filtro = {}): Promise<Evento[]> {
+  const { donde, valores, limite, desplazamiento } = publicados(filtro);
+  return listar<Evento>(
+    base,
+    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo
+       from eventos
+      where ${donde} and fecha < ?
+      order by fecha desc
+      limit ? offset ?`,
+    [...valores, ahora(), limite, desplazamiento],
+  );
+}
+
 export function eventoPorSlug(base: Base, slug: string): Promise<Evento | null> {
   return base
     .prepare(
@@ -168,6 +191,23 @@ export function eventoPorSlug(base: Base, slug: string): Promise<Evento | null> 
          from eventos where publicado = 1 and slug = ?`,
     )
     .bind(slug)
+    .first<Evento>();
+}
+
+/**
+ * Un evento por su identificador. Lo usa el archivo de calendario.
+ *
+ * Lleva `publicado = 1` como todo lo demás: un borrador tiene que dar 404
+ * igual que un identificador inventado, o el enlace del calendario sería una
+ * forma de espiar lo que aún no se anuncia.
+ */
+export function eventoPorId(base: Base, id: string): Promise<Evento | null> {
+  return base
+    .prepare(
+      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo
+         from eventos where publicado = 1 and id = ?`,
+    )
+    .bind(id)
     .first<Evento>();
 }
 
@@ -204,6 +244,18 @@ export function noticiaPorSlug(base: Base, slug: string): Promise<Noticia | null
     .first<Noticia>();
 }
 
+/** Una noticia por su identificador, para las direcciones antiguas sin slug. */
+export function noticiaPorId(base: Base, id: string): Promise<Noticia | null> {
+  return base
+    .prepare(
+      `select id, titulo, slug, bajada, cuerpo, imagen_clave, templo, publicado_en
+         from noticias
+        where publicado = 1 and publicado_en <= ? and id = ?`,
+    )
+    .bind(ahora(), id)
+    .first<Noticia>();
+}
+
 /** Cuántas noticias hay en total, para poder paginar sin adivinar. */
 export async function contarNoticias(base: Base, filtro: Filtro = {}): Promise<number> {
   const { donde, valores } = publicados(filtro);
@@ -220,7 +272,7 @@ export function videosPublicados(base: Base, filtro: Filtro = {}): Promise<Video
   const { donde, valores, limite, desplazamiento } = publicados(filtro);
   return listar<Video>(
     base,
-    `select id, titulo, youtube_url, descripcion, templo
+    `select id, titulo, youtube_url, descripcion, templo, creado_en
        from videos
       where ${donde}
       order by orden asc, creado_en desc
