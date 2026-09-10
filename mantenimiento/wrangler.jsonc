@@ -1,0 +1,47 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lacasadedios-construccion",
+  "main": "worker.js",
+  // Sin URL *.workers.dev. Dos razones:
+  //
+  //   · Registrar ese subdominio es un trámite aparte en el panel, se elige una
+  //     sola vez para toda la cuenta y el nombre obvio ya estaba tomado. No hay
+  //     comando de wrangler para hacerlo.
+  //   · Un cartel de «en construcción» no gana nada con tener una segunda
+  //     dirección pública. Para verlo antes de publicarlo está `wrangler dev`,
+  //     que además muestra el 503 y las cabeceras de verdad.
+  //
+  // Con esto, `wrangler deploy` sube el Worker y no lo expone en ninguna parte
+  // («No targets deployed») hasta que se descomenten las rutas de más abajo.
+  "workers_dev": false,
+  "compatibility_date": "2026-09-10",
+
+  // Importa los archivos que no son JavaScript como módulos.
+  //   Text → llega como string  (HTML y SVG)
+  //   Data → llega como ArrayBuffer (PNG)
+  // Sin estas reglas, `import html from './index.html'` falla al compilar.
+  // `fallthrough: false` es lo que apaga el aviso de wrangler: dice que estas
+  // reglas reemplazan a las que trae por defecto, que es justo lo que queremos.
+  "rules": [
+    { "type": "Text", "globs": ["**/*.html", "**/*.svg"], "fallthrough": false },
+    { "type": "Data", "globs": ["**/*.png"], "fallthrough": false },
+  ],
+
+  // ACTIVO desde el 10 de septiembre de 2026: esto es lo que apagó el WordPress
+  // viejo. `custom_domain: true` hace que Cloudflare administre el registro DNS
+  // del hostname, reemplazando el A que apuntaba a Netexplora.
+  //
+  // Para volver atrás: comentar este bloque, `wrangler deploy`, y devolver a
+  // mano el A de lacasadedios.cl a 190.113.1.162 con el CNAME de www.
+  //
+  // NO TOCA EL CORREO. Estas rutas gobiernan hostnames web; el MX, el DKIM, el
+  // SPF y el DMARC son registros aparte y siguen intactos.
+  "routes": [
+    { "pattern": "lacasadedios.cl", "custom_domain": true },
+    { "pattern": "www.lacasadedios.cl", "custom_domain": true },
+  ],
+
+  "observability": {
+    "enabled": true,
+  },
+}

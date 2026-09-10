@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>La Casa de Dios · Estamos construyendo nuestro sitio</title>
+    <meta
+      name="description"
+      content="Iglesia Evangélica La Casa de Dios. Estamos preparando nuestro nuevo sitio. Para más información escríbenos a contacto@lacasadedios.cl"
+    />
+
+    <!-- Sin <meta name="robots">: la página responde 200 y queremos que se
+         pueda encontrar. Quien busque «La Casa de Dios» durante la espera va a
+         hallar algo vigente en vez de nada. Al lanzar, el sitio real ocupa
+         estas mismas direcciones y lo indexado se reemplaza solo. -->
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="La Casa de Dios" />
+    <meta property="og:title" content="Acá se construye La Casa de Dios" />
+    <meta
+      property="og:description"
+      content="Estamos preparando nuestro nuevo sitio. Para más información, contacto@lacasadedios.cl"
+    />
+    <meta property="og:image" content="https://lacasadedios.cl/og-image.png" />
+    <meta property="og:locale" content="es_CL" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="favicon.png" />
+    <meta name="theme-color" content="#0a1730" />
+
+    <!-- Las tres familias del sitio en una sola petición. Si el CDN de Google
+         no responde, las pilas de reserva de abajo sostienen la maqueta: la
+         página no depende de que la fuente llegue. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700&family=Archivo+Narrow:wght@700&family=Fraunces:opsz,wght@9..144,400..700&display=swap"
+    />
+
+    <style>
+      /* ═══════════════════════════════════════════════════════════════════
+         Página de construcción — Iglesia Evangélica La Casa de Dios
+
+         Se mantiene aparte del sitio Astro a propósito: es un solo archivo,
+         sin compilación y sin dependencias, para que se pueda abrir con doble
+         clic y ver exactamente lo que verá una visita. La paleta y las fuentes
+         son las mismas de src/styles/global.css; los valores están copiados,
+         no importados, porque este archivo tiene que seguir funcionando
+         aunque el sitio cambie.
+         ═══════════════════════════════════════════════════════════════════ */
+
+      :root {
+        --noche: #0a1730; /* fondo: el azul de las bandas oscuras del sitio */
+        --oro: #d0a35c; /* acento sobre oscuro (el bronce #7d5518 aquí no se ve) */
+        --tinta-clara: #e4e9f2; /* texto sobre oscuro */
+        --papel: #fcfaf7; /* base clara: papel, no blanco de pantalla */
+
+        --display: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
+        --cuerpo: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --datos: 'Archivo Narrow', 'Archivo', ui-sans-serif, system-ui, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        color-scheme: dark;
+        /* La filigrana es fija y más ancha que un teléfono: sin esto, en pantallas
+           angostas aparece una barra de desplazamiento horizontal vacía. */
+        overflow-x: clip;
+      }
+
+      body {
+        margin: 0;
+        /* 100svh y no 100vh: en el móvil, vh cuenta la barra del navegador y
+           deja la página cortada por abajo justo donde va el versículo. */
+        min-height: 100svh;
+        /* Centrado con `margin: auto` en el hijo y no con `justify-content`:
+           si algún día el contenido queda más alto que la pantalla, el margen
+           automático lo deja desplazable en vez de cortarle la cabeza. */
+        display: flex;
+        padding: 3rem 1.25rem;
+        background: var(--noche);
+        color: var(--tinta-clara);
+        font-family: var(--cuerpo);
+        font-size: 16px;
+        line-height: 1.6;
+        text-align: center;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ── Filigrana de marca ───────────────────────────────────────────────
+         El mismo dibujo que sangra detrás de la portada. Ahí va sobre una
+         fotografía; aquí, sobre azul plano, así que baja del 60 % al 25 %:
+         a esa altura es textura y no una figura que compita con el mensaje, y
+         deja el texto blanco por encima muy por sobre el 4,5:1 de la norma. */
+      .filigrana {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        height: 118%;
+        width: auto;
+        transform: translate(-50%, -50%);
+        opacity: 0.25;
+        /* El color vive dentro del SVG (#23448f). La opacidad va aquí y no en
+           el archivo para poder graduarla sin abrirlo, igual que en la portada. */
+        pointer-events: none;
+        user-select: none;
+        z-index: 0;
+      }
+
+      main {
+        position: relative;
+        z-index: 1;
+        margin: auto;
+        width: 100%;
+        max-width: 40rem;
+      }
+
+      /* ── Antetítulo ─────────────────────────────────────────────────────── */
+      .antetitulo {
+        margin: 0;
+        font-family: var(--datos);
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--oro);
+      }
+
+      /* ── Logotipo ───────────────────────────────────────────────────────── */
+      .logo {
+        display: block;
+        margin: 1.5rem auto 0;
+        height: clamp(2.75rem, 9vw, 5rem);
+        width: auto;
+        max-width: 100%;
+      }
+
+      /* ── Filete ─────────────────────────────────────────────────────────── */
+      .filete {
+        height: 1px;
+        border: 0;
+        margin: 2.25rem 0;
+        background: linear-gradient(to right, transparent, rgba(208, 163, 92, 0.7), transparent);
+      }
+
+      /* ── Mensaje ────────────────────────────────────────────────────────── */
+      h1 {
+        margin: 0;
+        font-family: var(--display);
+        font-weight: 600;
+        font-size: clamp(1.9rem, 6vw, 3.15rem);
+        line-height: 1.15;
+        color: #ffffff;
+        text-wrap: balance;
+      }
+
+      .bajada {
+        margin: 1.25rem auto 0;
+        max-width: 34rem;
+        font-size: clamp(1rem, 2.6vw, 1.125rem);
+        color: rgba(228, 233, 242, 0.85);
+        text-wrap: pretty;
+      }
+
+      /* ── Contacto ───────────────────────────────────────────────────────── */
+      .pregunta {
+        margin: 2.5rem 0 0;
+        font-family: var(--datos);
+        font-weight: 700;
+        font-size: 0.9rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(228, 233, 242, 0.7);
+      }
+
+      .correo {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-top: 0.85rem;
+        padding: 0.85rem 1.5rem;
+        border-radius: 0.375rem;
+        background: var(--papel);
+        color: var(--noche);
+        font-weight: 700;
+        font-size: clamp(0.95rem, 3.2vw, 1.0625rem);
+        text-decoration: none;
+        /* El correo es largo: en pantallas muy angostas se parte antes de
+           desbordar la caja. */
+        word-break: break-word;
+        transition:
+          background-color 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .correo:hover,
+      .correo:focus-visible {
+        background: #ffffff;
+        transform: translateY(-1px);
+      }
+
+      .correo svg {
+        flex: none;
+        width: 1.15em;
+        height: 1.15em;
+      }
+
+      /* ── Redes ──────────────────────────────────────────────────────────── */
+      .redes {
+        display: flex;
+        justify-content: center;
+        gap: 1.25rem;
+        margin: 2rem 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .redes a {
+        display: grid;
+        place-items: center;
+        /* 44 px es el mínimo tocable con el pulgar; por debajo de eso el
+           enlace existe pero no se puede usar. */
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--tinta-clara);
+        transition:
+          background-color 0.2s ease,
+          color 0.2s ease;
+      }
+
+      .redes a:hover,
+      .redes a:focus-visible {
+        background: rgba(255, 255, 255, 0.18);
+        color: var(--oro);
+      }
+
+      .redes svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      /* ── Versículo ──────────────────────────────────────────────────────── */
+      blockquote {
+        margin: 0;
+      }
+
+      .versiculo {
+        margin: 0;
+        font-family: var(--display);
+        font-weight: 400;
+        font-size: clamp(1rem, 2.8vw, 1.1875rem);
+        line-height: 1.5;
+        color: rgba(228, 233, 242, 0.9);
+        text-wrap: balance;
+      }
+
+      .cita {
+        display: block;
+        margin-top: 0.75rem;
+        font-family: var(--datos);
+        font-style: normal;
+        font-weight: 700;
+        font-size: 0.875rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--oro);
+      }
+
+      /* ── Foco visible ───────────────────────────────────────────────────── */
+      a:focus-visible {
+        outline: 2px solid var(--oro);
+        outline-offset: 3px;
+      }
+
+      /* ── Entrada ────────────────────────────────────────────────────────── */
+      .entra {
+        animation: sube 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        animation-delay: calc(var(--i, 0) * 90ms);
+      }
+
+      @keyframes sube {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+      }
+
+      /* Pantallas cortas (360 x 640 y parecidas). Se aprieta el ritmo vertical
+         para asegurar lo que importa: el mensaje y el correo siempre visibles
+         sin desplazar. En los teléfonos más bajos el versículo queda debajo del
+         borde y hay que bajar un poco; se prefiere eso a comprimir el diseño
+         hasta que deje de respirar. */
+      @media (max-height: 760px) {
+        body {
+          padding-block: 2rem;
+        }
+        .filete {
+          margin: 1.75rem 0;
+        }
+        .pregunta {
+          margin-top: 2rem;
+        }
+        .redes {
+          margin-top: 1.5rem;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .entra {
+          animation: none;
+        }
+        .correo {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <img
+      class="filigrana"
+      src="filigrana.svg"
+      alt=""
+      aria-hidden="true"
+      width="886"
+      height="1462"
+    />
+
+    <main>
+      <p class="antetitulo entra" style="--i: 0">Iglesia Evangélica</p>
+
+      <img
+        class="logo entra"
+        style="--i: 1"
+        src="logo.svg"
+        alt="La Casa de Dios"
+        width="819"
+        height="185"
+      />
+
+      <hr class="filete entra" style="--i: 2" />
+
+      <h1 class="entra" style="--i: 3">Acá se construye La Casa de Dios</h1>
+
+      <p class="bajada entra" style="--i: 4">
+        Estamos preparando nuestro nuevo sitio. Muy pronto vas a encontrar acá los horarios de cada
+        templo, las noticias de la congregación y las transmisiones en vivo.
+      </p>
+
+      <p class="pregunta entra" style="--i: 5">¿Necesitas más información?</p>
+
+      <a class="correo entra" style="--i: 5" href="mailto:contacto@lacasadedios.cl">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m22 7l-8.991 5.727a2 2 0 0 1-2.009 0L2 7" />
+          <rect width="20" height="16" x="2" y="4" rx="2" />
+        </svg>
+        contacto@lacasadedios.cl
+      </a>
+
+      <ul class="redes entra" style="--i: 6">
+        <li>
+          <a
+            href="https://instagram.com/joveneslacasadedios"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram: @joveneslacasadedios"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+              <path d="M16 11.37A4 4 0 1 1 12.63 8A4 4 0 0 1 16 11.37m1.5-4.87h.01" />
+            </svg>
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://www.youtube.com/@casadediosconociendolapalabrad"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="YouTube: Conociendo la Palabra"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M2.5 17a24.1 24.1 0 0 1 0-10a2 2 0 0 1 1.4-1.4a49.6 49.6 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.1 24.1 0 0 1 0 10a2 2 0 0 1-1.4 1.4a49.6 49.6 0 0 1-16.2 0A2 2 0 0 1 2.5 17"
+              />
+              <path d="m10 15l5-3l-5-3z" />
+            </svg>
+          </a>
+        </li>
+      </ul>
+
+      <hr class="filete entra" style="--i: 7" />
+
+      <blockquote class="entra" style="--i: 8">
+        <p class="versiculo">
+          «Porque donde están dos o tres congregados en mi nombre, allí estoy yo en medio de ellos.»
+        </p>
+        <cite class="cita">Mateo 18:20</cite>
+      </blockquote>
+    </main>
+  </body>
+</html>

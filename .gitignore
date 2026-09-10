@@ -18,6 +18,8 @@ pnpm-debug.log*
 # environment variables
 .env
 .env.production
+# `vercel env pull` escribe aqui por defecto: son las claves de produccion
+.env*.local
 
 # macOS-specific files
 .DS_Store
@@ -27,3 +29,6 @@ pnpm-debug.log*
 
 #claude
 .claude/
+
+# wrangler (pagina de construccion)
+mantenimiento/.wrangler/
