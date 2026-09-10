@@ -18,10 +18,16 @@
     // redirección dejaba la canónica y la dirección servida en desacuerdo, y
     // cobraba un viaje de ida y vuelta en cada visita a una página estática.
     // En Vercel no pasaba. `drop-trailing-slash` restaura ese comportamiento.
-    "html_handling": "drop-trailing-slash"
+    "html_handling": "drop-trailing-slash",
   },
 
+  // Base de datos. El id se rellena al crearla con `wrangler d1 create`.
+  // En local, wrangler usa una SQLite de miniflare y no mira este id.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "lacasadedios", "database_id": "por-crear" },
+  ],
+
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+  },
 }
