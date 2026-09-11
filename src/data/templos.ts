@@ -35,8 +35,35 @@ export interface Leader {
   name: string;
   role: string;
   phone?: string;
+  /**
+   * Correo personal institucional.
+   *
+   * OJO: estar escrito acá NO basta para que salga en la web. Hace falta además
+   * `emailListo: true`. Ver el bloque de abajo.
+   */
   email?: string;
+  /**
+   * ¿Existe ya el buzón en Google Workspace?
+   *
+   * Las direcciones de más abajo están decididas pero todavía no creadas. Una
+   * dirección publicada que rebota es peor que ninguna: quien escribe cree que
+   * su mensaje llegó, nadie lo lee, y la iglesia queda como que no responde.
+   *
+   * Por eso el interruptor va uno por uno. Cuando se cree el buzón de alguien,
+   * se pone `emailListo: true` en SU línea y solo esa dirección aparece —en la
+   * página de su templo y en /contacto—. El resto sigue oculto hasta que le
+   * toque.
+   */
+  emailListo?: boolean;
 }
+
+/**
+ * Cómo se participa en el estudio bíblico de un templo.
+ *
+ * `zoom` no lleva enlace, y es a propósito: el enlace se pide al pastor, que
+ * decide a quién se lo entrega. Ver `src/pages/estudio-biblico.astro`.
+ */
+export type ModalidadEstudio = 'presencial' | 'zoom';
 
 export interface Templo {
   slug: string;
@@ -55,6 +82,8 @@ export interface Templo {
   mapLink: string;
   coords: { lat: number; lng: number };
   schedule: ServiceDay[];
+  /** Cómo se participa en el estudio bíblico de este templo. */
+  estudio: ModalidadEstudio;
   leader: Leader;
 }
 
@@ -77,7 +106,13 @@ export const templos: Templo[] = [
       { day: 'Lunes', tone: 'accent', services: ['20:00 · Estudio Bíblico'] },
       { day: 'Jueves', tone: 'neutral', services: ['20:00 · Culto General'] },
     ],
-    leader: { name: 'Pastor Manuel Silva Salas', role: 'Pastor' },
+    estudio: 'zoom',
+    leader: {
+      name: 'Pastor Manuel Silva Salas',
+      role: 'Pastor',
+      email: 'manuel.silva@lacasadedios.cl',
+      emailListo: false,
+    },
   },
   {
     slug: 'san-miguel',
@@ -104,7 +139,14 @@ export const templos: Templo[] = [
       { day: 'Jueves', tone: 'neutral', services: ['20:00 · Reunión General'] },
       { day: 'Sábado', tone: 'accent', services: ['17:30 · Reunión de Jóvenes'] },
     ],
-    leader: { name: 'Pastor Arturo Salas Olguín', role: 'Pastor' },
+    // El único templo donde el estudio bíblico es presencial.
+    estudio: 'presencial',
+    leader: {
+      name: 'Pastor Arturo Salas Olguín',
+      role: 'Pastor',
+      email: 'arturo.salas@lacasadedios.cl',
+      emailListo: false,
+    },
   },
   {
     slug: 'limache',
@@ -129,7 +171,13 @@ export const templos: Templo[] = [
       },
       { day: 'Jueves', tone: 'accent', services: ['20:00 · Culto General'] },
     ],
-    leader: { name: 'Pastor Alberto Gutiérrez Plaza', role: 'Pastor' },
+    estudio: 'zoom',
+    leader: {
+      name: 'Pastor Alberto Gutiérrez Plaza',
+      role: 'Pastor',
+      email: 'alberto.gutierrez@lacasadedios.cl',
+      emailListo: false,
+    },
   },
   {
     slug: 'coya',
@@ -149,12 +197,59 @@ export const templos: Templo[] = [
       { day: 'Lunes', tone: 'secondary', services: ['20:00 · Estudio Bíblico'] },
       { day: 'Miércoles', tone: 'accent', services: ['20:00 · Culto General'] },
     ],
-    leader: { name: 'Hermano Juan Enrique Plaza Morales', role: 'Obrero a cargo' },
+    estudio: 'zoom',
+    leader: {
+      name: 'Hermano Juan Enrique Plaza Morales',
+      role: 'Obrero a cargo',
+      email: 'juan.plaza@lacasadedios.cl',
+      emailListo: false,
+    },
   },
 ];
 
 export function getTemplo(slug: string): Templo | undefined {
   return templos.find((t) => t.slug === slug);
+}
+
+/**
+ * El correo de un líder, o `null` si su buzón todavía no existe.
+ *
+ * Toda la web pasa por acá para pintar una dirección personal. Que haya un solo
+ * sitio donde se decide es lo que permite encender los correos de uno en uno
+ * sin repasar cada plantilla. Ver `Leader.emailListo`.
+ */
+export function correoDe(leader: Leader): string | null {
+  return leader.emailListo && leader.email ? leader.email : null;
+}
+
+export interface EstudioDeTemplo {
+  templo: Templo;
+  modalidad: ModalidadEstudio;
+  /** Día y hora sacados del horario del templo; `null` si ahí no figura. */
+  day: DayName | null;
+  time: string | null;
+}
+
+/**
+ * Cuándo y cómo es el estudio bíblico en cada templo.
+ *
+ * El día y la hora NO se escriben aparte: se leen del mismo `schedule` que
+ * alimenta /horarios y la página de cada templo. Duplicarlos garantizaría que
+ * algún día digan cosas distintas —y quien llegue al templo con el horario
+ * equivocado se encuentra la puerta cerrada—.
+ */
+export function estudiosBiblicos(): EstudioDeTemplo[] {
+  return templos.map((templo) => {
+    for (const dia of templo.schedule) {
+      for (const bruto of dia.services) {
+        const { time, name } = parseService(bruto);
+        if (/estudio b[íi]blico/i.test(name)) {
+          return { templo, modalidad: templo.estudio, day: dia.day, time };
+        }
+      }
+    }
+    return { templo, modalidad: templo.estudio, day: null, time: null };
+  });
 }
 
 /** Devuelve el templo anterior y siguiente (circular) para la navegación. */

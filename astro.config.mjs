@@ -23,6 +23,32 @@ const site = process.env.SITE_URL || 'https://lacasadedios.cl';
 // imágenes, y esta decide si el navegador las deja cargar.
 const medios = process.env.MEDIOS_DOMINIO || 'medios.lacasadedios.cl';
 
+// Servidores desde los que RSS.com entrega los audios y la portada del estudio
+// bíblico (ver src/lib/rss.ts). Va aparte de la dirección del feed —que es una
+// variable del Worker y se lee al servir— porque la CSP se calcula AL COMPILAR
+// y queda escrita dentro de cada página.
+//
+// `media.rss.com` es el que usa RSS.com hoy: responde, y los otros nombres
+// candidatos (`feeds.rss.com`, `anchor.rss.com`) ni siquiera existen. Aun así
+// acepta una lista separada por comas, porque el día que cambien de servidor el
+// síntoma es feo y mudo: la lista de estudios se ve entera, con sus títulos y
+// sus fechas, y ningún reproductor suena. El error solo sale en la consola del
+// navegador. Con la lista, eso se arregla con una variable y no con un parche.
+//
+//     RSS_MEDIA_HOST="media.rss.com,cdn.rss.com" npm run build
+const audios = (process.env.RSS_MEDIA_HOST || 'media.rss.com')
+  .split(',')
+  .map((h) =>
+    h
+      .trim()
+      .replace(/^https?:\/\//, '')
+      .replace(/\/+$/, ''),
+  )
+  .filter(Boolean);
+
+/** `https://a https://b`, listo para pegar dentro de una directiva. */
+const fuentesAudio = audios.map((h) => `https://${h}`).join(' ');
+
 // https://astro.build/config
 export default defineConfig({
   site,
@@ -55,11 +81,11 @@ export default defineConfig({
         // SIN el dominio de medios acá, TODA imagen subida desde el panel sale
         // rota, y de la peor manera: la página no dice nada y el bloqueo solo
         // aparece en la consola del navegador.
-        `img-src 'self' data: blob: https://i.ytimg.com https://${medios}`,
-        // El audio de los estudios también vive en R2. Sin esta directiva caería
-        // en `default-src 'self'` y no sonaría; `subir.ts` ya acepta audio, así
-        // que la puerta queda abierta antes de que exista la página.
-        `media-src 'self' https://${medios}`,
+        `img-src 'self' data: blob: https://i.ytimg.com https://${medios} ${fuentesAudio}`,
+        // De dónde puede sonar el audio: R2 (lo que se sube desde el panel) y
+        // RSS.com (los estudios bíblicos). Sin esta directiva caerían en
+        // `default-src 'self'` y no sonaría ninguno.
+        `media-src 'self' https://${medios} ${fuentesAudio}`,
         // El navegador solo habla con este mismo sitio: el panel con /api/admin,
         // y las páginas públicas con /api/estado. Ya no hay ningún tercero.
         "connect-src 'self'",

@@ -10,7 +10,7 @@ import Reveal from '../components/Reveal.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import ContactForm from '../components/ContactForm.astro';
 import { Icon } from 'astro-icon/components';
-import { templos } from '../data/templos';
+import { templos, correoDe } from '../data/templos';
 import { CONTACT, SOCIAL, hasPhone } from '../data/site';
 import { IMG } from '../assets/images';
 ---
@@ -145,6 +145,17 @@ import { IMG } from '../assets/images';
                     <h3 class="font-display text-xl">{t.short}</h3>
                     <p class="mt-1 text-sm text-base-content/70">{t.address}</p>
                     <p class="text-sm text-base-content/55">{t.region}</p>
+                    {/* Aparece solo cuando el buzón existe: ver `emailListo`
+                        en src/data/templos.ts. */}
+                    {correoDe(t.leader) && (
+                      <a
+                        href={`mailto:${correoDe(t.leader)}`}
+                        class="mt-2 inline-flex items-center gap-1.5 text-sm break-all text-base-content/75 hover:text-primary"
+                      >
+                        <Icon name="lucide:mail" class="h-3.5 w-3.5 shrink-0 text-accent" />
+                        {correoDe(t.leader)}
+                      </a>
+                    )}
                   </div>
                   {t.matriz && (
                     <span class="shrink-0 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-content">

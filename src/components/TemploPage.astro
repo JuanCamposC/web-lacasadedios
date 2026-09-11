@@ -6,7 +6,7 @@ import Reveal from './Reveal.astro';
 import ScheduleList from './ScheduleList.astro';
 import CtaBand from './CtaBand.astro';
 import { Icon } from 'astro-icon/components';
-import { getTemplo, getSiblings, templos } from '../data/templos';
+import { getTemplo, getSiblings, templos, correoDe } from '../data/templos';
 import { CONTACT, hasPhone } from '../data/site';
 import { IMG } from '../assets/images';
 
@@ -21,6 +21,9 @@ if (!templo) {
 }
 
 const { prev, next } = getSiblings(slug);
+
+/** Correo del pastor de este templo, si su buzón ya existe. */
+const correoPersonal = correoDe(templo.leader);
 
 // Iniciales del líder (sin el título Pastor/Hermano)
 const initials = templo.leader.name
@@ -182,11 +185,28 @@ const jsonLd = {
             </div>
 
             <div class="mt-6 space-y-2 text-sm">
+              {
+                /* El correo personal solo aparece cuando su buzón existe de
+                   verdad (ver `emailListo` en src/data/templos.ts). Mientras
+                   tanto queda el de la iglesia, que sí se lee. */
+                correoPersonal && (
+                  <a
+                    href={`mailto:${correoPersonal}`}
+                    class="flex items-center gap-2 break-all font-medium text-base-content/80 hover:text-primary"
+                  >
+                    <Icon name="lucide:mail" class="h-4 w-4 shrink-0 text-accent" />
+                    {correoPersonal}
+                  </a>
+                )
+              }
               <a
                 href={`mailto:${CONTACT.email}`}
                 class="flex items-center gap-2 break-all text-base-content/80 hover:text-primary"
               >
-                <Icon name="lucide:mail" class="h-4 w-4 shrink-0 text-accent" />
+                <Icon
+                  name={correoPersonal ? 'lucide:building-2' : 'lucide:mail'}
+                  class="h-4 w-4 shrink-0 text-accent"
+                />
                 {CONTACT.email}
               </a>
               {

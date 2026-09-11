@@ -10,10 +10,32 @@ const asuntos = [
   'Quiero visitar la iglesia',
   'Petición de oración',
   'Consulta sobre horarios',
+  'Enlace del estudio bíblico por Zoom',
   'Otro',
 ];
 
 const enviado = Astro.url.searchParams.get('enviado');
+
+/**
+ * El formulario llega preparado cuando se entra desde otra página.
+ *
+ * `/contacto?asunto=Enlace del estudio bíblico por Zoom&templo=Limache` deja
+ * las dos casillas puestas. Lo usa el botón «Pedir el enlace» de
+ * /estudio-biblico: quien entra desde ahí ya dijo lo que quiere, y volvérselo
+ * a preguntar en dos desplegables es la clase de fricción que hace que la gente
+ * cierre la pestaña.
+ *
+ * Se COMPARA contra las listas en vez de usar el valor de la dirección tal cual.
+ * Es la diferencia entre preseleccionar una opción que existe y dejar que
+ * cualquiera decida, desde un enlace, qué texto viaja en el asunto del correo
+ * que le llega a la iglesia.
+ */
+const pedido = {
+  asunto: Astro.url.searchParams.get('asunto'),
+  templo: Astro.url.searchParams.get('templo'),
+};
+const asuntoElegido = asuntos.find((a) => a === pedido.asunto) ?? '';
+const temploElegido = templos.find((t) => t.short === pedido.templo || t.slug === pedido.templo);
 ---
 
 <form id="contact-form" method="post" action="/api/contacto" class="panel p-6 sm:p-8" novalidate>
@@ -83,8 +105,14 @@ const enviado = Astro.url.searchParams.get('enviado');
         <span class="label-text font-medium">Templo</span>
       </label>
       <select id="cf-templo" name="templo" class="select select-bordered w-full">
-        <option value="">Consulta general</option>
-        {templos.map((t) => <option value={t.short}>{t.short}</option>)}
+        <option value="" selected={!temploElegido}>Consulta general</option>
+        {
+          templos.map((t) => (
+            <option value={t.short} selected={temploElegido?.slug === t.slug}>
+              {t.short}
+            </option>
+          ))
+        }
       </select>
     </div>
 
@@ -93,8 +121,14 @@ const enviado = Astro.url.searchParams.get('enviado');
         <span class="label-text font-medium">Asunto <span class="text-error">*</span></span>
       </label>
       <select id="cf-asunto" name="asunto" required class="select select-bordered w-full">
-        <option value="">Elige un motivo…</option>
-        {asuntos.map((a) => <option value={a}>{a}</option>)}
+        <option value="" selected={!asuntoElegido}>Elige un motivo…</option>
+        {
+          asuntos.map((a) => (
+            <option value={a} selected={a === asuntoElegido}>
+              {a}
+            </option>
+          ))
+        }
       </select>
     </div>
 

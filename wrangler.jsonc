@@ -111,6 +111,24 @@
     // si esto cambia, se cambia acá y no en cada fila. Ver src/lib/medios.ts.
     "MEDIOS_DOMINIO": "medios.lacasadedios.cl",
 
+    // Feed del podcast de RSS.com con los audios del estudio bíblico.
+    //
+    // PENDIENTE: falta pegar la dirección. En RSS.com está en el panel del
+    // programa y en su página pública, en el botón «RSS Feed», que la copia al
+    // portapapeles. Hay que pegarla TAL CUAL: la forma exacta de la ruta no
+    // está documentada y no conviene reconstruirla de memoria.
+    //
+    // Vacía, la página /estudio-biblico se ve entera —la introducción, los
+    // horarios, cómo pedir el enlace de Zoom— y en lugar de la lista de audios
+    // dice que todavía no hay grabaciones. Es a propósito: la mitad útil de esa
+    // página no depende de rss.com.
+    //
+    // Si el servidor de archivos de RSS.com dejara de ser `media.rss.com`, esta
+    // variable NO basta: el servidor también está escrito en la política de
+    // seguridad, que se calcula al compilar (ver `RSS_MEDIA_HOST` en
+    // astro.config.mjs).
+    "RSS_ESTUDIOS_URL": "",
+
     // Dirección desde la que sale el aviso del formulario de contacto.
     //
     // Va SIN nombre a propósito: el nombre lo pone el código con el de quien

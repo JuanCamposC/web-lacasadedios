@@ -1,0 +1,111 @@
+---
+import { Icon } from 'astro-icon/components';
+import Reveal from './Reveal.astro';
+import { SOCIAL, CONTACT } from '../data/site';
+
+/**
+ * Banda de redes sociales.
+ *
+ * ── POR QUÉ EXISTE SI EL PIE YA LAS LLEVA ───────────────────────────────────
+ * En el pie son tres círculos con un icono dentro: sirven para quien YA decidió
+ * seguirnos y los va a buscar. Esto es otra cosa —dice qué hay en cada sitio—,
+ * y va dentro de la página, donde todavía se está leyendo. Un icono suelto no
+ * responde «¿y qué me pierdo si no entro?».
+ *
+ * ── UNA SOLA FUENTE ─────────────────────────────────────────────────────────
+ * Las direcciones NO se escriben aquí: salen de `SOCIAL`, en src/data/site.ts.
+ * `descripciones` solo añade la frase de cada una, y una red sin frase igual
+ * aparece. Así, añadir Facebook o TikTok es tocar site.ts y nada más; si además
+ * se le quiere poner frase, se añade abajo.
+ */
+interface Props {
+  /** Fondo claro para cuando la sección de arriba ya es oscura. */
+  claro?: boolean;
+}
+
+const { claro = false } = Astro.props;
+
+const descripciones: Record<string, string> = {
+  instagram: 'La vida de la congregación, los avisos de la semana y lo que vamos viviendo juntos.',
+  youtube: 'Prédicas y enseñanzas completas, y las transmisiones de los cultos.',
+  facebook: 'Novedades y avisos para quienes nos siguen desde ahí.',
+};
+---
+
+<section
+  class={`section ${claro ? 'bg-base-100' : 'on-dark bg-neutral text-neutral-content'}`}
+  aria-labelledby="redes-titulo"
+>
+  <div class="wrap">
+    <div class="text-center">
+      <span class={`eyebrow ${claro ? 'text-primary' : 'text-accent'}`}>Síguenos</span>
+      <h2 id="redes-titulo" class="mt-3 text-3xl md:text-4xl">Dónde encontrarnos</h2>
+      <p class={`mx-auto mt-4 max-w-xl ${claro ? 'text-base-content/70' : 'text-white/70'}`}>
+        También estamos fuera del templo, y ahí se entera antes de todo quien no puede venir.
+      </p>
+    </div>
+
+    <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        SOCIAL.map((red, i) => (
+          <Reveal delay={(i % 3) * 90} class="h-full">
+            <a
+              href={red.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class={`flex h-full flex-col rounded-xl border p-6 transition hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${
+                claro
+                  ? 'border-base-300 bg-base-200/50 hover:border-primary/40'
+                  : 'border-white/15 bg-white/5 hover:border-accent/50 hover:bg-white/10'
+              }`}
+            >
+              <span class={`tile ${claro ? '' : 'bg-white/10 text-accent'}`}>
+                <Icon name={red.icon} class="h-6 w-6" />
+              </span>
+              <h3 class="mt-4 font-display text-xl">{red.label}</h3>
+              <p class={`mt-1 font-data text-sm ${claro ? 'text-primary' : 'text-accent'}`}>
+                {red.handle}
+              </p>
+              {descripciones[red.key] && (
+                <p class={`mt-3 text-sm ${claro ? 'text-base-content/70' : 'text-white/65'}`}>
+                  {descripciones[red.key]}
+                </p>
+              )}
+            </a>
+          </Reveal>
+        ))
+      }
+
+      {
+        /* La transmisión en vivo vive en el sitio, no en una red, pero quien
+          busca «dónde los veo» la busca justo aquí. */
+      }
+      <Reveal delay={(SOCIAL.length % 3) * 90} class="h-full">
+        <a
+          href="/en-vivo"
+          class={`flex h-full flex-col rounded-xl border p-6 transition hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${
+            claro
+              ? 'border-base-300 bg-base-200/50 hover:border-primary/40'
+              : 'border-white/15 bg-white/5 hover:border-accent/50 hover:bg-white/10'
+          }`}
+        >
+          <span class={`tile ${claro ? '' : 'bg-white/10 text-accent'}`}>
+            <span class="pulse-dot block h-3 w-3 rounded-full bg-red-500" aria-hidden="true"></span>
+          </span>
+          <h3 class="mt-4 font-display text-xl">En vivo</h3>
+          <p class={`mt-1 font-data text-sm ${claro ? 'text-primary' : 'text-accent'}`}>
+            lacasadedios.cl/en-vivo
+          </p>
+          <p class={`mt-3 text-sm ${claro ? 'text-base-content/70' : 'text-white/65'}`}>
+            Los cultos, en directo desde donde estés.
+          </p>
+        </a>
+      </Reveal>
+    </div>
+
+    <p class={`mt-10 text-center text-sm ${claro ? 'text-base-content/70' : 'text-white/65'}`}>
+      ¿Prefieres escribirnos?{' '}
+      <a href={`mailto:${CONTACT.email}`} class="link-hover link font-medium">{CONTACT.email}</a>
+    </p>
+  </div>
+</section>

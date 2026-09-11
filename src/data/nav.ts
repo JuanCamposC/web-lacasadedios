@@ -83,6 +83,11 @@ export const MAIN_NAV: NavEntry[] = [
       ...sedes,
     ],
   },
+  // El estudio bíblico va suelto en la barra y no dentro de un desplegable, y
+  // va antes que Eventos y Noticias: es la actividad semanal que la iglesia
+  // quiere que se vea, no una novedad que pasa. Escondido bajo «Nosotros» o
+  // junto a Videos tendría el peso de un enlace de archivo.
+  { href: '/estudio-biblico', label: 'Estudio bíblico' },
   { href: '/eventos', label: 'Eventos' },
   { href: '/noticias', label: 'Noticias' },
   { href: '/videos', label: 'Videos' },
@@ -104,6 +109,7 @@ export const FOOTER_NAV: NavLink[] = [
   { href: '/sobre-nosotros', label: 'Nosotros' },
   { href: '/templos', label: 'Templos' },
   { href: '/horarios', label: 'Horarios' },
+  { href: '/estudio-biblico', label: 'Estudio bíblico' },
   { href: '/noticias', label: 'Noticias' },
 ];
 

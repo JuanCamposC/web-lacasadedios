@@ -5,13 +5,11 @@ import Layout from '../layouts/Layout.astro';
 import Reveal from '../components/Reveal.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import TemploCard from '../components/TemploCard.astro';
-import CtaBand from '../components/CtaBand.astro';
-import { templos } from '../data/templos';
-import { SITE, SOCIAL } from '../data/site';
+import Redes from '../components/Redes.astro';
+import { templos, estudiosBiblicos } from '../data/templos';
+import { SITE, INSTAGRAM, INSTAGRAM_POSTS } from '../data/site';
+import { ESTUDIO } from '../data/estudio';
 import { IMG } from '../assets/images';
-
-const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
-const instagram = SOCIAL.find((s) => s.key === 'instagram')!;
 ---
 
 <Layout>
@@ -198,6 +196,87 @@ const instagram = SOCIAL.find((s) => s.key === 'instagram')!;
     </div>
   </section>
 
+  <!-- ══ Estudio bíblico ═════════════════════════════════════════════════
+       Va aquí, inmediatamente después de quiénes somos y ANTES de los templos,
+       porque es lo que la iglesia quiere que se vea: la actividad semanal en la
+       que se abre la Palabra. Más abajo competiría con cuatro tarjetas de
+       templo y con la banda de redes, y sería un bloque más.
+
+       Sobre fondo oscuro y a ancho completo por lo mismo: es el único corte de
+       la portada entre el azul de la cabecera y el de la banda final, así que
+       al bajar la página obliga a detenerse.
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section id="estudio" class="on-dark relative overflow-hidden">
+    <Image
+      src={IMG.estudio}
+      alt=""
+      aria-hidden="true"
+      widths={[768, 1280, 1600]}
+      sizes="100vw"
+      loading="lazy"
+      class="absolute inset-0 h-full w-full object-cover"
+    />
+    <div class="absolute inset-0 bg-[#0a1730]/90"></div>
+
+    <!-- `text-white` hace falta de verdad: `.on-dark` redefine los tokens de la
+         paleta —el dorado, el azul claro— pero NO pone el color del texto, así
+         que sin esto el título y los nombres de los templos salían en el gris
+         oscuro de siempre sobre el azul noche, ilegibles. Es lo mismo que hace
+         el bloque «Quiénes somos» de más arriba. -->
+    <div class="wrap relative py-20 text-white lg:py-24">
+      <div class="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-center">
+        <Reveal>
+          <span class="eyebrow text-accent">{ESTUDIO.eyebrow}</span>
+          <h2 class="mt-3 text-3xl md:text-4xl">{ESTUDIO.titulo}</h2>
+          <p class="mt-5 max-w-prose text-lg leading-relaxed text-white/85">
+            {ESTUDIO.introduccion[0]}
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href="/estudio-biblico" class="btn btn-lg gap-2 btn-invert">
+              <Icon name="lucide:book-open" class="h-5 w-5" /> Conoce el estudio
+            </a>
+            <a href="/estudio-biblico#audios" class="btn btn-lg gap-2 btn-invert">
+              <Icon name="lucide:headphones" class="h-5 w-5" /> Escuchar los audios
+            </a>
+          </div>
+        </Reveal>
+
+        <Reveal delay={120}>
+          <ul
+            class="divide-y divide-white/15 rounded-xl border border-white/15 bg-white/5 backdrop-blur-sm"
+          >
+            {
+              estudiosBiblicos().map((e) => (
+                <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-4">
+                  <div class="min-w-0">
+                    <p class="font-bold">{e.templo.short}</p>
+                    {e.day && e.time && (
+                      <p class="text-sm text-white/65">
+                        {e.day} · {e.time} h
+                      </p>
+                    )}
+                  </div>
+                  <span
+                    class={`badge badge-sm gap-1.5 ${e.modalidad === 'presencial' ? 'badge-accent' : 'border-white/25 bg-white/10 text-white'}`}
+                  >
+                    <Icon
+                      name={e.modalidad === 'presencial' ? 'lucide:map-pin' : 'lucide:video'}
+                      class="h-3.5 w-3.5"
+                    />
+                    {e.modalidad === 'presencial' ? 'Presencial' : 'Por Zoom'}
+                  </span>
+                </li>
+              ))
+            }
+          </ul>
+          <p class="mt-3 text-sm text-white/60">
+            El enlace de Zoom se pide al pastor del templo más cercano.
+          </p>
+        </Reveal>
+      </div>
+    </div>
+  </section>
+
   <!-- ══ Templos ═════════════════════════════════════════════════════════ -->
   <section id="templos" class="section bg-base-200">
     <div class="wrap">
@@ -225,33 +304,68 @@ const instagram = SOCIAL.find((s) => s.key === 'instagram')!;
     </div>
   </section>
 
-  <!-- ══ Redes y transmisión ═════════════════════════════════════════════ -->
-  <CtaBand
-    eyebrow="Conociendo la Palabra"
-    title="Síguenos y crece en la fe"
-    text="Prédicas, enseñanzas y la vida de nuestra comunidad, también fuera del templo."
-    image={IMG.estudio}
-  >
-    <a
-      href={youtube.href}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="btn btn-lg gap-2 btn-invert"
-    >
-      <Icon name="lucide:youtube" class="h-5 w-5" /> Ver en YouTube
-    </a>
-    <a
-      href={instagram.href}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="btn btn-lg gap-2 btn-invert"
-    >
-      <Icon name="lucide:instagram" class="h-5 w-5" /> Instagram
-    </a>
-    <a href="/en-vivo" class="btn btn-lg gap-2 btn-invert">
-      <span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden="true"
-      ></span>
-      En vivo
-    </a>
-  </CtaBand>
+  <!-- ══ Instagram ═══════════════════════════════════════════════════════
+       Las fotos son archivos del repositorio, no el muro de verdad. La razón
+       está en src/data/site.ts, junto a la lista: traer el muro obliga a cargar
+       código de Meta y a fichar a cada visitante antes de que encuentre la
+       dirección de un templo.
+
+       Cada foto es un enlace y no un adorno, así que lleva su propio texto
+       alternativo: quien navega con lector de pantalla oye qué hay en la foto,
+       no «enlace, imagen».
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section id="instagram" class="section bg-base-100">
+    <div class="wrap">
+      <SectionHeading
+        eyebrow="Día a día"
+        title="Síguenos en Instagram"
+        subtitle="La vida de la congregación, los avisos de la semana y lo que vamos viviendo juntos."
+      />
+
+      <div class="mt-12 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {
+          INSTAGRAM_POSTS.map((post, i) => (
+            <Reveal delay={(i % 4) * 80}>
+              <a
+                href={post.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group relative block aspect-square overflow-hidden rounded-xl"
+              >
+                <Image
+                  src={IMG[post.img]}
+                  alt={post.alt}
+                  widths={[320, 600]}
+                  sizes="(min-width: 1024px) 23vw, 45vw"
+                  class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <span class="absolute inset-0 flex items-center justify-center bg-[#0a1730]/0 opacity-0 transition group-hover:bg-[#0a1730]/45 group-hover:opacity-100 motion-reduce:transition-none">
+                  <Icon name="lucide:instagram" class="h-8 w-8 text-white" />
+                </span>
+              </a>
+            </Reveal>
+          ))
+        }
+      </div>
+
+      <Reveal class="mt-10 text-center">
+        <a
+          href={INSTAGRAM.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-lg gap-2 btn-primary"
+        >
+          <Icon name="lucide:instagram" class="h-5 w-5" />
+          {INSTAGRAM.handle}
+        </a>
+      </Reveal>
+    </div>
+  </section>
+
+  <!-- ══ Redes y transmisión ═════════════════════════════════════════════
+       Reemplaza a la banda de llamada que había aquí. Repetía «Instagram» justo
+       debajo del bloque de Instagram, y una misma página que pide dos veces lo
+       mismo consigue menos que pidiéndolo una.
+  ══════════════════════════════════════════════════════════════════════ -->
+  <Redes />
 </Layout>

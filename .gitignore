@@ -57,3 +57,7 @@ pnpm-debug.log*
 revision.pdf
 captura.png
 textos-del-sitio.txt
+
+# Variables locales de wrangler (pueden llevar claves).
+.dev.vars
+.dev.vars.*

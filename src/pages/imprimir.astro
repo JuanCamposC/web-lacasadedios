@@ -45,14 +45,20 @@ import { templos } from '../data/templos';
 const TODAS: { ruta: string; titulo: string }[] = [
   { ruta: '/', titulo: 'Inicio' },
   { ruta: '/sobre-nosotros', titulo: 'Sobre nosotros' },
+  { ruta: '/estudio-biblico', titulo: 'Estudio bíblico' },
   { ruta: '/horarios', titulo: 'Horarios' },
   { ruta: '/templos', titulo: 'Nuestros templos' },
   ...templos.map((t) => ({ ruta: `/templos/${t.slug}`, titulo: `Templo · ${t.name}` })),
   { ruta: '/contacto', titulo: 'Contacto' },
 ];
 
+// Por defecto salen solo las tres páginas que el pastor tiene que revisar:
+// inicio, sobre nosotros y el estudio bíblico. Esta última entra porque es nueva
+// y es casi toda texto escrito a falta de su visto bueno —incluida la
+// introducción de qué se estudia—, que es justo lo que se le está pidiendo que
+// mire. Con `?todo=1` salen las once.
 const todo = Astro.url.searchParams.get('todo') === '1';
-const PAGINAS = todo ? TODAS : TODAS.slice(0, 2);
+const PAGINAS = todo ? TODAS : TODAS.slice(0, 3);
 
 /** Lo que se saca de cada página: su contenido y las hojas de estilo que usa. */
 interface Extraido {
