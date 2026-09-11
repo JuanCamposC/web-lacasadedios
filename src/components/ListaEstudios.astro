@@ -2,6 +2,7 @@
 import { Icon } from 'astro-icon/components';
 import Reveal from './Reveal.astro';
 import { duracionLegible } from '../lib/medios';
+import { fechaLarga } from '../lib/hora';
 import type { Episodio } from '../lib/rss';
 
 /**
@@ -23,9 +24,6 @@ interface Props {
 }
 
 const { estudios, class: className = '' } = Astro.props;
-
-const fechaLarga = (iso: string) =>
-  new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(iso));
 ---
 
 <ul class:list={['space-y-5', className]}>

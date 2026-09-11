@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { construirIcs, enlaceGoogleCalendar, fechaUtc, DURACION_MIN } from './ics';
+import { enlaceGoogleCalendar, fechaUtc, DURACION_MIN } from './ics';
 
 /**
- * Un `.ics` mal formado no avisa: el calendario simplemente no lo abre, o abre
- * un evento a una hora que no es. Aquí se fijan las tres cosas del RFC que se
- * saltan casi todas las implementaciones caseras —saltos CRLF, plegado a 75
- * octetos y escapado de comas— más la conversión a UTC.
+ * Un enlace de calendario mal armado no avisa: abre Google Calendar con el
+ * evento a una hora que no es, y quien lo agenda llega tarde sin saber por qué.
+ * Lo que se vigila acá es la conversión a UTC y que la duración esté puesta.
+ *
+ * (Antes había además un generador de `.ics` con sus pruebas de plegado y
+ * escapado. Se quitó junto con el formato: ahora solo hay Google Calendar.)
  */
 
 const evento = {
@@ -16,8 +18,6 @@ const evento = {
   lugar: 'Templo San Miguel',
   url: 'https://lacasadedios.cl/eventos#e-11111111',
 };
-
-const ahora = new Date('2026-09-07T12:00:00.000Z');
 
 describe('fechaUtc', () => {
   it('da el formato compacto en Zulú', () => {
@@ -36,66 +36,6 @@ describe('fechaUtc', () => {
 
   it('se queja de una fecha inválida en vez de escribir NaN en el archivo', () => {
     expect(() => fechaUtc('cualquier cosa')).toThrow(RangeError);
-  });
-});
-
-describe('construirIcs', () => {
-  it('trae la estructura mínima que espera un calendario', () => {
-    const ics = construirIcs(evento, ahora);
-    expect(ics).toContain('BEGIN:VCALENDAR');
-    expect(ics).toContain('VERSION:2.0');
-    expect(ics).toContain('BEGIN:VEVENT');
-    expect(ics).toContain(`UID:${evento.id}@lacasadedios.cl`);
-    expect(ics).toContain('DTSTART:20260921T230000Z');
-    expect(ics).toContain('DTEND:20260922T010000Z');
-    expect(ics).toContain('END:VCALENDAR');
-  });
-
-  // El RFC exige CRLF. Outlook es de los que lo comprueban.
-  it('separa las líneas con CRLF y termina con uno', () => {
-    const ics = construirIcs(evento, ahora);
-    expect(ics.split('\r\n').length).toBeGreaterThan(10);
-    expect(ics).not.toMatch(/[^\r]\n/);
-    expect(ics.endsWith('\r\n')).toBe(true);
-  });
-
-  // La coma separa valores dentro de un campo: sin escapar, el título se parte.
-  it('escapa comas, punto y coma y saltos de línea', () => {
-    const ics = construirIcs(
-      { ...evento, titulo: 'Culto, cena y vigilia', descripcion: 'Primero;\nDespués' },
-      ahora,
-    );
-    expect(ics).toContain('SUMMARY:Culto\\, cena y vigilia');
-    expect(ics).toContain('DESCRIPTION:Primero\\;\\nDespués');
-  });
-
-  it('omite los campos que el evento no tiene', () => {
-    const ics = construirIcs({ ...evento, descripcion: null, lugar: null }, ahora);
-    expect(ics).not.toContain('DESCRIPTION:');
-    expect(ics).not.toContain('LOCATION:');
-  });
-
-  describe('plegado', () => {
-    it('parte las líneas largas con un espacio al empezar la continuación', () => {
-      const ics = construirIcs({ ...evento, descripcion: 'a'.repeat(200) }, ahora);
-      for (const linea of ics.split('\r\n')) {
-        expect(new TextEncoder().encode(linea).length).toBeLessThanOrEqual(75);
-      }
-      expect(ics).toContain('\r\n ');
-    });
-
-    // El caso que rompe las implementaciones caseras: el límite es en OCTETOS,
-    // y una vocal acentuada ocupa dos. Cortar por la mitad de un carácter da un
-    // archivo que Outlook rechaza entero.
-    it('no parte un carácter multibyte por la mitad', () => {
-      const ics = construirIcs({ ...evento, descripcion: 'ó'.repeat(120) }, ahora);
-      expect(ics).not.toContain('�');
-      for (const linea of ics.split('\r\n')) {
-        expect(new TextEncoder().encode(linea).length).toBeLessThanOrEqual(75);
-      }
-      // Y no se pierde ninguna: 120 dentro y 120 fuera.
-      expect((ics.match(/ó/g) ?? []).length).toBe(120);
-    });
   });
 });
 

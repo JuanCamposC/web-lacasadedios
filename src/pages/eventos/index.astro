@@ -23,6 +23,7 @@ import { SITE } from '../../data/site';
 import { baseDeDatos } from '../../lib/base';
 import { eventosProximos, eventosPasados } from '../../lib/datos';
 import { urlMedio } from '../../lib/medios';
+import { enChile, fechaLarga, horaCorta } from '../../lib/hora';
 
 // Dos consultas acotadas en vez de traer la tabla entera y partirla acá, que es
 // lo que hacía antes: un archivo de diez años de eventos no tiene por qué
@@ -40,14 +41,13 @@ const [upcoming, past] = await Promise.all([
   eventosPasados(base, { limite: 6 }).then((f) => f.map(conImagen)),
 ]);
 
-const fmtDate = (d: string) =>
-  new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
-const fmtTime = (d: string) =>
-  new Intl.DateTimeFormat('es-CL', { hour: '2-digit', minute: '2-digit' }).format(new Date(d));
-const fmtDay = (d: string) =>
-  new Intl.DateTimeFormat('es-CL', { day: '2-digit' }).format(new Date(d));
-const fmtMonth = (d: string) =>
-  new Intl.DateTimeFormat('es-CL', { month: 'short' }).format(new Date(d)).replace('.', '');
+// Todas en hora de Chile. Ver src/lib/hora.ts: esta página se arma en el
+// Worker, que corre en UTC, y sin fijar el huso anunciaba las reuniones tres
+// horas más tarde de lo que decía el panel.
+const fmtDate = fechaLarga;
+const fmtTime = horaCorta;
+const fmtDay = (d: string) => enChile(d, { day: '2-digit' });
+const fmtMonth = (d: string) => enChile(d, { month: 'short' }).replace('.', '');
 
 // Datos estructurados de evento: Google los usa para mostrar la agenda en los
 // resultados de búsqueda. El lugar se resuelve contra los templos reales.

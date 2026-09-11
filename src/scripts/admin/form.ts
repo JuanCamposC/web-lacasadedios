@@ -1,5 +1,6 @@
 import type { Contexto, Fila } from './tipos';
-import { esc, toLocalInput } from './ui';
+import { esc } from './ui';
+import { deChileAIso, deIsoAChile } from '../../lib/hora';
 import { subirImagen } from './upload';
 
 export function resetForm(ctx: Contexto) {
@@ -42,7 +43,7 @@ export function startEdit(ctx: Contexto, row: Fila) {
     const val = row[f.name];
     if (f.type === 'checkbox') (el as HTMLInputElement).checked = Boolean(val);
     else if (f.type === 'datetime-local')
-      (el as HTMLInputElement).value = val ? toLocalInput(val) : '';
+      (el as HTMLInputElement).value = val ? deIsoAChile(String(val)) : '';
     else if (f.type === 'image') {
       const prev = ctx.root.querySelector(`[data-preview="${f.name}"]`);
       if (prev)
@@ -79,7 +80,11 @@ export async function construirPayload(ctx: Contexto): Promise<Record<string, an
         payload[f.name] = await subirImagen(ctx.recurso, blob);
       } else if (ctx.editing) payload[f.name] = ctx.editing[f.name] ?? null;
     } else if (f.type === 'datetime-local') {
-      payload[f.name] = el.value ? new Date(el.value).toISOString() : null;
+      // Lo escrito es hora de CHILE, no la del reloj de quien administra.
+      // `new Date('2026-09-26T19:00')` interpretaba en el huso del navegador, y
+      // como las páginas se arman en el Worker —que corre en UTC— la web
+      // terminaba anunciando otra hora. Ver src/lib/hora.ts.
+      payload[f.name] = el.value ? deChileAIso(el.value) : null;
     } else if (f.type === 'number') {
       payload[f.name] = el.value === '' ? 0 : Number(el.value);
     } else {

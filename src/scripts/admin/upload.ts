@@ -6,20 +6,36 @@ const ANCHO_MAX = 1600;
 
 /**
  * Reduce y recomprime la imagen en el navegador antes de subirla.
+ *
  * Una foto de teléfono son 4–8 MB; en el sitio nunca se ve a más de 1600 px.
- * Subir el original malgastaría almacenamiento y haría más lenta la página.
+ * Subir el original malgasta almacenamiento y hace más lenta la página.
+ *
+ * ── EL AGUJERO QUE TENÍA ────────────────────────────────────────────────────
+ * Antes esto devolvía el archivo intacto si la imagen no superaba los 1600 px
+ * de ancho, sin mirar cuánto pesaba. Y ahí se colaba justo el caso corriente:
+ * las dos primeras publicaciones del sitio subieron JPEG de **724 kB y 808 kB**
+ * —anchos normales, pero con la compresión floja que deja cualquier editor—, y
+ * el visitante los descarga enteros.
+ *
+ * Ahora se recomprime SIEMPRE a WebP, se redimensiona solo si hace falta, y se
+ * conserva el original únicamente si resultó ser más pequeño. Esa última
+ * comparación importa: una foto ya bien optimizada no tiene por qué engordar
+ * por pasar otra vez por el molino.
  */
 export async function prepararImagen(file: File): Promise<Blob> {
+  // El GIF queda fuera porque el lienzo se quedaría solo con el primer cuadro:
+  // una animación se convertiría en una foto fija sin avisar.
   if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
+
   try {
     const bitmap = await createImageBitmap(file);
-    if (bitmap.width <= ANCHO_MAX) return file;
+    const ancho = Math.min(bitmap.width, ANCHO_MAX);
+    const alto = Math.round((bitmap.height * ancho) / bitmap.width);
 
-    const escala = ANCHO_MAX / bitmap.width;
     const lienzo = document.createElement('canvas');
-    lienzo.width = ANCHO_MAX;
-    lienzo.height = Math.round(bitmap.height * escala);
-    lienzo.getContext('2d')!.drawImage(bitmap, 0, 0, lienzo.width, lienzo.height);
+    lienzo.width = ancho;
+    lienzo.height = alto;
+    lienzo.getContext('2d')!.drawImage(bitmap, 0, 0, ancho, alto);
 
     const blob: Blob | null = await new Promise((r) => lienzo.toBlob(r, 'image/webp', 0.86));
     return blob && blob.size < file.size ? blob : file;

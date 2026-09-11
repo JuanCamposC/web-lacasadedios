@@ -32,6 +32,20 @@ function espia() {
   return { base, llamadas };
 }
 
+/**
+ * La ESCRITURA de una tanda de llamadas.
+ *
+ * Hizo falta cuando `crear` y `actualizar` empezaron a consultar la base antes
+ * de escribir, para calcular el slug. Mirar `llamadas[0]` pasó a mirar un
+ * `select`, y varias pruebas empezaron a comprobar la consulta equivocada sin
+ * que su nombre cambiara —que es la peor forma de romper una prueba, porque
+ * sigue pareciendo que cuida lo que decía—.
+ */
+function escritura(llamadas: { sql: string; valores: unknown[] }[]) {
+  const escrituras = llamadas.filter((l) => /^\s*(insert|update|delete)/i.test(l.sql));
+  return escrituras.at(-1) ?? llamadas[0];
+}
+
 describe('esRecurso', () => {
   it('acepta las cuatro tablas del panel', () => {
     for (const r of ['eventos', 'noticias', 'videos', 'estudios']) {
@@ -73,9 +87,9 @@ describe('la lista blanca de columnas', () => {
       columna_inventada: 'x',
       cuerpo: 'este campo es de noticias, no de videos',
     });
-    expect(llamadas[0].sql).not.toContain('columna_inventada');
-    expect(llamadas[0].sql).not.toContain('cuerpo');
-    expect(llamadas[0].sql).toContain('titulo');
+    expect(escritura(llamadas).sql).not.toContain('columna_inventada');
+    expect(escritura(llamadas).sql).not.toContain('cuerpo');
+    expect(escritura(llamadas).sql).toContain('titulo');
   });
 
   it('no deja inyectar SQL por el nombre de la columna', async () => {
@@ -85,8 +99,8 @@ describe('la lista blanca de columnas', () => {
       'titulo = 1, publicado': 1,
       'x) values (1); drop table videos; --': 'x',
     });
-    expect(llamadas[0].sql).not.toContain('drop table');
-    expect(llamadas[0].sql).not.toContain('--');
+    expect(escritura(llamadas).sql).not.toContain('drop table');
+    expect(escritura(llamadas).sql).not.toContain('--');
   });
 
   it('los valores viajan enlazados, nunca dentro del SQL', async () => {
@@ -95,8 +109,8 @@ describe('la lista blanca de columnas', () => {
       titulo: "'; drop table videos; --",
       youtube_url: 'https://youtu.be/aaaaaaaaaaa',
     });
-    expect(llamadas[0].sql).not.toContain('drop table');
-    expect(llamadas[0].valores).toContain("'; drop table videos; --");
+    expect(escritura(llamadas).sql).not.toContain('drop table');
+    expect(escritura(llamadas).valores).toContain("'; drop table videos; --");
   });
 
   it('actualizar no toca nada si no llega ninguna columna válida', async () => {
@@ -125,34 +139,36 @@ describe('la normalización de valores', () => {
   it.each(casos)('publicado: %s → %s', async (entrada, esperado) => {
     const { base, llamadas } = espia();
     await crear(base, 'videos', { titulo: 'x', publicado: entrada });
-    expect(llamadas[0].valores).toContain(esperado);
+    expect(escritura(llamadas).valores).toContain(esperado);
   });
 
   it('una cadena vacía se guarda como null, no como cadena vacía', async () => {
     // Con `''`, dos filas sin slug chocarían entre sí en el índice único.
     const { base, llamadas } = espia();
     await crear(base, 'noticias', { titulo: 'Uno', slug: '   ' });
-    const i = llamadas[0].sql.split(',').findIndex((c) => c.includes('slug'));
-    expect(llamadas[0].valores[i]).toBeNull();
+    const i = escritura(llamadas)
+      .sql.split(',')
+      .findIndex((c) => c.includes('slug'));
+    expect(escritura(llamadas).valores[i]).toBeNull();
   });
 
   it('recorta los espacios de los textos', async () => {
     const { base, llamadas } = espia();
     await crear(base, 'noticias', { titulo: '  Con espacios  ' });
-    expect(llamadas[0].valores).toContain('Con espacios');
+    expect(escritura(llamadas).valores).toContain('Con espacios');
   });
 
   it('los números que no lo son quedan en null, no en NaN', async () => {
     const { base, llamadas } = espia();
     await crear(base, 'estudios', { titulo: 'x', duracion_seg: 'hola' });
-    expect(llamadas[0].valores).toContain(null);
-    expect(llamadas[0].valores.some((v) => Number.isNaN(v))).toBe(false);
+    expect(escritura(llamadas).valores).toContain(null);
+    expect(escritura(llamadas).valores.some((v) => Number.isNaN(v))).toBe(false);
   });
 
   it('trunca los decimales en vez de mandárselos a una columna entera', async () => {
     const { base, llamadas } = espia();
     await crear(base, 'estudios', { titulo: 'x', duracion_seg: 3612.7 });
-    expect(llamadas[0].valores).toContain(3612);
+    expect(escritura(llamadas).valores).toContain(3612);
   });
 });
 
@@ -161,7 +177,101 @@ describe('crear', () => {
     const { base, llamadas } = espia();
     const id = await crear(base, 'videos', { titulo: 'Uno' });
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
-    expect(llamadas[0].valores[0]).toBe(id);
+    expect(escritura(llamadas).valores[0]).toBe(id);
+  });
+});
+
+describe('el slug', () => {
+  /** El valor que se guardó en una columna concreta. */
+  function valorDe(l: { sql: string; valores: unknown[] }, columna: string) {
+    const cols = l.sql
+      .slice(l.sql.indexOf('(') + 1, l.sql.indexOf(')'))
+      .split(',')
+      .map((c) => c.trim());
+    return l.valores[cols.indexOf(columna)];
+  }
+
+  it('sale del título, sin tildes ni signos', async () => {
+    // EL CASO QUE FALLABA: la primera noticia publicada quedó sin slug y su
+    // dirección pasó a ser /noticias/9c41d06d-c19a-4fdd-87b8-0fe7161b977b.
+    const { base, llamadas } = espia();
+    await crear(base, 'noticias', {
+      titulo: 'Reunión de Acción de Gracias - Encuentro de Iglesias',
+    });
+    expect(valorDe(escritura(llamadas), 'slug')).toBe(
+      'reunion-de-accion-de-gracias-encuentro-de-iglesias',
+    );
+  });
+
+  it('respeta el que venga escrito a mano', async () => {
+    const { base, llamadas } = espia();
+    await crear(base, 'noticias', { titulo: 'Cualquier cosa', slug: 'mi-direccion' });
+    expect(valorDe(escritura(llamadas), 'slug')).toBe('mi-direccion');
+  });
+
+  it('no se lo inventa para tablas que no lo tienen', async () => {
+    const { base, llamadas } = espia();
+    await crear(base, 'videos', { titulo: 'Uno' });
+    expect(escritura(llamadas).sql).not.toContain('slug');
+  });
+
+  it('busca uno libre cuando el título se repite', async () => {
+    // «Reunión de oración» se publica todos los meses. La columna es única en
+    // la base: sin esto, el segundo guardado revienta con un error que nadie
+    // sabría interpretar.
+    const llamadas: { sql: string; valores: unknown[] }[] = [];
+    const ocupados = new Set(['reunion-de-oracion', 'reunion-de-oracion-2']);
+    const base = {
+      prepare(sql: string) {
+        return {
+          bind(...valores: unknown[]) {
+            llamadas.push({ sql, valores });
+            return {
+              async all<T>() {
+                return { results: [] as T[] };
+              },
+              async first<T>() {
+                const buscado = String(valores[0]);
+                return (
+                  sql.startsWith('select id') && ocupados.has(buscado) ? { id: 'x' } : null
+                ) as T | null;
+              },
+            };
+          },
+        };
+      },
+    } as unknown as Base;
+
+    await crear(base, 'noticias', { titulo: 'Reunión de oración' });
+    expect(valorDe(escritura(llamadas), 'slug')).toBe('reunion-de-oracion-3');
+  });
+
+  it('no cambia el de una fila que ya lo tiene, aunque cambie el título', async () => {
+    // Cambiar la dirección de algo ya publicado rompe el enlace que la gente
+    // compartió por WhatsApp, y lo rompe en silencio.
+    const llamadas: { sql: string; valores: unknown[] }[] = [];
+    const base = {
+      prepare(sql: string) {
+        return {
+          bind(...valores: unknown[]) {
+            llamadas.push({ sql, valores });
+            return {
+              async all<T>() {
+                return { results: [] as T[] };
+              },
+              async first<T>() {
+                return (
+                  sql.startsWith('select slug') ? { slug: 'el-de-siempre' } : null
+                ) as T | null;
+              },
+            };
+          },
+        };
+      },
+    } as unknown as Base;
+
+    await actualizar(base, 'noticias', 'id-1', { titulo: 'Título nuevo del todo' });
+    expect(escritura(llamadas).sql).not.toContain('slug');
   });
 });
 
@@ -169,20 +279,20 @@ describe('actualizar', () => {
   it('marca la fecha de modificación', async () => {
     const { base, llamadas } = espia();
     await actualizar(base, 'noticias', 'id-1', { titulo: 'Otro' });
-    expect(llamadas[0].sql).toContain('actualizado_en = ?');
+    expect(escritura(llamadas).sql).toContain('actualizado_en = ?');
   });
 
   it('no la marca en videos, que no tiene esa columna', async () => {
     const { base, llamadas } = espia();
     await actualizar(base, 'videos', 'id-1', { titulo: 'Otro' });
-    expect(llamadas[0].sql).not.toContain('actualizado_en');
+    expect(escritura(llamadas).sql).not.toContain('actualizado_en');
   });
 
   it('el id va enlazado al final y no pegado al SQL', async () => {
     const { base, llamadas } = espia();
     await actualizar(base, 'videos', "x' or '1'='1", { titulo: 'Otro' });
-    expect(llamadas[0].sql).toContain('where id = ?');
-    expect(llamadas[0].valores.at(-1)).toBe("x' or '1'='1");
+    expect(escritura(llamadas).sql).toContain('where id = ?');
+    expect(escritura(llamadas).valores.at(-1)).toBe("x' or '1'='1");
   });
 });
 
@@ -203,11 +313,11 @@ describe('guardarAjustes', () => {
   it('solo acepta las columnas de ajustes', async () => {
     const { base, llamadas } = espia();
     await guardarAjustes(base, { vivo_titulo: 'Culto', id: 99, otra_cosa: 'x' });
-    expect(llamadas[0].sql).toContain('vivo_titulo = ?');
-    expect(llamadas[0].sql).not.toContain('otra_cosa');
+    expect(escritura(llamadas).sql).toContain('vivo_titulo = ?');
+    expect(escritura(llamadas).sql).not.toContain('otra_cosa');
     // `id` no se puede cambiar: la fila es una sola y siempre es la 1.
-    expect(llamadas[0].sql).not.toMatch(/set[^]*\bid = \?/);
-    expect(llamadas[0].sql).toContain('where id = 1');
+    expect(escritura(llamadas).sql).not.toMatch(/set[^]*\bid = \?/);
+    expect(escritura(llamadas).sql).toContain('where id = 1');
   });
 
   it('no escribe si no llega nada válido', async () => {
@@ -219,7 +329,7 @@ describe('guardarAjustes', () => {
   it('convierte las banderas a 0 y 1', async () => {
     const { base, llamadas } = espia();
     await guardarAjustes(base, { vivo_activo: 'on', aviso_activo: false });
-    expect(llamadas[0].valores.slice(0, 2)).toEqual([1, 0]);
+    expect(escritura(llamadas).valores.slice(0, 2)).toEqual([1, 0]);
   });
 });
 

@@ -20,6 +20,7 @@ import { markdownAResumen } from '../../lib/markdown';
 import { baseDeDatos } from '../../lib/base';
 import { noticiasPublicadas } from '../../lib/datos';
 import { urlMedio } from '../../lib/medios';
+import { fechaLarga } from '../../lib/hora';
 
 // El filtro de publicado y el tope viven en `noticiasPublicadas`, no acá: ver
 // la explicación en src/lib/datos.ts. Esta página solo pide y muestra.
@@ -32,8 +33,7 @@ const news = filas.map((n) => ({ ...n, imagen: urlMedio(n.imagen_clave) }));
 type Fila = (typeof news)[number];
 
 const [destacada, ...resto] = news;
-const fmtDate = (d: string) =>
-  new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
+const fmtDate = fechaLarga;
 const url = (n: Fila) => `/noticias/${n.slug ?? n.id}`;
 ---
 

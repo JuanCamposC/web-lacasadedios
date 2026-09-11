@@ -6,6 +6,7 @@ import { Icon } from 'astro-icon/components';
 
 import { baseDeDatos } from '../../lib/base';
 import { listarSuscriptores } from '../../lib/boletin';
+import { fechaYHora } from '../../lib/hora';
 
 const subs = await listarSuscriptores(await baseDeDatos());
 
@@ -19,8 +20,7 @@ const emails = subs
 
 const confirmados = subs.filter((s) => s.pendiente === 0).length;
 const pendientes = subs.length - confirmados;
-const fmt = (d: string) =>
-  new Intl.DateTimeFormat('es-CL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(d));
+const fmt = fechaYHora;
 ---
 
 <AdminLayout

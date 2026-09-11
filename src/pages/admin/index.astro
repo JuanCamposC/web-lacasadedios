@@ -6,6 +6,7 @@ import { Icon } from 'astro-icon/components';
 
 import { baseDeDatos } from '../../lib/base';
 import { ajustes as leerAjustes } from '../../lib/datos';
+import { enChile } from '../../lib/hora';
 
 const db = await baseDeDatos();
 
@@ -103,8 +104,7 @@ const actividad = [
   .sort((a, b) => +new Date(b.creado_en) - +new Date(a.creado_en))
   .slice(0, 6);
 
-const fecha = (d: string) =>
-  new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: 'short' }).format(new Date(d));
+const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
 ---
 
 <AdminLayout

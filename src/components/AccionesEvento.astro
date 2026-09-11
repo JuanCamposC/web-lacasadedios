@@ -6,16 +6,12 @@ import type { Evento } from '../lib/datos';
 /**
  * Compartir un evento y agendarlo.
  *
- * DOS ENLACES DE CALENDARIO, NO UNO. El `.ics` lo entienden Apple Calendar,
- * Outlook y casi todo; en un iPhone se abre solo. En Android se descarga un
- * archivo que hay que ir a buscar, y ahí vale más el enlace de Google, que abre
- * el evento ya rellenado. Como no se puede adivinar desde el servidor cuál toca,
- * se ofrecen los dos con el nombre del destino, que es lo que la gente reconoce.
- *
- * EL DESPLEGABLE SE ABRE HACIA ABAJO, EMPUJANDO. La ficha del evento lleva
- * `overflow-hidden` por el zoom de la foto: un menú flotante quedaría cortado
- * por el borde de la tarjeta. Un `<details>` normal crece dentro y además
- * funciona sin JavaScript.
+ * SOLO GOOGLE CALENDAR. Antes había también un `.ics` descargable para Apple
+ * Calendar y Outlook. Se quitó: mantener un generador de ICS correcto —plegado
+ * de líneas a 75 octetos, escapes, saltos CRLF que Outlook comprueba— es mucho
+ * trabajo para un formato que, en Android, además baja un archivo que hay que
+ * ir a buscar. Google Calendar es un enlace que abre el evento ya rellenado, y
+ * es lo que usa la congregación.
  */
 interface Props {
   evento: Evento;
@@ -33,9 +29,6 @@ const google = enlaceGoogleCalendar({
   lugar: evento.lugar,
   url: enlace,
 });
-
-const opcion =
-  'inline-flex items-center gap-1.5 rounded-lg border border-base-300 px-3 py-1.5 text-sm transition hover:border-primary hover:text-primary';
 ---
 
 <div class="mt-auto pt-5">
@@ -51,26 +44,17 @@ const opcion =
       <span data-rotulo>Compartir</span>
     </button>
 
-    <details class="group/cal">
-      <summary
-        class="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content [&::-webkit-details-marker]:hidden"
-      >
-        <Icon name="lucide:calendar-plus" class="h-4 w-4" />
-        Agregar al calendario
-        <Icon
-          name="lucide:chevron-down"
-          class="h-3.5 w-3.5 transition-transform group-open/cal:rotate-180"
-        />
-      </summary>
-      <div class="mt-2 flex flex-wrap gap-2">
-        <a href={google} target="_blank" rel="noopener noreferrer" class={opcion}>
-          <Icon name="lucide:calendar" class="h-4 w-4 text-accent" /> Google Calendar
-        </a>
-        <a href={`/api/evento.ics?id=${evento.id}`} class={opcion}>
-          <Icon name="lucide:download" class="h-4 w-4 text-accent" /> Apple, Outlook u otro
-        </a>
-      </div>
-    </details>
+    <!-- Con una sola opción ya no hace falta desplegable: era un clic de más
+         para llegar a lo único que había dentro. -->
+    <a
+      href={google}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
+    >
+      <Icon name="lucide:calendar-plus" class="h-4 w-4" />
+      Agregar a Google Calendar
+    </a>
   </div>
 </div>
 

@@ -18,6 +18,7 @@ import { renderMarkdown, markdownAResumen } from '../../lib/markdown';
 import { baseDeDatos } from '../../lib/base';
 import { noticiaPorSlug, noticiaPorId, noticiasPublicadas, ajustes } from '../../lib/datos';
 import { urlMedio } from '../../lib/medios';
+import { fechaLarga } from '../../lib/hora';
 
 const { slug } = Astro.params;
 const base = await baseDeDatos();
@@ -43,8 +44,7 @@ const otras = (await noticiasPublicadas(base, { limite: 4 }))
   .slice(0, 3)
   .map((n) => ({ ...n, imagen: urlMedio(n.imagen_clave) }));
 
-const fmtDate = (d: string) =>
-  new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(d));
+const fmtDate = fechaLarga;
 
 // El cuerpo se escribe en Markdown desde el panel y se convierte a HTML aquí,
 // en el servidor: el visitante no descarga ninguna librería para leerlo. El

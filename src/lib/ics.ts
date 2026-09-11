@@ -1,16 +1,22 @@
 /**
- * Agendar un evento: archivo `.ics` y enlace a Google Calendar.
+ * Agendar un evento en Google Calendar.
  *
- * DOS CAMINOS PORQUE NO HAY UNO SOLO QUE SIRVA
- * El `.ics` es el formato estándar (RFC 5545) y es lo que entienden Apple
- * Calendar, Outlook y prácticamente todo lo demás; en un iPhone, tocarlo abre
- * el calendario directamente. En Android, en cambio, se descarga un archivo y
- * hay que buscarlo, así que ahí vale más el enlace de Google Calendar, que abre
- * el evento ya rellenado.
+ * ── HUBO UN `.ics` Y SE QUITÓ ───────────────────────────────────────────────
+ * Antes se ofrecían dos caminos: este enlace y un archivo `.ics` descargable
+ * para Apple Calendar y Outlook. Emitir ICS correcto es más trabajo del que
+ * parece —plegar líneas a 75 OCTETOS contando bytes UTF-8, escapar comas y
+ * puntos y coma, saltos CRLF que Outlook sí comprueba— y encima en Android baja
+ * un archivo que hay que ir a buscar. Un enlace que abre el evento ya relleno
+ * hace el trabajo para casi todo el mundo.
  *
- * LOS EVENTOS NO GUARDAN HORA DE TÉRMINO. La tabla solo tiene `event_date`.
- * Poner un evento sin duración deja un hueco raro en el calendario, así que se
- * asumen dos horas, que es lo que dura un culto largo.
+ * ── LOS EVENTOS NO GUARDAN HORA DE TÉRMINO ──────────────────────────────────
+ * La tabla solo tiene `fecha`. Un evento sin duración deja un hueco raro en el
+ * calendario, así que se asumen dos horas, que es lo que dura un culto largo.
+ *
+ * ── LA HORA ─────────────────────────────────────────────────────────────────
+ * Lo que se guarda es un instante en UTC (ver src/lib/hora.ts), y a Google se le
+ * manda en UTC. Google lo pinta en el huso de quien agenda, que es lo correcto:
+ * quien esté en Chile verá la hora de la iglesia.
  */
 
 /** Lo que dura un evento cuando nadie dijo cuánto dura. */
@@ -19,7 +25,7 @@ export const DURACION_MIN = 120;
 export interface EventoAgendable {
   id: string;
   titulo: string;
-  /** Fecha de inicio en ISO, tal como sale de Postgres (`timestamptz`). */
+  /** Instante de inicio en ISO-8601 UTC, tal como se guarda en D1. */
   inicio: string;
   descripcion?: string | null;
   lugar?: string | null;
@@ -41,74 +47,6 @@ export function fechaUtc(iso: string, minutosExtra = 0): string {
     .toISOString()
     .replace(/[-:]/g, '')
     .replace(/\.\d{3}/, '');
-}
-
-/** Coma, punto y coma y barra invertida separan campos en ICS: hay que escaparlos. */
-function escapar(texto: string): string {
-  return texto
-    .replace(/\\/g, '\\\\')
-    .replace(/;/g, '\\;')
-    .replace(/,/g, '\\,')
-    .replace(/\r?\n/g, '\\n');
-}
-
-/**
- * Parte las líneas de más de 75 OCTETOS, como manda el RFC.
- *
- * Octetos y no caracteres: en UTF-8 una «ó» ocupa dos bytes, y cortar por la
- * mitad de un carácter produce un archivo que Outlook rechaza entero. Por eso
- * se recorre por puntos de código y se cuenta lo que ocupa cada uno.
- *
- * La continuación empieza por un espacio, que también cuenta, así que a partir
- * de la segunda línea el tope es 74.
- */
-function plegar(linea: string): string {
-  const enc = new TextEncoder();
-  if (enc.encode(linea).length <= 75) return linea;
-
-  const trozos: string[] = [];
-  let actual = '';
-  let bytes = 0;
-
-  for (const ch of linea) {
-    const n = enc.encode(ch).length;
-    const tope = trozos.length === 0 ? 75 : 74;
-    if (bytes + n > tope) {
-      trozos.push(actual);
-      actual = '';
-      bytes = 0;
-    }
-    actual += ch;
-    bytes += n;
-  }
-  trozos.push(actual);
-  return trozos.join('\r\n ');
-}
-
-export function construirIcs(e: EventoAgendable, ahora = new Date()): string {
-  const campos: [string, string][] = [
-    ['BEGIN', 'VCALENDAR'],
-    ['VERSION', '2.0'],
-    ['PRODID', '-//La Casa de Dios//Eventos//ES'],
-    ['CALSCALE', 'GREGORIAN'],
-    ['METHOD', 'PUBLISH'],
-    ['BEGIN', 'VEVENT'],
-    // El identificador tiene que ser único y estable: si cambia, el calendario
-    // crea un evento nuevo en vez de actualizar el que ya estaba.
-    ['UID', `${e.id}@lacasadedios.cl`],
-    ['DTSTAMP', fechaUtc(ahora.toISOString())],
-    ['DTSTART', fechaUtc(e.inicio)],
-    ['DTEND', fechaUtc(e.inicio, DURACION_MIN)],
-    ['SUMMARY', escapar(e.titulo)],
-    ...(e.descripcion ? ([['DESCRIPTION', escapar(e.descripcion)]] as [string, string][]) : []),
-    ...(e.lugar ? ([['LOCATION', escapar(e.lugar)]] as [string, string][]) : []),
-    ['URL', escapar(e.url)],
-    ['END', 'VEVENT'],
-    ['END', 'VCALENDAR'],
-  ];
-
-  // Saltos CRLF, no LF: el RFC lo exige y Outlook es de los que lo comprueban.
-  return campos.map(([k, v]) => plegar(`${k}:${v}`)).join('\r\n') + '\r\n';
 }
 
 /** Enlace que abre Google Calendar con el evento ya rellenado. */

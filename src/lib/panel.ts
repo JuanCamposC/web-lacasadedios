@@ -136,6 +136,61 @@ export function unaFila<T>(base: Base, recurso: Recurso, id: string): Promise<T 
   return base.prepare(`select * from ${recurso} where id = ?`).bind(id).first<T>();
 }
 
+// ── Direcciones legibles ────────────────────────────────────────────────────
+
+/** Tablas cuya dirección pública usa un `slug`. */
+const CON_SLUG: readonly Recurso[] = ['eventos', 'noticias', 'estudios'];
+
+/**
+ * De un título a un trozo de dirección.
+ *
+ * ── POR QUÉ NO LO ESCRIBE QUIEN PUBLICA ─────────────────────────────────────
+ * Porque no había campo para ello y nadie lo echó de menos hasta ver el
+ * resultado: la primera noticia publicada quedó con el `slug` vacío y su
+ * dirección pasó a ser `/noticias/9c41d06d-c19a-4fdd-87b8-0fe7161b977b`. Eso se
+ * comparte por WhatsApp y no dice nada de lo que hay al otro lado.
+ *
+ * Pedirle el slug a quien publica sería un campo más que explicar y una forma
+ * más de equivocarse. Se saca del título, que ya está escrito.
+ */
+export function slugificar(texto: string): string {
+  return (
+    texto
+      // `normalize('NFD')` separa la letra de su tilde, y el rango de abajo se
+      // lleva las tildes sueltas: «Reunión» → «reunion», «Año» → «ano».
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      // Un título largo da una dirección impronunciable. Se corta y se limpia
+      // el guion que pudiera quedar colgando del corte.
+      .slice(0, 80)
+      .replace(/-+$/, '')
+  );
+}
+
+/**
+ * Un slug que no choque con otro. `slug`, `slug-2`, `slug-3`…
+ *
+ * La columna es `unique` en la base, así que sin esto publicar dos veces algo
+ * con el mismo título —«Reunión de oración», que se repite cada mes— reventaría
+ * el guardado con un error de la base que nadie sabría interpretar.
+ */
+async function slugLibre(base: Base, recurso: Recurso, deseado: string): Promise<string> {
+  for (let n = 1; n < 50; n++) {
+    const intento = n === 1 ? deseado : `${deseado}-${n}`;
+    const choca = await base
+      .prepare(`select id from ${recurso} where slug = ?`)
+      .bind(intento)
+      .first<{ id: string }>();
+    if (!choca) return intento;
+  }
+  // Cincuenta títulos idénticos es más raro que un fallo de la base. Antes que
+  // rendirse y guardar sin dirección, se remata con algo irrepetible.
+  return `${deseado}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
 /**
  * Crea una fila y devuelve su id.
  *
@@ -147,6 +202,13 @@ export async function crear(
   recurso: Recurso,
   datos: Record<string, unknown>,
 ): Promise<string> {
+  // El slug se calcula ANTES de `limpiar`, para que pase por la lista blanca
+  // como cualquier otro campo y no haya un camino paralelo hacia el SQL.
+  if (CON_SLUG.includes(recurso) && !datos.slug && typeof datos.titulo === 'string') {
+    const deseado = slugificar(datos.titulo);
+    if (deseado) datos = { ...datos, slug: await slugLibre(base, recurso, deseado) };
+  }
+
   const { campos, valores } = limpiar(recurso, datos);
   const id = crypto.randomUUID();
 
@@ -174,6 +236,20 @@ export async function actualizar(
   id: string,
   datos: Record<string, unknown>,
 ): Promise<boolean> {
+  // Se rellena el slug de las filas que se guardaron sin él, pero NO se
+  // recalcula el de las que ya lo tienen aunque cambie el título: la dirección
+  // vieja puede estar compartida por WhatsApp, y cambiarla la rompe en silencio.
+  if (CON_SLUG.includes(recurso) && !datos.slug && typeof datos.titulo === 'string') {
+    const actual = await base
+      .prepare(`select slug from ${recurso} where id = ?`)
+      .bind(id)
+      .first<{ slug: string | null }>();
+    if (actual && !actual.slug) {
+      const deseado = slugificar(datos.titulo);
+      if (deseado) datos = { ...datos, slug: await slugLibre(base, recurso, deseado) };
+    }
+  }
+
   const { campos, valores } = limpiar(recurso, datos);
   if (campos.length === 0) return false;
 
