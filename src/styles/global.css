@@ -926,3 +926,142 @@
     letter-spacing: -0.005em;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   IMPRESIÓN
+
+   Para llevarle el sitio al pastor en papel y que marque los textos a mano.
+
+   La pantalla y el papel no se parecen en nada y tratarlos igual da lo de
+   siempre: hojas negras, botones que no llevan a ninguna parte, enlaces
+   invisibles y una foto cortada entre dos páginas. Acá se resuelve cada una.
+
+   Se usa `@media print` y no una página aparte a propósito: así lo que se
+   imprime ES el sitio. Una página «versión imprimible» se desactualiza en
+   cuanto alguien cambia un texto, y entonces el pastor revisa algo que ya no
+   existe — que es justo lo contrario de lo que se busca.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media print {
+  /* Hoja carta, que es la de Chile. `cm` y no `in` por lo mismo. */
+  @page {
+    size: letter;
+    margin: 1.8cm 1.5cm;
+  }
+
+  /* El tema oscuro en papel gasta un cartucho por hoja y se lee peor. Se fuerza
+     todo a negro sobre blanco, pase lo que pase con el tema del navegador. */
+  :root,
+  [data-theme] {
+    color-scheme: light;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Lo que no tiene sentido en papel:
+     · la navegación y el pie, que son enlaces
+     · el formulario del boletín, que no se puede rellenar
+     · la pastilla de «en vivo» y los avisos emergentes
+     · los mapas y videos incrustados, que salen como un rectángulo gris */
+  nav,
+  header,
+  footer,
+  dialog,
+  iframe,
+  #live-pill,
+  [data-no-print] {
+    display: none !important;
+  }
+
+  /* El hueco que dejaba el navbar fijo. */
+  main {
+    padding-top: 0 !important;
+  }
+
+  /* Serif para el cuerpo: en papel se lee mejor y es lo que espera el ojo en un
+     documento que se va a leer entero, no ojear. */
+  body {
+    font-family: 'Fraunces Variable', Georgia, serif;
+    font-size: 11.5pt;
+    line-height: 1.55;
+  }
+
+  /* Un título no se queda solo al final de una hoja con su texto en la
+     siguiente, y un párrafo no se parte dejando una línea suelta. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    break-after: avoid-page;
+    page-break-after: avoid;
+    color: #000 !important;
+  }
+  p,
+  li,
+  blockquote {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Cada sección grande empieza en hoja nueva: así el pastor puede repartir las
+     páginas por tema en la mesa, que es como se revisa un texto de verdad. */
+  section {
+    break-inside: avoid-page;
+  }
+
+  /* Las imágenes, contenidas y sin cortar entre páginas. */
+  img {
+    max-width: 100% !important;
+    max-height: 9cm;
+    object-fit: contain;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Los enlaces enseñan a dónde van: en papel, un «pincha aquí» subrayado no
+     lleva a ninguna parte. Solo los internos y los http, no los `mailto:` ni
+     los anclas, que ya se entienden solos y ensucian. */
+  a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 9pt;
+    color: #444;
+    word-break: break-all;
+  }
+
+  /* Los botones son enlaces disfrazados. En papel se leen como texto normal,
+     porque un rectángulo de color sin función confunde más que ayuda. */
+  .btn {
+    border: 1px solid #000 !important;
+    background: none !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    padding: 0.1cm 0.3cm !important;
+  }
+
+  /* Lo que el sitio anima al aparecer se queda quieto y visible: si no, lo que
+     no llegó a animarse se imprime invisible. Es el fallo más fácil de no ver,
+     porque en pantalla nunca ocurre. */
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Fondos oscuros de sección: en papel, texto negro sobre papel blanco. */
+  .panel,
+  [class*='bg-'] {
+    background: none !important;
+    box-shadow: none !important;
+  }
+  [class*='text-white'],
+  [class*='text-base-content'] {
+    color: #000 !important;
+  }
+
+  /* Una regla fina donde había un bloque de color, para que se siga entendiendo
+     dónde empieza y termina cada sección. */
+  .panel {
+    border: 1px solid #bbb !important;
+  }
+}

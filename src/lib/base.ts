@@ -25,6 +25,8 @@ import type { Base } from './datos';
 interface Bindings {
   DB?: Base;
   MEDIOS?: R2Bucket;
+  /** Los archivos ya compilados. Ver `archivos()` más abajo. */
+  ASSETS?: { fetch(peticion: Request): Promise<Response> };
 }
 
 /** Un archivo del bucket, con lo poco que el panel necesita saber de él. */
@@ -63,6 +65,23 @@ export async function baseDeDatos(): Promise<Base> {
   const { DB } = await bindings();
   if (!DB) throw new Error('Falta la binding D1 «DB». Revisa d1_databases en wrangler.jsonc.');
   return DB;
+}
+
+/**
+ * Los archivos estáticos ya compilados, o `null`.
+ *
+ * Es la binding con la que el Worker le pide a Cloudflare una página
+ * prerenderizada, **sin salir a la red**: no es un `fetch` de verdad, no pasa
+ * por el DNS y —lo que importa acá— no pasa por Cloudflare Access. Eso es lo
+ * que permite que /imprimir junte las páginas del sitio estando todo detrás del
+ * login: pedirlas por HTTP desde el propio Worker devolvería nueve redirecciones
+ * a la pantalla de Google.
+ *
+ * Devuelve `null` en vez de lanzar: quien la usa sabe seguir sin ella.
+ */
+export async function archivos(): Promise<{ fetch(p: Request): Promise<Response> } | null> {
+  const { ASSETS } = await bindings();
+  return ASSETS ?? null;
 }
 
 /** El bucket de archivos, o un error claro. */

@@ -1,0 +1,267 @@
+---
+export const prerender = false;
+
+/**
+ * El sitio entero en una sola hoja continua, para imprimirlo y revisarlo en
+ * papel.
+ *
+ * ── PARA QUÉ ────────────────────────────────────────────────────────────────
+ * Para llevarle los textos al pastor y que los corrija a mano. Revisar palabras
+ * en una pantalla, saltando de página en página y perdiendo el hilo, no es lo
+ * mismo que tener las hojas encima de la mesa y poder rayarlas.
+ *
+ * ── POR QUÉ JUNTA LAS PÁGINAS DE VERDAD ─────────────────────────────────────
+ * Lo fácil habría sido escribir acá una copia de los textos. Sería mentira a
+ * los dos días: alguien cambia una frase en el sitio y el papel ya no
+ * corresponde, y entonces se revisa algo que no existe.
+ *
+ * Así que esta página pide las páginas COMPILADAS y les saca el contenido. Lo
+ * que se imprime es el sitio, no una versión suya.
+ *
+ * ── POR QUÉ POR LA BINDING Y NO POR HTTP ────────────────────────────────────
+ * `ASSETS.fetch()` no sale a la red: Cloudflare devuelve el archivo desde
+ * dentro. Un `fetch()` normal a `https://pruebas.lacasadedios.cl/horarios`
+ * saldría del Worker, entraría por la puerta principal y **se toparía con
+ * Access**: nueve redirecciones a la pantalla de Google en vez de nueve
+ * páginas.
+ *
+ * ── QUÉ NO ESTÁ ─────────────────────────────────────────────────────────────
+ * Eventos, noticias y videos. Son listados que cambian solos y no tienen texto
+ * que aprobar; además se arman al servir, así que no existen como archivo.
+ */
+import { archivos } from '../lib/base';
+import { SITE } from '../data/site';
+import { templos } from '../data/templos';
+
+/** En el orden en que se recorre el sitio, no en el del menú. */
+const PAGINAS: { ruta: string; titulo: string }[] = [
+  { ruta: '/', titulo: 'Portada' },
+  { ruta: '/sobre-nosotros', titulo: 'Sobre nosotros' },
+  { ruta: '/horarios', titulo: 'Horarios' },
+  { ruta: '/templos', titulo: 'Nuestros templos' },
+  ...templos.map((t) => ({ ruta: `/templos/${t.slug}`, titulo: `Templo · ${t.name}` })),
+  { ruta: '/contacto', titulo: 'Contacto' },
+];
+
+/**
+ * Saca el contenido de una página compilada.
+ *
+ * Se queda con lo de dentro de `<main>`: fuera quedan la navegación, el pie y
+ * el formulario del boletín, que en papel no sirven de nada. Y se quitan los
+ * `<script>`, porque acá se pegan como texto plano dentro de otro documento y
+ * volverían a ejecutarse sin el HTML que esperan.
+ */
+function contenidoDe(html: string): string | null {
+  const m = html.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
+  if (!m) return null;
+  return m[1].replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<dialog[\s\S]*?<\/dialog>/gi, '');
+}
+
+const assets = await archivos();
+
+/**
+ * Trae una página, por el camino que haga falta.
+ *
+ * Primero por la binding, que es instantánea y no pasa por Access. Pero no todas
+ * las páginas son archivos: `/contacto` se arma al servir, porque tiene
+ * formulario y enseña el resultado del envío. Esas no están en la binding, y
+ * hay que pedirlas por HTTP.
+ *
+ * Y ahí aparece el problema: el sitio está detrás de Cloudflare Access, así que
+ * una petición del Worker a su propio dominio vuelve a entrar por la puerta
+ * principal y se topa con el login. **La cookie de quien está leyendo esta
+ * página sirve para eso**: ya pasó por Access, así que se reenvía y la
+ * subpetición entra igual que entró la persona.
+ */
+async function traer(ruta: string): Promise<string | null> {
+  const destino = new URL(ruta, Astro.url);
+
+  if (assets) {
+    try {
+      const res = await assets.fetch(new Request(destino));
+      if (res.ok) {
+        const html = contenidoDe(await res.text());
+        if (html) return html;
+      }
+    } catch {
+      /* no era un archivo; se intenta por HTTP */
+    }
+  }
+
+  try {
+    const cookie = Astro.request.headers.get('cookie');
+    const res = await fetch(destino, { headers: cookie ? { cookie } : {} });
+    return res.ok ? contenidoDe(await res.text()) : null;
+  } catch {
+    return null;
+  }
+}
+
+const secciones = await Promise.all(
+  PAGINAS.map(async (p) => ({ ...p, html: await traer(p.ruta) })),
+);
+
+const hoy = new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date());
+const fallidas = secciones.filter((s) => !s.html).length;
+---
+
+<!doctype html>
+<html lang="es" data-theme="church">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* Que esto no llegue nunca a un buscador: es el sitio entero duplicado. */}
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{SITE.name} · textos para revisar</title>
+  </head>
+  <body class="bg-white text-black">
+    {/* ── Instrucciones. En pantalla sí; en papel, no. ────────────────────── */}
+    <div data-no-print class="mx-auto max-w-3xl px-6 py-10">
+      <h1 class="font-display text-3xl">Textos del sitio, para revisar en papel</h1>
+      <p class="mt-3 text-base-content/75">
+        Esta página junta {secciones.length} páginas del sitio en un solo documento, en el orden en que
+        se recorren. No es una copia: se lee del sitio de verdad cada vez que se abre, así que siempre
+        muestra lo que hay publicado hoy.
+      </p>
+
+      <div class="panel mt-6 p-5">
+        <p class="font-semibold">Para llevarlo a papel o a PDF</p>
+        <ol class="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-base-content/75">
+          <li>Pulsa <kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">P</kbd>.</li>
+          <li>
+            En «Destino», elige la impresora, o <strong>Guardar como PDF</strong> si prefieres mandarlo
+            por correo.
+          </li>
+          <li>Deja los márgenes como vienen: ya están ajustados a hoja carta.</li>
+        </ol>
+      </div>
+
+      {
+        /* El manejador va en un <script> aparte y no en un `onclick`: la CSP de
+          este sitio usa hashes, y con hashes el navegador bloquea los atributos
+          de evento en línea. El botón se habría quedado mudo, sin decir nada. */
+      }
+      <button id="imprimir" class="btn btn-primary mt-5">Imprimir ahora</button>
+
+      {
+        fallidas > 0 && (
+          <p class="mt-5 rounded bg-warning/10 px-4 py-3 text-sm text-warning-content">
+            No se pudieron leer {fallidas} de las {secciones.length} páginas. Las que faltan
+            aparecen señaladas abajo; el resto se imprime igual.
+          </p>
+        )
+      }
+
+      {
+        !assets && (
+          <p class="mt-5 rounded bg-error/10 px-4 py-3 text-sm">
+            Esto solo funciona con el sitio compilado. En desarrollo (<code>npm run dev</code>) no
+            hay archivos que leer: compila con <code>npm run build</code> y sirve con{' '}
+            <code>npx wrangler dev</code>.
+          </p>
+        )
+      }
+    </div>
+
+    {/* ── Portada del documento, solo en papel ────────────────────────────── */}
+    <div class="hoja-portada hidden print:block">
+      <h1 class="font-display text-4xl">{SITE.name}</h1>
+      <p class="mt-2 text-lg">Textos del sitio web</p>
+      <p class="mt-8 text-sm">Impreso el {hoy}</p>
+      <p class="mt-10 max-w-md text-sm leading-relaxed">
+        Estas son las palabras que aparecen hoy en el sitio. Cada página va en su propia hoja y
+        numerada. Puedes escribir encima: lo que corrijas se traslada tal cual.
+      </p>
+    </div>
+
+    {
+      secciones.map((s, i) => (
+        <section class="pagina">
+          <header class="encabezado">
+            <span class="numero">{i + 1}</span>
+            <span class="titulo">{s.titulo}</span>
+            <span class="ruta">{s.ruta}</span>
+          </header>
+          {s.html ? (
+            <div set:html={s.html} />
+          ) : (
+            <p class="aviso-fallo">
+              Esta página no se pudo leer desde acá. Ábrela en <strong>{s.ruta}</strong> e imprímela
+              aparte.
+            </p>
+          )}
+        </section>
+      ))
+    }
+
+    <script>
+      document.getElementById('imprimir')?.addEventListener('click', () => window.print());
+    </script>
+
+    <style is:global>
+      /* Lo específico de este documento. Lo general —colores, saltos de página,
+         qué se esconde— está en el bloque `@media print` de global.css. */
+      .pagina {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+      }
+
+      .encabezado {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        border-bottom: 2px solid #0a1730;
+        padding-bottom: 0.4rem;
+        margin-bottom: 1.5rem;
+      }
+      .encabezado .numero {
+        font-weight: 700;
+        font-size: 1.5rem;
+        color: #0a1730;
+      }
+      .encabezado .titulo {
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+      .encabezado .ruta {
+        margin-left: auto;
+        font-size: 0.8rem;
+        color: #666;
+      }
+
+      .aviso-fallo {
+        border: 1px dashed #999;
+        padding: 1rem;
+        color: #666;
+      }
+
+      @media print {
+        /* Cada página del sitio, en su propia hoja: así se reparten por tema
+           encima de la mesa, que es como se revisa un texto de verdad. */
+        .pagina {
+          break-before: page;
+          page-break-before: always;
+          padding: 0;
+          max-width: none;
+        }
+        .pagina:first-of-type {
+          break-before: avoid;
+          page-break-before: avoid;
+        }
+
+        .hoja-portada {
+          break-after: page;
+          page-break-after: always;
+        }
+
+        /* El encabezado se repite arriba de cada hoja de esa sección: con
+           veinte hojas sueltas en la mesa, saber de cuál es cada una deja de
+           ser un detalle. */
+        .encabezado {
+          position: running(cabecera);
+        }
+      }
+    </style>
+  </body>
+</html>
