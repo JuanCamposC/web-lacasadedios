@@ -3,7 +3,8 @@ import { crearTransporte } from '../../lib/envio';
 import { SITE, CONTACT } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 import { construirCorreo } from '../../lib/correo-plantilla';
-import { crearSupabaseServicio } from '../../lib/supabaseAdmin';
+import { baseDeDatos } from '../../lib/base';
+import { marcarBienvenido, porToken } from '../../lib/boletin';
 
 export const prerender = false;
 
@@ -16,13 +17,13 @@ export const prerender = false;
  * página llama aquí después, sin que nadie espere.
  *
  * POR QUÉ NO HAY SESIÓN
- * Igual que en /baja y /confirmar: el token del enlace ES la credencial. Se
- * usa la clave de servicio porque `subscribers` no acepta lecturas con la clave
- * anónima.
+ * Igual que en /baja y /confirmar: el token del enlace ES la credencial. No hay
+ * nada más que presentar, y por eso todo se busca POR TOKEN y nunca por correo,
+ * que sería adivinable.
  *
  * POR QUÉ NO SE PUEDE ABUSAR
  * Solo escribe a quien ya confirmó Y todavía no tiene bienvenida, y lo primero
- * que hace tras enviar es marcar `welcomed_at`. Cada dirección recibe una y
+ * que hace tras enviar es marcar `bienvenido_en`. Cada dirección recibe una y
  * solo una, aunque alguien recargue la página veinte veces o acierte un token
  * al azar.
  */
@@ -53,27 +54,21 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   const token = String(body?.t ?? '').trim();
   if (!ES_UUID.test(token)) return fin('token con formato inválido');
 
-  const supabase = crearSupabaseServicio();
-  if (!supabase) return fin('falta SUPABASE_SERVICE_ROLE_KEY');
-
-  const { data: fila, error } = await supabase
-    .from('subscribers')
-    .select('email, pending, welcomed_at')
-    .eq('token', token)
-    .maybeSingle();
-
-  if (error) {
-    // La columna llega con la migración 0008. Sin ella no se manda nada, pero
-    // la confirmación —que es lo que importa— ya ocurrió.
-    const faltaColumna = /welcomed_at/i.test(error.message ?? '');
-    return fin(faltaColumna ? 'falta la migración 0008' : `error de base: ${error.message}`);
+  let db;
+  let fila;
+  try {
+    db = await baseDeDatos();
+    fila = await porToken(db, token);
+  } catch (e) {
+    return fin(`error de base: ${(e as Error).message}`);
   }
+
   if (!fila) return fin('token desconocido');
-  if (fila.pending) return fin('la suscripción todavía no está confirmada');
-  if (fila.welcomed_at) return fin('ya tenía bienvenida');
+  if (fila.pendiente === 1) return fin('la suscripción todavía no está confirmada');
+  if (fila.bienvenido_en) return fin('ya tenía bienvenida');
 
   const transporte = crearTransporte();
-  if (!transporte) return fin('sin SMTP configurado');
+  if (!transporte) return fin('sin proveedor de correo configurado');
 
   const remitente = resolverRemitente('BOLETIN_FROM');
   if (!remitente.ok) return fin(`remitente inválido: «${remitente.valor}»`);
@@ -109,7 +104,7 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
     await transporte.sendMail({
       from: remitente.from,
       replyTo: CONTACT.email,
-      to: fila.email,
+      to: fila.correo,
       subject: `${SITE.name} — Bienvenido al boletín`,
       text: texto,
       html,
@@ -122,11 +117,11 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
     transporte.close();
   }
 
-  const { error: errorMarca } = await supabase
-    .from('subscribers')
-    .update({ welcomed_at: new Date().toISOString() })
-    .eq('token', token);
-  if (errorMarca) console.error(`[bienvenida] no se pudo marcar: ${errorMarca.message}`);
+  try {
+    await marcarBienvenido(db, token);
+  } catch (e) {
+    console.error(`[bienvenida] no se pudo marcar: ${(e as Error).message}`);
+  }
 
   // La dirección no va a los registros: es un dato personal.
   return fin('enviada');

@@ -3,6 +3,9 @@ import { enviarCadaUno, envioConfigurado } from '../../lib/envio';
 import { CONTACT, SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 import { construirCorreo } from '../../lib/correo-plantilla';
+import { baseDeDatos } from '../../lib/base';
+import { ajustes } from '../../lib/datos';
+import { confirmados, marcarVivoAvisado } from '../../lib/boletin';
 
 export const prerender = false;
 
@@ -34,14 +37,19 @@ function clasificar(mensaje: string): string {
 }
 
 export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
-  const supabase = (locals as any).supabase;
-  if (!supabase) return json({ ok: false, reason: 'unconfigured' });
+  // Quien autentica es Cloudflare Access, en el borde; el middleware ya
+  // verificó la firma del token antes de llegar acá (ver src/lib/access.ts).
+  // Este endpoint escribe a TODA la lista: no se sirve si el middleware no
+  // dejó identidad.
+  const identidad = locals.identidad;
 
-  // Solo el mantenedor autenticado puede disparar notificaciones.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return json({ ok: false, reason: 'unauthorized' }, 401);
+  // `db` y no `base`: más abajo `base` ya es la dirección del sitio.
+  let db;
+  try {
+    db = await baseDeDatos();
+  } catch (e) {
+    return json({ ok: false, reason: 'db_error', detalle: (e as Error).message });
+  }
 
   const body = await request.json().catch(() => ({}));
   const type = String(body?.type ?? '');
@@ -84,24 +92,16 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
    */
   let marcaVivo = '';
   if (esVivo && !esPrueba) {
-    const { data: aj, error: errAj } = await supabase
-      .from('settings')
-      .select('live_enabled, live_url, live_notified_url')
-      .eq('id', 1)
-      .maybeSingle();
-
-    if (errAj) {
-      const faltaColumna = /live_notified_url/i.test(errAj.message ?? '');
-      return json({
-        ok: false,
-        reason: faltaColumna ? 'falta_migracion' : 'db_error',
-        detalle: errAj.message,
-      });
+    let aj;
+    try {
+      aj = await ajustes(db);
+    } catch (e) {
+      return json({ ok: false, reason: 'db_error', detalle: (e as Error).message });
     }
-    if (!aj?.live_enabled) return json({ ok: false, reason: 'no_en_vivo' });
+    if (aj?.vivo_activo !== 1) return json({ ok: false, reason: 'no_en_vivo' });
 
-    marcaVivo = aj.live_url ?? '';
-    if (marcaVivo && marcaVivo === aj.live_notified_url) {
+    marcaVivo = aj.vivo_url ?? '';
+    if (marcaVivo && marcaVivo === aj.vivo_url_avisada) {
       // No es un fallo: es la protección funcionando.
       return json({ ok: true, sent: 0, reason: 'ya_avisado' });
     }
@@ -112,35 +112,26 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   // En la prueba el único destinatario es quien la pidió, con un token
   // inventado: el enlace de baja tiene que aparecer en el correo —es lo que se
   // va a revisar— pero no debe dar de baja a nadie de verdad al pulsarlo.
-  let destinatarios: { email: string; token: string }[];
+  let destinatarios: { correo: string; token: string }[];
 
   if (esPrueba) {
-    if (!user.email) return json({ ok: false, reason: 'sin_correo_admin' });
-    destinatarios = [{ email: user.email, token: 'prueba' }];
+    // La prueba va a quien la pidió, y eso sale del token de Access. Si no hay
+    // identidad —panel abierto a propósito, o desarrollo local— no hay a quién
+    // mandarla: se dice, en vez de mandarla a la lista por descuido.
+    if (!identidad?.correo) return json({ ok: false, reason: 'sin_correo_admin' });
+    destinatarios = [{ correo: identidad.correo, token: 'prueba' }];
   } else {
-    // `token` viene de la migración de baja (ver supabase/schema.sql). Si la
-    // migración todavía no se corrió, la consulta falla y se dice por qué en
-    // vez de enviar correos sin enlace de baja.
-    //
-    // `pending` viene de la migración de doble opt-in: solo se escribe a quien
-    // confirmó su correo desde su propia bandeja. Enviar a los pendientes sería
-    // escribir a direcciones que nadie verificó, que es justo lo que dispara
-    // las quejas de spam y arrastra la reputación del dominio.
-    const { data: subs, error: errorSubs } = await supabase
-      .from('subscribers')
-      .select('email, token')
-      .eq('pending', false);
-
-    if (errorSubs) {
-      const faltaColumna = /token|pending/i.test(errorSubs.message ?? '');
-      return json({
-        ok: false,
-        reason: faltaColumna ? 'falta_migracion' : 'db_error',
-        detalle: errorSubs.message,
-      });
+    // `confirmados()` filtra SIEMPRE por quien confirmó desde su propia bandeja.
+    // Escribir a los pendientes sería escribir a direcciones que nadie verificó,
+    // que es justo lo que dispara las quejas de spam y arrastra la reputación
+    // del dominio. Ver src/lib/boletin.ts.
+    try {
+      destinatarios = await confirmados(db);
+    } catch (e) {
+      return json({ ok: false, reason: 'db_error', detalle: (e as Error).message });
     }
 
-    destinatarios = (subs ?? []).filter((s: any) => s.email && s.token);
+    destinatarios = destinatarios.filter((s) => s.correo && s.token);
     if (!destinatarios.length) return json({ ok: true, sent: 0 });
   }
 
@@ -214,13 +205,13 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   // La concurrencia la pone `enviarCadaUno`, no este código: el `pool` de
   // nodemailer que antes encolaba de tres en tres ya no existe, y sin freno
   // una lista larga se respondería a sí misma con 429.
-  const mensajes = destinatarios.map((s: { email: string; token: string }) => {
+  const mensajes = destinatarios.map((s) => {
     const urlBaja = `${base}/baja?t=${encodeURIComponent(s.token)}`;
     const { html, texto } = cuerpo(urlBaja);
     return {
       from,
       replyTo: responderA,
-      to: s.email,
+      to: s.correo,
       subject: asunto,
       text: texto,
       html,
@@ -253,13 +244,13 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   // envío falla entero, el siguiente intento debe volver a intentarlo. Una
   // prueba nunca marca nada: para eso es una prueba.
   if (esVivo && !esPrueba && enviados && marcaVivo) {
-    const { error } = await supabase
-      .from('settings')
-      .update({ live_notified_url: marcaVivo })
-      .eq('id', 1);
-    // No se le devuelve al panel: los correos YA salieron, y decir que falló
-    // invitaría a reintentar y a escribir dos veces. Queda en los registros.
-    if (error) console.error(`[notify] no se pudo marcar la transmisión avisada: ${error.message}`);
+    try {
+      await marcarVivoAvisado(db, marcaVivo);
+    } catch (e) {
+      // No se le devuelve al panel: los correos YA salieron, y decir que falló
+      // invitaría a reintentar y a escribir dos veces. Queda en los registros.
+      console.error(`[notify] no se pudo marcar la transmisión avisada: ${(e as Error).message}`);
+    }
   }
 
   return json({ ok: true, sent: enviados, fallidos, prueba: esPrueba });

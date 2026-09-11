@@ -2,20 +2,23 @@
  * Alta al boletín con doble opt-in.
  *
  * POR QUÉ EXISTE
- * Antes el navegador insertaba directamente en `subscribers` con la clave
- * anónima, amparado en una política `for insert with check (true)`. Como esa
- * clave es pública por diseño, cualquiera podía llenar la tabla o suscribir a
- * terceros a su nombre. La política ya no existe (ver la migración «ALTA DEL
- * BOLETÍN CON DOBLE OPT-IN» en supabase/schema.sql) y esta es la única vía de
- * escritura: valida el correo, frena por IP y deja la fila en `pending` hasta
- * que la persona confirme desde su bandeja.
+ * Hubo un tiempo en que el navegador insertaba directamente en la tabla con una
+ * clave pública. Cualquiera podía llenarla o suscribir a terceros a su nombre.
+ * Este endpoint es desde entonces la única vía de escritura: valida el correo,
+ * frena por IP y deja la fila `pendiente` hasta que la persona confirme desde
+ * su bandeja.
+ *
+ * Ahora la base es D1, que no tiene políticas de fila: lo que sustituye a
+ * aquellas reglas es que el acceso a la tabla vive en un solo módulo
+ * (src/lib/boletin.ts) y nada más lo toca.
  */
 import type { APIRoute } from 'astro';
 import { crearTransporte } from '../../lib/envio';
 import { SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 import { construirCorreo } from '../../lib/correo-plantilla';
-import { crearSupabaseServicio } from '../../lib/supabaseAdmin';
+import { baseDeDatos } from '../../lib/base';
+import { altaSuscriptor, registrarIntento } from '../../lib/boletin';
 
 export const prerender = false;
 
@@ -58,10 +61,17 @@ function correoValido(email: string): boolean {
 }
 
 /**
- * IP del visitante. En Vercel llega en `x-forwarded-for`, donde el primer
- * elemento es el cliente real y el resto son los proxies intermedios.
+ * IP del visitante.
+ *
+ * En Cloudflare se lee `CF-Connecting-IP`, que la pone el propio borde y **no
+ * se puede falsear desde fuera**: si la petición la trae, viene de Cloudflare.
+ * `x-forwarded-for` sí es falsificable —cualquiera puede mandarla— y por eso
+ * queda de respaldo y no de primera opción; con ella sola, saltarse el freno
+ * por IP sería tan fácil como inventar una dirección distinta en cada intento.
  */
 function ipDe(request: Request): string {
+  const cf = request.headers.get('cf-connecting-ip')?.trim();
+  if (cf) return cf;
   const xff = request.headers.get('x-forwarded-for') ?? '';
   const primera = xff.split(',')[0]?.trim();
   return primera || request.headers.get('x-real-ip')?.trim() || 'desconocida';
@@ -77,58 +87,38 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
 
   if (!correoValido(email)) return json({ ok: false, reason: 'correo_invalido' }, 400);
 
-  const supabase = crearSupabaseServicio();
-  if (!supabase) {
-    // Sin la clave de servicio no se puede escribir: la tabla ya no acepta la
-    // clave anónima. Se registra cuál falta en vez de dejar un 500 mudo.
-    return fallo('sin_configurar', 'Falta SUPABASE_SERVICE_ROLE_KEY en el entorno del servidor.');
+  let alta;
+  try {
+    const base = await baseDeDatos();
+
+    // ── Freno por IP ────────────────────────────────────────────────────────
+    // La cuenta vive en la base y no en memoria: cada isolate de Workers tiene
+    // la suya y se recicla sin avisar, así que un contador en una variable se
+    // reinicia solo y bastaría con reintentar para saltárselo.
+    const previos = await registrarIntento(base, ipDe(request), VENTANA_MIN);
+    if (previos >= LIMITE) return json({ ok: false, reason: 'demasiados_intentos' }, 429);
+
+    alta = await altaSuscriptor(base, email);
+  } catch (e) {
+    return fallo('db_error', (e as Error).message);
   }
 
-  // ── Freno por IP ──────────────────────────────────────────────────────────
-  // La cuenta vive en la base y no en memoria del proceso: en serverless cada
-  // instancia tendría su propio contador y bastaría con reintentar hasta caer
-  // en una nueva para saltárselo.
-  const { data: previos, error: errorFreno } = await supabase.rpc('registrar_intento_alta', {
-    p_ip: ipDe(request),
-    p_ventana: `${VENTANA_MIN} minutes`,
-  });
-
-  if (errorFreno) {
-    const faltaMigracion = /registrar_intento_alta|subscribe_attempts/i.test(
-      errorFreno.message ?? '',
-    );
-    return fallo(faltaMigracion ? 'falta_migracion' : 'db_error', errorFreno.message);
-  }
-
-  if (typeof previos === 'number' && previos >= LIMITE) {
-    return json({ ok: false, reason: 'demasiados_intentos' }, 429);
-  }
-
-  // ── Alta ──────────────────────────────────────────────────────────────────
-  const { data: fila, error } = await supabase
-    .from('subscribers')
-    .insert({ email })
-    .select('token, pending')
-    .single();
-
-  if (error) {
-    // 23505 = correo ya presente. Al navegador se le responde lo mismo que a un
-    // alta nueva: distinguirlas permitiría comprobar desde fuera quién está en
-    // la lista. En los registros sí se separan —sin la dirección, que es un dato
-    // personal— porque si no, un «dice que lo envió y no llega» es indistinguible
-    // de un fallo de entrega.
-    if (error.code === '23505') {
-      console.info('[suscribir] ya_estaba: la dirección ya figuraba, no se envía correo');
-      return json({ ok: true, estado: 'ya_estaba' });
-    }
-
-    const faltaMigracion = /pending|confirmed_at/i.test(error.message ?? '');
-    return fallo(faltaMigracion ? 'falta_migracion' : 'db_error', error.message);
+  // Al navegador se le responde lo mismo que a un alta nueva: distinguirlas
+  // permitiría comprobar desde fuera quién está en la lista. En los registros sí
+  // se separan —sin la dirección, que es un dato personal— porque si no, un
+  // «dice que lo envió y no llega» es indistinguible de un fallo de entrega.
+  if (alta.estado === 'ya_estaba') {
+    console.info('[suscribir] ya_estaba: la dirección ya figuraba, no se envía correo');
+    return json({ ok: true, estado: 'ya_estaba' });
   }
 
   // ── Correo de confirmación ────────────────────────────────────────────────
   const transporte = crearTransporte();
-  const remitente = resolverRemitente();
+  // La confirmación de alta es el PRIMER correo del boletín, así que sale de la
+  // casilla del boletín. Si alguien la marca como no deseada, el castigo de
+  // reputación cae ahí y no sobre la casilla del formulario de contacto, que es
+  // la que no puede fallar.
+  const remitente = resolverRemitente('BOLETIN_FROM');
 
   // Los dos fallos van por separado y no en una disyunción: `remitente.valor`
   // solo existe en la rama de error del tipo, y agrupándolos TypeScript no
@@ -146,12 +136,12 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   if (!remitente.ok) {
     return fallo(
       'from_invalido',
-      `CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
+      `BOLETIN_FROM/CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
     );
   }
 
   const base = process.env.SITE_URL || reqUrl.origin;
-  const enlace = `${base}/confirmar?t=${encodeURIComponent(String(fila.token))}`;
+  const enlace = `${base}/confirmar?t=${encodeURIComponent(alta.token)}`;
 
   const { html, texto } = construirCorreo({
     base,
@@ -170,7 +160,7 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   });
 
   try {
-    // nodemailer lanza si el envío falla: no hay un error que mirar en el
+    // El enviador lanza si el envío falla: no hay un error que mirar en el
     // resultado, todo el camino de fallo pasa por el catch.
     await transporte.sendMail({
       from: remitente.from,

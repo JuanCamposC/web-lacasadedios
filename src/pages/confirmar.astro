@@ -10,7 +10,8 @@ export const prerender = false;
 import Layout from '../layouts/Layout.astro';
 import EmptyState from '../components/EmptyState.astro';
 import { Icon } from 'astro-icon/components';
-import { restRpc } from '../lib/rest';
+import { baseDeDatos } from '../lib/base';
+import { confirmarSuscriptor } from '../lib/boletin';
 import { CONTACT } from '../data/site';
 
 const token = Astro.url.searchParams.get('t')?.trim() ?? '';
@@ -23,9 +24,16 @@ if (token) {
   if (!ES_UUID.test(token)) {
     estado = 'no-encontrado';
   } else {
-    // Devuelve true si actualizó una fila. `null` = la llamada falló.
-    const confirmado = await restRpc<boolean>('confirmar_suscriptor', { p_token: token });
-    estado = confirmado === null ? 'error' : confirmado ? 'listo' : 'no-encontrado';
+    // `true` si esta llamada fue la que confirmó. Confirmar dos veces no da
+    // «listo» la segunda, y está bien: quien recarga ya está dentro y lo que
+    // ve es la página de «este enlace ya no sirve», no un error.
+    try {
+      const confirmado = await confirmarSuscriptor(await baseDeDatos(), token);
+      estado = confirmado ? 'listo' : 'no-encontrado';
+    } catch (e) {
+      console.error(`[confirmar] ${(e as Error).message}`);
+      estado = 'error';
+    }
   }
 }
 

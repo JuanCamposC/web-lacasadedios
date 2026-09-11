@@ -4,15 +4,21 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { Icon } from 'astro-icon/components';
 
-const supabase = Astro.locals.supabase;
-if (!supabase) return Astro.redirect('/admin/login');
+import { baseDeDatos } from '../../lib/base';
+import { listarSuscriptores } from '../../lib/boletin';
 
-const { data } = await supabase
-  .from('subscribers')
-  .select('*')
-  .order('created_at', { ascending: false });
-const subs = data ?? [];
-const emails = subs.map((s: any) => s.email).join(', ');
+const subs = await listarSuscriptores(await baseDeDatos());
+
+// Solo se copian los confirmados. Quien está pendiente no dio permiso para que
+// le escriban, y una lista que se copia al portapapeles termina pegada en el
+// «Para:» de algún correo: mezclarlos sería regalar ese error.
+const emails = subs
+  .filter((s) => s.pendiente === 0)
+  .map((s) => s.correo)
+  .join(', ');
+
+const confirmados = subs.filter((s) => s.pendiente === 0).length;
+const pendientes = subs.length - confirmados;
 const fmt = (d: string) =>
   new Intl.DateTimeFormat('es-CL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(d));
 ---
@@ -42,10 +48,25 @@ const fmt = (d: string) =>
         <Icon name="lucide:mail" class="h-6 w-6" />
       </span>
       <div>
-        <p class="font-data text-3xl font-bold leading-none text-primary">{subs.length}</p>
+        {
+          /* El número grande es el de CONFIRMADOS, que son a quienes de verdad
+            les llega el boletín. Contar también los pendientes daría una cifra
+            más bonita y equivocada: al pulsar «avisar» saldrían menos correos
+            de los que dice este número, y eso parece un fallo del envío. */
+        }
+        <p class="font-data text-3xl font-bold leading-none text-primary">{confirmados}</p>
         <p class="mt-1 text-sm text-base-content/60">
-          {subs.length === 1 ? 'persona suscrita' : 'personas suscritas'} · se dan de alta desde el pie
-          del sitio
+          {confirmados === 1 ? 'persona recibe el boletín' : 'personas reciben el boletín'} · se dan de
+          alta desde el pie del sitio
+          {
+            pendientes > 0 && (
+              <span class="mt-1 block text-warning">
+                {pendientes === 1
+                  ? 'Otra persona se apuntó y no ha confirmado todavía.'
+                  : `Otras ${pendientes} se apuntaron y no han confirmado todavía.`}
+              </span>
+            )
+          }
         </p>
       </div>
     </div>
@@ -67,16 +88,27 @@ const fmt = (d: string) =>
               <tr>
                 <>
                   <th>Correo</th>
+                  <th>Estado</th>
                   <th class="text-right">Se suscribió</th>
                 </>
               </tr>
             </thead>
             <tbody>
-              {subs.map((s: any) => (
+              {subs.map((s) => (
                 <tr>
-                  <td class="font-medium">{s.email}</td>
+                  <td class="font-medium">{s.correo}</td>
+                  {/* Los pendientes se enseñan a propósito: es la explicación de
+                      la mitad de los «me suscribí y no me llega nada». A esos
+                      NO se les escribe hasta que confirmen desde su bandeja. */}
+                  <td>
+                    {s.pendiente === 1 ? (
+                      <span class="badge badge-warning badge-sm">Sin confirmar</span>
+                    ) : (
+                      <span class="badge badge-success badge-sm">Confirmado</span>
+                    )}
+                  </td>
                   <td class="font-data text-right text-sm text-base-content/55">
-                    {fmt(s.created_at)}
+                    {fmt(s.creado_en)}
                   </td>
                 </tr>
               ))}

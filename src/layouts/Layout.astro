@@ -173,10 +173,6 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
   // dependa del DOM de la página se cuelga de `astro:page-load`, que además
   // dispara en la carga inicial.
   import '../scripts/reveal';
-  // `restLeer` en vez del cliente de Supabase: son 215 kB de JavaScript menos
-  // en cada página pública (ver src/lib/rest.ts).
-  import { restLeer } from '../lib/rest';
-
   let estaEnVivo: boolean | null = null;
 
   async function pastillaEnVivo() {
@@ -184,11 +180,14 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
     if (!pill) return;
     try {
       // La consulta se hace una vez por sesión, no en cada navegación.
+      //
+      // Va a `/api/estado`, del propio sitio, y no a la base directamente: así
+      // no viaja ninguna clave dentro del HTML y la política de seguridad puede
+      // seguir siendo `connect-src 'self'`.
       if (estaEnVivo === null) {
-        const filas = await restLeer<{ live_enabled: boolean }>(
-          'settings?id=eq.1&select=live_enabled',
-        );
-        estaEnVivo = Boolean(filas[0]?.live_enabled);
+        const res = await fetch('/api/estado');
+        const datos = res.ok ? ((await res.json()) as { vivo?: { activo?: boolean } }) : null;
+        estaEnVivo = Boolean(datos?.vivo?.activo);
       }
       pill.classList.toggle('hidden', !estaEnVivo);
       pill.classList.toggle('inline-flex', estaEnVivo);

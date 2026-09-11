@@ -6,7 +6,7 @@ import { templos } from './templos';
  * POR QUÉ ESTÁ AQUÍ Y NO EN LA BASE
  * La lista se deriva de `templos`, así que abrir una sede nueva la añade sola
  * al desplegable del panel y a los filtros del sitio, sin migración y sin dos
- * listas que se desincronicen. La columna en Supabase guarda el `slug` como
+ * listas que se desincronicen. La columna de la base guarda el `slug` como
  * texto libre a propósito, por lo mismo.
  */
 

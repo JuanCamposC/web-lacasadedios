@@ -5,50 +5,56 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import { Icon } from 'astro-icon/components';
 import { templos } from '../../data/templos';
 
-const supabase = Astro.locals.supabase;
-if (!supabase) return Astro.redirect('/admin/login');
+import { almacen, baseDeDatos } from '../../lib/base';
+import { ajustes } from '../../lib/datos';
+import { urlMedio } from '../../lib/medios';
 
-const { data } = await supabase
-  .from('settings')
-  .select(
-    'popup_enabled, popup_title, popup_body, popup_cta_label, popup_cta_url, popup_image_url, popup_starts_at, popup_ends_at, popup_version, popup_layout, popup_cta_pos',
-  )
-  .eq('id', 1)
-  .maybeSingle();
+const fila = await ajustes(await baseDeDatos());
 
-const s = data ?? {
-  popup_enabled: false,
-  popup_title: '',
-  popup_body: '',
-  popup_cta_label: '',
-  popup_cta_url: '',
-  popup_image_url: '',
-  popup_starts_at: null,
-  popup_ends_at: null,
-  popup_version: 1,
-  popup_layout: 'normal',
-  popup_cta_pos: 'abajo-centro',
+// Los nombres de la izquierda son los que usa el formulario desde siempre; los
+// de la derecha, los de la base. Se traduce acá y no se renombra medio archivo.
+const s = {
+  popup_enabled: fila?.aviso_activo === 1,
+  popup_title: fila?.aviso_titulo ?? '',
+  popup_body: fila?.aviso_cuerpo ?? '',
+  popup_cta_label: fila?.aviso_boton ?? '',
+  popup_cta_url: fila?.aviso_boton_url ?? '',
+  // En la base vive la CLAVE del archivo, no su dirección. El formulario
+  // trabaja con la clave y solo la convierte a dirección para enseñarla.
+  popup_image_key: fila?.aviso_imagen_clave ?? '',
+  popup_image_url: urlMedio(fila?.aviso_imagen_clave) ?? '',
+  popup_starts_at: fila?.aviso_desde ?? null,
+  popup_ends_at: fila?.aviso_hasta ?? null,
+  popup_version: fila?.aviso_version ?? 1,
+  popup_layout: fila?.aviso_diseno ?? 'normal',
+  popup_cta_pos: fila?.aviso_boton_pos ?? 'abajo-centro',
 };
 
 /* ── Imágenes ya subidas ───────────────────────────────────────────────────
-   Se listan las carpetas donde el panel guarda las imágenes de cada sección
+   Se listan los prefijos donde el panel guarda las imágenes de cada sección
    (ver `subirImagen` en src/scripts/admin/upload.ts, que usa el nombre de la
-   tabla como carpeta). Así se puede reutilizar la foto de un evento sin
-   volver a subirla ni ir a buscar la dirección a mano. */
-const CARPETAS = ['avisos', 'events', 'news', 'videos'];
+   tabla como prefijo). Así se puede reutilizar la foto de un evento sin volver
+   a subirla ni ir a buscar la dirección a mano.
 
-const disponibles: { url: string; nombre: string }[] = [];
-for (const carpeta of CARPETAS) {
-  const { data: archivos } = await supabase.storage
-    .from('media')
-    .list(carpeta, { limit: 24, sortBy: { column: 'created_at', order: 'desc' } });
-  for (const a of archivos ?? []) {
-    if (a.name.startsWith('.')) continue; // marcador de carpeta vacía
-    disponibles.push({
-      url: supabase.storage.from('media').getPublicUrl(`${carpeta}/${a.name}`).data.publicUrl,
-      nombre: a.name,
-    });
+   R2 no tiene carpetas: `prefix` filtra por el principio de la clave, que es
+   lo mismo en la práctica. Y como no ordena por fecha, se ordena acá. */
+const PREFIJOS = ['avisos/', 'eventos/', 'noticias/', 'videos/'];
+
+const disponibles: { clave: string; url: string; nombre: string }[] = [];
+try {
+  const bucket = await almacen();
+  const listas = await Promise.all(PREFIJOS.map((prefix) => bucket.list({ prefix, limit: 24 })));
+  for (const lista of listas) {
+    for (const o of lista.objects) {
+      const url = urlMedio(o.key);
+      if (!url) continue; // sin MEDIOS_DOMINIO no hay dirección que enseñar
+      disponibles.push({ clave: o.key, url, nombre: o.key.split('/').pop() ?? o.key });
+    }
   }
+  disponibles.sort((a, b) => b.clave.localeCompare(a.clave));
+} catch {
+  // Sin bucket la galería queda vacía y se puede subir igual: no es motivo
+  // para tumbar la pantalla entera del aviso.
 }
 
 /* Destinos internos para el botón, además de «otro enlace». */
@@ -162,7 +168,13 @@ const paraInput = (iso: string | null) => {
       {/* ── Imagen ───────────────────────────────────────────────────── */}
       <div>
         <span class="mb-1.5 block text-sm font-medium">Imagen</span>
-        <input type="hidden" name="popup_image_url" value={s.popup_image_url ?? ''} />
+        {
+          /* Lo que se guarda es la CLAVE del archivo, no su dirección: si mañana
+            cambia el dominio del bucket se cambia una variable y no cada fila.
+            La dirección viaja aparte, solo para la vista previa. */
+        }
+        <input type="hidden" name="popup_image_key" value={s.popup_image_key} />
+        <input type="hidden" name="popup_image_url" value={s.popup_image_url} />
 
         <div class="flex flex-wrap items-center gap-2">
           <label class="btn btn-outline btn-sm gap-2">
@@ -188,7 +200,8 @@ const paraInput = (iso: string | null) => {
                   <button
                     type="button"
                     class="group relative aspect-video overflow-hidden rounded border-2 border-transparent transition hover:border-primary"
-                    data-elegir={img.url}
+                    data-elegir={img.clave}
+                    data-url={img.url}
                     title={img.nombre}
                   >
                     <img src={img.url} alt="" loading="lazy" class="h-full w-full object-cover" />
@@ -411,10 +424,9 @@ const paraInput = (iso: string | null) => {
   </div>
 
   <script>
-    import { createBrowserSupabase } from '../../lib/supabase';
+    import { api } from '../../scripts/admin/api';
     import { prepararImagen, subirImagen } from '../../scripts/admin/upload';
 
-    const supabase = createBrowserSupabase();
     const form = document.getElementById('aviso-form') as HTMLFormElement;
     const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
     const campo = (n: string) => form.querySelector(`[name="${n}"]`) as HTMLInputElement;
@@ -434,17 +446,24 @@ const paraInput = (iso: string | null) => {
     const archivo = $<HTMLInputElement>('aviso-archivo');
     const subiendo = $('aviso-subiendo');
 
-    $('aviso-quitar-img').addEventListener('click', () => {
-      campo('popup_image_url').value = '';
+    /**
+     * La imagen se lleva en dos campos: la CLAVE es lo que se guarda, la
+     * dirección solo sirve para la vista previa. Van siempre juntas — poner una
+     * sin la otra deja el formulario diciendo una cosa y guardando otra.
+     */
+    const fijarImagen = (clave: string, url: string) => {
+      campo('popup_image_key').value = clave;
+      campo('popup_image_url').value = url;
       pintar();
-    });
+    };
 
-    document.querySelectorAll<HTMLElement>('[data-elegir]').forEach((b) =>
-      b.addEventListener('click', () => {
-        campo('popup_image_url').value = b.dataset.elegir ?? '';
-        pintar();
-      }),
-    );
+    $('aviso-quitar-img').addEventListener('click', () => fijarImagen('', ''));
+
+    document
+      .querySelectorAll<HTMLElement>('[data-elegir]')
+      .forEach((b) =>
+        b.addEventListener('click', () => fijarImagen(b.dataset.elegir ?? '', b.dataset.url ?? '')),
+      );
 
     archivo.addEventListener('change', async () => {
       const f = archivo.files?.[0];
@@ -454,8 +473,13 @@ const paraInput = (iso: string | null) => {
         // Mismo camino que las imágenes de eventos y noticias: se reduce en el
         // navegador antes de subir, para no guardar los 6 MB del teléfono.
         const blob = await prepararImagen(f);
-        campo('popup_image_url').value = await subirImagen('varios', blob);
-        pintar();
+        const clave = await subirImagen('avisos', blob);
+        // La dirección se arma con el mismo dominio que ya usan las miniaturas
+        // de la galería; si no hay ninguna, no hay vista previa pero la clave
+        // queda guardada igual y el aviso funciona.
+        const muestra = document.querySelector<HTMLElement>('[data-url]')?.dataset.url ?? '';
+        const dominio = muestra ? new URL(muestra).origin : '';
+        fijarImagen(clave, dominio ? `${dominio}/${clave}` : '');
       } catch (e) {
         mensaje('No se pudo subir la imagen: ' + (e as Error).message, false);
       } finally {
@@ -572,7 +596,7 @@ const paraInput = (iso: string | null) => {
         (form.querySelector('[name="popup_layout"]:checked') as HTMLInputElement)?.value ??
         'normal';
       const titulo = vacio(campo('popup_title').value);
-      const imagen = vacio(campo('popup_image_url').value);
+      const imagen = vacio(campo('popup_image_key').value);
 
       // Encender un aviso que nunca se mostrará dejaría a alguien mirando el
       // sitio sin entender por qué no pasa nada.
@@ -589,30 +613,35 @@ const paraInput = (iso: string | null) => {
       const version = Number(campo('popup_version').value || 1);
       const repetir = (form.querySelector('[name="repetir"]') as HTMLInputElement).checked;
 
+      // Nombres de la base (`aviso_*`). La fecha de actualización la pone la
+      // propia base al guardar, así que no se manda.
+      const nuevaVersion = repetir ? version + 1 : version;
       const payload = {
-        popup_enabled: check.checked,
-        popup_layout: modo,
-        popup_title: titulo,
-        popup_body: vacio(campo('popup_body').value),
-        popup_cta_label: vacio(campo('popup_cta_label').value),
-        popup_cta_url: vacio(campo('popup_cta_url').value),
-        popup_cta_pos: campo('popup_cta_pos').value || 'abajo-centro',
-        popup_image_url: imagen,
-        popup_starts_at: fecha(campo('popup_starts_at').value),
-        popup_ends_at: fecha(campo('popup_ends_at').value),
-        popup_version: repetir ? version + 1 : version,
-        updated_at: new Date().toISOString(),
+        aviso_activo: check.checked,
+        aviso_diseno: modo,
+        aviso_titulo: titulo,
+        aviso_cuerpo: vacio(campo('popup_body').value),
+        aviso_boton: vacio(campo('popup_cta_label').value),
+        aviso_boton_url: vacio(campo('popup_cta_url').value),
+        aviso_boton_pos: campo('popup_cta_pos').value || 'abajo-centro',
+        aviso_imagen_clave: imagen,
+        aviso_desde: fecha(campo('popup_starts_at').value),
+        aviso_hasta: fecha(campo('popup_ends_at').value),
+        aviso_version: nuevaVersion,
       };
 
-      const { error } = await supabase.from('settings').update(payload).eq('id', 1);
+      try {
+        await api.guardarAjustes(payload);
+      } catch (err) {
+        btn.disabled = false;
+        return mensaje('No se pudo guardar: ' + (err as Error).message, false);
+      }
       btn.disabled = false;
 
-      if (error) return mensaje('No se pudo guardar: ' + error.message, false);
-
-      campo('popup_version').value = String(payload.popup_version);
+      campo('popup_version').value = String(nuevaVersion);
       (form.querySelector('[name="repetir"]') as HTMLInputElement).checked = false;
       mensaje(
-        !payload.popup_enabled
+        !payload.aviso_activo
           ? 'Guardado. El aviso está apagado.'
           : repetir
             ? 'Guardado. Vuelve a mostrarse a todo el mundo, también a quien ya lo cerró.'

@@ -4,75 +4,79 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { Icon } from 'astro-icon/components';
 
-const supabase = Astro.locals.supabase;
-if (!supabase) return Astro.redirect('/admin/login');
+import { baseDeDatos } from '../../lib/base';
+import { ajustes as leerAjustes } from '../../lib/datos';
 
-const cuenta = (tabla: string, filtro?: Record<string, unknown>) => {
-  let q = supabase.from(tabla).select('id', { count: 'exact', head: true });
-  if (filtro) for (const [k, v] of Object.entries(filtro)) q = q.eq(k, v);
-  return q;
-};
+const db = await baseDeDatos();
 
-const [ev, evPub, nw, nwPub, vd, vdPub, subs, ajustes, recientes] = await Promise.all([
-  cuenta('events'),
-  cuenta('events', { published: true }),
-  cuenta('news'),
-  cuenta('news', { published: true }),
+/**
+ * Totales y publicados en UNA consulta por tabla, no en dos.
+ *
+ * Antes eran dos viajes por recurso —uno para el total y otro para los
+ * publicados—, ocho en total. `sum(publicado)` los junta: SQLite cuenta las dos
+ * cosas en la misma pasada. Con D1 en Norteamérica cada viaje se nota, y esta
+ * es la primera pantalla que se ve al entrar al panel.
+ */
+const cuenta = (tabla: string) =>
+  db
+    .prepare(`select count(*) as total, sum(publicado) as publicados from ${tabla}`)
+    .bind()
+    .first<{ total: number; publicados: number | null }>();
+
+const recientesDe = (tabla: string) =>
+  db
+    .prepare(
+      `select id, titulo, creado_en, publicado from ${tabla} order by creado_en desc limit 4`,
+    )
+    .bind()
+    .all<{ id: string; titulo: string; creado_en: string; publicado: number }>();
+
+const [ev, nw, vd, subs, aj, evR, nwR, vdR] = await Promise.all([
+  cuenta('eventos'),
+  cuenta('noticias'),
   cuenta('videos'),
-  cuenta('videos', { published: true }),
-  cuenta('subscribers'),
-  supabase.from('settings').select('live_enabled, live_title').eq('id', 1).maybeSingle(),
-  Promise.all([
-    supabase
-      .from('events')
-      .select('id,title,created_at,published')
-      .order('created_at', { ascending: false })
-      .limit(4),
-    supabase
-      .from('news')
-      .select('id,title,created_at,published')
-      .order('created_at', { ascending: false })
-      .limit(4),
-    supabase
-      .from('videos')
-      .select('id,title,created_at,published')
-      .order('created_at', { ascending: false })
-      .limit(4),
-  ]),
+  db
+    .prepare('select count(*) as total from suscriptores where pendiente = 0')
+    .bind()
+    .first<{ total: number }>(),
+  leerAjustes(db),
+  recientesDe('eventos'),
+  recientesDe('noticias'),
+  recientesDe('videos'),
 ]);
 
-const enVivo = Boolean(ajustes.data?.live_enabled);
+const enVivo = aj?.vivo_activo === 1;
 
 const tarjetas = [
   {
     href: '/admin/eventos',
     label: 'Eventos',
     icon: 'lucide:calendar-days',
-    total: ev.count ?? 0,
-    publicados: evPub.count ?? 0,
+    total: ev?.total ?? 0,
+    publicados: ev?.publicados ?? 0,
     tile: 'tile',
   },
   {
     href: '/admin/noticias',
     label: 'Noticias',
     icon: 'lucide:newspaper',
-    total: nw.count ?? 0,
-    publicados: nwPub.count ?? 0,
+    total: nw?.total ?? 0,
+    publicados: nw?.publicados ?? 0,
     tile: 'tile tile-accent',
   },
   {
     href: '/admin/videos',
     label: 'Videos',
     icon: 'lucide:youtube',
-    total: vd.count ?? 0,
-    publicados: vdPub.count ?? 0,
+    total: vd?.total ?? 0,
+    publicados: vd?.publicados ?? 0,
     tile: 'tile tile-secondary',
   },
   {
     href: '/admin/suscriptores',
     label: 'Suscriptores',
     icon: 'lucide:mail',
-    total: subs.count ?? 0,
+    total: subs?.total ?? 0,
     publicados: null,
     tile: 'tile tile-muted',
   },
@@ -85,19 +89,18 @@ const acciones = [
 ];
 
 const TIPO = {
-  events: { label: 'Evento', icon: 'lucide:calendar-days', href: '/admin/eventos' },
-  news: { label: 'Noticia', icon: 'lucide:newspaper', href: '/admin/noticias' },
+  eventos: { label: 'Evento', icon: 'lucide:calendar-days', href: '/admin/eventos' },
+  noticias: { label: 'Noticia', icon: 'lucide:newspaper', href: '/admin/noticias' },
   videos: { label: 'Video', icon: 'lucide:youtube', href: '/admin/videos' },
 } as const;
 
-type Fila = { id: string; title: string; created_at: string; published: boolean };
-const [evR, nwR, vdR] = recientes;
+type Fila = { id: string; titulo: string; creado_en: string; publicado: number };
 const actividad = [
-  ...((evR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'events' as const })),
-  ...((nwR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'news' as const })),
-  ...((vdR.data ?? []) as Fila[]).map((r) => ({ ...r, tipo: 'videos' as const })),
+  ...(evR.results as Fila[]).map((r) => ({ ...r, tipo: 'eventos' as const })),
+  ...(nwR.results as Fila[]).map((r) => ({ ...r, tipo: 'noticias' as const })),
+  ...(vdR.results as Fila[]).map((r) => ({ ...r, tipo: 'videos' as const })),
 ]
-  .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at))
+  .sort((a, b) => +new Date(b.creado_en) - +new Date(a.creado_en))
   .slice(0, 6);
 
 const fecha = (d: string) =>
@@ -136,7 +139,7 @@ const fecha = (d: string) =>
       <span class="mt-0.5 block truncate text-sm text-base-content/60">
         {
           enVivo
-            ? (ajustes.data?.live_title || 'Sin título') + ' — toca para cambiarla o apagarla'
+            ? (aj?.vivo_titulo || 'Sin título') + ' — toca para cambiarla o apagarla'
             : 'Toca para activar la transmisión cuando empiece el culto'
         }
       </span>
@@ -201,15 +204,15 @@ const fecha = (d: string) =>
                     <Icon name={TIPO[r.tipo].icon} class="h-4 w-4" />
                   </span>
                   <span class="min-w-0 flex-1">
-                    <span class="block truncate text-sm font-medium">{r.title}</span>
+                    <span class="block truncate text-sm font-medium">{r.titulo}</span>
                     <span class="font-data text-xs uppercase tracking-wide text-base-content/50">
-                      {TIPO[r.tipo].label} · {fecha(r.created_at)}
+                      {TIPO[r.tipo].label} · {fecha(r.creado_en)}
                     </span>
                   </span>
                   <span
-                    class={`badge badge-sm shrink-0 ${r.published ? 'badge-success' : 'badge-ghost'}`}
+                    class={`badge badge-sm shrink-0 ${r.publicado === 1 ? 'badge-success' : 'badge-ghost'}`}
                   >
-                    {r.published ? 'Publicado' : 'Borrador'}
+                    {r.publicado === 1 ? 'Publicado' : 'Borrador'}
                   </span>
                 </a>
               </li>

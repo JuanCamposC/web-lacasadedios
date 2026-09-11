@@ -14,16 +14,6 @@ declare namespace App {
      * tiene que verlo, no deducirlo.
      */
     motivoAcceso: import('./lib/access').Motivo;
-
-    /**
-     * TRANSITORIO — se va cuando el boletín deje de usar Supabase.
-     *
-     * Las páginas públicas y el panel ya leen de D1. Quedan los dos endpoints
-     * de suscripción. Cuando `grep -r "locals.supabase" src/` no devuelva nada,
-     * estas dos líneas se borran.
-     */
-    supabase: import('@supabase/supabase-js').SupabaseClient;
-    user: import('@supabase/supabase-js').User | null;
   }
 }
 

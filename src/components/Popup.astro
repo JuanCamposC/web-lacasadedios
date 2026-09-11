@@ -3,13 +3,14 @@
  * Avisos emergentes: la transmisión en vivo y el aviso configurable del panel.
  *
  * POR QUÉ SE LEE EN EL NAVEGADOR
- * Las páginas públicas llevan caché de CDN (`s-maxage` en vercel.json): si el
- * aviso se renderizara en el servidor, encenderlo o apagarlo tardaría en verse
- * lo que tarde en caducar la caché. Leyéndolo aquí, el cambio es inmediato y
- * además no obliga a que ninguna página deje de ser estática.
+ * Las páginas públicas son estáticas: se generan al compilar. Si el aviso se
+ * pintara ahí, encenderlo o apagarlo no se vería hasta la siguiente
+ * compilación. Pidiéndolo desde acá, el cambio es inmediato y ninguna página
+ * tiene que dejar de ser estática.
  *
- * Se usa `restLeer` y no el cliente de Supabase por lo mismo que la pastilla de
- * «En vivo»: son 215 kB de JavaScript menos en cada página.
+ * Se pide a `/api/estado`, del propio sitio. Antes se hablaba directamente con
+ * Supabase, lo que obligaba a llevar su clave pública dentro del HTML de cada
+ * página y a abrirle `connect-src` a un tercero en la política de seguridad.
  *
  * POR QUÉ LOS DOS AVISOS VIVEN EN EL MISMO ARCHIVO
  * Porque compiten por la pantalla y hay que ordenarlos. Una transmisión está
@@ -71,38 +72,33 @@
 </dialog>
 
 <script>
-  import { restLeer } from '../lib/rest';
-
-  interface Ajustes {
-    popup_enabled: boolean;
-    popup_title: string | null;
-    popup_body: string | null;
-    popup_cta_label: string | null;
-    popup_cta_url: string | null;
-    popup_image_url: string | null;
-    popup_starts_at: string | null;
-    popup_ends_at: string | null;
-    popup_version: number;
-    popup_layout: string;
-    popup_cta_pos: string;
-    live_enabled: boolean;
-    live_url: string | null;
-    live_title: string | null;
+  /**
+   * Lo que responde /api/estado.
+   *
+   * `aviso` llega en `null` cuando no toca enseñarlo: la ventana de fechas la
+   * resuelve el servidor. Antes se comprobaba acá, lo que obligaba a mandar el
+   * texto del aviso a todo el mundo y esconderlo con JavaScript — que es
+   * publicarlo igual, solo que disimulado.
+   */
+  interface Estado {
+    vivo: { activo: boolean; url: string | null; titulo: string | null };
+    aviso: {
+      titulo: string | null;
+      cuerpo: string | null;
+      boton: string | null;
+      botonUrl: string | null;
+      imagen: string | null;
+      version: number;
+      diseno: string;
+      botonPos: string;
+    } | null;
   }
-
-  const CAMPOS =
-    'popup_enabled,popup_title,popup_body,popup_cta_label,popup_cta_url,popup_image_url,' +
-    'popup_starts_at,popup_ends_at,popup_version,popup_layout,popup_cta_pos,' +
-    'live_enabled,live_url,live_title';
-
-  /** Lo mínimo para el aviso de transmisión, que existe desde la primera migración. */
-  const CAMPOS_VIVO = 'live_enabled,live_url,live_title';
 
   const CLAVE = 'aviso-visto';
   const CLAVE_VIVO = 'vivo-visto';
 
   /**
-   * Qué versión cerró ya esta persona. Si el panel sube `popup_version` —o si
+   * Qué versión cerró ya esta persona. Si el panel sube `aviso_version` —o si
    * empieza otra transmisión, que cambia el enlace—, la marca deja de coincidir
    * y el aviso vuelve a salir: sin eso, cambiar el texto no serviría de nada
    * para quien ya lo hubiera cerrado.
@@ -125,13 +121,6 @@
     }
   }
 
-  function enVentana(a: Ajustes): boolean {
-    const ahora = Date.now();
-    if (a.popup_starts_at && ahora < Date.parse(a.popup_starts_at)) return false;
-    if (a.popup_ends_at && ahora > Date.parse(a.popup_ends_at)) return false;
-    return true;
-  }
-
   /**
    * Tocar el fondo cierra. <dialog> no lo hace solo: el clic en el backdrop
    * llega con el propio diálogo como destino, porque el ::backdrop no es un
@@ -152,7 +141,7 @@
 
   const pausa = (ms: number) => new Promise((listo) => setTimeout(listo, ms));
 
-  let yaConsultado: Ajustes | null | undefined;
+  let yaConsultado: Estado | null | undefined;
   let corriendo = false;
 
   /**
@@ -162,15 +151,15 @@
    * transmisión siguiente el enlace cambia, deja de coincidir con lo guardado y
    * el aviso sale solo. No hay ningún contador que acordarse de subir.
    */
-  async function mostrarVivo(a: Ajustes): Promise<boolean> {
+  async function mostrarVivo(v: Estado['vivo']): Promise<boolean> {
     const dlg = document.getElementById('vivo') as HTMLDialogElement | null;
-    if (!dlg || dlg.open || !a.live_enabled) return false;
+    if (!dlg || dlg.open || !v.activo) return false;
 
-    const marca = a.live_url || a.live_title || 'vivo';
+    const marca = v.url || v.titulo || 'vivo';
     if (vistoAntes(CLAVE_VIVO, marca)) return false;
 
     (document.getElementById('vivo-titulo') as HTMLElement).textContent =
-      a.live_title || 'Estamos transmitiendo';
+      v.titulo || 'Estamos transmitiendo';
 
     const cerrar = () => {
       marcarVisto(CLAVE_VIVO, marca);
@@ -193,23 +182,24 @@
     return true;
   }
 
-  function mostrarAviso(a: Ajustes) {
+  function mostrarAviso(a: NonNullable<Estado['aviso']>) {
     const dlg = document.getElementById('aviso') as HTMLDialogElement | null;
-    if (!dlg || dlg.open || !a.popup_enabled) return;
+    if (!dlg || dlg.open) return;
 
-    const soloImagen = a.popup_layout === 'imagen';
+    const soloImagen = a.diseno === 'imagen';
     // Cada modo tiene su requisito mínimo: sin eso no habría nada que ver.
-    if (soloImagen ? !a.popup_image_url : !a.popup_title) return;
-    if (!enVentana(a) || vistoAntes(CLAVE, String(a.popup_version))) return;
+    if (soloImagen ? !a.imagen : !a.titulo) return;
+    // La ventana de fechas ya la comprobó el servidor: si llegó, toca.
+    if (vistoAntes(CLAVE, String(a.version))) return;
 
     const cuerpo = document.getElementById('aviso-cuerpo') as HTMLElement;
     cuerpo.classList.toggle('hidden', soloImagen);
-    (document.getElementById('aviso-titulo') as HTMLElement).textContent = a.popup_title ?? '';
-    (document.getElementById('aviso-texto') as HTMLElement).textContent = a.popup_body ?? '';
+    (document.getElementById('aviso-titulo') as HTMLElement).textContent = a.titulo ?? '';
+    (document.getElementById('aviso-texto') as HTMLElement).textContent = a.cuerpo ?? '';
 
     const img = document.getElementById('aviso-img') as HTMLImageElement;
-    if (a.popup_image_url) {
-      img.src = a.popup_image_url;
+    if (a.imagen) {
+      img.src = a.imagen;
       img.classList.remove('hidden');
       img.classList.toggle('rounded-t-xl', !soloImagen);
       img.classList.toggle('rounded-xl', soloImagen);
@@ -218,30 +208,30 @@
       img.classList.add('hidden');
     }
 
-    const hayBoton = Boolean(a.popup_cta_url && a.popup_cta_label);
+    const hayBoton = Boolean(a.botonUrl && a.boton);
 
     // Botón flotante sobre la imagen (modo imagen).
     const sobre = document.getElementById('aviso-sobre') as HTMLElement;
     const ctaImg = document.getElementById('aviso-cta-img') as HTMLAnchorElement;
     sobre.classList.toggle('hidden', !(soloImagen && hayBoton));
     if (soloImagen && hayBoton) {
-      ctaImg.href = a.popup_cta_url!;
-      ctaImg.textContent = a.popup_cta_label!;
+      ctaImg.href = a.botonUrl!;
+      ctaImg.textContent = a.boton!;
       // La posición la resuelve el CSS a partir del atributo (ver global.css).
-      ctaImg.setAttribute('data-ancla', a.popup_cta_pos || 'abajo-centro');
+      ctaImg.setAttribute('data-ancla', a.botonPos || 'abajo-centro');
     }
 
     // Botón normal (modo título y texto).
     const cta = document.getElementById('aviso-cta') as HTMLAnchorElement;
     if (!soloImagen && hayBoton) {
-      cta.href = a.popup_cta_url!;
-      cta.textContent = a.popup_cta_label!;
+      cta.href = a.botonUrl!;
+      cta.textContent = a.boton!;
       cta.classList.remove('hidden');
     } else {
       cta.classList.add('hidden');
     }
 
-    const marca = String(a.popup_version);
+    const marca = String(a.version);
     const cerrar = () => {
       marcarVisto(CLAVE, marca);
       dlg.close();
@@ -268,24 +258,17 @@
     try {
       // Una consulta por sesión, no una por navegación.
       if (yaConsultado === undefined) {
-        let filas = await restLeer<Ajustes>('settings?id=eq.1&select=' + CAMPOS);
-        // Si faltan las columnas del aviso —migraciones 0005 y 0006 sin correr—
-        // PostgREST rechaza la consulta entera y no vuelve nada. El aviso de
-        // transmisión no tiene por qué caerse con ellas: se reintenta pidiendo
-        // solo lo suyo, que existe desde el principio.
-        if (!filas.length) {
-          filas = await restLeer<Ajustes>('settings?id=eq.1&select=' + CAMPOS_VIVO);
-        }
-        yaConsultado = filas[0] ?? null;
+        const res = await fetch('/api/estado');
+        yaConsultado = res.ok ? ((await res.json()) as Estado) : null;
       }
-      const a = yaConsultado;
-      if (!a) return;
+      const e = yaConsultado;
+      if (!e) return;
 
-      const huboVivo = await mostrarVivo(a);
+      const huboVivo = await mostrarVivo(e.vivo);
       // Dos ventanas seguidas sin respiro se leen como un parpadeo o como un
       // fallo. Medio segundo basta para que se entiendan como dos cosas.
       if (huboVivo) await pausa(500);
-      mostrarAviso(a);
+      if (e.aviso) mostrarAviso(e.aviso);
     } catch {
       // Sin conexión: el sitio funciona igual, simplemente no hay avisos.
     } finally {

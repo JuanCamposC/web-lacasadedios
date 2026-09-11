@@ -13,7 +13,12 @@ interface Props {
   active?: 'inicio' | 'eventos' | 'noticias' | 'videos' | 'suscriptores' | 'en-vivo' | 'aviso';
 }
 const { title = 'Panel', description, active } = Astro.props;
-const user = Astro.locals.user;
+// Quién entró sale del token de Cloudflare Access, verificado en el middleware.
+// Es `null` cuando el panel se abrió a propósito o desde localhost, y ahí se
+// enseña ese motivo en vez de un correo: trabajar con la puerta abierta tiene
+// que verse, no deducirse.
+const identidad = Astro.locals.identidad;
+const motivo = Astro.locals.motivoAcceso;
 
 const links = [
   { href: '/admin', label: 'Inicio', key: 'inicio', icon: 'lucide:layout-dashboard' },
@@ -23,7 +28,10 @@ const links = [
   { href: '/admin/en-vivo', label: 'En vivo', key: 'en-vivo', icon: 'lucide:radio' },
   { href: '/admin/aviso', label: 'Aviso', key: 'aviso', icon: 'lucide:megaphone' },
   { href: '/admin/suscriptores', label: 'Correos', key: 'suscriptores', icon: 'lucide:mail' },
-  { href: '/admin/seguridad', label: 'Seguridad', key: 'seguridad', icon: 'lucide:shield-check' },
+  // «Seguridad» ya no está: era la contraseña y el segundo factor del login
+  // propio, y de eso se encarga ahora Google a través de Cloudflare Access.
+  // Dejar la pantalla habría sido ofrecer cambiar una contraseña que ya no
+  // abre nada.
 ];
 ---
 
@@ -85,9 +93,13 @@ const links = [
 
       <div class="space-y-1 px-3 py-4">
         {
-          user && (
-            <p class="truncate px-3 pb-2 text-xs text-white/40" title={user.email}>
-              {user.email}
+          identidad ? (
+            <p class="truncate px-3 pb-2 text-xs text-white/40" title={identidad.correo}>
+              {identidad.correo}
+            </p>
+          ) : (
+            <p class="px-3 pb-2 text-xs text-warning">
+              {motivo === 'local' ? 'Desarrollo local · sin sesión' : 'Panel abierto sin sesión'}
             </p>
           )
         }
@@ -173,13 +185,20 @@ const links = [
     <div id="toast" class="toast toast-end z-50 pb-20 lg:pb-4"></div>
 
     <script>
-      import { createBrowserSupabase } from '../lib/supabase';
       import '../scripts/reveal';
 
+      /**
+       * Cerrar sesión lo hace Cloudflare Access, no el sitio.
+       *
+       * Ya no hay sesión propia que cerrar: la identidad vive en la cookie que
+       * pone Access en el borde, y `/cdn-cgi/access/logout` es lo único que la
+       * borra de verdad. Un botón que solo limpiara algo del lado del sitio
+       * diría «sesión cerrada» dejando a la persona dentro, que es peor que no
+       * tener botón.
+       */
       document.querySelectorAll('[data-logout]').forEach((b) =>
-        b.addEventListener('click', async () => {
-          await createBrowserSupabase().auth.signOut();
-          window.location.href = '/admin/login';
+        b.addEventListener('click', () => {
+          window.location.href = '/cdn-cgi/access/logout';
         }),
       );
     </script>

@@ -5,37 +5,38 @@ San Miguel, Limache y Coya), horarios de culto, historia, declaración de fe,
 contacto, y secciones de **eventos, noticias y videos** gestionables desde un
 panel con login.
 
-Construido con **Astro 7** (SSR en Vercel), **Tailwind CSS 4** + **DaisyUI 5** (temas
-`church` claro y `churchdark` oscuro), **astro-icon** (Lucide) y **Supabase** (base de
-datos + auth + storage). Diseño cinematográfico: heros con foto, movimiento en scroll
+Construido con **Astro 7** sobre **Cloudflare Workers**, **Tailwind CSS 4** +
+**DaisyUI 5** (temas `church` claro y `churchdark` oscuro), **astro-icon**
+(Lucide), **D1** para los datos, **R2** para los archivos y **Cloudflare Access**
+para la puerta del panel. Diseño cinematográfico: heros con foto, movimiento en scroll
 (`src/scripts/reveal.ts`) e imágenes optimizadas con `<Image>`. Las fotos son de stock
 temporal (ver `src/assets/img/CREDITS.md`), reemplazables por fotografía real.
 
 ## 🧞 Comandos
 
-| Comando           | Acción                                       |
-| :---------------- | :------------------------------------------- |
-| `npm install`     | Instala dependencias                         |
-| `npm run dev`     | Servidor local en `localhost:4321`           |
-| `npm run build`   | Compila el sitio                             |
+| Comando         | Acción                             |
+| :-------------- | :--------------------------------- |
+| `npm install`   | Instala dependencias               |
+| `npm run dev`   | Servidor local en `localhost:4321` |
+| `npm run build` | Compila el sitio                   |
 
 ## 🗺️ Mapa del sitio
 
-| Ruta | Qué es | Render |
-| :--- | :--- | :--- |
-| `/` | Portada: hero, quiénes somos, templos, horarios, redes | estático |
-| `/sobre-nosotros` | Misión y visión · **Historia** · Valores · Liderazgo · **Pastores y líderes** · **Declaración de fe** · Sacramentos | estático |
-| `/templos` | Listado de las cuatro sedes con dirección, líder y resumen de horarios | estático |
-| `/templos/{sede}` | Ficha de cada templo: mapa, horarios, pastor a cargo | estático |
-| `/horarios` | Todas las reuniones de la semana, con filtro por sede y marca de «hoy» | estático |
-| `/contacto` | Formulario + datos de contacto + direcciones | **SSR** |
-| `/eventos` | Próximos eventos y eventos anteriores | **SSR** |
-| `/noticias` | Listado con noticia destacada | **SSR** |
-| `/noticias/{slug}` | Noticia completa, compartir y «sigue leyendo» | **SSR** |
-| `/videos` | Prédicas embebidas de YouTube | **SSR** |
-| `/en-vivo` | Transmisión en vivo + días de reunión | **SSR** |
-| `/404` | Página no encontrada con atajos | estático |
-| `/admin/*` | Panel de administración | **SSR** protegido |
+| Ruta               | Qué es                                                                                                              | Render            |
+| :----------------- | :------------------------------------------------------------------------------------------------------------------ | :---------------- |
+| `/`                | Portada: hero, quiénes somos, templos, horarios, redes                                                              | estático          |
+| `/sobre-nosotros`  | Misión y visión · **Historia** · Valores · Liderazgo · **Pastores y líderes** · **Declaración de fe** · Sacramentos | estático          |
+| `/templos`         | Listado de las cuatro sedes con dirección, líder y resumen de horarios                                              | estático          |
+| `/templos/{sede}`  | Ficha de cada templo: mapa, horarios, pastor a cargo                                                                | estático          |
+| `/horarios`        | Todas las reuniones de la semana, con filtro por sede y marca de «hoy»                                              | estático          |
+| `/contacto`        | Formulario + datos de contacto + direcciones                                                                        | **SSR**           |
+| `/eventos`         | Próximos eventos y eventos anteriores                                                                               | **SSR**           |
+| `/noticias`        | Listado con noticia destacada                                                                                       | **SSR**           |
+| `/noticias/{slug}` | Noticia completa, compartir y «sigue leyendo»                                                                       | **SSR**           |
+| `/videos`          | Prédicas embebidas de YouTube                                                                                       | **SSR**           |
+| `/en-vivo`         | Transmisión en vivo + días de reunión                                                                               | **SSR**           |
+| `/404`             | Página no encontrada con atajos                                                                                     | estático          |
+| `/admin/*`         | Panel de administración                                                                                             | **SSR** protegido |
 
 ## 📁 Estructura
 
@@ -55,8 +56,11 @@ src/
 │   ├── templos.ts    ★ Sedes, horarios y utilidades (weekSchedule, parseService)
 │   └── historia.ts   ★ Relato e hitos de la historia
 ├── layouts/          Layout (público) y AdminLayout (panel)
-├── lib/supabase.ts   Clientes Supabase (browser/server) + tipos
-├── middleware.ts     Protege /admin y expone el cliente en rutas SSR
+├── lib/datos.ts      Lecturas públicas · SIEMPRE filtra por publicado = 1
+├── lib/panel.ts      Escrituras del panel · nunca filtra, a propósito
+├── lib/boletin.ts    Suscriptores · el único módulo que toca correos de personas
+├── lib/access.ts     Verifica el token de Cloudflare Access (firma y aud)
+├── middleware.ts     Cabeceras de seguridad y la puerta de /admin
 ├── scripts/          reveal.ts (scroll + contadores), adminCrud.ts
 ├── styles/global.css Temas DaisyUI + sistema de diseño (.panel, .section, .prose-lcd…)
 └── pages/            Ver el mapa del sitio de arriba
@@ -64,14 +68,14 @@ src/
 
 ## ✏️ Dónde se edita cada cosa
 
-| Quiero cambiar… | Archivo |
-| :--- | :--- |
-| Correo, teléfono, redes sociales | [`src/data/site.ts`](src/data/site.ts) |
-| Direcciones, horarios, pastores, mapas | [`src/data/templos.ts`](src/data/templos.ts) |
-| Menú de la cabecera y columnas del pie | [`src/data/nav.ts`](src/data/nav.ts) |
-| Historia de la congregación | [`src/data/historia.ts`](src/data/historia.ts) |
-| Colores, tipografía, superficies | [`src/styles/global.css`](src/styles/global.css) |
-| Eventos, noticias, videos, «en vivo» | El panel **`/admin`** |
+| Quiero cambiar…                        | Archivo                                          |
+| :------------------------------------- | :----------------------------------------------- |
+| Correo, teléfono, redes sociales       | [`src/data/site.ts`](src/data/site.ts)           |
+| Direcciones, horarios, pastores, mapas | [`src/data/templos.ts`](src/data/templos.ts)     |
+| Menú de la cabecera y columnas del pie | [`src/data/nav.ts`](src/data/nav.ts)             |
+| Historia de la congregación            | [`src/data/historia.ts`](src/data/historia.ts)   |
+| Colores, tipografía, superficies       | [`src/styles/global.css`](src/styles/global.css) |
+| Eventos, noticias, videos, «en vivo»   | El panel **`/admin`**                            |
 
 ## 🎨 Identidad visual
 
@@ -82,15 +86,15 @@ del framework: el azul de los estandartes y las fachadas pintadas de la
 tradición evangélica chilena, el bronce de los instrumentos y las letras, el
 muro encalado bajo tubo fluorescente, y el azul de la noche del culto de tarde.
 
-| | | |
-| :--- | :--- | :--- |
-| `azul-vivo` | `#23448F` | primario: enlaces, botones y tintes |
-| `azul-estandarte` | `#14295C` | secundario: superficies serias |
-| `azul-noche` | `#0A1730` | bandas oscuras y el cartel |
-| `bronce` | `#7D5518` | acento **solo** estructural, nunca relleno |
-| `boletin` | `#FCFAF7` | base clara: papel, no blanco de pantalla |
-| `papel-hondo` | `#ECE4D6` | superficie secundaria |
-| `tinta` | `#17202E` | texto |
+|                   |           |                                            |
+| :---------------- | :-------- | :----------------------------------------- |
+| `azul-vivo`       | `#23448F` | primario: enlaces, botones y tintes        |
+| `azul-estandarte` | `#14295C` | secundario: superficies serias             |
+| `azul-noche`      | `#0A1730` | bandas oscuras y el cartel                 |
+| `bronce`          | `#7D5518` | acento **solo** estructural, nunca relleno |
+| `boletin`         | `#FCFAF7` | base clara: papel, no blanco de pantalla   |
+| `papel-hondo`     | `#ECE4D6` | superficie secundaria                      |
+| `tinta`           | `#17202E` | texto                                      |
 
 **Tres correcciones que costaron una vuelta** — vale la pena no repetirlas:
 
@@ -114,11 +118,11 @@ historial de esta sección; si tocas la paleta, vuelve a medir.
 
 ### Tres voces tipográficas
 
-| Rol | Familia | Dónde |
-| :--- | :--- | :--- |
-| Display | **Fraunces Variable** (eje `opsz`) | `h1`, `h2`, `.font-display`, `.versiculo` |
-| Cuerpo | **Archivo Variable** | todo lo demás, incluidos `h3`/`h4` y `.card-title` |
-| Datos | **Archivo Narrow Variable** | `.font-data`, `.eyebrow`, horas, cifras e iniciales |
+| Rol     | Familia                            | Dónde                                               |
+| :------ | :--------------------------------- | :-------------------------------------------------- |
+| Display | **Fraunces Variable** (eje `opsz`) | `h1`, `h2`, `.font-display`, `.versiculo`           |
+| Cuerpo  | **Archivo Variable**               | todo lo demás, incluidos `h3`/`h4` y `.card-title`  |
+| Datos   | **Archivo Narrow Variable**        | `.font-data`, `.eyebrow`, horas, cifras e iniciales |
 
 El display se usa **con restricción**: si apareciera también en cada título de
 tarjeta, dejaría de significar algo. Los números y las iniciales van en la voz
@@ -180,16 +184,16 @@ El sitio prioriza SEO y Core Web Vitals, y su público está mayormente en Andro
 de gama media. Cada kilobyte de JavaScript compite con eso, así que la lista es
 corta a propósito.
 
-| | Peso | Por qué |
-| :--- | :--- | :--- |
-| ✅ **Astro ClientRouter** (`astro:transitions`) | **0 kB extra** | Transiciones de vista nativas: navegación sin recarga, con continuidad visual. Es el mayor salto de dinamismo y no cuesta nada — ya viene en Astro. |
-| ✅ **@formkit/auto-animate** | ~2 kB | Solo en el panel: las listas se animan al crear, borrar o filtrar. |
-| ✅ **SortableJS** | ~45 kB, solo panel | Reordenar videos arrastrando, con soporte táctil. Sustituye al campo numérico «orden». |
-| ✅ **marked** | **0 kB en el cliente** | Convierte el Markdown de las noticias a HTML **en el servidor**. El visitante no descarga nada. |
-| ❌ EasyMDE / TipTap / Quill | 250 kB+ | Un editor completo monta su propia superficie de escritura, y en el teléfono el teclado se comporta peor que en un `<textarea>` nativo. Aquí se administra desde el teléfono, así que pesa más que las funciones extra. |
-| ❌ GSAP + ScrollTrigger | ~33 kB | Es excelente para escenas ancladas al scroll y morphing de SVG; nada de eso es lo que este sitio necesita, y el costo cae justo sobre la métrica que queremos cuidar. |
-| ❌ Motion / Motion One | ~5 kB | `src/scripts/reveal.ts` hace lo mismo con IntersectionObserver + CSS en ~1 kB. Cambiarlo por una librería 5× más pesada sería una pérdida neta. |
-| ❌ AOS | ~6 kB | Hace menos que lo que ya hay. |
+|                                                 | Peso                   | Por qué                                                                                                                                                                                                                 |
+| :---------------------------------------------- | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅ **Astro ClientRouter** (`astro:transitions`) | **0 kB extra**         | Transiciones de vista nativas: navegación sin recarga, con continuidad visual. Es el mayor salto de dinamismo y no cuesta nada — ya viene en Astro.                                                                     |
+| ✅ **@formkit/auto-animate**                    | ~2 kB                  | Solo en el panel: las listas se animan al crear, borrar o filtrar.                                                                                                                                                      |
+| ✅ **SortableJS**                               | ~45 kB, solo panel     | Reordenar videos arrastrando, con soporte táctil. Sustituye al campo numérico «orden».                                                                                                                                  |
+| ✅ **marked**                                   | **0 kB en el cliente** | Convierte el Markdown de las noticias a HTML **en el servidor**. El visitante no descarga nada.                                                                                                                         |
+| ❌ EasyMDE / TipTap / Quill                     | 250 kB+                | Un editor completo monta su propia superficie de escritura, y en el teléfono el teclado se comporta peor que en un `<textarea>` nativo. Aquí se administra desde el teléfono, así que pesa más que las funciones extra. |
+| ❌ GSAP + ScrollTrigger                         | ~33 kB                 | Es excelente para escenas ancladas al scroll y morphing de SVG; nada de eso es lo que este sitio necesita, y el costo cae justo sobre la métrica que queremos cuidar.                                                   |
+| ❌ Motion / Motion One                          | ~5 kB                  | `src/scripts/reveal.ts` hace lo mismo con IntersectionObserver + CSS en ~1 kB. Cambiarlo por una librería 5× más pesada sería una pérdida neta.                                                                         |
+| ❌ AOS                                          | ~6 kB                  | Hace menos que lo que ya hay.                                                                                                                                                                                           |
 
 **Consecuencia importante:** con `<ClientRouter />` los módulos se evalúan una
 sola vez. Todo script que dependa del DOM debe colgarse de `astro:page-load`
@@ -219,77 +223,90 @@ cartel, y las placas, filetes y tipografías son las mismas.
   - Borrado con diálogo que **nombra lo que se va a borrar**, y Ctrl+S para
     guardar.
 
-> **Seguridad del Markdown.** El texto se escapa *antes* de interpretarlo, así
+> **Seguridad del Markdown.** El texto se escapa _antes_ de interpretarlo, así
 > que un `<script>` pegado en el panel llega al lector como texto literal. Solo
 > existen las etiquetas que genera el propio Markdown, y los enlaces con
 > esquema no permitido (`javascript:`, `data:`) se descartan. Ver
 > [`src/lib/markdown.ts`](src/lib/markdown.ts).
+
 - **`/admin/en-vivo`** — el interruptor que enciende la transmisión en todo el
   sitio, con vista previa de estado.
 - **`/admin/suscriptores`** — listado y copia de correos en un clic.
 
-### Cómo entrar la primera vez
+### Cómo se entra
 
-**No hay credenciales guardadas en este repositorio ni las puede haber**: los
-usuarios viven en Supabase Auth. Dos caminos:
+**No hay contraseñas, ni en este repositorio ni en ninguna base.** Autentica
+Cloudflare Access contra Google Workspace, en el borde: la petición ni siquiera
+llega al sitio si no trae un token válido.
 
-1. **Desde Supabase** — *Authentication → Users → Add user*, con «Auto confirm
-   user» activado.
-2. **Desde la terminal**, con la clave `service_role` (*Project Settings → API*):
+Quién puede entrar se decide en la política de Access —lo normal es
+_Emails ending in `@lacasadedios.cl`_—, y el cambio tiene efecto al instante,
+sin desplegar nada.
 
-   ```bash
-   SUPABASE_SERVICE_ROLE_KEY=eyJ... node scripts/crear-admin.mjs correo@lacasadedios.cl "unaClaveLarga"
-   ```
-
-   La clave secreta no se guarda en ningún archivo y solo se necesita esa vez.
-   Es una llave de administrador total: no la subas al repositorio.
-
-El registro público está desactivado: solo entra quien se cree a mano.
+El middleware no se fía de la cabecera con el correo, que cualquiera podría
+escribir: verifica la **firma** del token y que su `aud` sea el de esta
+aplicación. Sin esa segunda comprobación, un token de cualquier otra aplicación
+de Access de la misma cuenta abriría el panel. Ver [`src/lib/access.ts`](src/lib/access.ts).
 
 ## 🛠️ Scripts
 
-| Comando | Qué hace |
-| :--- | :--- |
-| `node scripts/crear-admin.mjs <correo> <clave>` | Crea un usuario del panel (requiere `SUPABASE_SERVICE_ROLE_KEY`). |
+| Comando                     | Qué hace                                                                                  |
+| :-------------------------- | :---------------------------------------------------------------------------------------- |
 | `node scripts/og-image.mjs` | Regenera `public/og-image.png` (1200×630). Solo hace falta si cambia el logo o la paleta. |
 
-## ⚙️ Configuración (Supabase)
+## ⚙️ Configuración (Cloudflare)
 
-1. Crea un proyecto en [supabase.com](https://supabase.com).
-2. Ejecuta [`supabase/schema.sql`](supabase/schema.sql) en el *SQL Editor*
-   (crea tablas, RLS y el bucket de imágenes). El archivo entero se puede
-   volver a correr cuando se añade una migración: cada política lleva delante
-   su `drop policy if exists` y las siembras solo escriben con la tabla vacía.
-3. Copia [`.env.example`](.env.example) a `.env` y completa:
+Todo vive en Cloudflare. No hace falta crear nada a mano salvo la primera vez;
+los identificadores ya están en [`wrangler.jsonc`](wrangler.jsonc).
 
+| Pieza                        | Qué guarda                                                  |
+| ---------------------------- | ----------------------------------------------------------- |
+| **D1** `lacasadedios`        | Eventos, noticias, videos, estudios, suscriptores y ajustes |
+| **R2** `lacasadedios-medios` | Imágenes y audio, servidos desde `medios.lacasadedios.cl`   |
+| **KV** `SESSION`             | Sesiones de Astro                                           |
+| **Access**                   | Quién entra al panel, con Google Workspace                  |
+| **Resend**                   | Correo saliente                                             |
+
+Para desarrollo, copia [`.env.example`](.env.example) a `.env`. Sin nada puesto
+el sitio arranca igual: lo que dependa de una variable dice que falta, en vez de
+fallar raro.
+
+El esquema de la base se aplica con:
+
+```bash
+npx wrangler d1 execute lacasadedios --remote --file=d1/0001_esquema.sql
 ```
-PUBLIC_SUPABASE_URL=https://<tu-proyecto>.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...   # o la anon key (pública)
-SITE_URL=https://web-lacasadedios.vercel.app
-SMTP_HOST=mail.lacasadedios.cl                 # correo del formulario y del boletín
-SMTP_PORT=465
-SMTP_USER=boletin@lacasadedios.cl
-SMTP_PASS=...                                  # SECRETA
-CONTACT_FROM=La Casa de Dios <boletin@lacasadedios.cl>
-```
 
-> No se usa la `service_role` / clave secreta: toda la escritura pasa por la
-> sesión autenticada + las políticas RLS.
+### Dónde va cada variable, que no da igual
 
-El correo sale por SMTP con una casilla del propio dominio, no por un servicio
-de envío. Los servicios exigen verificar un dominio con registros DNS, y el
-sitio vive en un dominio de Vercel al que no se le pueden añadir; el servidor
-de la iglesia, en cambio, ya está autorizado en el SPF del dominio, así que no
-hay que tocar el DNS. A cambio hereda el límite de envíos por hora del hosting
-compartido: sobra para una lista de decenas, se queda corto para miles.
+- **`vars` en `wrangler.jsonc`** — lo que no es secreto. Va versionado y no se
+  puede olvidar: `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `SITE_URL`,
+  `MEDIOS_DOMINIO`, `CONTACT_FROM`, `BOLETIN_FROM`.
+- **Secretos** — `npx wrangler secret put RESEND_API_KEY`. Es el único.
 
-**Sin las variables `SMTP_*` el formulario de contacto no finge un envío**:
-avisa a la persona que escriba directamente al correo de la iglesia.
+Con `nodejs_compat` las dos cosas aparecen en `process.env`, que es por lo que
+el código lee `process.env.RESEND_API_KEY` y funciona.
 
-## 🌐 Despliegue (Vercel)
+### Correo
 
-El sitio usa el adapter `@astrojs/vercel` (SSR). En Vercel → *Settings →
-Environment Variables* añade las mismas variables y vuelve a desplegar.
+Sale por la API HTTP de Resend, no por SMTP: en Workers no hay sockets, y
+`node:tls` —del que depende todo el SMTP sobre 465— está soportado solo a
+medias. El dominio está verificado en Resend con los registros en el subdominio
+`send`, así que **el SPF de la raíz, el de Google Workspace, no se toca**.
+
+Hay dos remitentes a propósito: `formulario@` para el formulario de contacto y
+`boletin@` para todo lo del boletín. Si alguien marca un boletín como no
+deseado, el castigo de reputación cae en esa casilla y no arrastra los correos
+del formulario, que son los que no pueden fallar.
+
+**Sin `RESEND_API_KEY` el formulario no finge un envío**: avisa a la persona que
+escriba directamente al correo de la iglesia.
+
+## 🌐 Despliegue
+
+Ver [DESPLIEGUE.md](DESPLIEGUE.md). La regla corta: **compilar siempre antes de
+desplegar**, porque wrangler no lee `wrangler.jsonc` sino la copia que el
+adaptador deja en `dist/` al compilar.
 
 ## 🔎 SEO
 
@@ -325,7 +342,7 @@ web**: el archivo abre con las seis reglas que impone el correo, y las pruebas
 de [`correo-plantilla.test.ts`](src/lib/correo-plantilla.test.ts) fijan las que
 ya nos mordieron.
 
-El botón **«Enviarme una prueba»** del panel de *En vivo* manda el correo real a
+El botón **«Enviarme una prueba»** del panel de _En vivo_ manda el correo real a
 la casilla de quien esté dentro, sin tocar la lista ni marcar la transmisión
 como avisada. Úsalo siempre antes de escribirle a todo el mundo.
 
@@ -335,69 +352,54 @@ entra al sitemap: solo se llega con el token personal del correo.
 ### 📮 Dos casillas, no una
 
 `BOLETIN_FROM` es el remitente del boletín; `CONTACT_FROM`, el del formulario de
-contacto. Si alguien marca como no deseado un aviso del boletín, el castigo cae
-sobre la dirección que lo mandó: con una sola casilla, eso arrastra también los
-correos del formulario, que son los que no pueden fallar.
+contacto. Si alguien marca como no deseado un aviso del boletín, el castigo de
+reputación cae sobre la dirección que lo mandó: con una sola casilla, eso
+arrastra también los correos del formulario, que son los que no pueden fallar.
+
+**No hay buzones que crear.** Resend firma por dominio, no por cuenta, así que
+`formulario@` y `boletin@` pueden no existir como casillas. Nadie les escribe:
+el aviso del formulario lleva `reply_to` con el correo del visitante, y el del
+boletín, el de contacto.
 
 Si `BOLETIN_FROM` está vacío se usa `CONTACT_FROM` y todo funciona igual, solo
-que sin la separación. Para activarla hay que **crear la casilla en cPanel
-primero** y luego poner la variable en Vercel.
+que sin la separación.
 
-### ⛔ SPF, DKIM y DMARC: bloqueado hasta salir de Netexplora
+### ✅ SPF, DKIM y DMARC
 
-Esto es lo que de verdad decide si los correos llegan a la bandeja o a spam, y
-**hoy no se puede tocar**: el DNS de `lacasadedios.cl` lo controla Netexplora
-(`ns308`/`ns309.netexplora.com`). El día que el dominio pase a Cloudflare, esto
-es lo primero, antes de mandar un solo boletín más:
+Resueltos y verificados en los dos sentidos sobre `lacasadedios.cl`. La clave
+está en que **conviven dos remitentes sin pisarse**:
 
-**Ojo: SPF y DKIM cambian de fuente con la migración.** Hoy los manda el
-servidor de correo de la iglesia; cuando el correo pase a Google Workspace, los
-manda Google. La tabla cubre los dos casos porque el cambio no es simultáneo.
+| Registro       | Dónde                  | Para qué                                     |
+| -------------- | ---------------------- | -------------------------------------------- |
+| SPF            | raíz                   | Google Workspace (`include:_spf.google.com`) |
+| DKIM           | `google._domainkey`    | Firma de Workspace                           |
+| SPF de retorno | `send.lacasadedios.cl` | Resend (`include:amazonses.com`)             |
+| DKIM           | `resend._domainkey`    | Firma de Resend                              |
+| DMARC          | `_dmarc`               | `p=none` con `rua=`                          |
 
-| Registro | Hoy (correo en cPanel) | Después (Google Workspace) |
-| --- | --- | --- |
-| **SPF** | Ya debería existir: se envía por el propio servidor de la iglesia. Comprobar que el `TXT` de la raíz empiece por `v=spf1`, incluya ese servidor y termine en `~all`. | Pasa a autorizar a Google, en la línea de `v=spf1 include:_spf.google.com ~all`. **No borrar el viejo antes de mover el correo**, ni dejarlo después: en el primer caso deja de salir nada, en el segundo Google no queda autorizado. |
-| **DKIM** | Lo genera el servidor; la clave no se inventa. *Email Deliverability* de cPanel muestra el `TXT` exacto (`default._domainkey`) y si está puesto. | Lo genera la consola de administración: *Apps → Google Workspace → Gmail → Autenticar correo*. Hay que generarlo y activarlo a mano; no viene puesto. |
-| **DMARC** | Es una política que se elige, no la da nadie. Empezar en observación, nunca en bloqueo. | Igual. |
+Que el DKIM de Resend esté en la **raíz** es lo que permite enviar desde
+`@lacasadedios.cl`. Si el dominio registrado en Resend hubiera sido
+`send.lacasadedios.cl`, cada envío sería rechazado con un error indistinguible
+del de una clave mala.
 
-Para DMARC, el registro exacto con el que empezar — en `_dmarc.lacasadedios.cl`,
-tipo `TXT`:
+DMARC empieza en observación a propósito. Poner `p=reject` de entrada es la
+forma más rápida de que dejen de llegar los correos de la propia iglesia.
 
-```
-v=DMARC1; p=none; rua=mailto:dmarc@lacasadedios.cl; fo=1
-```
+### ⚠️ HSTS: sin `includeSubDomains`, y es deliberado
 
-`p=none` no rechaza nada: solo pide informes para ver qué se está enviando en
-nombre del dominio. Después de unas semanas de informes limpios se pasa a
-`p=quarantine` y más tarde a `p=reject`. Poner `p=reject` de entrada es la forma
-más rápida de que dejen de llegar los correos de la propia iglesia.
+[`public/_headers`](public/_headers) manda `Strict-Transport-Security:
+max-age=31536000` **sin** `includeSubDomains`, al revés de lo que suele
+recomendarse.
 
-### ⚠️ HSTS: comprobar los subdominios ANTES de apuntar el dominio
+El motivo: `webmail`, `cpanel`, `whm`, `webdisk` y `ftp` siguen apuntando a
+Netexplora, y su certificado comodín **vence el 4 de noviembre de 2026 sin poder
+renovarse** —la validación pasa ahora por Cloudflare—. Con `includeSubDomains`,
+cualquiera que hubiera visitado el sitio quedaría obligado a HTTPS en esos
+subdominios durante un año, y al vencer el certificado el navegador se negaría a
+abrirlos. Sin escapatoria: HSTS no se puede saltar.
 
-[`vercel.json`](vercel.json) manda
-`Strict-Transport-Security: max-age=31536000; includeSubDomains`. Hoy solo lo ve
-el dominio de Vercel y no molesta a nadie. **En cuanto `lacasadedios.cl` apunte
-a Vercel, todo subdominio tendrá que servirse por HTTPS durante un año** para
-cualquiera que haya visitado el sitio: el navegador se negará a abrir por HTTP
-`webmail.lacasadedios.cl` o `mail.lacasadedios.cl`.
-
-Antes de mover el dominio, comprobar que cada subdominio en uso responde por
-HTTPS con un certificado válido. La cabecera no lleva `preload`, así que al
-menos el dominio no queda en la lista que los navegadores traen de fábrica y el
-daño se limita a quien ya visitó el sitio.
-
-### ⛔ Migración obligatoria antes del próximo aviso
-
-El aviso necesita la columna `token` y la función `baja_suscriptor`. **Hasta que
-se corra, `/api/notify` no envía nada** y el panel avisa con «Falta correr la
-migración de baja del boletín en Supabase».
-
-Copia [`supabase/schema.sql`](supabase/schema.sql) entero en *Supabase → SQL
-Editor → Run*: es idempotente, se puede ejecutar las veces que haga falta.
-
-La baja se resuelve con una función `security definer` y no con una política de
-borrado abierta: con una política, cualquiera podría vaciar la tabla omitiendo
-el filtro. La función solo borra la fila cuyo token coincide.
+Se puede volver a poner cuando Netexplora se cancele y esos subdominios
+desaparezcan del DNS.
 
 ## ⚠️ Pendientes de contenido
 

@@ -54,15 +54,15 @@ export default defineConfig({
         //
         // SIN el dominio de medios acá, TODA imagen subida desde el panel sale
         // rota, y de la peor manera: la página no dice nada y el bloqueo solo
-        // aparece en la consola del navegador. Supabase sigue en la lista
-        // mientras el boletín no termine de migrar.
-        `img-src 'self' data: blob: https://i.ytimg.com https://${medios} https://*.supabase.co`,
+        // aparece en la consola del navegador.
+        `img-src 'self' data: blob: https://i.ytimg.com https://${medios}`,
         // El audio de los estudios también vive en R2. Sin esta directiva caería
         // en `default-src 'self'` y no sonaría; `subir.ts` ya acepta audio, así
         // que la puerta queda abierta antes de que exista la página.
         `media-src 'self' https://${medios}`,
-        // El panel habla con Supabase (sesión, CRUD y subidas) desde el navegador.
-        "connect-src 'self' https://*.supabase.co",
+        // El navegador solo habla con este mismo sitio: el panel con /api/admin,
+        // y las páginas públicas con /api/estado. Ya no hay ningún tercero.
+        "connect-src 'self'",
         // Los dos únicos embebidos: el reproductor de YouTube sin cookies y el
         // mapa de cada templo. Cualquier otro iframe queda bloqueado.
         'frame-src https://www.youtube-nocookie.com https://www.google.com',
@@ -135,8 +135,6 @@ export default defineConfig({
       // Declarándolas aquí se empaquetan al inicio y no hay reoptimización.
       // Solo afecta al servidor de desarrollo; la compilación nunca tuvo esto.
       include: [
-        '@supabase/ssr',
-        '@supabase/supabase-js',
         '@formkit/auto-animate',
         'sortablejs',
         // Los módulos de <ClientRouter />: también se descubrían tarde.

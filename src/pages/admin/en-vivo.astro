@@ -4,15 +4,18 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { Icon } from 'astro-icon/components';
 
-const supabase = Astro.locals.supabase;
-if (!supabase) return Astro.redirect('/admin/login');
+import { baseDeDatos } from '../../lib/base';
+import { ajustes } from '../../lib/datos';
 
-const { data } = await supabase
-  .from('settings')
-  .select('live_enabled, live_url, live_title')
-  .eq('id', 1)
-  .maybeSingle();
-const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
+// Ya no hay redirección a /admin/login: quien autentica es Cloudflare Access,
+// antes de que la petición llegue acá. Si el middleware la dejó pasar, hay
+// permiso; si no, ni se renderiza esto.
+const fila = await ajustes(await baseDeDatos());
+const s = {
+  live_enabled: fila?.vivo_activo === 1,
+  live_url: fila?.vivo_url ?? '',
+  live_title: fila?.vivo_titulo ?? '',
+};
 ---
 
 <AdminLayout
@@ -145,9 +148,8 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
   </div>
 
   <script>
-    import { createBrowserSupabase } from '../../lib/supabase';
+    import { api } from '../../scripts/admin/api';
     import { resumenAviso, pedirAviso } from '../../scripts/admin/notificar';
-    const supabase = createBrowserSupabase();
     const form = document.getElementById('live-form') as HTMLFormElement;
     const msg = document.getElementById('live-msg')!;
     const btn = document.getElementById('live-save') as HTMLButtonElement;
@@ -188,24 +190,27 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
       btn.disabled = true;
       msg.className = 'hidden text-sm';
       const fd = new FormData(form);
+      const encendido = (form.querySelector('[name="live_enabled"]') as HTMLInputElement).checked;
+      // Los nombres son los de la base: `vivo_*`. La fecha no se manda — la pone
+      // la propia base al guardar (ver guardarAjustes en src/lib/panel.ts).
       const payload = {
-        live_enabled: (form.querySelector('[name="live_enabled"]') as HTMLInputElement).checked,
-        live_url: String(fd.get('live_url') || '').trim() || null,
-        live_title: String(fd.get('live_title') || '').trim() || null,
-        updated_at: new Date().toISOString(),
+        vivo_activo: encendido,
+        vivo_url: String(fd.get('live_url') || '').trim() || null,
+        vivo_titulo: String(fd.get('live_title') || '').trim() || null,
       };
       const bien = 'rounded bg-success/10 px-3 py-2 text-sm text-success';
       const mal = 'rounded bg-error/10 px-3 py-2 text-sm text-error';
 
-      const { error } = await supabase.from('settings').update(payload).eq('id', 1);
-      if (error) {
-        msg.textContent = 'No se pudo guardar: ' + error.message;
+      try {
+        await api.guardarAjustes(payload);
+      } catch (err) {
+        msg.textContent = 'No se pudo guardar: ' + (err as Error).message;
         msg.className = mal;
         btn.disabled = false;
         return;
       }
 
-      msg.textContent = payload.live_enabled
+      msg.textContent = encendido
         ? 'Listo: el sitio ya anuncia la transmisión.'
         : 'Listo: el sitio ya no anuncia ninguna transmisión.';
       msg.className = bien;
@@ -214,7 +219,7 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
       // tabla para saber qué se está emitiendo y para comprobar si esta
       // transmisión ya se avisó, así que primero tiene que estar escrita.
       const avisar = (form.querySelector('[name="avisar"]') as HTMLInputElement).checked;
-      if (payload.live_enabled && avisar) {
+      if (encendido && avisar) {
         msg.textContent = 'Guardado. Enviando el aviso por correo…';
         try {
           const r = await fetch('/api/notify', {
@@ -222,7 +227,7 @@ const s = data ?? { live_enabled: false, live_url: '', live_title: '' };
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'vivo',
-              title: payload.live_title || 'Transmisión en vivo',
+              title: payload.vivo_titulo || 'Transmisión en vivo',
               url: location.origin + '/en-vivo',
             }),
           }).then((x) => x.json());

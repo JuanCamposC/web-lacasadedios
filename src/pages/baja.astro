@@ -6,7 +6,8 @@ export const prerender = false;
 import Layout from '../layouts/Layout.astro';
 import EmptyState from '../components/EmptyState.astro';
 import { Icon } from 'astro-icon/components';
-import { restRpc } from '../lib/rest';
+import { baseDeDatos } from '../lib/base';
+import { bajaSuscriptor } from '../lib/boletin';
 import { CONTACT } from '../data/site';
 
 const token = Astro.url.searchParams.get('t')?.trim() ?? '';
@@ -19,9 +20,15 @@ if (token) {
   if (!ES_UUID.test(token)) {
     estado = 'no-encontrado';
   } else {
-    // La función devuelve true si borró una fila. `null` = la llamada falló.
-    const borrado = await restRpc<boolean>('baja_suscriptor', { p_token: token });
-    estado = borrado === null ? 'error' : borrado ? 'listo' : 'no-encontrado';
+    // `true` si borró una fila. Quien ya se dio de baja y vuelve a pulsar el
+    // enlace ve «no encontrado», que en la práctica dice lo mismo: no está.
+    try {
+      const borrado = await bajaSuscriptor(await baseDeDatos(), token);
+      estado = borrado ? 'listo' : 'no-encontrado';
+    } catch (e) {
+      console.error(`[baja] ${(e as Error).message}`);
+      estado = 'error';
+    }
   }
 }
 

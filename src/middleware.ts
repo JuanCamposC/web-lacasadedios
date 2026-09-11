@@ -1,5 +1,4 @@
 import { defineMiddleware } from 'astro:middleware';
-import { createServerSupabase, supabaseConfigured } from './lib/supabase';
 import { conSeguridad } from './lib/cabeceras';
 import { permitirPanel } from './lib/access';
 
@@ -50,21 +49,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.locals.motivoAcceso = 'denegado';
   }
 
-  // ── Supabase, solo para lo que aún no migra ────────────────────────────────
-  // Queda para los dos endpoints del boletín. Las páginas públicas y el panel
-  // ya leen de D1. Cuando el boletín pase a D1, estas líneas se van.
-  if (supabaseConfigured) {
-    context.locals.supabase = createServerSupabase(context.cookies, context.request);
-  }
-  context.locals.user = null;
-
   const response = await next();
 
   // El panel y los endpoints no se guardan en ninguna caché. Las páginas de
   // contenido sí —cada una fija su propio `s-maxage`—, y sin esta marca una
   // respuesta con datos de sesión podría quedarse guardada en alguna capa
   // intermedia y servirse a otra persona.
-  if (path.startsWith('/admin') || path.startsWith('/api')) {
+  //
+  // `/api/estado` es la excepción, y es deliberada: lo pide el navegador en
+  // TODA página estática para saber si hay transmisión en vivo, no lleva ni
+  // sesión ni nada sin publicar, y sin caché serían tantas consultas a la base
+  // como visitas. Fija su propio `s-maxage` y esta línea se lo respetaría de
+  // todas formas mal: `set` pisa, no añade.
+  if (path !== '/api/estado' && (path.startsWith('/admin') || path.startsWith('/api'))) {
     response.headers.set('Cache-Control', 'no-store, must-revalidate');
   }
 

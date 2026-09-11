@@ -14,10 +14,10 @@ import { toast } from './ui';
 // enviar» que se tragaba la causa real y dejaba sin pistas.
 const EXPLICACION: Record<string, string> = {
   no_email_provider: 'Falta el secreto RESEND_API_KEY en Cloudflare.',
-  from_invalido: 'La variable CONTACT_FROM está mal escrita en Cloudflare.',
+  from_invalido: 'La variable BOLETIN_FROM está mal escrita en Cloudflare.',
   falta_migracion:
-    'Falta correr una migración en Supabase. Copia supabase/schema.sql en el editor SQL.',
-  unauthorized: 'Tu sesión expiró. Vuelve a entrar al panel.',
+    'Falta correr el esquema en la base. Aplica d1/0001_esquema.sql con `wrangler d1 execute`.',
+  unauthorized: 'Tu sesión de Cloudflare Access expiró. Recarga la página para volver a entrar.',
   unconfigured: 'El servidor no tiene configurada la conexión a la base.',
   db_error: 'No se pudo leer la lista de suscriptores.',
   send_error: 'El servidor de correo rechazó todos los envíos.',
@@ -27,7 +27,10 @@ const EXPLICACION: Record<string, string> = {
   limite_proveedor: 'Se topó el límite de envíos de Resend. Espera un momento y reintenta.',
   exception: 'Error inesperado al enviar.',
   no_en_vivo: 'La transmisión no está encendida. Enciende el interruptor, guarda y reintenta.',
-  sin_correo_admin: 'Tu cuenta del panel no tiene correo asociado, así que no hay dónde mandarla.',
+  // Pasa cuando se entra con el panel abierto a propósito o desde localhost:
+  // no hay token de Access, así que no hay correo al que mandar la prueba.
+  sin_correo_admin:
+    'No se pudo saber tu correo. Entra por Cloudflare Access para poder mandarte la prueba.',
 };
 
 /**

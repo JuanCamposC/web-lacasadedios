@@ -27,13 +27,24 @@ interface Bindings {
   MEDIOS?: R2Bucket;
 }
 
+/** Un archivo del bucket, con lo poco que el panel necesita saber de él. */
+export interface R2Objeto {
+  key: string;
+  size: number;
+  uploaded: Date;
+}
+
 /** Mínimo de R2 que el sitio usa. Evita arrastrar los tipos globales de Workers,
  *  que pisan los del DOM y rompen todo el código de navegador. */
 export interface R2Bucket {
   get(clave: string): Promise<unknown | null>;
   put(clave: string, valor: ArrayBuffer | ReadableStream, opciones?: unknown): Promise<unknown>;
   delete(clave: string): Promise<void>;
-  list(opciones?: unknown): Promise<unknown>;
+  list(opciones?: {
+    prefix?: string;
+    limit?: number;
+    cursor?: string;
+  }): Promise<{ objects: R2Objeto[]; truncated: boolean; cursor?: string }>;
 }
 
 async function bindings(): Promise<Bindings> {
