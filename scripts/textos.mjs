@@ -29,7 +29,7 @@ import { resolve } from 'node:path';
 
 /** En el orden en que se recorre el sitio, no en el del menú. */
 const PAGINAS = [
-  { archivo: 'dist/client/index.html', titulo: 'Portada', ruta: '/' },
+  { archivo: 'dist/client/index.html', titulo: 'Inicio', ruta: '/' },
   {
     archivo: 'dist/client/sobre-nosotros/index.html',
     titulo: 'Sobre nosotros',
@@ -53,7 +53,7 @@ const PAGINAS = [
     ruta: '/templos/limache',
   },
   { archivo: 'dist/client/templos/coya/index.html', titulo: 'Templo Coya', ruta: '/templos/coya' },
-  { archivo: 'dist/client/404.html', titulo: 'Página no encontrada', ruta: '/404' },
+  { archivo: 'dist/client/404.html', titulo: 'Si alguien se equivoca de dirección', ruta: '/404' },
 ];
 
 /** Cómo se llama cada cosa en el documento, para que se entienda sin saber HTML. */
@@ -187,6 +187,30 @@ function ajustar(texto, ancho, sangria) {
 }
 
 // ── Armado del documento ────────────────────────────────────────────────────
+//
+// Escrito para que lo lea una persona mayor que no trabaja con computadores.
+//
+// Eso decidió cada detalle del formato: una sola numeración corrida —«el 47» se
+// dice y se anota mucho mejor que «el 3.11»—, nada de jerga («título de
+// sección», «punto de lista» no significan nada fuera de acá), líneas cortas
+// para que el ojo no se pierda al volver, y espacio en blanco de sobra para
+// escribir encima.
+//
+// Lo único que se marca es qué textos son botones: «Cómo llegar», suelto en una
+// lista, no se entiende; sabiendo que es un botón, sí.
+
+/** Qué es cada página, dicho como se lo explicarías a alguien. */
+const QUE_ES = {
+  '/': 'La primera pantalla, la que ve quien entra a la página.',
+  '/sobre-nosotros': 'Quiénes somos, qué creemos y de dónde venimos.',
+  '/horarios': 'Todas las reuniones de la semana, templo por templo.',
+  '/templos': 'La lista de los cuatro templos.',
+  '/templos/santiago-centro': 'La página del templo de Santiago Centro.',
+  '/templos/san-miguel': 'La página del templo de San Miguel.',
+  '/templos/limache': 'La página del templo de Limache.',
+  '/templos/coya': 'La página del templo de Coya.',
+  '/404': 'Lo que aparece si alguien escribe mal una dirección.',
+};
 
 const faltan = PAGINAS.filter((p) => !existsSync(p.archivo));
 if (faltan.length === PAGINAS.length) {
@@ -195,141 +219,145 @@ if (faltan.length === PAGINAS.length) {
 }
 
 const hoy = new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date());
-const ANCHO = 74;
-const l = [];
+const ANCHO = 58; // Ancho del texto. Corto a propósito: se lee sin perder la línea.
+const SANGRIA = '       '; // Donde empieza el texto, después del número.
 
-l.push('='.repeat(ANCHO));
-l.push('LA CASA DE DIOS · TEXTOS DEL SITIO WEB');
-l.push('='.repeat(ANCHO));
+const l = [];
+let n = 0;
+
+/** Un texto con su número, y sitio para escribir al lado. */
+function apuntar(t) {
+  n++;
+  const marca = t.tipo === 'Botón' ? '   (botón)' : '';
+  l.push('');
+  l.push(`  ${String(n).padStart(3)}  ${ajustar(t.texto, ANCHO, SANGRIA)}${marca}`);
+}
+
+function titulo(texto, explicacion) {
+  l.push('');
+  l.push('');
+  l.push('');
+  l.push(`  ${'━'.repeat(ANCHO + 8)}`);
+  l.push(`  ${texto}`);
+  l.push(`  ${'━'.repeat(ANCHO + 8)}`);
+  if (explicacion) {
+    l.push('');
+    l.push(`  ${explicacion}`);
+  }
+}
+
+// ── Portada del documento ───────────────────────────────────────────────────
+
 l.push('');
-l.push(`Generado el ${hoy}.`);
+l.push('');
+l.push('        LOS TEXTOS DE LA PÁGINA WEB');
+l.push('        La Casa de Dios');
+l.push('');
+l.push(`        ${hoy}`);
+l.push('');
+l.push('');
 l.push('');
 l.push(
-  ajustar(
-    'Estos son todos los textos que aparecen hoy en el sitio, en el orden en que se recorren. Cada uno lleva un número: para corregir algo basta con anotar ese número y lo que debería decir. Por ejemplo: «2.4 — cambiar comunidad por congregación».',
-    ANCHO,
-    '',
-  ),
+  `  ${ajustar('Acá están todas las palabras que aparecen en la página web, en el mismo orden en que se leen.', ANCHO + 8, '  ')}`,
 );
 l.push('');
 l.push(
-  ajustar(
-    'No están las fotos ni los botones de navegación: lo que se revisa acá son las palabras. Los eventos, las noticias y los videos tampoco, porque se cargan desde el panel y cambian solos.',
-    ANCHO,
-    '',
-  ),
+  `  ${ajustar('Cada texto tiene un número al lado. Si hay algo que cambiar, basta con anotar el número y lo que debería decir.', ANCHO + 8, '  ')}`,
 );
 l.push('');
+l.push('        Por ejemplo:');
+l.push('');
+l.push('           47 — en vez de «comunidad», poner «congregación»');
+l.push('');
+l.push('');
+l.push(
+  `  ${ajustar('No están las fotos ni los colores: eso se ve en la página. Acá van solo las palabras.', ANCHO + 8, '  ')}`,
+);
+
+// ── Página por página ───────────────────────────────────────────────────────
 
 let numeroPagina = 0;
-let total = 0;
 
 for (const p of PAGINAS) {
   if (!existsSync(p.archivo)) continue;
-  const textos = textosDe(readFileSync(p.archivo, 'utf8'));
+  const html = readFileSync(p.archivo, 'utf8');
+  const textos = textosDe(html);
   if (!textos.length) continue;
 
   numeroPagina++;
-  l.push('');
-  l.push('');
-  l.push('─'.repeat(ANCHO));
-  l.push(`${numeroPagina} · ${p.titulo.toUpperCase()}`);
-  l.push(`   lacasadedios.cl${p.ruta === '/' ? '' : p.ruta}`);
-  l.push('─'.repeat(ANCHO));
-
-  const todos = [...metaDe(readFileSync(p.archivo, 'utf8')), ...textos];
-
-  todos.forEach((t, i) => {
-    const num = `${numeroPagina}.${i + 1}`;
-    l.push('');
-    l.push(`  ${num.padEnd(6)} ${t.tipo}`);
-    l.push(`         ${ajustar(t.texto, ANCHO - 9, '         ')}`);
-    total++;
-  });
+  titulo(`PÁGINA ${numeroPagina} — ${p.titulo.toUpperCase()}`, QUE_ES[p.ruta]);
+  textos.forEach(apuntar);
 }
 
-// ── La página de contacto ───────────────────────────────────────────────────
-//
-// No está en `dist` porque se arma al servir: tiene formulario y enseña el
-// resultado del envío. Así que sus textos se leen del código.
-//
-// Es una lectura más pobre —salen los que están escritos literalmente, no los
-// que vienen de un componente o de `src/data/site.ts`— y por eso el documento
-// lo dice en vez de disimularlo. Dejarla fuera en silencio habría sido peor:
-// alguien la echa de menos y no sabe si falta o si no tiene texto.
+// ── Contacto ────────────────────────────────────────────────────────────────
+
 const contactoFuente = 'src/pages/contacto.astro';
 if (existsSync(contactoFuente)) {
-  const fuente = readFileSync(contactoFuente, 'utf8');
-  const sueltos = [...fuente.matchAll(/<(h1|h2|h3|h4|p|label|button)\b[^>]*>([^<{}]{4,})</gi)]
+  const sueltos = [
+    ...readFileSync(contactoFuente, 'utf8').matchAll(
+      /<(h1|h2|h3|h4|p|label|button)\b[^>]*>([^<{}]{4,})</gi,
+    ),
+  ]
     .map((m) => ({ tipo: NOMBRES[m[1].toLowerCase()] ?? 'Texto', texto: limpiar(m[2]) }))
     .filter((t) => t.texto);
 
   if (sueltos.length) {
     numeroPagina++;
-    l.push('');
-    l.push('');
-    l.push('─'.repeat(ANCHO));
-    l.push(`${numeroPagina} · CONTACTO`);
-    l.push('   lacasadedios.cl/contacto');
-    l.push('─'.repeat(ANCHO));
-    l.push('');
-    l.push(
-      ajustar(
-        'Esta página se arma al abrirla, así que sus textos se leyeron del código. Salen los que están escritos ahí directamente; los datos de la iglesia (dirección, teléfono, correo) y las etiquetas del formulario vienen de otro lado y se revisan aparte.',
-        ANCHO - 2,
-        '  ',
-      )
-        .split('\n')
-        .map((x, i) => (i === 0 ? '  ' + x : x))
-        .join('\n'),
+    titulo(
+      `PÁGINA ${numeroPagina} — CONTACTO`,
+      'El formulario para escribirle a la iglesia. La dirección, el\n  teléfono y el correo salen acá también, pero esos se revisan\n  aparte porque no son textos escritos: son datos.',
     );
-
-    sueltos.forEach((t, i) => {
-      const num = `${numeroPagina}.${i + 1}`;
-      l.push('');
-      l.push(`  ${num.padEnd(6)} ${t.tipo}`);
-      l.push(`         ${ajustar(t.texto, ANCHO - 9, '         ')}`);
-      total++;
-    });
+    sueltos.forEach(apuntar);
   }
 }
 
-// ── El menú y el pie, una sola vez ──────────────────────────────────────────
-// Se repiten iguales en las nueve páginas. Sacarlos en cada una habría hecho un
-// documento nueve veces más largo que nadie termina de leer; dejarlos fuera
-// habría escondido textos que se ven en TODAS las páginas, que es lo contrario.
+// ── El menú y el pie ────────────────────────────────────────────────────────
+
 const portada = readFileSync(PAGINAS[0].archivo, 'utf8');
-const comunes = [
-  ...textosDe(portada, 'nav', true).map((t) => ({ ...t, tipo: `Menú · ${t.tipo}` })),
-  ...textosDe(portada, 'footer', true).map((t) => ({ ...t, tipo: `Pie · ${t.tipo}` })),
-];
+const comunes = [...textosDe(portada, 'nav', true), ...textosDe(portada, 'footer', true)];
 
 if (comunes.length) {
-  numeroPagina++;
-  l.push('');
-  l.push('');
-  l.push('─'.repeat(ANCHO));
-  l.push(`${numeroPagina} · MENÚ Y PIE DE PÁGINA`);
-  l.push('   Se ven igual en todas las páginas');
-  l.push('─'.repeat(ANCHO));
+  titulo(
+    'EL MENÚ Y EL PIE DE PÁGINA',
+    'Esto se ve igual en todas las páginas: arriba el menú para\n  moverse, y abajo del todo los datos de la iglesia.',
+  );
+  comunes.forEach(apuntar);
+}
 
-  comunes.forEach((t, i) => {
-    const num = `${numeroPagina}.${i + 1}`;
+// ── Lo que sale en Google ───────────────────────────────────────────────────
+//
+// Va al final y aparte porque no se ve en la página: es lo que lee quien busca
+// la iglesia en Google, antes de decidir si entra. Nadie lo revisa nunca,
+// justamente porque no está a la vista.
+
+const enGoogle = [];
+for (const p of PAGINAS) {
+  if (!existsSync(p.archivo)) continue;
+  const m = metaDe(readFileSync(p.archivo, 'utf8'));
+  if (m.length) enGoogle.push({ pagina: p.titulo, textos: m });
+}
+
+if (enGoogle.length) {
+  titulo(
+    'LO QUE APARECE EN GOOGLE',
+    'Cuando alguien busca la iglesia en Google, ve esto antes de\n  entrar. No se ve dentro de la página, pero es lo primero que\n  lee la gente.',
+  );
+  for (const g of enGoogle) {
     l.push('');
-    l.push(`  ${num.padEnd(6)} ${t.tipo}`);
-    l.push(`         ${ajustar(t.texto, ANCHO - 9, '         ')}`);
-    total++;
-  });
+    l.push(`  · ${g.pagina}`);
+    g.textos.forEach(apuntar);
+  }
 }
 
 l.push('');
 l.push('');
-l.push('─'.repeat(ANCHO));
-l.push(`${total} textos en ${numeroPagina} secciones.`);
-l.push('─'.repeat(ANCHO));
+l.push('');
+l.push(`  ${'━'.repeat(ANCHO + 8)}`);
+l.push(`  Son ${n} textos en total.`);
+l.push(`  ${'━'.repeat(ANCHO + 8)}`);
 l.push('');
 
 const salida = resolve('textos-del-sitio.txt');
 writeFileSync(salida, l.join('\n'), 'utf8');
 console.log(`Listo: ${salida}`);
-console.log(`${total} textos en ${numeroPagina} páginas.`);
+console.log(`${n} textos.`);
