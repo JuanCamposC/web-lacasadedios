@@ -5,8 +5,23 @@ import cloudflare from '@astrojs/cloudflare';
 import icon from 'astro-icon';
 import tailwindcss from '@tailwindcss/vite';
 
-// URL de producción (sobrescribible con la variable de entorno SITE_URL en Vercel).
-const site = process.env.SITE_URL || 'https://web-lacasadedios.vercel.app';
+// URL del sitio. Se lee AL COMPILAR, no al servir: Astro la incrusta en las
+// canónicas y en el sitemap, y ambos quedan fijos dentro del HTML generado.
+//
+// Por eso compilar para pruebas y compilar para producción NO son lo mismo.
+// Ponerla como `var` del Worker no basta —eso solo la deja en `process.env`
+// cuando ya se está sirviendo— y hay que darla también acá:
+//     SITE_URL=https://pruebas.lacasadedios.cl npm run build
+//
+// El respaldo es el dominio de verdad: si alguien compila sin la variable, lo
+// peor que pasa es que las canónicas apunten a producción. El respaldo de antes
+// era la dirección de Vercel, que ya no sirve nada.
+const site = process.env.SITE_URL || 'https://lacasadedios.cl';
+
+// Dominio público del bucket de R2, para la CSP. Tiene que coincidir con
+// MEDIOS_DOMINIO (ver src/lib/medios.ts): aquella dice de dónde se sacan las
+// imágenes, y esta decide si el navegador las deja cargar.
+const medios = process.env.MEDIOS_DOMINIO || 'medios.lacasadedios.cl';
 
 // https://astro.build/config
 export default defineConfig({
@@ -25,7 +40,8 @@ export default defineConfig({
   //     hay hashes, el navegador ignora 'unsafe-inline'. Van por su propia
   //     directiva, style-src-attr, que aquí se pide con `kind: 'attribute'`.
   //   · 'frame-ancestors' no va aquí: los navegadores lo ignoran dentro de un
-  //     <meta>. Se cubre con X-Frame-Options en vercel.json, que sí es cabecera.
+  //     <meta>. Se cubre con X-Frame-Options, que sí es cabecera de verdad (ver
+  //     public/_headers y src/lib/cabeceras.ts).
   security: {
     csp: {
       directives: [
@@ -34,8 +50,17 @@ export default defineConfig({
         "form-action 'self'",
         "object-src 'none'",
         "font-src 'self'",
-        // Miniaturas de YouTube e imágenes subidas al storage de Supabase.
-        "img-src 'self' data: blob: https://i.ytimg.com https://*.supabase.co",
+        // Miniaturas de YouTube y lo que se sube al bucket de R2.
+        //
+        // SIN el dominio de medios acá, TODA imagen subida desde el panel sale
+        // rota, y de la peor manera: la página no dice nada y el bloqueo solo
+        // aparece en la consola del navegador. Supabase sigue en la lista
+        // mientras el boletín no termine de migrar.
+        `img-src 'self' data: blob: https://i.ytimg.com https://${medios} https://*.supabase.co`,
+        // El audio de los estudios también vive en R2. Sin esta directiva caería
+        // en `default-src 'self'` y no sonaría; `subir.ts` ya acepta audio, así
+        // que la puerta queda abierta antes de que exista la página.
+        `media-src 'self' https://${medios}`,
         // El panel habla con Supabase (sesión, CRUD y subidas) desde el navegador.
         "connect-src 'self' https://*.supabase.co",
         // Los dos únicos embebidos: el reproductor de YouTube sin cookies y el
@@ -70,8 +95,20 @@ export default defineConfig({
     prerenderEnvironment: 'node',
   }),
   integrations: [
-    // /baja solo se alcanza con un enlace personal: fuera del sitemap.
-    sitemap({ filter: (page) => !page.includes('/baja') }),
+    sitemap({
+      // Qué NO se le ofrece a Google:
+      //   · /admin — el panel entero. Estaba saliendo en el sitemap, que es
+      //     publicar la dirección de la puerta de servicio. Access la protege,
+      //     pero eso no es razón para anunciarla.
+      //   · /baja — solo se alcanza con el enlace personal de cada correo.
+      filter: (page) => !page.includes('/admin') && !page.includes('/baja'),
+
+      // Sin barra final, igual que las canónicas de Layout.astro. Astro las
+      // genera con barra porque compila en carpetas; Cloudflare sirve sin ella
+      // y redirige. Un sitemap lleno de direcciones que redirigen le hace
+      // gastar a Google la mitad de las visitas en 301.
+      serialize: (item) => ({ ...item, url: item.url.replace(/(.)\/+$/, '$1') }),
+    }),
     icon(),
   ],
   vite: {

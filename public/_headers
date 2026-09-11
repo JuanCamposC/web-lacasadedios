@@ -32,6 +32,26 @@
 # desaparezcan del DNS.
   Strict-Transport-Security: max-age=31536000
 
+# ── El sitio de pruebas no se indexa ─────────────────────────────────────────
+#
+# `pruebas.lacasadedios.cl` sirve exactamente el mismo Worker que producción.
+# Sin esto, Google indexaría las dos y competirían entre sí por el mismo
+# contenido, con el agravante de que la de pruebas suele ir por delante.
+#
+# La regla lleva el HOST completo a propósito, no solo la ruta: así se apaga
+# sola el día del lanzamiento. Ninguna dirección de producción coincide con
+# ella, y no queda nada que acordarse de borrar.
+#
+# NO se acompaña de un `Disallow` en robots.txt, aunque parezca lo obvio: si se
+# prohíbe rastrear, Google nunca llega a LEER esta cabecera y puede indexar la
+# dirección igual, a partir de cualquier enlace. Para que un `noindex` sirva hay
+# que dejar entrar al robot.
+#
+# Solo cubre lo estático. Lo que arma el Worker lleva la misma cabecera desde
+# src/middleware.ts, por el motivo de siempre (ver src/lib/cabeceras.ts).
+https://pruebas.lacasadedios.cl/*
+  X-Robots-Tag: noindex, nofollow
+
 /admin
   Cache-Control: no-store, must-revalidate
   X-Robots-Tag: noindex, nofollow

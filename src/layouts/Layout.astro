@@ -32,7 +32,19 @@ const {
   noindex = false,
 } = Astro.props;
 
-const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : Astro.url.href;
+// La canónica va SIN barra final, y eso hay que forzarlo.
+//
+// Astro compila las páginas en carpetas (`horarios/index.html`), así que al
+// compilar `Astro.url.pathname` vale `/horarios/`. Cloudflare, en cambio, sirve
+// con `html_handling: "drop-trailing-slash"` (ver wrangler.jsonc) y redirige
+// `/horarios/` a `/horarios`. Sin este recorte, la dirección que la página
+// declara como buena es justo la que el servidor manda a otra parte: la
+// canónica de cada página respondía con un 301.
+//
+// La raíz se queda como está: `https://lacasadedios.cl` sin barra es la misma
+// dirección, pero la forma con barra es la que todo el mundo escribe.
+const ruta = Astro.url.pathname.replace(/(.)\/+$/, '$1');
+const canonical = Astro.site ? new URL(ruta, Astro.site).href : Astro.url.href;
 // Imagen social: la propia de la página si la hay, y si no la tarjeta de marca
 // (public/og-image.png, generada con `node scripts/og-image.mjs`).
 const ogImage = new URL(image ?? '/og-image.png', Astro.site ?? Astro.url).href;

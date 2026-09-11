@@ -13,7 +13,11 @@ import { crearTransporte, enviarCadaUno, envioConfigurado, type Mensaje } from '
 const ORIGINAL = { ...process.env };
 
 function fingirRespuesta(estado: number, cuerpo: unknown) {
-  return vi.fn(async () =>
+  // Los dos parámetros se declaran aunque no se usen. Sin ellos, `vi.fn` deduce
+  // una función sin argumentos y `mock.calls` queda tipado como tupla vacía:
+  // leer lo que se envió deja de compilar por mucho que en tiempo de ejecución
+  // esté ahí.
+  return vi.fn(async (_url: string, _opciones: RequestInit) =>
     estado === 200
       ? Response.json(cuerpo)
       : new Response(JSON.stringify(cuerpo), { status: estado }),
@@ -59,7 +63,7 @@ describe('sendMail', () => {
 
     await crearTransporte()!.sendMail(mensaje);
 
-    const [url, opciones] = fetchFalso.mock.calls[0] as [string, RequestInit];
+    const [url, opciones] = fetchFalso.mock.calls[0];
     expect(url).toBe('https://api.resend.com/emails');
     expect(opciones.method).toBe('POST');
     expect((opciones.headers as Record<string, string>).authorization).toBe(
@@ -76,7 +80,7 @@ describe('sendMail', () => {
 
     await crearTransporte()!.sendMail({ ...mensaje, replyTo: 'quien@escribio.cl' });
 
-    const cuerpo = JSON.parse((fetchFalso.mock.calls[0][1] as RequestInit).body as string);
+    const cuerpo = JSON.parse(fetchFalso.mock.calls[0][1].body as string);
     expect(cuerpo.reply_to).toBe('quien@escribio.cl');
     expect(cuerpo.replyTo).toBeUndefined();
   });
@@ -90,7 +94,7 @@ describe('sendMail', () => {
       headers: { 'List-Unsubscribe': '<https://lacasadedios.cl/baja?t=x>' },
     });
 
-    const cuerpo = JSON.parse((fetchFalso.mock.calls[0][1] as RequestInit).body as string);
+    const cuerpo = JSON.parse(fetchFalso.mock.calls[0][1].body as string);
     expect(cuerpo.headers['List-Unsubscribe']).toBe('<https://lacasadedios.cl/baja?t=x>');
   });
 
@@ -100,7 +104,7 @@ describe('sendMail', () => {
 
     await crearTransporte()!.sendMail({ from: 'a@b.cl', to: 'c@d.cl', subject: 'x' });
 
-    const cuerpo = JSON.parse((fetchFalso.mock.calls[0][1] as RequestInit).body as string);
+    const cuerpo = JSON.parse(fetchFalso.mock.calls[0][1].body as string);
     expect(Object.keys(cuerpo).sort()).toEqual(['from', 'subject', 'to']);
   });
 

@@ -31,10 +31,42 @@
     },
   ],
 
+  // Sesiones de Astro. El primer despliegue creó este espacio de nombres solo,
+  // porque el adaptador declara el binding `SESSION`, y lo dejó SIN anotar en
+  // ningún sitio: `wrangler dev --remote` fallaba con «SESSION bindings must
+  // have an id». Escrito acá, la configuración vuelve a valerse por sí misma.
+  "kv_namespaces": [{ "binding": "SESSION", "id": "3fa36b4cccfe4f969ee70aa461a85028" }],
+
+  // Lo mismo, otra vez, para `wrangler dev --remote`.
+  //
+  // No es duplicar por gusto. El adaptador arma la sección `previews` aparte y
+  // le mete un `SESSION` SIN id salvo que ya encuentre uno declarado ahí (ver
+  // cloudflareConfigCustomizer en @astrojs/cloudflare/dist/wrangler.js). Sin
+  // estas dos líneas, `--remote` muere con «SESSION bindings must have an id» y
+  // no hay manera de probar contra las bases de verdad.
+  //
+  // Va al MISMO espacio de nombres a propósito: son sesiones de un sitio de
+  // pruebas, no hay nada que aislar.
+  "previews": {
+    "kv_namespaces": [{ "binding": "SESSION", "id": "3fa36b4cccfe4f969ee70aa461a85028" }],
+  },
+
   // Archivos: imágenes, documentos y los estudios en audio, todo en un bucket
   // con prefijos. Uno solo y no varios porque el tramo gratuito es por cuenta,
   // y así hay un único dominio público que servir.
   "r2_buckets": [{ "binding": "MEDIOS", "bucket_name": "lacasadedios-medios" }],
+
+  // Dónde responde el Worker.
+  //
+  // Por ahora SOLO pruebas: `lacasadedios.cl` y `www` los tiene el Worker de
+  // mantenimiento (mantenimiento/wrangler.jsonc), y una ruta no se puede
+  // reclamar desde dos sitios. Dos Workers separados y no uno con condicionales
+  // porque así el lanzamiento es un cambio de rutas, no un despliegue a ciegas:
+  // hasta ese día, romper esto no rompe lo que ve la gente.
+  //
+  // `custom_domain` hace que Cloudflare cree y mantenga el registro DNS. Por eso
+  // `pruebas` no resolvía antes del primer despliegue: no había nada que crearlo.
+  "routes": [{ "pattern": "pruebas.lacasadedios.cl", "custom_domain": true }],
 
   // Identidad de Cloudflare Access. NO son secretos: el dominio del equipo es
   // público y el AUD viaja dentro de cada token. Van acá y no en variables de
@@ -43,6 +75,19 @@
   "vars": {
     "ACCESS_TEAM_DOMAIN": "lacasadedios.cloudflareaccess.com",
     "ACCESS_AUD": "c6d6fb65388b5b61c2e2b0e2f7f5d5f7410d1898bfe3a71158f98142f039b890",
+
+    // Dirección del sitio, para lo que se arma al servir: sobre todo el enlace
+    // de baja del boletín, que tiene que llevar a un sitio que exista.
+    //
+    // OJO: esta copia NO alcanza. Astro incrusta las canónicas y el sitemap al
+    // COMPILAR, y para eso la variable tiene que estar puesta en el shell antes
+    // de `npm run build` (ver astro.config.mjs). Están las dos porque son dos
+    // momentos distintos, no por duplicar.
+    "SITE_URL": "https://pruebas.lacasadedios.cl",
+
+    // Dominio público del bucket. En la base se guardan CLAVES, no direcciones:
+    // si esto cambia, se cambia acá y no en cada fila. Ver src/lib/medios.ts.
+    "MEDIOS_DOMINIO": "medios.lacasadedios.cl",
   },
 
   "observability": {
