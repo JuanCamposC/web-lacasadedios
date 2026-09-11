@@ -1,4 +1,5 @@
 import { SITE } from '../data/site';
+import { urlMedio } from './medios';
 
 /**
  * Plantilla única para todos los correos que manda el sitio.
@@ -216,6 +217,23 @@ function bloqueTexto(b: Bloque): string {
 export function construirCorreo(c: Correo): { html: string; texto: string } {
   const sitio = c.base.replace(/\/+$/, '');
 
+  /**
+   * El logotipo sale del bucket, NO del sitio.
+   *
+   * Se descubrió con el primer correo de verdad: la imagen apuntaba a
+   * `${SITE_URL}/marca/logo-correo.png`, y con el sitio detrás de Cloudflare
+   * Access esa dirección responde 302 al login. El proxy de imágenes de Gmail
+   * no inicia sesión, así que el correo llegaba sin logotipo.
+   *
+   * El motivo para dejarlo en R2 es más general que ese susto: **un correo vive
+   * para siempre en la bandeja de quien lo recibió**, y sus imágenes no
+   * deberían depender de quién pueda entrar hoy al sitio. El bucket es público,
+   * no tiene sesión que valga y no cambia el día del lanzamiento.
+   *
+   * El respaldo al sitio queda por si faltara MEDIOS_DOMINIO: peor es un hueco.
+   */
+  const logo = urlMedio('marca/logo-correo.png') ?? `${sitio}/marca/logo-correo.png`;
+
   const eyebrowHtml = c.eyebrow
     ? `<p class="oro" style="margin:0 0 10px;font-family:${PALO};font-size:12px;font-weight:bold;letter-spacing:1.6px;text-transform:uppercase;color:${BRONCE}">${esc(c.eyebrow)}</p>`
     : '';
@@ -282,7 +300,7 @@ export function construirCorreo(c: Correo): { html: string; texto: string } {
           <tr>
             <td class="banda" bgcolor="${NOCHE}" align="center" style="padding:24px 32px;background-color:${NOCHE}">
               <a href="${esc(sitio)}" style="text-decoration:none">
-                <img src="${esc(sitio)}/marca/logo-correo.png" width="240" height="72" alt="${esc(SITE.name)}" style="display:block;border:0;width:240px;height:72px;font-family:${SERIFA};font-size:20px;color:#ffffff">
+                <img src="${esc(logo)}" width="240" height="72" alt="${esc(SITE.name)}" style="display:block;border:0;width:240px;height:72px;font-family:${SERIFA};font-size:20px;color:#ffffff">
               </a>
             </td>
           </tr>

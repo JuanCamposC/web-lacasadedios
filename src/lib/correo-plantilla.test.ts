@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { construirCorreo, esc } from './correo-plantilla';
 
 /**
@@ -188,5 +188,38 @@ describe('esc', () => {
   it('trata null y undefined como cadena vacía', () => {
     expect(esc(null)).toBe('');
     expect(esc(undefined)).toBe('');
+  });
+});
+
+/**
+ * El logotipo se sirve desde el bucket y no desde el sitio.
+ *
+ * Es una regresión de verdad, encontrada con el primer correo que llegó a una
+ * bandeja: apuntaba a `${SITE_URL}/marca/logo-correo.png` y, con el sitio detrás
+ * de Cloudflare Access, esa dirección responde 302 al login. El proxy de
+ * imágenes de Gmail no inicia sesión, así que el correo salía sin logotipo.
+ *
+ * Nada de esto se nota compilando: el HTML es correcto, la dirección existe, y
+ * el fallo solo aparece cuando alguien abre el correo.
+ */
+describe('logotipo', () => {
+  const ORIGINAL = { ...process.env };
+  afterEach(() => {
+    process.env = { ...ORIGINAL };
+  });
+
+  it('sale del dominio de medios, no del sitio', () => {
+    process.env.MEDIOS_DOMINIO = 'medios.lacasadedios.cl';
+    const { html } = construirCorreo(minimo);
+    expect(html).toContain('https://medios.lacasadedios.cl/marca/logo-correo.png');
+    expect(html).not.toContain(`${base}/marca/logo-correo.png`);
+  });
+
+  // Sin dominio de medios vale más un logotipo que quizá no cargue que un
+  // hueco seguro: el respaldo mantiene el correo armado.
+  it('cae al sitio si no hay dominio de medios', () => {
+    delete process.env.MEDIOS_DOMINIO;
+    const { html } = construirCorreo(minimo);
+    expect(html).toContain(`${base}/marca/logo-correo.png`);
   });
 });
