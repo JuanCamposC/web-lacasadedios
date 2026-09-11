@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { crearTransporteLote } from '../../lib/smtp';
+import { enviarCadaUno, envioConfigurado } from '../../lib/envio';
 import { CONTACT, SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 import { construirCorreo } from '../../lib/correo-plantilla';
@@ -23,11 +23,13 @@ function json(data: unknown, status = 200) {
  * remitente, no por nada del hosting.
  */
 function clasificar(mensaje: string): string {
-  if (/sender verify|no such user|verification failed/i.test(mensaje)) {
+  // Los patrones son los de Resend, no los del SMTP de antes: aquellos
+  // —«sender verify», «535»— hablaban de Exim y ya no puede llegar ninguno.
+  if (/not verified|domain.*verif|invalid.*from/i.test(mensaje)) {
     return 'remitente_inexistente';
   }
-  if (/535|authentication/i.test(mensaje)) return 'auth_invalida';
-  if (/max emails|exceeded|per hour/i.test(mensaje)) return 'limite_hosting';
+  if (/unauthorized|invalid.*api.?key|forbidden|401|403/i.test(mensaje)) return 'auth_invalida';
+  if (/rate limit|too many|429|quota/i.test(mensaje)) return 'limite_proveedor';
   return 'send_error';
 }
 
@@ -105,8 +107,7 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
     }
   }
 
-  const transporte = crearTransporteLote();
-  if (!transporte) return json({ ok: false, reason: 'no_email_provider' });
+  if (!envioConfigurado()) return json({ ok: false, reason: 'no_email_provider' });
 
   // En la prueba el único destinatario es quien la pidió, con un token
   // inventado: el enlace de baja tiene que aparecer en el correo —es lo que se
@@ -202,68 +203,46 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
       },
     });
 
-  let enviados = 0;
-  let fallidos = 0;
-  // El primero manda: si fallan todos, fallan por lo mismo.
-  let primerFallo = '';
+  // Un correo por persona, nunca copia oculta: cada uno lleva su propio enlace
+  // de baja, y sin esa salida los proveedores penalizan.
+  //
+  // Un rechazo individual NO aborta el resto. Eso ya se sufrió con un envío por
+  // lotes anterior, donde un solo destinatario malo dejaba sin aviso a toda la
+  // lista que venía detrás. Resend tiene su propio endpoint de lote y NO se usa
+  // por exactamente esa razón: valida el lote entero. Ver src/lib/envio.ts.
+  //
+  // La concurrencia la pone `enviarCadaUno`, no este código: el `pool` de
+  // nodemailer que antes encolaba de tres en tres ya no existe, y sin freno
+  // una lista larga se respondería a sí misma con 429.
+  const mensajes = destinatarios.map((s: { email: string; token: string }) => {
+    const urlBaja = `${base}/baja?t=${encodeURIComponent(s.token)}`;
+    const { html, texto } = cuerpo(urlBaja);
+    return {
+      from,
+      replyTo: responderA,
+      to: s.email,
+      subject: asunto,
+      text: texto,
+      html,
+      headers: {
+        // Cabecera estándar: pone el botón «Cancelar suscripción» en Gmail y
+        // Outlook, y es lo que miran para no marcar el envío como spam.
+        //
+        // A propósito SIN `List-Unsubscribe-Post`: la baja en un clic exige que
+        // la URL acepte POST sin cabecera Origin, y Astro lo bloquea por
+        // protección CSRF. Desactivar esa protección en todo el sitio por una
+        // lista de decenas de personas no compensa; así el botón igual aparece
+        // y abre la página de baja.
+        'List-Unsubscribe': `<${urlBaja}>`,
+      },
+    };
+  });
 
-  try {
-    // Se lanzan todos a la vez y el pool los encola de tres en tres: la
-    // concurrencia la decide el transporte (ver crearTransporteLote), no este
-    // bucle. Un correo por persona, nunca copia oculta: cada uno lleva su
-    // propio enlace de baja, y sin esa salida los proveedores penalizan.
-    //
-    // Un rechazo individual YA NO aborta el resto. Con el envío por lotes que
-    // había antes, un solo destinatario malo dejaba sin aviso a toda la lista
-    // que venía detrás; ahora se apunta y se sigue.
-    await Promise.all(
-      destinatarios.map(async (s: any) => {
-        const urlBaja = `${base}/baja?t=${encodeURIComponent(s.token)}`;
-        const { html, texto } = cuerpo(urlBaja);
-        try {
-          await transporte.sendMail({
-            from,
-            replyTo: responderA,
-            to: s.email,
-            subject: asunto,
-            text: texto,
-            html,
-            headers: {
-              // Cabecera estándar: pone el botón «Cancelar suscripción» en
-              // Gmail y Outlook, y es lo que miran para no marcar el envío
-              // como spam.
-              //
-              // A propósito SIN `List-Unsubscribe-Post`: la baja en un clic
-              // exige que la URL acepte POST sin cabecera Origin, y Astro lo
-              // bloquea por protección CSRF. Desactivar esa protección en todo
-              // el sitio por una lista de decenas de personas no compensa; así
-              // el botón igual aparece y abre la página de baja.
-              'List-Unsubscribe': `<${urlBaja}>`,
-            },
-          });
-          enviados++;
-        } catch (e: any) {
-          // La dirección no va a los registros: es un dato personal. Basta con
-          // saber cuántos fallaron y con qué motivo los rechazaron.
-          fallidos++;
-          const mensaje = String(e?.message ?? e);
-          if (!primerFallo) primerFallo = mensaje;
-          console.error(`[notify] destinatario rechazado: ${mensaje}`);
-        }
-      }),
-    );
-  } catch (e: any) {
-    return json({
-      ok: false,
-      reason: 'exception',
-      sent: enviados,
-      detalle: e?.message ?? String(e),
-    });
-  } finally {
-    // El pool deja conexiones abiertas si no se cierra, y la función se
-    // congelaría con ellas dentro.
-    transporte.close();
-  }
+  // La dirección no va a los registros: es un dato personal. Basta con saber
+  // cuántos fallaron y con qué motivo los rechazaron.
+  const { enviados, fallidos, primerFallo } = await enviarCadaUno(mensajes, (motivo) =>
+    console.error(`[notify] destinatario rechazado: ${motivo}`),
+  );
 
   // Que no saliera NI UNO es un fallo; que fallen algunos, un aviso.
   if (!enviados && fallidos) {

@@ -13,8 +13,8 @@ import { toast } from './ui';
 // Siempre se dice QUÉ falló. La versión anterior tenía un comodín «no se pudo
 // enviar» que se tragaba la causa real y dejaba sin pistas.
 const EXPLICACION: Record<string, string> = {
-  no_email_provider: 'Faltan SMTP_HOST, SMTP_USER o SMTP_PASS en Vercel.',
-  from_invalido: 'La variable CONTACT_FROM está mal escrita en Vercel.',
+  no_email_provider: 'Falta el secreto RESEND_API_KEY en Cloudflare.',
+  from_invalido: 'La variable CONTACT_FROM está mal escrita en Cloudflare.',
   falta_migracion:
     'Falta correr una migración en Supabase. Copia supabase/schema.sql en el editor SQL.',
   unauthorized: 'Tu sesión expiró. Vuelve a entrar al panel.',
@@ -22,9 +22,9 @@ const EXPLICACION: Record<string, string> = {
   db_error: 'No se pudo leer la lista de suscriptores.',
   send_error: 'El servidor de correo rechazó todos los envíos.',
   remitente_inexistente:
-    'El remitente no existe como casilla en el servidor. Revisa CONTACT_FROM en Vercel, o crea esa dirección en cPanel.',
-  auth_invalida: 'La contraseña de SMTP_PASS no es correcta.',
-  limite_hosting: 'Se topó el límite de correos por hora del hosting. Espera o súbelo en cPanel.',
+    'Resend no acepta ese remitente. Revisa CONTACT_FROM: tiene que ser una dirección del dominio verificado en Resend.',
+  auth_invalida: 'La clave de Resend no es válida o fue revocada.',
+  limite_proveedor: 'Se topó el límite de envíos de Resend. Espera un momento y reintenta.',
   exception: 'Error inesperado al enviar.',
   no_en_vivo: 'La transmisión no está encendida. Enciende el interruptor, guarda y reintenta.',
   sin_correo_admin: 'Tu cuenta del panel no tiene correo asociado, así que no hay dónde mandarla.',

@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { crearTransporte } from '../../lib/smtp';
+import { crearTransporte } from '../../lib/envio';
 import { CONTACT } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 import { construirCorreo } from '../../lib/correo-plantilla';

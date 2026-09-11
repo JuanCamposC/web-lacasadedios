@@ -13,7 +13,6 @@ const ORIGINAL = { ...process.env };
 beforeEach(() => {
   delete process.env.CONTACT_FROM;
   delete process.env.BOLETIN_FROM;
-  delete process.env.SMTP_USER;
 });
 
 afterEach(() => {
@@ -21,15 +20,14 @@ afterEach(() => {
 });
 
 describe('resolverRemitente', () => {
-  it('usa la casilla del SMTP cuando no hay nada configurado', () => {
-    process.env.SMTP_USER = 'iglesia@lacasadedios.cl';
+  // ANTES el suelo era `SMTP_USER`, la cuenta con la que se autenticaba el
+  // envío, porque muchos servidores rechazan un `From` que no coincide con
+  // quien abrió la sesión. Con Resend no hay sesión que coincidir: lo que exige
+  // es que el dominio esté verificado. Esa variable ya no existe.
+  it('sin nada configurado usa la casilla de contacto del sitio', () => {
     const r = resolverRemitente();
-    expect(r.ok && r.from).toBe('La Casa de Dios <iglesia@lacasadedios.cl>');
+    expect(r.ok && r.from).toBe('La Casa de Dios <contacto@lacasadedios.cl>');
     expect(r.ok && r.porDefecto).toBe(true);
-  });
-
-  it('sin SMTP_USER ni remitente no hay nada que usar', () => {
-    expect(resolverRemitente().ok).toBe(false);
   });
 
   // El error real: pegar el valor en Vercel con las comillas incluidas. Quedan
@@ -67,8 +65,7 @@ describe('resolverRemitente', () => {
       });
     });
 
-    it('y en la casilla del SMTP si tampoco hay CONTACT_FROM', () => {
-      process.env.SMTP_USER = 'iglesia@lacasadedios.cl';
+    it('y en la casilla de contacto si tampoco hay CONTACT_FROM', () => {
       expect(resolverRemitente('BOLETIN_FROM')).toMatchObject({ ok: true, porDefecto: true });
     });
 
@@ -76,7 +73,8 @@ describe('resolverRemitente', () => {
     // del boletín, que es la que puede acabar con mala reputación.
     it('el contacto no hereda la casilla del boletín', () => {
       process.env.BOLETIN_FROM = 'boletin@lacasadedios.cl';
-      expect(resolverRemitente('CONTACT_FROM').ok).toBe(false);
+      const r = resolverRemitente('CONTACT_FROM');
+      expect(r.ok && r.from).not.toContain('boletin@');
     });
   });
 });

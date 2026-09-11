@@ -11,7 +11,7 @@
  * que la persona confirme desde su bandeja.
  */
 import type { APIRoute } from 'astro';
-import { crearTransporte } from '../../lib/smtp';
+import { crearTransporte } from '../../lib/envio';
 import { SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 import { construirCorreo } from '../../lib/correo-plantilla';
@@ -139,7 +139,7 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   if (!transporte) {
     return fallo(
       'sin_proveedor_correo',
-      'Faltan SMTP_HOST, SMTP_USER o SMTP_PASS: el alta quedó pendiente de confirmar.',
+      'Falta RESEND_API_KEY: el alta quedó pendiente de confirmar.',
     );
   }
 
