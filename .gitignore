@@ -1,3 +1,23 @@
+# ── Documentación interna ───────────────────────────────────────────────────
+#
+# El repositorio es PÚBLICO. Los .md de este proyecto no son documentación de
+# biblioteca: son documentos operativos. Dicen qué falta por configurar, qué
+# vence y cuándo, y cómo está montada la infraestructura. Nada de eso es un
+# secreto por sí solo, pero junto es un mapa que no hace falta publicar.
+#
+# Los archivos SIGUEN en el disco y se siguen usando: lo que cambia es que no
+# viajan al remoto. Si alguna vez hay que compartirlos, se mandan aparte.
+*.md
+
+# La excepción. CREDITS.md es la atribución de las fotos de stock, y varias de
+# esas licencias la EXIGEN. Quitarlo no es limpiar el repositorio, es dejar de
+# cumplir una condición de uso.
+!src/assets/img/CREDITS.md
+
+# ── Variables de entorno: lo de verdad secreto ──────────────────────────────
+# Recordatorio de por qué importa el bloque de abajo: `.env` lleva la clave de
+# Resend. Nunca se quita de esta lista.
+
 # build output
 dist/
 .vercel/
@@ -18,7 +38,6 @@ pnpm-debug.log*
 # environment variables
 .env
 .env.production
-# `vercel env pull` escribe aqui por defecto: son las claves de produccion
 .env*.local
 
 # macOS-specific files

@@ -43,18 +43,45 @@ const PAGINAS: { ruta: string; titulo: string }[] = [
   { ruta: '/contacto', titulo: 'Contacto' },
 ];
 
+/** Lo que se saca de cada página: su contenido y las hojas de estilo que usa. */
+interface Extraido {
+  html: string;
+  hojas: string[];
+}
+
 /**
- * Saca el contenido de una página compilada.
+ * Saca el contenido de una página compilada, **y sus hojas de estilo**.
  *
- * Se queda con lo de dentro de `<main>`: fuera quedan la navegación, el pie y
- * el formulario del boletín, que en papel no sirven de nada. Y se quitan los
- * `<script>`, porque acá se pegan como texto plano dentro de otro documento y
- * volverían a ejecutarse sin el HTML que esperan.
+ * Lo del `<main>` es lo evidente: fuera quedan la navegación, el pie y el
+ * formulario del boletín, que en papel no sirven de nada. Se quitan además los
+ * `<script>` y los `<dialog>`, que acá se pegan como texto dentro de otro
+ * documento y volverían a ejecutarse sin el HTML que esperan.
+ *
+ * ── LO DE LAS HOJAS DE ESTILO, QUE SE ME PASÓ ───────────────────────────────
+ * La primera versión se quedaba solo con el HTML, y salía un desastre: imágenes
+ * a tamaño original, textos encima de otros, ni un margen. Se entiende al verlo:
+ * el contenido son clases de Tailwind —`grid`, `max-w-3xl`, `object-cover`— y
+ * esta página no cargaba NINGUNA hoja de estilos. Sin ellas, una clase es un
+ * atributo sin significado y el navegador apila todo en bruto.
+ *
+ * Astro compila una hoja por página y le pone un hash en el nombre, así que no
+ * vale con importar `global.css` acá: los estilos con ámbito de cada componente
+ * viven en la hoja de SU página. Hay que recoger las de todas y juntarlas.
  */
-function contenidoDe(html: string): string | null {
+function contenidoDe(html: string): Extraido | null {
   const m = html.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
   if (!m) return null;
-  return m[1].replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<dialog[\s\S]*?<\/dialog>/gi, '');
+
+  const hojas = [...html.matchAll(/<link[^>]+rel=["']stylesheet["'][^>]*>/gi)]
+    .map((l) => l[0].match(/href=["']([^"']+)["']/i)?.[1])
+    .filter((h): h is string => Boolean(h));
+
+  return {
+    html: m[1]
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<dialog[\s\S]*?<\/dialog>/gi, ''),
+    hojas,
+  };
 }
 
 const assets = await archivos();
@@ -73,15 +100,15 @@ const assets = await archivos();
  * página sirve para eso**: ya pasó por Access, así que se reenvía y la
  * subpetición entra igual que entró la persona.
  */
-async function traer(ruta: string): Promise<string | null> {
+async function traer(ruta: string): Promise<Extraido | null> {
   const destino = new URL(ruta, Astro.url);
 
   if (assets) {
     try {
       const res = await assets.fetch(new Request(destino));
       if (res.ok) {
-        const html = contenidoDe(await res.text());
-        if (html) return html;
+        const extraido = contenidoDe(await res.text());
+        if (extraido) return extraido;
       }
     } catch {
       /* no era un archivo; se intenta por HTTP */
@@ -98,11 +125,16 @@ async function traer(ruta: string): Promise<string | null> {
 }
 
 const secciones = await Promise.all(
-  PAGINAS.map(async (p) => ({ ...p, html: await traer(p.ruta) })),
+  PAGINAS.map(async (p) => ({ ...p, contenido: await traer(p.ruta) })),
 );
 
+// Todas las hojas de estilo que usa cualquiera de las páginas, sin repetir y en
+// el orden en que aparecieron. Casi todas comparten la misma, pero las que
+// tienen estilos propios traen la suya y sin ella esa página sale en bruto.
+const hojas = [...new Set(secciones.flatMap((s) => s.contenido?.hojas ?? []))];
+
 const hoy = new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date());
-const fallidas = secciones.filter((s) => !s.html).length;
+const fallidas = secciones.filter((s) => !s.contenido).length;
 ---
 
 <!doctype html>
@@ -113,6 +145,13 @@ const fallidas = secciones.filter((s) => !s.html).length;
     {/* Que esto no llegue nunca a un buscador: es el sitio entero duplicado. */}
     <meta name="robots" content="noindex, nofollow" />
     <title>{SITE.name} · textos para revisar</title>
+
+    {
+      /* Las hojas de estilo de las páginas que se juntaron. Sin esto, el
+        contenido son clases de Tailwind sin significado y el navegador lo apila
+        en bruto: imágenes a tamaño original y textos unos encima de otros. */
+    }
+    {hojas.map((h) => <link rel="stylesheet" href={h} />)}
   </head>
   <body class="bg-white text-black">
     {/* ── Instrucciones. En pantalla sí; en papel, no. ────────────────────── */}
@@ -182,8 +221,8 @@ const fallidas = secciones.filter((s) => !s.html).length;
             <span class="titulo">{s.titulo}</span>
             <span class="ruta">{s.ruta}</span>
           </header>
-          {s.html ? (
-            <div set:html={s.html} />
+          {s.contenido ? (
+            <div set:html={s.contenido.html} />
           ) : (
             <p class="aviso-fallo">
               Esta página no se pudo leer desde acá. Ábrela en <strong>{s.ruta}</strong> e imprímela
@@ -234,6 +273,25 @@ const fallidas = secciones.filter((s) => !s.html).length;
         border: 1px dashed #999;
         padding: 1rem;
         color: #666;
+      }
+
+      /**
+       * Lo que el sitio anima al aparecer, acá se queda quieto y visible.
+       *
+       * `[data-reveal]` arranca en `opacity: 0` y lo enciende un script al
+       * entrar en pantalla. Ese script no está: se quita a propósito al pegar
+       * el contenido de una página dentro de otra. Sin esta regla, ocho bloques
+       * de texto salen INVISIBLES —en pantalla y en papel— y parece que
+       * faltaran, no que estén escondidos.
+       *
+       * En global.css hay una regla igual, pero solo dentro de `@media print`.
+       * Acá hace falta también en pantalla, porque esta página se mira antes de
+       * imprimirla.
+       */
+      [data-reveal] {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
       }
 
       @media print {
