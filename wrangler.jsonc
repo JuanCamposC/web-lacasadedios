@@ -1,12 +1,34 @@
+// ⚠️ TOCAR ESTE ARCHIVO NO BASTA: HAY QUE RECOMPILAR.
+//
+// Wrangler NO lee este archivo al desplegar. El adaptador de Astro escribe una
+// copia en `dist/server/wrangler.json` AL COMPILAR y wrangler sigue esa copia:
+//
+//     Using redirected Wrangler configuration.
+//      - Configuration being used: "dist/server/wrangler.json"
+//      - Original user's configuration: "wrangler.jsonc"
+//
+// Esas tres líneas salen en cada `wrangler deploy` y es fácil no leerlas. El
+// síntoma es que agregas una variable, despliegas sin error, y la variable
+// sencillamente no está: no hay aviso ninguno. Ya pasó con BOLETIN_FROM.
+//
+// Así que el orden es siempre:
+//     npm run build   (con SITE_URL y MEDIOS_DOMINIO en el shell)
+//     npx wrangler deploy
+//
+// Los secretos son la excepción: `wrangler secret put` va directo al Worker y
+// no pasa por acá ni por la compilación.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "lacasadedios",
   "main": "@astrojs/cloudflare/entrypoints/server",
   "compatibility_date": "2026-09-10",
 
-  // `nodejs_compat` da acceso a los módulos de Node que el sitio ya usa:
-  // `node:crypto` para los hashes de la CSP (src/lib/csp.ts) y lo que arrastre
-  // nodemailer. Sin esto, esos import fallan al arrancar el Worker.
+  // `nodejs_compat` da acceso a los módulos de Node que el sitio usa —hoy
+  // `node:crypto`, para los hashes de la CSP (src/lib/csp.ts)—, y además puebla
+  // `process.env` con las `vars` y los secretos de acá abajo. Eso último es lo
+  // que hace que `process.env.RESEND_API_KEY` funcione dentro del Worker; lo
+  // activa la bandera `nodejs_compat_populate_process_env`, encendida sola para
+  // fechas de compatibilidad desde 2025-04-01.
   "compatibility_flags": ["nodejs_compat"],
 
   "assets": {
@@ -88,6 +110,19 @@
     // Dominio público del bucket. En la base se guardan CLAVES, no direcciones:
     // si esto cambia, se cambia acá y no en cada fila. Ver src/lib/medios.ts.
     "MEDIOS_DOMINIO": "medios.lacasadedios.cl",
+
+    // Casilla propia del boletín, separada de la del formulario de contacto.
+    //
+    // POR QUÉ SEPARARLAS: si alguien marca como no deseado un aviso del boletín,
+    // el castigo de reputación cae sobre la dirección que lo mandó. Con una sola
+    // casilla para todo, eso arrastraría también los correos del formulario de
+    // contacto, que son los que no pueden fallar.
+    //
+    // NO hay que crear el buzón en ningún sitio: Resend firma por dominio, no
+    // por cuenta, y las respuestas del boletín ya van dirigidas a `contacto@`
+    // con `reply_to` (ver resolverRemitente y src/pages/api/notify.ts). Nadie
+    // escribe nunca a esta dirección.
+    "BOLETIN_FROM": "La Casa de Dios <boletin@lacasadedios.cl>",
   },
 
   "observability": {
