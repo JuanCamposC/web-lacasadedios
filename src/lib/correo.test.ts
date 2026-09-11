@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { resolverRemitente } from './correo';
+import { conNombre, resolverRemitente } from './correo';
 
 /**
  * El remitente es la variable que más veces ha roto el correo en este
@@ -76,5 +76,51 @@ describe('resolverRemitente', () => {
       const r = resolverRemitente('CONTACT_FROM');
       expect(r.ok && r.from).not.toContain('boletin@');
     });
+  });
+});
+
+/**
+ * `conNombre` mete en una cabecera `From` un texto que escribió un desconocido
+ * en un formulario público. Lo que se prueba acá es justamente que no pueda
+ * hacer nada con eso: la dirección tiene que seguir siendo la de la iglesia
+ * pase lo que pase.
+ */
+describe('conNombre', () => {
+  const DE = 'La Casa de Dios <formulario@lacasadedios.cl>';
+
+  it('cambia el nombre y conserva la dirección', () => {
+    expect(conNombre(DE, 'Juan Pérez')).toBe('Juan Pérez <formulario@lacasadedios.cl>');
+  });
+
+  it('funciona con un remitente sin nombre', () => {
+    expect(conNombre('formulario@lacasadedios.cl', 'Ana')).toBe('Ana <formulario@lacasadedios.cl>');
+  });
+
+  // El ataque que motiva toda la limpieza: llamarse como una dirección para que
+  // el correo parezca salir de otra parte llevando el sello de la iglesia.
+  it('no deja colar otra dirección en el nombre', () => {
+    const r = conNombre(DE, 'Banco <cobros@estafa.cl>');
+    expect(r).toBe('Banco cobros@estafa.cl <formulario@lacasadedios.cl>');
+    expect(r.match(/</g)).toHaveLength(1);
+    expect(r.endsWith('<formulario@lacasadedios.cl>')).toBe(true);
+  });
+
+  it('quita saltos de línea, comillas y separadores de destinatario', () => {
+    const r = conNombre(DE, 'Ana"\r\nBcc: otro@ajeno.cl, tercero@ajeno.cl; cuarto@ajeno.cl');
+    expect(r).not.toMatch(/[\r\n"',;]/);
+    expect(r.endsWith('<formulario@lacasadedios.cl>')).toBe(true);
+  });
+
+  it('recorta un nombre kilométrico', () => {
+    const r = conNombre(DE, 'a'.repeat(500));
+    expect(r.length).toBeLessThan(100);
+    expect(r.endsWith('<formulario@lacasadedios.cl>')).toBe(true);
+  });
+
+  // Un nombre vacío dejaría `<direccion@...>` sin nada delante, que se ve peor
+  // que el remitente de siempre.
+  it('sin nombre utilizable devuelve el remitente tal cual', () => {
+    expect(conNombre(DE, '   ')).toBe(DE);
+    expect(conNombre(DE, '<<>>')).toBe(DE);
   });
 });

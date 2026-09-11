@@ -58,3 +58,39 @@ export function resolverRemitente(
   }
   return { ok: false, valor: crudo };
 }
+
+/**
+ * Cambia el NOMBRE visible de un remitente, conservando su dirección.
+ *
+ * PARA QUÉ: el aviso del formulario sale de una casilla de la iglesia y llega a
+ * otra de la iglesia. Si además lleva el nombre de la casa, en la bandeja no se
+ * distingue un mensaje de otro —Gmail llegaba a mostrar «yo»—. Poniendo delante
+ * el nombre de quien escribió, la lista se lee de un vistazo.
+ *
+ * LA DIRECCIÓN NO SE TOCA. Solo el nombre. Cambiar la dirección rompería la
+ * firma DKIM y el correo acabaría en no deseados.
+ *
+ * ── POR QUÉ SE LIMPIA TANTO ─────────────────────────────────────────────────
+ * `nombre` lo escribe un desconocido en un formulario público, y acaba dentro
+ * de una cabecera `From`. Sin limpiar, alguien que se llamara
+ *
+ *     Banco <cobros@estafa.cl>
+ *
+ * produciría `Banco <cobros@estafa.cl> <formulario@lacasadedios.cl>`, y a quien
+ * lo interprete de izquierda a derecha le queda un correo que parece salir del
+ * atacante y llega con el sello de la iglesia. Por eso se quitan `< >` y las
+ * comillas —que arman una dirección—, la coma y el punto y coma —que separan
+ * destinatarios— y los saltos de línea —que abren una cabecera nueva—.
+ *
+ * Sin nombre utilizable se devuelve el remitente tal cual: un nombre vacío es
+ * peor que el de siempre.
+ */
+export function conNombre(from: string, nombre: string): string {
+  const direccion = from.match(/<([^<>]+)>/)?.[1] ?? from.trim();
+  const limpio = nombre
+    .replace(/[<>"'\r\n,;]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60);
+  return limpio ? `${limpio} <${direccion}>` : from;
+}

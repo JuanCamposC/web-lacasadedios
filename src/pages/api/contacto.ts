@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { crearTransporte } from '../../lib/envio';
 import { CONTACT } from '../../data/site';
-import { resolverRemitente } from '../../lib/correo';
+import { conNombre, resolverRemitente } from '../../lib/correo';
 import { construirCorreo } from '../../lib/correo-plantilla';
 
 export const prerender = false;
@@ -69,7 +69,14 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   const remitente = resolverRemitente();
   if (!remitente.ok)
     return done(false, { reason: 'from_invalido', email: CONTACT.email, status: 500 });
-  const from = remitente.from;
+  // El aviso sale con el nombre de quien escribió, no con el de la iglesia.
+  //
+  // Sin esto, el correo salía de `contacto@` y llegaba a `contacto@` —la misma
+  // dirección en los dos extremos—, y Gmail lo rotulaba «yo»: en la bandeja no
+  // se distinguía un mensaje de otro. La dirección la sigue poniendo
+  // CONTACT_FROM; acá solo cambia el nombre visible, y `conNombre` se encarga
+  // de que un nombre malicioso no pueda colar otra dirección.
+  const from = conNombre(remitente.from, `${nombre} (formulario web)`);
   // El asunto sube a título del correo, así que aquí no se repite.
   const filas: [string, string][] = [
     ['Nombre', nombre],

@@ -111,6 +111,20 @@
     // si esto cambia, se cambia acá y no en cada fila. Ver src/lib/medios.ts.
     "MEDIOS_DOMINIO": "medios.lacasadedios.cl",
 
+    // Dirección desde la que sale el aviso del formulario de contacto.
+    //
+    // Va SIN nombre a propósito: el nombre lo pone el código con el de quien
+    // escribió (ver conNombre en src/lib/correo.ts), para que en la bandeja se
+    // lea «Juan Pérez (formulario web)» y no el nombre de la iglesia.
+    //
+    // POR QUÉ NO ES `contacto@`: el aviso salía de contacto@ y llegaba a
+    // contacto@ —la misma dirección en los dos extremos—, y Gmail lo rotulaba
+    // «yo». Con una casilla distinta se distingue de un vistazo.
+    //
+    // No hay buzón que crear ni a donde responder: `reply_to` lleva el correo
+    // del visitante, así que responder le contesta a él.
+    "CONTACT_FROM": "formulario@lacasadedios.cl",
+
     // Casilla propia del boletín, separada de la del formulario de contacto.
     //
     // POR QUÉ SEPARARLAS: si alguien marca como no deseado un aviso del boletín,
