@@ -79,7 +79,20 @@ function contenidoDe(html: string): Extraido | null {
   return {
     html: m[1]
       .replace(/<script[\s\S]*?<\/script>/gi, '')
-      .replace(/<dialog[\s\S]*?<\/dialog>/gi, ''),
+      .replace(/<dialog[\s\S]*?<\/dialog>/gi, '')
+      /**
+       * Los contadores que suben solos, ya subidos.
+       *
+       * El sitio escribe `<span data-count="4" …>0</span>` y un script lo anima
+       * de 0 a 4 cuando entra en pantalla. Ese script no está acá, así que el
+       * número se quedaba en **0**: el documento decía «0 Templos» de una
+       * iglesia que tiene cuatro. En papel eso no se lee como una animación que
+       * no corrió; se lee como un dato, y encima falso.
+       */
+      .replace(
+        /(<(\w+)[^>]*\sdata-count="([^"]*)"[^>]*>)[\s\S]*?(<\/\2>)/gi,
+        (_todo, apertura, _etiqueta, valor, cierre) => `${apertura}${valor}${cierre}`,
+      ),
     hojas,
   };
 }
@@ -183,8 +196,10 @@ const fallidas = secciones.filter((s) => !s.contenido).length;
       <button id="imprimir" class="btn btn-primary mt-5">Imprimir ahora</button>
 
       {
+        /* Sin `text-warning-content`: ese color va SOBRE un warning sólido, y
+           sobre este fondo al 10 % salía blanco sobre crema, ilegible. */
         fallidas > 0 && (
-          <p class="mt-5 rounded bg-warning/10 px-4 py-3 text-sm text-warning-content">
+          <p class="mt-5 rounded border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
             No se pudieron leer {fallidas} de las {secciones.length} páginas. Las que faltan
             aparecen señaladas abajo; el resto se imprime igual.
           </p>
@@ -240,10 +255,29 @@ const fallidas = secciones.filter((s) => !s.contenido).length;
     <style is:global>
       /* Lo específico de este documento. Lo general —colores, saltos de página,
          qué se esconde— está en el bloque `@media print` de global.css. */
+      /**
+       * A todo el ancho, NO en una columna estrecha.
+       *
+       * El primer intento las metía en 46rem «para que se leyera cómodo», y era
+       * un error: el sitio está maquetado para pantallas anchas, con rejillas de
+       * dos y tres columnas. Al estrecharlo, las tarjetas se apilaban, los
+       * títulos se partían en cuatro líneas y las fotos salían recortadas. Lo
+       * que había que revisar era cómo se ve el sitio, y así no se veía como el
+       * sitio.
+       */
       .pagina {
-        max-width: 46rem;
-        margin: 0 auto;
-        padding: 2rem 1.5rem;
+        padding: 0 0 3rem;
+      }
+
+      /**
+       * Los heros llevan `-mt-16` para meterse DEBAJO del navbar fijo. Acá no
+       * hay navbar, así que ese margen negativo se comía el encabezado con el
+       * número y el nombre de la sección: la referencia justo que sirve para
+       * decir «página 3, tercer párrafo».
+       */
+      .pagina > :first-child + * [class*='-mt-16'],
+      .pagina [class*='-mt-16'] {
+        margin-top: 0 !important;
       }
 
       .encabezado {
@@ -251,7 +285,7 @@ const fallidas = secciones.filter((s) => !s.contenido).length;
         align-items: baseline;
         gap: 0.75rem;
         border-bottom: 2px solid #0a1730;
-        padding-bottom: 0.4rem;
+        padding: 0 1.5rem 0.4rem;
         margin-bottom: 1.5rem;
       }
       .encabezado .numero {

@@ -51,3 +51,8 @@ pnpm-debug.log*
 
 # wrangler: estado local de miniflare (cachés y bases SQLite de desarrollo)
 .wrangler/
+
+# El PDF de revisión: se genera con scripts/pdf-revision.mjs y pesa 15 MB.
+# Se regenera en un minuto, así que no tiene por qué viajar en el repositorio.
+revision.pdf
+captura.png
