@@ -33,15 +33,26 @@ import { archivos } from '../lib/base';
 import { SITE } from '../data/site';
 import { templos } from '../data/templos';
 
-/** En el orden en que se recorre el sitio, no en el del menú. */
-const PAGINAS: { ruta: string; titulo: string }[] = [
-  { ruta: '/', titulo: 'Portada' },
+/**
+ * Qué se imprime.
+ *
+ * Por defecto SOLO las dos páginas que se están revisando ahora: la de inicio y
+ * la de «sobre nosotros». Un documento de dos páginas se revisa de una sentada;
+ * uno de once se deja para después y no se retoma.
+ *
+ * Con `?todo=1` salen todas, para cuando toque revisar el resto.
+ */
+const TODAS: { ruta: string; titulo: string }[] = [
+  { ruta: '/', titulo: 'Inicio' },
   { ruta: '/sobre-nosotros', titulo: 'Sobre nosotros' },
   { ruta: '/horarios', titulo: 'Horarios' },
   { ruta: '/templos', titulo: 'Nuestros templos' },
   ...templos.map((t) => ({ ruta: `/templos/${t.slug}`, titulo: `Templo · ${t.name}` })),
   { ruta: '/contacto', titulo: 'Contacto' },
 ];
+
+const todo = Astro.url.searchParams.get('todo') === '1';
+const PAGINAS = todo ? TODAS : TODAS.slice(0, 2);
 
 /** Lo que se saca de cada página: su contenido y las hojas de estilo que usa. */
 interface Extraido {

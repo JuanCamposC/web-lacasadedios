@@ -1012,20 +1012,53 @@
     min-height: 8cm !important;
   }
 
-  /* Un título no se queda solo al final de una hoja con su texto en la
-     siguiente, y un párrafo no se parte dejando una línea suelta. */
+  /**
+   * QUE NO SE PARTA UNA FRASE ENTRE DOS HOJAS.
+   *
+   * Es lo que más molesta al revisar en papel: se lee media oración, hay que
+   * dar vuelta la hoja para terminarla, y al volver se ha perdido el hilo. Para
+   * aprobar una redacción eso la arruina.
+   *
+   * `orphans` y `widows` no bastan. Solo impiden que queden una o dos líneas
+   * sueltas; permiten igual que un párrafo se parta por la mitad. Lo que lo
+   * impide de verdad es `break-inside: avoid`, que dice «esto no se corta
+   * nunca»: si no cabe en lo que queda de hoja, pasa entero a la siguiente.
+   *
+   * Se puede porque los textos de este sitio son cortos. En un párrafo más
+   * largo que una hoja, el navegador lo parte igual —no le queda otra— y no
+   * pasa nada malo.
+   */
+  p,
+  li,
+  blockquote,
+  figure,
+  figcaption,
+  dt,
+  dd {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Y un título nunca se queda solo al final de una hoja, con el texto que
+     presenta en la siguiente. */
   h1,
   h2,
   h3,
   h4 {
+    break-inside: avoid;
     break-after: avoid-page;
     page-break-after: avoid;
   }
-  p,
-  li,
-  blockquote {
-    orphans: 3;
-    widows: 3;
+
+  /* Las tarjetas y los bloques con recuadro tampoco se parten: media tarjeta al
+     final de una hoja no se lee como contenido, se lee como un error. */
+  .panel,
+  article,
+  .card {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   /* Las imágenes no se parten entre dos hojas. */
