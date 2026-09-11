@@ -1,0 +1,47 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout
+  title="Instagram"
+  description="Las fotos que salen en la portada. Se arrastran para cambiarlas de orden."
+  active="instagram"
+>
+  <div id="crud-root"></div>
+
+  <script>
+    import { setupCrud } from '../../scripts/adminCrud';
+    setupCrud({
+      table: 'instagram',
+      singular: 'publicación',
+      titleField: 'alt',
+      subtitleField: 'enlace',
+      orderBy: { column: 'orden', ascending: true },
+      orderable: { column: 'orden' },
+      fields: [
+        {
+          name: 'imagen_clave',
+          label: 'Foto',
+          type: 'image',
+          required: true,
+          help: 'Cuadrada o casi: en la portada se recorta a cuadrado.',
+        },
+        {
+          name: 'alt',
+          label: 'Qué se ve en la foto',
+          type: 'text',
+          required: true,
+          help: 'Para quien no puede verla. Ej.: «La congregación reunida en el templo». Sin esto, quien usa lector de pantalla oye cuatro veces «enlace, imagen».',
+        },
+        {
+          name: 'enlace',
+          label: 'Link de la publicación (opcional)',
+          type: 'url',
+          help: 'En Instagram: los tres puntos de la publicación → «Copiar enlace». Si lo dejas vacío, la foto lleva al perfil.',
+        },
+        { name: 'publicado', label: 'Publicado', type: 'checkbox' },
+      ],
+    });
+  </script>
+</AdminLayout>

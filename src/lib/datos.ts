@@ -328,6 +328,34 @@ export function seriesDeEstudios(base: Base): Promise<{ serie: string; total: nu
   );
 }
 
+// ── Instagram ───────────────────────────────────────────────────────────────
+
+export interface PostIg {
+  id: string;
+  imagen_clave: string;
+  alt: string;
+  enlace: string | null;
+}
+
+/**
+ * Las fotos de Instagram de la portada, en su orden.
+ *
+ * El tope es del que llama y no de la tabla: la portada pide cuatro porque la
+ * rejilla es de cuatro, y pedir «todas» para quedarse con cuatro sería traer de
+ * la base lo que no se va a enseñar.
+ */
+export function instagramPublicado(base: Base, limite = 4): Promise<PostIg[]> {
+  return listar<PostIg>(
+    base,
+    `select id, imagen_clave, alt, enlace
+       from instagram
+      where publicado = 1
+      order by orden asc, creado_en desc
+      limit ?`,
+    [limite],
+  );
+}
+
 // ── Ajustes ─────────────────────────────────────────────────────────────────
 
 export function ajustes(base: Base): Promise<Ajustes | null> {

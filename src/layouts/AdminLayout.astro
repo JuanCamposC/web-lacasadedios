@@ -10,7 +10,15 @@ interface Props {
   title?: string;
   /** Bajada bajo el título, para orientar sin tener que adivinar. */
   description?: string;
-  active?: 'inicio' | 'eventos' | 'noticias' | 'videos' | 'suscriptores' | 'en-vivo' | 'aviso';
+  active?:
+    | 'inicio'
+    | 'eventos'
+    | 'noticias'
+    | 'videos'
+    | 'instagram'
+    | 'suscriptores'
+    | 'en-vivo'
+    | 'aviso';
 }
 const { title = 'Panel', description, active } = Astro.props;
 // Quién entró sale del token de Cloudflare Access, verificado en el middleware.
@@ -25,6 +33,7 @@ const links = [
   { href: '/admin/eventos', label: 'Eventos', key: 'eventos', icon: 'lucide:calendar-days' },
   { href: '/admin/noticias', label: 'Noticias', key: 'noticias', icon: 'lucide:newspaper' },
   { href: '/admin/videos', label: 'Videos', key: 'videos', icon: 'lucide:youtube' },
+  { href: '/admin/instagram', label: 'Instagram', key: 'instagram', icon: 'lucide:instagram' },
   { href: '/admin/en-vivo', label: 'En vivo', key: 'en-vivo', icon: 'lucide:radio' },
   { href: '/admin/aviso', label: 'Aviso', key: 'aviso', icon: 'lucide:megaphone' },
   { href: '/admin/suscriptores', label: 'Correos', key: 'suscriptores', icon: 'lucide:mail' },

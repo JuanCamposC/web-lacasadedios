@@ -56,12 +56,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // respuesta con datos de sesión podría quedarse guardada en alguna capa
   // intermedia y servirse a otra persona.
   //
-  // `/api/estado` es la excepción, y es deliberada: lo pide el navegador en
-  // TODA página estática para saber si hay transmisión en vivo, no lleva ni
-  // sesión ni nada sin publicar, y sin caché serían tantas consultas a la base
-  // como visitas. Fija su propio `s-maxage` y esta línea se lo respetaría de
-  // todas formas mal: `set` pisa, no añade.
-  if (path !== '/api/estado' && (path.startsWith('/admin') || path.startsWith('/api'))) {
+  // `/api/estado` y `/api/instagram` son las excepciones, y son deliberadas:
+  // los pide el navegador desde páginas estáticas —el primero en todas, para
+  // saber si hay transmisión en vivo; el segundo en la portada, para las fotos
+  // de Instagram—, no llevan ni sesión ni nada sin publicar, y sin caché serían
+  // tantas consultas a la base como visitas. Cada uno fija su propio `s-maxage`
+  // y esta línea se lo estropearía: `set` pisa, no añade.
+  const publicos = ['/api/estado', '/api/instagram'];
+  if (!publicos.includes(path) && (path.startsWith('/admin') || path.startsWith('/api'))) {
     response.headers.set('Cache-Control', 'no-store, must-revalidate');
   }
 

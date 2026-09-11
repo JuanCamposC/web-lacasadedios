@@ -1,4 +1,22 @@
 ---
+/**
+ * La portada se queda ESTÁTICA. Se intentó lo contrario y salió caro.
+ *
+ * Para que las fotos de Instagram vinieran del panel, esta página pasó a
+ * armarse al servir. Funcionaba, pero rompía las imágenes sin decirlo: en una
+ * página prerenderizada, `<Image />` apunta a los WebP que Astro genera al
+ * compilar; en una que se arma al servir, apunta a `/_image?…`, y con
+ * `imageService.runtime: 'passthrough'` (ver astro.config.mjs) eso devuelve el
+ * archivo ORIGINAL sin tocar.
+ *
+ * Medido: la misma foto pasaba de 12 kB en WebP a 211 kB en JPEG. Multiplicado
+ * por el hero, los cuatro templos y las cuatro fotos de Instagram, la página
+ * que más se visita —y la que más se abre desde el teléfono— engordaba más de
+ * un mega.
+ *
+ * Así que las fotos del panel se piden desde el navegador, igual que el estado
+ * de la transmisión: ver el bloque de Instagram más abajo y /api/instagram.
+ */
 import { Image } from 'astro:assets';
 import { Icon } from 'astro-icon/components';
 import Layout from '../layouts/Layout.astro';
@@ -242,6 +260,17 @@ import { IMG } from '../assets/images';
         </Reveal>
 
         <Reveal delay={120}>
+          <!-- La hora se dice UNA vez, arriba. Los cuatro templos coinciden, y
+               repetir «Lunes · 20:00 h» en cada fila no informaba de nada: solo
+               tapaba lo único que de verdad cambia de un templo a otro, que es
+               si se va o si se conecta. -->
+          <p
+            class="mb-4 flex items-center gap-2 font-data text-lg font-bold tracking-wide text-accent"
+          >
+            <Icon name="lucide:calendar-clock" class="h-5 w-5" />
+            {ESTUDIO.cuando}, 20:00 h
+          </p>
+
           <ul
             class="divide-y divide-white/15 rounded-xl border border-white/15 bg-white/5 backdrop-blur-sm"
           >
@@ -250,11 +279,6 @@ import { IMG } from '../assets/images';
                 <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-4">
                   <div class="min-w-0">
                     <p class="font-bold">{e.templo.short}</p>
-                    {e.day && e.time && (
-                      <p class="text-sm text-white/65">
-                        {e.day} · {e.time} h
-                      </p>
-                    )}
                   </div>
                   <span
                     class={`badge badge-sm gap-1.5 ${e.modalidad === 'presencial' ? 'badge-accent' : 'border-white/25 bg-white/10 text-white'}`}
@@ -322,7 +346,13 @@ import { IMG } from '../assets/images';
         subtitle="La vida de la congregación, los avisos de la semana y lo que vamos viviendo juntos."
       />
 
-      <div class="mt-12 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <!-- Lo que se pinta de entrada son las fotos del proyecto, optimizadas al
+           compilar. Si el panel tiene fotos subidas, el script del final las
+           reemplaza. Así:
+             · quien no tenga JavaScript ve cuatro fotos, no una rejilla vacía;
+             · la rejilla nunca salta, porque cada hueco ya es un cuadrado;
+             · y la portada sigue siendo un archivo fijo. -->
+      <div id="ig-grid" class="mt-12 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {
           INSTAGRAM_POSTS.map((post, i) => (
             <Reveal delay={(i % 4) * 80}>
@@ -360,6 +390,67 @@ import { IMG } from '../assets/images';
         </a>
       </Reveal>
     </div>
+
+    <script>
+      /**
+       * Cambia las fotos del proyecto por las que haya subido el panel.
+       *
+       * Se hace acá y no al generar la página porque la portada es un archivo
+       * fijo: armarla al servir haría que `<Image />` sirviera los originales
+       * sin optimizar y engordaría la página más de un mega (ver la nota de
+       * arriba del archivo).
+       *
+       * Si algo falla —la red, la base, la respuesta— no se toca nada y se
+       * quedan las fotos que ya están pintadas. Nunca se vacía la rejilla.
+       */
+      import { INSTAGRAM } from '../data/site';
+
+      async function pintarInstagram() {
+        const grid = document.getElementById('ig-grid');
+        if (!grid) return;
+
+        try {
+          const res = await fetch('/api/instagram');
+          if (!res.ok) return;
+          const { fotos } = (await res.json()) as {
+            fotos: { src: string; alt: string; href: string | null }[];
+          };
+          if (!Array.isArray(fotos) || fotos.length === 0) return;
+
+          grid.replaceChildren(
+            ...fotos.map((f) => {
+              const a = document.createElement('a');
+              a.href = f.href || INSTAGRAM.href;
+              a.target = '_blank';
+              a.rel = 'noopener noreferrer';
+              a.className = 'group relative block aspect-square overflow-hidden rounded-xl';
+
+              const img = document.createElement('img');
+              img.src = f.src;
+              // El texto alternativo es obligatorio en la base justamente para
+              // que esta línea nunca quede vacía: son cuatro enlaces seguidos, y
+              // sin él un lector de pantalla anuncia «enlace, imagen» cuatro
+              // veces.
+              img.alt = f.alt;
+              img.width = 600;
+              img.height = 600;
+              img.loading = 'lazy';
+              img.decoding = 'async';
+              img.className =
+                'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105';
+
+              a.append(img);
+              return a;
+            }),
+          );
+        } catch {
+          /* Se quedan las fotos que ya estaban. */
+        }
+      }
+
+      pintarInstagram();
+      document.addEventListener('astro:page-load', pintarInstagram);
+    </script>
   </section>
 
   <!-- ══ Redes y transmisión ═════════════════════════════════════════════

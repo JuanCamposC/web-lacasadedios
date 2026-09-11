@@ -6,16 +6,29 @@
  * debería obligar a abrir un archivo lleno de etiquetas. Acá solo hay frases.
  * Se cambian entre las comillas y listo.
  *
- * PENDIENTE DE REVISIÓN DEL PASTOR. Lo que sigue está escrito para que la
- * página se pueda ver y leer completa, no para quedarse. En particular `SERIE`
- * describe un recorrido genérico por los fundamentos de la fe; el estudio real
- * que se esté dando ahora lo tiene que decir él.
+ * ── POR QUÉ EL NOMBRE Y LA DESCRIPCIÓN NO SALEN DEL FEED ────────────────────
+ * Antes la página tomaba el título y la descripción de RSS.com, para no
+ * escribirlos dos veces. Duró lo que tardó en haber un feed de verdad: el
+ * programa está registrado como «Instituto Bíblico» a secas y su descripción
+ * traía una falta de ortografía, y las dos cosas aparecieron tal cual en la web
+ * de la iglesia sin que nadie las hubiera aprobado.
+ *
+ * Así que mandan estos textos. Lo que RSS.com diga sigue importando —es lo que
+ * ve quien llega por Spotify o Apple Podcasts—, pero eso se arregla allá.
+ *
+ * PENDIENTE DE REVISIÓN DEL PASTOR: `introduccion`, `serie` y `queEsperar`.
  */
 
 export const ESTUDIO = {
   eyebrow: 'Conociendo la Palabra',
   titulo: 'Estudio bíblico',
-  bajada: 'Cada lunes, en los cuatro templos, abrimos juntos la Palabra de Dios.',
+  bajada: 'Todos los lunes, en los cuatro templos, abrimos juntos la Palabra de Dios.',
+
+  /** El nombre del programa, tal como debe leerse. */
+  programa: 'Instituto Bíblico Bet-El',
+
+  /** Cuándo se reúne. Uno solo porque los cuatro templos coinciden. */
+  cuando: 'Todos los lunes',
 
   /**
    * Por qué el estudio importa, en tres párrafos.
@@ -29,15 +42,8 @@ export const ESTUDIO = {
     'No hace falta saber nada de antemano ni traer nada más que una Biblia —y si no la tienes, te prestamos una—. Vienen hermanos que llevan cuarenta años en la fe y personas que abren la Biblia por primera vez, y la conversación es la misma para todos.',
   ],
 
-  /**
-   * Lo que se está estudiando ahora.
-   *
-   * Si el feed de RSS.com trae una descripción del programa, la página usa esa
-   * en vez de esta: así basta con escribirlo una vez, en RSS.com, y no hay dos
-   * textos que puedan contradecirse. Esto es el respaldo.
-   */
+  /** Lo que se está estudiando ahora. */
   serie: {
-    titulo: 'Lo que estamos estudiando',
     texto:
       'Estamos recorriendo los fundamentos de la fe cristiana: quién es Dios, quién es Jesucristo y qué significa seguirle. Cada encuentro toma un pasaje completo, lo sitúa en su contexto y termina con una pregunta concreta para la semana. Los encuentros son independientes entre sí, así que se puede entrar en cualquier momento sin haber estado en los anteriores.',
   },
@@ -66,18 +72,24 @@ export const ESTUDIO = {
     },
   ],
 
-  /** Cómo se pide el enlace de Zoom, y por qué no está publicado. */
-  zoom: {
-    titulo: 'Participar por Zoom',
-    texto:
-      'En Santiago Centro, Limache y Coya el estudio se hace por Zoom. El enlace no se publica en internet: se solicita al pastor del templo más cercano, que lo hace llegar personalmente.',
+  /** Cómo se participa, resumido. Los detalles de cada templo están en su página. */
+  participar: {
+    presencial: 'En San Miguel el estudio es presencial. No hace falta avisar ni inscribirse.',
+    zoom: 'En Santiago Centro, Limache y Coya es por Zoom. El enlace no se publica: se pide al pastor del templo, que lo hace llegar personalmente.',
+    /**
+     * Por qué el enlace no está publicado.
+     *
+     * Va escrito en la página y no solo en el código: quien lo lee entiende que
+     * es cuidado y no burocracia, y así nadie «ayuda» pegando el enlace en un
+     * grupo de WhatsApp.
+     */
     porQue:
-      'Lo hacemos así para cuidar el encuentro. Un enlace abierto en la red permite que entre cualquiera a interrumpir, y en el estudio se comparten cosas personales y se ora por situaciones de familia. Escribir un mensaje toma un minuto y se responde el mismo día.',
+      'Un enlace abierto en internet permite que entre cualquiera a interrumpir, y en el estudio se comparten cosas personales y se ora por situaciones de familia.',
   },
 
   /** Encabezado de la lista de audios. */
   audios: {
-    titulo: 'Escucha los estudios',
+    titulo: 'Audios y recursos',
     texto:
       'Cada estudio queda grabado y publicado acá. También se puede seguir desde Spotify, Apple Podcasts o cualquier aplicación de podcast buscando el nombre del programa.',
   },

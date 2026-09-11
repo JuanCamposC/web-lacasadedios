@@ -48,6 +48,7 @@ const COLUMNAS = {
     'publicado_en',
   ],
   videos: ['titulo', 'youtube_url', 'descripcion', 'templo', 'publicado', 'orden'],
+  instagram: ['imagen_clave', 'alt', 'enlace', 'publicado', 'orden'],
   estudios: [
     'titulo',
     'slug',
@@ -72,6 +73,7 @@ const ORDEN: Record<Recurso, string> = {
   noticias: 'publicado_en desc',
   videos: 'orden asc, creado_en desc',
   estudios: 'fecha desc',
+  instagram: 'orden asc, creado_en desc',
 };
 
 /** ¿Es un nombre de recurso válido? Se comprueba antes de tocar nada. */
@@ -176,7 +178,7 @@ export async function actualizar(
   if (campos.length === 0) return false;
 
   const asignaciones = campos.map((c) => `${c} = ?`);
-  // `videos` no tiene columna de modificación; las otras tres sí.
+  // `videos` es la única tabla sin columna de modificación; las demás la tienen.
   if (recurso !== 'videos') asignaciones.push('actualizado_en = ?');
   const extra = recurso !== 'videos' ? [ahora()] : [];
 

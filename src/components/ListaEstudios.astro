@@ -1,0 +1,87 @@
+---
+import { Icon } from 'astro-icon/components';
+import Reveal from './Reveal.astro';
+import { duracionLegible } from '../lib/medios';
+import type { Episodio } from '../lib/rss';
+
+/**
+ * La lista de estudios en audio.
+ *
+ * Está aparte de la página porque la usan DOS sitios: los audios de verdad, que
+ * vienen del feed de RSS.com, y el bloque de vista previa que enseña cómo
+ * quedaría lo mismo con los audios en nuestro propio servidor. Que sea el mismo
+ * componente no es economía de líneas: es lo que hace honesta la comparación,
+ * porque si cada una tuviera su plantilla, «se ven iguales» sería una promesa
+ * mía en vez de un hecho.
+ *
+ * Recibe `Episodio`, que es la forma que sale del feed. La vista previa traduce
+ * las filas de la base a esa misma forma (ver estudio-biblico.astro).
+ */
+interface Props {
+  estudios: Episodio[];
+  class?: string;
+}
+
+const { estudios, class: className = '' } = Astro.props;
+
+const fechaLarga = (iso: string) =>
+  new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(iso));
+---
+
+<ul class:list={['space-y-5', className]}>
+  {
+    estudios.map((ep, i) => (
+      <li id={`ep-${i + 1}`}>
+        <Reveal delay={Math.min(i, 4) * 70}>
+          <article class="panel p-6 sm:p-7">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-base-content/60">
+              {ep.numero !== null && (
+                <span class="badge badge-ghost badge-sm font-data">Nº {ep.numero}</span>
+              )}
+              {ep.fecha && <time datetime={ep.fecha}>{fechaLarga(ep.fecha)}</time>}
+              {ep.duracionSeg && (
+                <span class="flex items-center gap-1">
+                  <Icon name="lucide:clock" class="h-3.5 w-3.5" />
+                  {duracionLegible(ep.duracionSeg)}
+                </span>
+              )}
+            </div>
+
+            <h3 class="mt-2 font-display text-xl">{ep.titulo}</h3>
+
+            {ep.resumen && (
+              <p class="mt-2 max-w-prose text-sm leading-relaxed whitespace-pre-line text-base-content/75">
+                {ep.resumen}
+              </p>
+            )}
+
+            {/* `preload="none"` a propósito: con doce estudios en la página,
+                precargar cada uno serían decenas de megas gastados por quien
+                quizá no reproduzca ninguno. */}
+            <audio
+              controls
+              preload="none"
+              class="mt-5 w-full"
+              aria-label={`Escuchar: ${ep.titulo}`}
+            >
+              <source src={ep.audio} type={ep.tipoMime} />
+              Tu navegador no puede reproducir este audio.
+              <a href={ep.audio}>Descargar el archivo</a>.
+            </audio>
+
+            {ep.enlace && (
+              <a
+                href={ep.enlace}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="link-hover link mt-3 inline-flex items-center gap-1.5 text-sm text-base-content/60"
+              >
+                <Icon name="lucide:external-link" class="h-3.5 w-3.5" /> Ver este estudio en RSS.com
+              </a>
+            )}
+          </article>
+        </Reveal>
+      </li>
+    ))
+  }
+</ul>

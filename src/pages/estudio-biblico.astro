@@ -9,7 +9,6 @@ export const prerender = false;
 // minutos en el borde (ver src/lib/rss.ts).
 Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
 
-import { Image } from 'astro:assets';
 import { Icon } from 'astro-icon/components';
 import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
@@ -18,15 +17,15 @@ import Reveal from '../components/Reveal.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import EmptyState from '../components/EmptyState.astro';
 import CtaBand from '../components/CtaBand.astro';
+import ListaEstudios from '../components/ListaEstudios.astro';
 import { IMG } from '../assets/images';
 import { ESTUDIO } from '../data/estudio';
-import { estudiosBiblicos, correoDe } from '../data/templos';
+import { templos, correoDe } from '../data/templos';
 import { SOCIAL } from '../data/site';
 import { leerFeed } from '../lib/rss';
-import { duracionLegible } from '../lib/medios';
-
-const feed = await leerFeed();
-const encuentros = estudiosBiblicos();
+import { baseDeDatos } from '../lib/base';
+import { estudiosPublicados } from '../lib/datos';
+import { urlMedio } from '../lib/medios';
 
 /**
  * Cuántas grabaciones se enseñan.
@@ -38,28 +37,99 @@ const encuentros = estudiosBiblicos();
  * completo, donde además hay buscador.
  */
 const MAXIMO = 12;
+
+const feed = await leerFeed();
 const episodios = feed?.episodios.slice(0, MAXIMO) ?? [];
 const hayMas = (feed?.episodios.length ?? 0) > MAXIMO;
 
-// Presencial y por Zoom se muestran en bloques distintos porque lo que hay que
-// hacer es distinto: a uno se va, al otro hay que pedir el enlace antes.
-const presenciales = encuentros.filter((e) => e.modalidad === 'presencial');
-const porZoom = encuentros.filter((e) => e.modalidad === 'zoom');
+/**
+ * ── BLOQUE TEMPORAL: la otra opción, para decidir ───────────────────────────
+ *
+ * Enseña cómo quedaría esta misma lista si los audios se subieran al panel y
+ * vivieran en nuestro propio almacenamiento, en vez de en RSS.com. Está en la
+ * página pública porque así se pidió, para poder verlo sin abrir otra
+ * dirección.
+ *
+ * PARA QUITARLO cuando esté decidido: poner `false` acá abajo y borrar la
+ * sección «La otra opción» del final del archivo. No hay nada más que tocar.
+ *
+ * Si la tabla `estudios` tiene filas de verdad, se enseñan esas. Si está vacía
+ * —que es lo normal hoy— se enseñan tres de ejemplo, rotuladas como tales: un
+ * ejemplo sin rótulo en una web de iglesia es una prédica que nadie dio.
+ */
+const MOSTRAR_COMPARATIVA = true;
 
-// Si en RSS.com ya está escrito de qué va el programa, manda eso: es el texto
-// que además ve quien llega por Spotify o Apple Podcasts, y tener dos versiones
-// del mismo párrafo es tener una que algún día queda vieja.
-const descripcionSerie = feed?.descripcion?.trim() || ESTUDIO.serie.texto;
+// El `try` envuelve también a `baseDeDatos()`, que lanza si falta la binding.
+// Esto es un bloque para decidir, no contenido: que falle no puede tumbar una
+// página que lleva los horarios de cuatro templos.
+let propios: Awaited<ReturnType<typeof estudiosPublicados>> = [];
+if (MOSTRAR_COMPARATIVA) {
+  try {
+    propios = await estudiosPublicados(await baseDeDatos(), { limite: 3 });
+  } catch {
+    propios = [];
+  }
+}
 
-const fechaLarga = (iso: string) =>
-  new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date(iso));
+const EJEMPLOS = [
+  {
+    titulo: 'Efesios 2: salvos por gracia',
+    fecha: '2026-09-07T23:00:00Z',
+    duracionSeg: 3750,
+    resumen:
+      'Primera parte del capítulo. Leemos el pasaje completo y nos detenemos en qué significa que la salvación sea un regalo y no un logro.',
+  },
+  {
+    titulo: 'Mateo 6: no os afanéis',
+    fecha: '2026-08-31T23:00:00Z',
+    duracionSeg: 2715,
+    resumen: 'Sobre la preocupación por el día de mañana y a qué nos llama Jesús en su lugar.',
+  },
+  {
+    titulo: 'Salmo 23: el pastor que no falta',
+    fecha: '2026-08-24T23:00:00Z',
+    duracionSeg: 3180,
+    resumen: 'Un salmo que casi todos sabemos de memoria, leído despacio y por partes.',
+  },
+];
+
+/** Los estudios de la base, con la forma que espera la lista. */
+const comparativa = propios.length
+  ? propios.map((e) => ({
+      guid: e.id,
+      titulo: e.titulo,
+      resumen: e.descripcion ?? '',
+      enlace: null,
+      audio: urlMedio(e.archivo_clave) ?? '',
+      tipoMime: e.tipo_mime,
+      duracionSeg: e.duracion_seg,
+      fecha: e.fecha,
+      temporada: null,
+      numero: null,
+    }))
+  : EJEMPLOS.map((e, i) => ({
+      guid: `ejemplo-${i}`,
+      titulo: e.titulo,
+      resumen: e.resumen,
+      enlace: null,
+      audio: '',
+      tipoMime: 'audio/mpeg',
+      duracionSeg: e.duracionSeg,
+      fecha: e.fecha,
+      temporada: null,
+      numero: null,
+    }));
+
+const sanMiguel = templos.find((t) => t.estudio === 'presencial')!;
+const porZoom = templos.filter((t) => t.estudio === 'zoom');
+const asuntoZoom = encodeURIComponent('Enlace del estudio bíblico por Zoom');
 
 const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
 ---
 
 <Layout
-  title="Estudio bíblico · La Casa de Dios"
-  description="Cada lunes abrimos juntos la Palabra de Dios en los cuatro templos de La Casa de Dios. Presencial en San Miguel y por Zoom en Santiago Centro, Limache y Coya. Escucha los estudios grabados."
+  title={`${ESTUDIO.programa} · La Casa de Dios`}
+  description="Todos los lunes abrimos juntos la Palabra de Dios en los cuatro templos de La Casa de Dios. Presencial en San Miguel y por Zoom en Santiago Centro, Limache y Coya. Escucha los estudios grabados."
 >
   <PageHero
     image={IMG.estudio}
@@ -72,7 +142,7 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
 
   <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Estudio bíblico' }]} />
 
-  <!-- ══ Por qué el estudio ══════════════════════════════════════════════ -->
+  <!-- ══ Qué es y qué esperar ════════════════════════════════════════════ -->
   <section class="section bg-base-100">
     <div class="wrap grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start">
       <Reveal>
@@ -115,147 +185,19 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
   <!-- ══ Lo que se está estudiando ═══════════════════════════════════════ -->
   <section class="section bg-base-200">
     <div class="wrap">
-      <SectionHeading
-        eyebrow="En curso"
-        title={feed?.titulo || ESTUDIO.serie.titulo}
-        align="left"
-      />
+      <SectionHeading eyebrow="En curso" title={ESTUDIO.programa} align="left" />
       <Reveal>
-        <p class="mt-6 max-w-prose leading-relaxed whitespace-pre-line text-base-content/85">
-          {descripcionSerie}
-        </p>
+        <p class="mt-6 max-w-prose leading-relaxed text-base-content/85">{ESTUDIO.serie.texto}</p>
       </Reveal>
     </div>
   </section>
 
-  <!-- ══ Dónde y cuándo ══════════════════════════════════════════════════
-       Presencial primero: es lo único a lo que alguien puede simplemente
-       llegar, sin escribir a nadie ni esperar respuesta.
+  <!-- ══ Audios y recursos ═══════════════════════════════════════════════
+       Va acá arriba, antes de «cómo participar», y no al final: es lo que
+       viene a buscar quien ya conoce el estudio, que son casi todos los que
+       vuelven a esta página.
   ══════════════════════════════════════════════════════════════════════ -->
-  <section id="participar" class="section bg-base-100">
-    <div class="wrap">
-      <SectionHeading
-        eyebrow="Cómo participar"
-        title="Dónde y cuándo nos reunimos"
-        subtitle="El estudio se hace en los cuatro templos. En San Miguel es presencial; en los demás, por Zoom."
-      />
-
-      {
-        presenciales.map((e) => (
-          <Reveal class="mt-12">
-            <div class="panel overflow-hidden">
-              <div class="grid gap-0 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
-                <Image
-                  src={IMG[e.templo.image]}
-                  alt={`Templo ${e.templo.short}`}
-                  widths={[480, 800]}
-                  sizes="(min-width: 768px) 40vw, 100vw"
-                  class="h-56 w-full object-cover md:h-full"
-                />
-                <div class="p-7 sm:p-9">
-                  <span class="badge badge-primary badge-sm gap-1.5">
-                    <Icon name="lucide:map-pin" class="h-3.5 w-3.5" /> Presencial
-                  </span>
-                  <h3 class="mt-3 font-display text-2xl">Templo {e.templo.short}</h3>
-                  <p class="mt-2 text-base-content/70">{e.templo.address}</p>
-
-                  {e.day && e.time && (
-                    <p class="mt-5 flex items-center gap-2 text-lg font-bold text-primary">
-                      <Icon name="lucide:calendar-clock" class="h-5 w-5" />
-                      {e.day} · {e.time} h
-                    </p>
-                  )}
-
-                  <p class="mt-4 text-base-content/80">
-                    No hace falta avisar ni inscribirse. Llega unos minutos antes y alguien te
-                    recibe en la puerta.
-                  </p>
-
-                  <div class="mt-6 flex flex-wrap gap-3">
-                    <a href={`/templos/${e.templo.slug}`} class="btn btn-primary gap-2">
-                      Cómo llegar <Icon name="lucide:arrow-right" class="h-4 w-4" />
-                    </a>
-                    <a
-                      href={e.templo.mapLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="btn btn-outline gap-2"
-                    >
-                      <Icon name="lucide:navigation" class="h-4 w-4" /> Abrir en el mapa
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        ))
-      }
-
-      <!-- ── Por Zoom ──────────────────────────────────────────────────────
-           El enlace NO se publica. Va en el texto y también en el código para
-           que a nadie se le ocurra «facilitarlo» pegándolo acá: el filtro es el
-           pastor, y ese es justamente el punto.
-      ────────────────────────────────────────────────────────────────────── -->
-      <Reveal class="mt-14">
-        <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-          <h3 class="font-display text-2xl">{ESTUDIO.zoom.titulo}</h3>
-          <span class="badge badge-secondary badge-sm gap-1.5">
-            <Icon name="lucide:video" class="h-3.5 w-3.5" /> Por Zoom
-          </span>
-        </div>
-        <p class="mt-3 max-w-prose text-base-content/85">{ESTUDIO.zoom.texto}</p>
-        <p class="mt-3 max-w-prose text-sm text-base-content/65">{ESTUDIO.zoom.porQue}</p>
-      </Reveal>
-
-      <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {
-          porZoom.map((e, i) => {
-            const correo = correoDe(e.templo.leader);
-            const asunto = encodeURIComponent('Enlace del estudio bíblico por Zoom');
-            return (
-              <Reveal delay={(i % 3) * 90} class="h-full">
-                <div class="panel flex h-full flex-col p-6">
-                  <h4 class="font-display text-xl">{e.templo.short}</h4>
-                  {e.day && e.time && (
-                    <p class="mt-1 flex items-center gap-2 text-sm font-bold text-secondary">
-                      <Icon name="lucide:calendar-clock" class="h-4 w-4" />
-                      {e.day} · {e.time} h
-                    </p>
-                  )}
-                  <p class="mt-3 text-sm text-base-content/70">
-                    {e.templo.leader.role.startsWith('Obrero') ? 'Hermano' : 'Pastor'} a cargo:{' '}
-                    <span class="font-medium text-base-content/90">
-                      {e.templo.leader.name.replace(/^(Pastor|Hermano)\s+/, '')}
-                    </span>
-                  </p>
-
-                  <div class="mt-auto flex flex-col gap-2 pt-6">
-                    <a
-                      href={`/contacto?asunto=${asunto}&templo=${encodeURIComponent(e.templo.short)}`}
-                      class="btn btn-primary btn-sm gap-2"
-                    >
-                      <Icon name="lucide:mail" class="h-4 w-4" /> Pedir el enlace
-                    </a>
-                    {correo && (
-                      <a
-                        href={`mailto:${correo}?subject=${asunto}`}
-                        class="link-hover link text-center text-xs break-all text-base-content/60"
-                      >
-                        {correo}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </Reveal>
-            );
-          })
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- ══ Los audios ══════════════════════════════════════════════════════ -->
-  <section id="audios" class="section bg-base-200">
+  <section id="audios" class="section bg-base-100">
     <div class="wrap">
       <SectionHeading
         eyebrow="Grabaciones"
@@ -272,7 +214,7 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
           <Reveal class="mt-10 flex justify-center">
             <img
               src={feed.imagen}
-              alt={`Portada de ${feed.titulo}`}
+              alt={`Portada de ${ESTUDIO.programa}`}
               width="176"
               height="176"
               loading="lazy"
@@ -295,68 +237,11 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
             />
           </Reveal>
         ) : (
-          <ul class="mt-12 space-y-5">
-            {episodios.map((ep, i) => (
-              <li id={`ep-${i + 1}`}>
-                <Reveal delay={Math.min(i, 4) * 70}>
-                  <article class="panel p-6 sm:p-7">
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-base-content/60">
-                      {ep.numero !== null && (
-                        <span class="badge badge-ghost badge-sm font-data">Nº {ep.numero}</span>
-                      )}
-                      {ep.fecha && <time datetime={ep.fecha}>{fechaLarga(ep.fecha)}</time>}
-                      {ep.duracionSeg && (
-                        <span class="flex items-center gap-1">
-                          <Icon name="lucide:clock" class="h-3.5 w-3.5" />
-                          {duracionLegible(ep.duracionSeg)}
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 class="mt-2 font-display text-xl">{ep.titulo}</h3>
-
-                    {ep.resumen && (
-                      <p class="mt-2 max-w-prose text-sm leading-relaxed whitespace-pre-line text-base-content/75">
-                        {ep.resumen}
-                      </p>
-                    )}
-
-                    {/* `preload="none"` a propósito: con diez estudios en la
-                        página, precargar cada uno serían decenas de megas
-                        gastados por quien quizá no reproduzca ninguno. */}
-                    <audio
-                      controls
-                      preload="none"
-                      class="mt-5 w-full"
-                      aria-label={`Escuchar: ${ep.titulo}`}
-                    >
-                      <source src={ep.audio} type={ep.tipoMime} />
-                      Tu navegador no puede reproducir este audio.
-                      <a href={ep.audio}>Descargar el archivo</a>.
-                    </audio>
-
-                    {ep.enlace && (
-                      <a
-                        href={ep.enlace}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="link-hover link mt-3 inline-flex items-center gap-1.5 text-sm text-base-content/60"
-                      >
-                        <Icon name="lucide:external-link" class="h-3.5 w-3.5" /> Ver este estudio en
-                        RSS.com
-                      </a>
-                    )}
-                  </article>
-                </Reveal>
-              </li>
-            ))}
-          </ul>
+          <ListaEstudios estudios={episodios} class="mt-12" />
         )
       }
 
       {
-        /* Los estudios más antiguos no se pierden: están en el programa
-           completo, que además tiene buscador. */
         hayMas && feed?.enlace && (
           <Reveal class="mt-10 text-center">
             <a
@@ -373,6 +258,150 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
       }
     </div>
   </section>
+
+  <!-- ══ Cómo participar ═════════════════════════════════════════════════
+       Dos tarjetas y poco texto. Antes eran una tarjeta grande con foto, tres
+       tarjetas de templo y cuatro párrafos; para decir dos cosas —a San Miguel
+       se va, al resto se pide el enlace— era demasiado.
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section id="participar" class="section bg-base-200">
+    <div class="wrap">
+      <SectionHeading
+        eyebrow="Cómo participar"
+        title={`${ESTUDIO.cuando}, en los cuatro templos`}
+        subtitle="A las 20:00 horas."
+      />
+
+      <div class="mt-12 grid gap-5 md:grid-cols-2">
+        <Reveal class="h-full">
+          <div class="panel flex h-full flex-col p-7">
+            <span class="badge badge-primary badge-sm w-fit gap-1.5">
+              <Icon name="lucide:map-pin" class="h-3.5 w-3.5" /> Presencial
+            </span>
+            <h3 class="mt-3 font-display text-xl">{sanMiguel.short}</h3>
+            <p class="mt-1 text-sm text-base-content/70">{sanMiguel.address}</p>
+            <p class="mt-4 text-base-content/85">{ESTUDIO.participar.presencial}</p>
+            <div class="mt-auto flex flex-wrap gap-2 pt-6">
+              <a href={`/templos/${sanMiguel.slug}`} class="btn btn-sm btn-primary gap-1.5">
+                Cómo llegar <Icon name="lucide:arrow-right" class="h-4 w-4" />
+              </a>
+              <a
+                href={sanMiguel.mapLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-ghost btn-sm gap-1.5"
+              >
+                <Icon name="lucide:navigation" class="h-4 w-4" /> Abrir en el mapa
+              </a>
+            </div>
+          </div>
+        </Reveal>
+
+        <Reveal delay={90} class="h-full">
+          <div class="panel flex h-full flex-col p-7">
+            <span class="badge badge-secondary badge-sm w-fit gap-1.5">
+              <Icon name="lucide:video" class="h-3.5 w-3.5" /> Por Zoom
+            </span>
+            <h3 class="mt-3 font-display text-xl">
+              {
+                porZoom
+                  .map((t) => t.short)
+                  .join(', ')
+                  .replace(/, ([^,]*)$/, ' y $1')
+              }
+            </h3>
+            <p class="mt-4 text-base-content/85">{ESTUDIO.participar.zoom}</p>
+            <p class="mt-3 text-sm text-base-content/65">{ESTUDIO.participar.porQue}</p>
+
+            <div class="mt-auto flex flex-wrap gap-2 pt-6">
+              {
+                porZoom.map((t) => (
+                  <a
+                    href={`/contacto?asunto=${asuntoZoom}&templo=${encodeURIComponent(t.short)}`}
+                    class="btn btn-sm btn-primary gap-1.5"
+                  >
+                    <Icon name="lucide:mail" class="h-4 w-4" /> {t.short}
+                  </a>
+                ))
+              }
+            </div>
+
+            {
+              /* Los correos personales solo aparecen cuando existen de verdad:
+                 ver `emailListo` en src/data/templos.ts. */
+              porZoom.some((t) => correoDe(t.leader)) && (
+                <ul class="mt-4 space-y-1 text-xs text-base-content/60">
+                  {porZoom.map((t) => {
+                    const correo = correoDe(t.leader);
+                    return (
+                      correo && (
+                        <li>
+                          {t.short}:{' '}
+                          <a
+                            href={`mailto:${correo}?subject=${asuntoZoom}`}
+                            class="link-hover link break-all"
+                          >
+                            {correo}
+                          </a>
+                        </li>
+                      )
+                    );
+                  })}
+                </ul>
+              )
+            }
+          </div>
+        </Reveal>
+      </div>
+    </div>
+  </section>
+
+  {
+    /* ══ TEMPORAL · La otra opción ══════════════════════════════════════
+       Para decidir dónde viven los audios. Se borra entera cuando esté
+       decidido; ver `MOSTRAR_COMPARATIVA` arriba. */
+    MOSTRAR_COMPARATIVA && (
+      <section class="section bg-base-100">
+        <div class="wrap">
+          <div class="rounded-2xl border-2 border-dashed border-warning/50 bg-warning/5 p-6 sm:p-9">
+            <span class="badge badge-warning badge-sm gap-1.5">
+              <Icon name="lucide:flask-conical" class="h-3.5 w-3.5" /> Vista previa · no es parte
+              del sitio
+            </span>
+
+            <h2 class="mt-4 font-display text-2xl">Si los audios vivieran en nuestro servidor</h2>
+
+            <div class="mt-4 grid max-w-4xl gap-6 sm:grid-cols-2">
+              <div>
+                <h3 class="font-bold">Cómo se ve</h3>
+                <p class="mt-1 text-sm text-base-content/75">
+                  Igual. Las mismas tarjetas y el mismo reproductor: la lista de abajo está armada
+                  sobre nuestra propia base de datos y no se distingue de la de arriba.
+                </p>
+              </div>
+              <div>
+                <h3 class="font-bold">Qué cambia de verdad</h3>
+                <ul class="mt-1 space-y-1 text-sm text-base-content/75">
+                  <li>· El audio se sube desde el panel, no desde RSS.com.</li>
+                  <li>· Deja de aparecer en Spotify y Apple Podcasts.</li>
+                  <li>· El alojamiento pasa a ser nuestro, y se paga por lo que ocupe.</li>
+                  <li>· Nada depende de que un tercero siga existiendo.</li>
+                </ul>
+              </div>
+            </div>
+
+            {propios.length === 0 && (
+              <p class="mt-6 text-sm font-medium text-warning">
+                Los tres estudios de abajo son inventados, para poder verlo. No existen.
+              </p>
+            )}
+
+            <ListaEstudios estudios={comparativa} class="mt-6" />
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   <CtaBand
     eyebrow="Sigue estudiando"
