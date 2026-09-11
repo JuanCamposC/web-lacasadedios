@@ -284,7 +284,9 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
       }
 
       {
-        feed === null ? (
+        /* Se mira la lista, no el feed: un programa recién creado se lee
+           perfectamente y todavía no tiene ni un episodio. */
+        episodios.length === 0 ? (
           <Reveal class="mt-12">
             <EmptyState
               icon="lucide:headphones"

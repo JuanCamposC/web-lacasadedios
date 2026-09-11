@@ -105,6 +105,20 @@ describe('analizar', () => {
     expect(analizar('').episodios).toEqual([]);
     expect(analizar('<html><body>404</body></html>').episodios).toEqual([]);
   });
+
+  it('lee el programa aunque todavía no tenga ni un episodio', () => {
+    // El caso real del primer día: el programa creado en RSS.com y el primer
+    // audio sin subir. El nombre y la descripción tienen que llegar igual,
+    // porque son lo único que la página puede enseñar todavía.
+    const reciEn = analizar(`<rss><channel>
+      <title><![CDATA[Instituto Bíblico]]></title>
+      <link>https://rss.com/podcasts/instituto-biblico</link>
+      <description><![CDATA[<p>Clases de los lunes.</p>]]></description>
+    </channel></rss>`);
+    expect(reciEn.titulo).toBe('Instituto Bíblico');
+    expect(reciEn.descripcion).toBe('Clases de los lunes.');
+    expect(reciEn.episodios).toEqual([]);
+  });
 });
 
 describe('duracionEnSegundos', () => {

@@ -127,10 +127,7 @@ export default defineConfig({
       //     publicar la dirección de la puerta de servicio. Access la protege,
       //     pero eso no es razón para anunciarla.
       //   · /baja — solo se alcanza con el enlace personal de cada correo.
-      //   · /imprimir — es el sitio entero repetido en una sola página; a ojos
-      //     de Google, contenido duplicado de todo lo demás.
-      filter: (page) =>
-        !page.includes('/admin') && !page.includes('/baja') && !page.includes('/imprimir'),
+      filter: (page) => !page.includes('/admin') && !page.includes('/baja'),
 
       // Sin barra final, igual que las canónicas de Layout.astro. Astro las
       // genera con barra porque compila en carpetas; Cloudflare sirve sin ella

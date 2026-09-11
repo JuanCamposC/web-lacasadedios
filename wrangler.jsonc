@@ -127,7 +127,7 @@
     // variable NO basta: el servidor también está escrito en la política de
     // seguridad, que se calcula al compilar (ver `RSS_MEDIA_HOST` en
     // astro.config.mjs).
-    "RSS_ESTUDIOS_URL": "",
+    "RSS_ESTUDIOS_URL": "https://media.rss.com/instituto-biblico/feed.xml",
 
     // Dirección desde la que sale el aviso del formulario de contacto.
     //

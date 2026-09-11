@@ -289,8 +289,11 @@ export async function leerFeed(): Promise<Feed | null> {
       cf: { cacheTtl: 300, cacheEverything: true },
     } as RequestInit);
     if (!respuesta.ok) return null;
-    const feed = analizar(await respuesta.text());
-    return feed.episodios.length > 0 ? feed : null;
+    // Un programa recién creado, sin episodios todavía, SÍ se devuelve. `null`
+    // significa una sola cosa —no se pudo leer el feed— y confundirlo con «aún
+    // no hay grabaciones» haría que la página se callara el nombre del programa
+    // y su descripción justo cuando son lo único que hay que enseñar.
+    return analizar(await respuesta.text());
   } catch {
     return null;
   }
