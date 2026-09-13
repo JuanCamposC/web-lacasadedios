@@ -8,11 +8,16 @@
  * de la bio busca un templo o una playlist, y lo tiene que encontrar sin bajar
  * más allá de la primera pantalla.
  *
+ * Los colores salen de la paleta de la iglesia, con #2f4156 de principal
+ * (septiembre de 2026). Por ahora solo la usan estas dos páginas; el resto de
+ * la web sigue con su azul anterior.
+ *
  * Dos temas, cada uno con su público:
- *   · `templos` — claro, con el azul y el dorado de la marca en un degradado
- *     suave. Es la cara de la iglesia: sobria, pero luminosa.
- *   · `jovenes` — un degradado vivo de índigo a ámbar y tarjetas blancas. Tiene
- *     que parecer de ellos, no un anexo de la web de la iglesia.
+ *   · `templos` — claro: los grises azulados de la paleta, con la mostaza
+ *     #D4A72C de acento. Es la cara de la iglesia: sobria, pero luminosa.
+ *   · `jovenes` — un degradado con los acentos frescos (verde agua, azul,
+ *     morado) y tarjetas blancas. Tiene que parecer de ellos, sin salirse de
+ *     la paleta.
  *
  * No carga el script del tema de la web ni las transiciones de vista: cada
  * página tiene un solo aspecto y así no hay nada que esperar antes de pintar.
@@ -34,7 +39,7 @@ const canonical = Astro.site ? new URL(ruta, Astro.site).href : Astro.url.href;
 const ogImage = new URL('/og-image.png', Astro.site ?? Astro.url).href;
 // El color de la barra del navegador, igual al borde de arriba del degradado:
 // así la barra y la página se leen como una sola pieza.
-const colorBarra = tema === 'jovenes' ? '#4f46e5' : '#dfe7f8';
+const colorBarra = tema === 'jovenes' ? '#4ca68d' : '#e6e9ed';
 ---
 
 <!doctype html>
@@ -74,34 +79,27 @@ const colorBarra = tema === 'jovenes' ? '#4f46e5' : '#dfe7f8';
        Todo lo de abajo lee estas variables; cada tema solo las rellena. */
     .enlaces[data-tema='templos'] {
       --e-fondo:
-        radial-gradient(90% 45% at 100% 0%, rgba(217, 174, 99, 0.28), transparent 70%),
-        radial-gradient(110% 55% at 0% 0%, rgba(138, 169, 232, 0.45), transparent 70%),
-        linear-gradient(180deg, #e9effb 0%, #fcfaf7 45%, #f6ecd9 100%);
-      --e-texto: #14295c;
-      --e-suave: #55617c;
-      --e-tarjeta: rgba(255, 255, 255, 0.82);
+        radial-gradient(90% 40% at 100% 0%, rgba(212, 167, 44, 0.22), transparent 70%),
+        radial-gradient(110% 55% at 0% 0%, rgba(183, 194, 204, 0.75), transparent 70%),
+        linear-gradient(180deg, #e6e9ed 0%, #ffffff 50%, #e6e9ed 100%);
+      --e-texto: #2f4156;
+      --e-suave: #53697e;
+      --e-tarjeta: rgba(255, 255, 255, 0.9);
       --e-tarjeta-hover: #ffffff;
-      --e-borde: rgba(20, 41, 92, 0.1);
-      --e-sombra: 0 1px 2px rgba(20, 41, 92, 0.06), 0 8px 24px -12px rgba(20, 41, 92, 0.25);
-      --e-flecha: rgba(20, 41, 92, 0.35);
-      --e-foco: #23448f;
+      --e-borde: rgba(183, 194, 204, 0.7);
+      --e-sombra: 0 1px 2px rgba(47, 65, 86, 0.06), 0 8px 24px -12px rgba(47, 65, 86, 0.3);
+      --e-flecha: #708497;
+      --e-foco: #2f4156;
     }
     .enlaces[data-tema='jovenes'] {
-      --e-fondo: linear-gradient(
-        160deg,
-        #4f46e5 0%,
-        #9333ea 30%,
-        #db2777 62%,
-        #fb923c 90%,
-        #fbbf24 100%
-      );
-      --e-texto: #1e1b4b;
-      --e-suave: #6b6391;
-      --e-tarjeta: rgba(255, 255, 255, 0.94);
+      --e-fondo: linear-gradient(160deg, #4ca68d 0%, #4c6fa6 50%, #7e4ca6 100%);
+      --e-texto: #2f4156;
+      --e-suave: #53697e;
+      --e-tarjeta: rgba(255, 255, 255, 0.95);
       --e-tarjeta-hover: #ffffff;
       --e-borde: rgba(255, 255, 255, 0.6);
-      --e-sombra: 0 10px 30px -12px rgba(49, 16, 90, 0.55);
-      --e-flecha: rgba(30, 27, 75, 0.35);
+      --e-sombra: 0 10px 30px -12px rgba(47, 65, 86, 0.6);
+      --e-flecha: #708497;
       --e-foco: #ffffff;
     }
 
@@ -191,12 +189,15 @@ const colorBarra = tema === 'jovenes' ? '#4f46e5' : '#dfe7f8';
       width: 2.75rem;
       height: 2.75rem;
       border-radius: 0.85rem;
-      background: color-mix(in srgb, var(--acento, #23448f) 14%, transparent);
-      color: var(--acento, #23448f);
+      /* Recuadro teñido con el acento y el icono en el azul principal: los
+         acentos de la paleta son tonos medios, y como color de un icono sobre
+         blanco no se leen bien. */
+      background: color-mix(in srgb, var(--acento, #4c6fa6) 24%, white);
+      color: #2f4156;
     }
     .enlaces[data-tema='jovenes'] .enlace-icono {
       /* Con los jóvenes el icono va en su color lleno: más marca, más juego. */
-      background: var(--acento, #9333ea);
+      background: var(--acento, #7e4ca6);
       color: #fff;
       transform: rotate(-4deg);
     }
