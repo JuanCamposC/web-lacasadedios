@@ -17,7 +17,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate
 import { Icon } from 'astro-icon/components';
 import EnlacesLayout from '../layouts/EnlacesLayout.astro';
 import { templos, estiloDistintivo } from '../data/templos';
-import { SITE, YOUTUBE_CHANNEL } from '../data/site';
+import { YOUTUBE_CHANNEL } from '../data/site';
 import { baseDeDatos } from '../lib/base';
 import { reunionesPublicadas } from '../lib/datos';
 import { momentoEnChile, proximaReunion, type Reunion } from '../lib/reuniones';
@@ -37,31 +37,38 @@ const fichas = templos.map((t) => {
   return { templo: t, propias, proxima: proximaReunion(propias, ahora) };
 });
 
-/** «jueves 20:00», para la línea de una reunión suspendida. */
-const cuandoSuspendida = (r: Reunion) =>
-  `${['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][r.dia]} ${r.hora}`;
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const lineaSuspendidas = (lista: Reunion[]) =>
+  lista
+    .map((r) => `Suspendida la del ${DIAS[r.dia]} ${r.hora}${r.aviso ? `: ${r.aviso}` : ''}`)
+    .join(' · ');
 ---
 
 <EnlacesLayout
-  title="Nuestros templos · La Casa de Dios"
-  description="Los cuatro templos de La Casa de Dios —Santiago Centro, San Miguel, Limache y Coya— con su próxima reunión."
+  title="Nuestros templos · Iglesia La Casa de Dios"
+  description="Los cuatro templos de la Iglesia La Casa de Dios —Santiago Centro, San Miguel, Limache y Coya— con su próxima reunión."
+  tema="templos"
 >
   <header class="text-center">
     <img
-      src="/marca/isotipo-blanco.png"
+      src="/marca/isotipo-azul.png"
       alt=""
       width="480"
       height="792"
-      class="mx-auto h-16 w-auto"
+      class="mx-auto h-[clamp(3.25rem,15vw,4.25rem)] w-auto"
     />
-    <h1 class="mt-4 font-display text-3xl text-white">{SITE.name}</h1>
-    <p class="mt-1 text-sm text-white/60">{SITE.legalName}</p>
+    <h1 class="e-titulo mt-3">Iglesia La Casa de Dios</h1>
+    <div
+      class="mx-auto mt-3 h-[3px] w-12 rounded-full bg-gradient-to-r from-[#23448f] to-[#d9ae63]"
+      aria-hidden="true"
+    >
+    </div>
   </header>
 
-  <section class="mt-9" aria-labelledby="titulo-templos">
+  <section class="mt-7" aria-labelledby="titulo-templos">
     <h2
       id="titulo-templos"
-      class="font-data mb-3 text-center text-xs uppercase tracking-[0.2em] text-white/50"
+      class="font-data e-suave mb-3 text-center text-xs font-semibold uppercase tracking-[0.2em]"
     >
       Nuestros templos
     </h2>
@@ -72,63 +79,53 @@ const cuandoSuspendida = (r: Reunion) =>
           <li>
             <a
               href={`/templos/${t.slug}`}
-              class="enlace-boton relative items-stretch overflow-hidden py-4 pl-5"
+              class="enlace-boton overflow-hidden py-3.5 pl-5"
               style={estiloDistintivo(t)}
-              data-templo={t.slug}
               data-reuniones={JSON.stringify(propias)}
             >
               {/* El color del templo, el mismo de /horarios: quien ya
                   conoce el cartel reconoce su templo sin leer. */}
               <span
-                class="absolute inset-y-0 left-0 w-1.5 bg-[var(--d-claro)]"
+                class="absolute inset-y-0 left-0 w-1.5 bg-[var(--d-fondo)]"
                 aria-hidden="true"
               />
               <span class="min-w-0 flex-1">
-                <span class="flex flex-wrap items-center gap-2">
-                  <span class="font-display text-xl leading-tight text-white">{t.short}</span>
+                <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span class="font-display text-[1.2rem] leading-tight">{t.short}</span>
                   {t.matriz && (
-                    <span class="font-data rounded-full bg-accent px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-accent-content">
+                    <span class="font-data rounded-full bg-[#d9ae63] px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-wider text-[#1b1405]">
                       Matriz
                     </span>
                   )}
                 </span>
-                <span class="mt-0.5 block text-sm text-white/55">{t.address}</span>
+                <span class="e-suave mt-0.5 block text-sm">{t.address}</span>
 
-                <span class="mt-3 block" data-proxima>
-                  <span class="font-data block text-[0.7rem] uppercase tracking-[0.16em] text-[var(--d-claro)]">
+                <span class="mt-2.5 block">
+                  <span class="font-data block text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[var(--d-fondo)]">
                     Próxima reunión
                   </span>
-                  <span class="mt-0.5 block font-medium text-white" data-linea>
+                  <span class="mt-0.5 block font-semibold" data-linea>
                     {proxima.reunion
                       ? `${proxima.cuando} ${proxima.reunion.hora} · ${proxima.reunion.nombre}`
                       : 'Consulta los horarios'}
                   </span>
                   <span
-                    class="mt-1 block text-sm text-amber-200"
+                    class="mt-1 block text-sm font-medium text-[#8a5a00]"
                     data-cambio
                     hidden={!proxima.reunion?.aviso}
                   >
                     {proxima.reunion?.aviso}
                   </span>
                   <span
-                    class="mt-1 block text-sm text-red-300"
+                    class="mt-1 block text-sm font-medium text-[#b42318]"
                     data-suspendidas
                     hidden={proxima.suspendidas.length === 0}
                   >
-                    {proxima.suspendidas
-                      .map(
-                        (r) =>
-                          `Suspendida la del ${cuandoSuspendida(r)}${r.aviso ? `: ${r.aviso}` : ''}`,
-                      )
-                      .join(' · ')}
+                    {lineaSuspendidas(proxima.suspendidas)}
                   </span>
                 </span>
               </span>
-              <Icon
-                name="lucide:chevron-right"
-                class="h-5 w-5 shrink-0 self-center text-white/40"
-                aria-hidden="true"
-              />
+              <Icon name="lucide:chevron-right" class="enlace-flecha" aria-hidden="true" />
             </a>
           </li>
         ))
@@ -136,14 +133,14 @@ const cuandoSuspendida = (r: Reunion) =>
     </ul>
   </section>
 
-  <section class="mt-8 flex flex-col gap-3" aria-label="Más enlaces">
-    <a href="/estudio-biblico" class="enlace-boton" style="--acento:#d0a35c">
+  <section class="mt-7 flex flex-col gap-3" aria-label="Más enlaces">
+    <a href="/estudio-biblico" class="enlace-boton" style="--acento:#7d5518">
       <span class="enlace-icono"><Icon name="lucide:book-open" class="h-5 w-5" /></span>
       <span class="min-w-0 flex-1">
-        <span class="block font-medium text-white">Instituto Bíblico Bet-El</span>
-        <span class="block text-sm text-white/55">Todos los lunes · escucha los estudios</span>
+        <span class="enlace-nombre">Instituto Bíblico Bet-El</span>
+        <span class="e-suave block text-sm">Todos los lunes · escucha los estudios</span>
       </span>
-      <Icon name="lucide:chevron-right" class="h-5 w-5 shrink-0 text-white/40" />
+      <Icon name="lucide:chevron-right" class="enlace-flecha" aria-hidden="true" />
     </a>
 
     <a
@@ -151,23 +148,23 @@ const cuandoSuspendida = (r: Reunion) =>
       target="_blank"
       rel="noopener noreferrer"
       class="enlace-boton"
-      style="--acento:#ff4e45"
+      style="--acento:#d62d20"
     >
       <span class="enlace-icono"><Icon name="lucide:youtube" class="h-5 w-5" /></span>
       <span class="min-w-0 flex-1">
-        <span class="block font-medium text-white">YouTube</span>
-        <span class="block text-sm text-white/55">@lacasadedioscl</span>
+        <span class="enlace-nombre">YouTube</span>
+        <span class="e-suave block text-sm">@lacasadedioscl</span>
       </span>
-      <Icon name="lucide:arrow-up-right" class="h-5 w-5 shrink-0 text-white/40" />
+      <Icon name="lucide:arrow-up-right" class="enlace-flecha" aria-hidden="true" />
     </a>
 
-    <a href="/" class="enlace-boton" style="--acento:#7d9ce0">
+    <a href="/" class="enlace-boton" style="--acento:#23448f">
       <span class="enlace-icono"><Icon name="lucide:globe" class="h-5 w-5" /></span>
       <span class="min-w-0 flex-1">
-        <span class="block font-medium text-white">Nuestra web</span>
-        <span class="block text-sm text-white/55">lacasadedios.cl</span>
+        <span class="enlace-nombre">Nuestra web</span>
+        <span class="e-suave block text-sm">lacasadedios.cl</span>
       </span>
-      <Icon name="lucide:chevron-right" class="h-5 w-5 shrink-0 text-white/40" />
+      <Icon name="lucide:chevron-right" class="enlace-flecha" aria-hidden="true" />
     </a>
   </section>
 </EnlacesLayout>

@@ -20,7 +20,7 @@ export interface Plataforma {
 const PLATAFORMAS: { hosts: string[]; plataforma: Plataforma }[] = [
   {
     hosts: ['open.spotify.com', 'spotify.com', 'spotify.link'],
-    plataforma: { nombre: 'Spotify', icono: 'lucide:music', color: '#1ed760' },
+    plataforma: { nombre: 'Spotify', icono: 'lucide:music', color: '#1aa34a' },
   },
   {
     hosts: ['music.apple.com'],
@@ -45,7 +45,7 @@ const PLATAFORMAS: { hosts: string[]; plataforma: Plataforma }[] = [
   },
   {
     hosts: ['tiktok.com'],
-    plataforma: { nombre: 'TikTok', icono: 'lucide:music-2', color: '#69c9d0' },
+    plataforma: { nombre: 'TikTok', icono: 'lucide:music-2', color: '#111827' },
   },
   {
     hosts: ['facebook.com', 'fb.me'],
@@ -57,7 +57,7 @@ const PLATAFORMAS: { hosts: string[]; plataforma: Plataforma }[] = [
   },
 ];
 
-const GENERICA: Plataforma = { nombre: '', icono: 'lucide:link', color: '#d4a64a' };
+const GENERICA: Plataforma = { nombre: '', icono: 'lucide:link', color: '#7c3aed' };
 
 /**
  * La plataforma de una dirección, o la genérica si no se reconoce.

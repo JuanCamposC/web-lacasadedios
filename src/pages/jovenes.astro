@@ -33,45 +33,80 @@ const botones = enlaces.map((e) => ({ ...e, plataforma: plataformaDe(e.url) }));
 <EnlacesLayout
   title="Jóvenes Casa de Dios"
   description="Playlists, redes y todo lo de los jóvenes de La Casa de Dios."
+  tema="jovenes"
 >
-  <header class="text-center">
-    <div
-      class="mx-auto grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-[#d0a35c] to-[#7d9ce0] font-display text-3xl font-semibold text-[#0a1730] shadow-lg shadow-black/30"
-      aria-hidden="true"
-    >
-      JCD
-    </div>
-    <h1 class="mt-4 font-display text-3xl text-white">Jóvenes Casa de Dios</h1>
-  </header>
-
   {
-    botones.length > 0 ? (
-      <ul class="mt-9 flex flex-col gap-3">
-        {botones.map((b) => (
-          <li>
-            <a
-              href={b.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="enlace-boton"
-              style={`--acento:${b.plataforma.color}`}
-            >
-              <span class="enlace-icono">
-                <Icon name={b.plataforma.icono} class="h-5 w-5" />
-              </span>
-              <span class="min-w-0 flex-1">
-                <span class="block font-medium text-white">{b.titulo}</span>
-                {b.plataforma.nombre && (
-                  <span class="block text-sm text-white/55">{b.plataforma.nombre}</span>
-                )}
-              </span>
-              <Icon name="lucide:arrow-up-right" class="h-5 w-5 shrink-0 text-white/40" />
-            </a>
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <p class="mt-10 text-center text-white/60">Pronto habrá enlaces por aquí.</p>
-    )
+    /* Burbujas de luz detrás del contenido. Solo decoran: sin ellas la página
+      se lee igual, y no reciben toques. */
   }
+  <div class="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+    <span
+      class="absolute -right-16 top-4 h-48 w-48 sm:right-[calc(50%-18rem)] rounded-full bg-[#fbbf24]/40 blur-3xl"
+    ></span>
+    <span
+      class="absolute -left-20 top-56 h-56 w-56 sm:left-[calc(50%-20rem)] rounded-full bg-[#22d3ee]/30 blur-3xl"
+    ></span>
+  </div>
+
+  <div class="relative">
+    <header class="text-center">
+      <div
+        class="mx-auto grid h-[clamp(5rem,24vw,6rem)] w-[clamp(5rem,24vw,6rem)] rotate-[-6deg] place-items-center rounded-[1.75rem] bg-white shadow-xl shadow-[#31105a]/40"
+        aria-hidden="true"
+      >
+        <span
+          class="bg-gradient-to-br from-[#4f46e5] via-[#db2777] to-[#fb923c] bg-clip-text font-display text-[clamp(1.6rem,8vw,2rem)] font-bold text-transparent"
+        >
+          JCD
+        </span>
+      </div>
+      <h1 class="e-titulo mt-5 text-white drop-shadow-[0_2px_10px_rgba(49,16,90,0.45)]">
+        Jóvenes Casa de Dios
+      </h1>
+    </header>
+
+    {
+      botones.length > 0 ? (
+        <ul class="mt-7 flex flex-col gap-3">
+          {botones.map((b) => (
+            <li>
+              <a
+                href={b.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="enlace-boton"
+                style={`--acento:${b.plataforma.color}`}
+              >
+                <span class="enlace-icono">
+                  <Icon name={b.plataforma.icono} class="h-5 w-5" />
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="enlace-nombre">{b.titulo}</span>
+                  {b.plataforma.nombre && (
+                    <span class="e-suave block text-sm">{b.plataforma.nombre}</span>
+                  )}
+                </span>
+                <Icon name="lucide:arrow-up-right" class="enlace-flecha" aria-hidden="true" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="mt-10 text-center font-medium text-white">Pronto habrá enlaces por aquí.</p>
+      )
+    }
+
+    {
+      /* Fijo y no desde el panel: la web no cambia con cada evento, y así no
+        se puede borrar por descuido junto con una playlist vieja. */
+    }
+    <a href="/" class="enlace-boton mt-3" style="--acento:#4f46e5">
+      <span class="enlace-icono"><Icon name="lucide:globe" class="h-5 w-5" /></span>
+      <span class="min-w-0 flex-1">
+        <span class="enlace-nombre">Iglesia La Casa de Dios</span>
+        <span class="e-suave block text-sm">lacasadedios.cl</span>
+      </span>
+      <Icon name="lucide:chevron-right" class="enlace-flecha" aria-hidden="true" />
+    </a>
+  </div>
 </EnlacesLayout>

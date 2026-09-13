@@ -8,9 +8,14 @@
  * de la bio busca un templo o una playlist, y lo tiene que encontrar sin bajar
  * más allá de la primera pantalla.
  *
- * No carga el script del tema ni las transiciones de vista: la pantalla tiene
- * un solo aspecto, el azul noche del cartel de horarios, y así no hay nada que
- * esperar antes de pintar.
+ * Dos temas, cada uno con su público:
+ *   · `templos` — claro, con el azul y el dorado de la marca en un degradado
+ *     suave. Es la cara de la iglesia: sobria, pero luminosa.
+ *   · `jovenes` — un degradado vivo de índigo a ámbar y tarjetas blancas. Tiene
+ *     que parecer de ellos, no un anexo de la web de la iglesia.
+ *
+ * No carga el script del tema de la web ni las transiciones de vista: cada
+ * página tiene un solo aspecto y así no hay nada que esperar antes de pintar.
  */
 import '@fontsource-variable/fraunces/opsz.css';
 import '@fontsource-variable/archivo/wght.css';
@@ -20,12 +25,16 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description: string;
+  tema: 'templos' | 'jovenes';
 }
 
-const { title, description } = Astro.props;
+const { title, description, tema } = Astro.props;
 const ruta = Astro.url.pathname.replace(/(.)\/+$/, '$1');
 const canonical = Astro.site ? new URL(ruta, Astro.site).href : Astro.url.href;
 const ogImage = new URL('/og-image.png', Astro.site ?? Astro.url).href;
+// El color de la barra del navegador, igual al borde de arriba del degradado:
+// así la barra y la página se leen como una sola pieza.
+const colorBarra = tema === 'jovenes' ? '#4f46e5' : '#dfe7f8';
 ---
 
 <!doctype html>
@@ -40,7 +49,7 @@ const ogImage = new URL('/og-image.png', Astro.site ?? Astro.url).href;
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#0a1730" />
+    <meta name="theme-color" content={colorBarra} />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="La Casa de Dios" />
@@ -52,7 +61,7 @@ const ogImage = new URL('/og-image.png', Astro.site ?? Astro.url).href;
     <meta name="twitter:card" content="summary_large_image" />
   </head>
 
-  <body class="enlaces on-dark">
+  <body class="enlaces" data-tema={tema}>
     <main class="enlaces-hoja">
       <slot />
     </main>
@@ -61,43 +70,119 @@ const ogImage = new URL('/og-image.png', Astro.site ?? Astro.url).href;
 
 <style is:global>
   @layer components {
+    /* ── Los dos temas ────────────────────────────────────────────────────
+       Todo lo de abajo lee estas variables; cada tema solo las rellena. */
+    .enlaces[data-tema='templos'] {
+      --e-fondo:
+        radial-gradient(90% 45% at 100% 0%, rgba(217, 174, 99, 0.28), transparent 70%),
+        radial-gradient(110% 55% at 0% 0%, rgba(138, 169, 232, 0.45), transparent 70%),
+        linear-gradient(180deg, #e9effb 0%, #fcfaf7 45%, #f6ecd9 100%);
+      --e-texto: #14295c;
+      --e-suave: #55617c;
+      --e-tarjeta: rgba(255, 255, 255, 0.82);
+      --e-tarjeta-hover: #ffffff;
+      --e-borde: rgba(20, 41, 92, 0.1);
+      --e-sombra: 0 1px 2px rgba(20, 41, 92, 0.06), 0 8px 24px -12px rgba(20, 41, 92, 0.25);
+      --e-flecha: rgba(20, 41, 92, 0.35);
+      --e-foco: #23448f;
+    }
+    .enlaces[data-tema='jovenes'] {
+      --e-fondo: linear-gradient(
+        160deg,
+        #4f46e5 0%,
+        #9333ea 30%,
+        #db2777 62%,
+        #fb923c 90%,
+        #fbbf24 100%
+      );
+      --e-texto: #1e1b4b;
+      --e-suave: #6b6391;
+      --e-tarjeta: rgba(255, 255, 255, 0.94);
+      --e-tarjeta-hover: #ffffff;
+      --e-borde: rgba(255, 255, 255, 0.6);
+      --e-sombra: 0 10px 30px -12px rgba(49, 16, 90, 0.55);
+      --e-flecha: rgba(30, 27, 75, 0.35);
+      --e-foco: #ffffff;
+    }
+
     .enlaces {
       min-height: 100vh;
       min-height: 100dvh;
-      background:
-        radial-gradient(120% 60% at 50% -10%, rgba(125, 156, 224, 0.22), transparent 60%), #0a1730;
-      color: #e4e9f2;
+      background: var(--e-fondo);
+      background-attachment: fixed;
+      color: var(--e-texto);
+      overflow-x: hidden;
     }
+    /* En iOS `background-attachment: fixed` hace que el degradado se estire a
+       todo el alto de la página y salte al hacer scroll. Ahí va sin fijar. */
+    @supports (-webkit-touch-callout: none) {
+      .enlaces {
+        background-attachment: scroll;
+      }
+    }
+
     /* Una columna del ancho de un teléfono, también en escritorio: en una
-       pantalla ancha, botones de lado a lado se leen como una tabla. */
+       pantalla ancha, botones de lado a lado se leen como una tabla. Los
+       márgenes laterales crecen un poco en teléfonos grandes, sin pasar de
+       lo que deja el pulgar cómodo. */
     .enlaces-hoja {
+      position: relative;
       margin-inline: auto;
-      max-width: 32rem;
-      padding: max(2.5rem, env(safe-area-inset-top)) 1rem max(2.5rem, env(safe-area-inset-bottom));
+      max-width: 30rem;
+      padding-top: max(clamp(1.75rem, 7vw, 3rem), env(safe-area-inset-top));
+      padding-bottom: max(2.5rem, env(safe-area-inset-bottom));
+      padding-left: max(clamp(0.875rem, 4vw, 1.25rem), env(safe-area-inset-left));
+      padding-right: max(clamp(0.875rem, 4vw, 1.25rem), env(safe-area-inset-right));
     }
+
+    .e-titulo {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 7.5vw, 2.1rem);
+      line-height: 1.1;
+    }
+    .e-suave {
+      color: var(--e-suave);
+    }
+
+    /* ── Botón ─────────────────────────────────────────────────────────── */
     .enlace-boton {
+      position: relative;
       display: flex;
       align-items: center;
-      gap: 0.9rem;
-      border-radius: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(255, 255, 255, 0.055);
-      padding: 0.85rem 1rem;
+      gap: clamp(0.7rem, 3vw, 0.9rem);
+      /* 3.5rem de alto como mínimo: el tamaño que un pulgar acierta a la
+         primera en el navegador de Instagram. */
+      min-height: 3.5rem;
+      border-radius: 1.1rem;
+      border: 1px solid var(--e-borde);
+      background: var(--e-tarjeta);
+      box-shadow: var(--e-sombra);
+      padding: 0.8rem clamp(0.8rem, 3.5vw, 1rem);
+      color: var(--e-texto);
+      -webkit-tap-highlight-color: transparent;
       transition:
         background-color 0.15s,
-        border-color 0.15s,
-        transform 0.15s;
+        transform 0.15s,
+        box-shadow 0.15s;
     }
-    .enlace-boton:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.24);
+    @media (hover: hover) {
+      .enlace-boton:hover {
+        background: var(--e-tarjeta-hover);
+        transform: translateY(-2px);
+      }
     }
     .enlace-boton:active {
-      transform: scale(0.985);
+      transform: scale(0.98);
     }
     .enlace-boton:focus-visible {
-      outline: 2px solid #d0a35c;
+      outline: 3px solid var(--e-foco);
       outline-offset: 2px;
+    }
+    .enlace-nombre {
+      display: block;
+      font-weight: 600;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
     }
     .enlace-icono {
       display: grid;
@@ -105,14 +190,28 @@ const ogImage = new URL('/og-image.png', Astro.site ?? Astro.url).href;
       flex-shrink: 0;
       width: 2.75rem;
       height: 2.75rem;
-      border-radius: 0.8rem;
-      background: color-mix(in srgb, var(--acento, #d0a35c) 18%, transparent);
-      color: var(--acento, #d0a35c);
+      border-radius: 0.85rem;
+      background: color-mix(in srgb, var(--acento, #23448f) 14%, transparent);
+      color: var(--acento, #23448f);
     }
+    .enlaces[data-tema='jovenes'] .enlace-icono {
+      /* Con los jóvenes el icono va en su color lleno: más marca, más juego. */
+      background: var(--acento, #9333ea);
+      color: #fff;
+      transform: rotate(-4deg);
+    }
+    .enlace-flecha {
+      flex-shrink: 0;
+      width: 1.25rem;
+      height: 1.25rem;
+      color: var(--e-flecha);
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .enlace-boton {
         transition: none;
       }
+      .enlace-boton:hover,
       .enlace-boton:active {
         transform: none;
       }
