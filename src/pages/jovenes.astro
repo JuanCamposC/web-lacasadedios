@@ -1,0 +1,77 @@
+---
+/**
+ * Los enlaces de los jóvenes: lo que antes era su Linktree.
+ *
+ * La lista sale de la tabla `enlaces` y se edita en /admin/jovenes, porque
+ * cambia con cada evento. El icono de cada botón se deduce de la dirección
+ * (ver src/lib/enlaces.ts).
+ *
+ * PENDIENTE: el logo de los jóvenes. Mientras no exista, arriba va un círculo
+ * con las iniciales. Cuando llegue, se guarda en public/marca/ y se cambia el
+ * círculo por la imagen; es lo único de esta página que no se toca desde el
+ * panel.
+ */
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
+
+import { Icon } from 'astro-icon/components';
+import EnlacesLayout from '../layouts/EnlacesLayout.astro';
+import { baseDeDatos } from '../lib/base';
+import { enlacesPublicados, type Enlace } from '../lib/datos';
+import { plataformaDe, esEnlaceSeguro } from '../lib/enlaces';
+
+let enlaces: Enlace[] = [];
+try {
+  enlaces = (await enlacesPublicados(await baseDeDatos())).filter((e) => esEnlaceSeguro(e.url));
+} catch (e) {
+  console.error('[jovenes]', e);
+}
+
+const botones = enlaces.map((e) => ({ ...e, plataforma: plataformaDe(e.url) }));
+---
+
+<EnlacesLayout
+  title="Jóvenes Casa de Dios"
+  description="Playlists, redes y todo lo de los jóvenes de La Casa de Dios."
+>
+  <header class="text-center">
+    <div
+      class="mx-auto grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-[#d0a35c] to-[#7d9ce0] font-display text-3xl font-semibold text-[#0a1730] shadow-lg shadow-black/30"
+      aria-hidden="true"
+    >
+      JCD
+    </div>
+    <h1 class="mt-4 font-display text-3xl text-white">Jóvenes Casa de Dios</h1>
+  </header>
+
+  {
+    botones.length > 0 ? (
+      <ul class="mt-9 flex flex-col gap-3">
+        {botones.map((b) => (
+          <li>
+            <a
+              href={b.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="enlace-boton"
+              style={`--acento:${b.plataforma.color}`}
+            >
+              <span class="enlace-icono">
+                <Icon name={b.plataforma.icono} class="h-5 w-5" />
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="block font-medium text-white">{b.titulo}</span>
+                {b.plataforma.nombre && (
+                  <span class="block text-sm text-white/55">{b.plataforma.nombre}</span>
+                )}
+              </span>
+              <Icon name="lucide:arrow-up-right" class="h-5 w-5 shrink-0 text-white/40" />
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="mt-10 text-center text-white/60">Pronto habrá enlaces por aquí.</p>
+    )
+  }
+</EnlacesLayout>

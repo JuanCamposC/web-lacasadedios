@@ -1,0 +1,216 @@
+---
+/**
+ * La entrada desde la biografía de Instagram de la iglesia (@lacasadedioscl).
+ *
+ * Lo que busca quien toca ese enlace es un templo: dónde queda y cuándo hay
+ * reunión. Por eso lo primero son los cuatro templos con su próxima reunión, y
+ * debajo, lo poco más que vale la pena a un toque: el Instituto Bíblico, el
+ * canal y la web.
+ *
+ * Se arma sola con los templos y la tabla de horarios; no hay lista que
+ * mantener. Va con la misma caché que /horarios: un minuto servida hecha, y
+ * rehecha por detrás hasta diez más.
+ */
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
+
+import { Icon } from 'astro-icon/components';
+import EnlacesLayout from '../layouts/EnlacesLayout.astro';
+import { templos, estiloDistintivo } from '../data/templos';
+import { SITE, YOUTUBE_CHANNEL } from '../data/site';
+import { baseDeDatos } from '../lib/base';
+import { reunionesPublicadas } from '../lib/datos';
+import { momentoEnChile, proximaReunion, type Reunion } from '../lib/reuniones';
+
+let reuniones: Reunion[] = [];
+try {
+  reuniones = await reunionesPublicadas(await baseDeDatos());
+} catch (e) {
+  // Sin base, cada templo se sigue viendo con su dirección y su enlace; solo
+  // falta la línea de la próxima reunión.
+  console.error('[nuestrostemplos]', e);
+}
+
+const ahora = momentoEnChile();
+const fichas = templos.map((t) => {
+  const propias = reuniones.filter((r) => r.templo === t.slug);
+  return { templo: t, propias, proxima: proximaReunion(propias, ahora) };
+});
+
+/** «jueves 20:00», para la línea de una reunión suspendida. */
+const cuandoSuspendida = (r: Reunion) =>
+  `${['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][r.dia]} ${r.hora}`;
+---
+
+<EnlacesLayout
+  title="Nuestros templos · La Casa de Dios"
+  description="Los cuatro templos de La Casa de Dios —Santiago Centro, San Miguel, Limache y Coya— con su próxima reunión."
+>
+  <header class="text-center">
+    <img
+      src="/marca/isotipo-blanco.png"
+      alt=""
+      width="480"
+      height="792"
+      class="mx-auto h-16 w-auto"
+    />
+    <h1 class="mt-4 font-display text-3xl text-white">{SITE.name}</h1>
+    <p class="mt-1 text-sm text-white/60">{SITE.legalName}</p>
+  </header>
+
+  <section class="mt-9" aria-labelledby="titulo-templos">
+    <h2
+      id="titulo-templos"
+      class="font-data mb-3 text-center text-xs uppercase tracking-[0.2em] text-white/50"
+    >
+      Nuestros templos
+    </h2>
+
+    <ul class="flex flex-col gap-3">
+      {
+        fichas.map(({ templo: t, propias, proxima }) => (
+          <li>
+            <a
+              href={`/templos/${t.slug}`}
+              class="enlace-boton relative items-stretch overflow-hidden py-4 pl-5"
+              style={estiloDistintivo(t)}
+              data-templo={t.slug}
+              data-reuniones={JSON.stringify(propias)}
+            >
+              {/* El color del templo, el mismo de /horarios: quien ya
+                  conoce el cartel reconoce su templo sin leer. */}
+              <span
+                class="absolute inset-y-0 left-0 w-1.5 bg-[var(--d-claro)]"
+                aria-hidden="true"
+              />
+              <span class="min-w-0 flex-1">
+                <span class="flex flex-wrap items-center gap-2">
+                  <span class="font-display text-xl leading-tight text-white">{t.short}</span>
+                  {t.matriz && (
+                    <span class="font-data rounded-full bg-accent px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-accent-content">
+                      Matriz
+                    </span>
+                  )}
+                </span>
+                <span class="mt-0.5 block text-sm text-white/55">{t.address}</span>
+
+                <span class="mt-3 block" data-proxima>
+                  <span class="font-data block text-[0.7rem] uppercase tracking-[0.16em] text-[var(--d-claro)]">
+                    Próxima reunión
+                  </span>
+                  <span class="mt-0.5 block font-medium text-white" data-linea>
+                    {proxima.reunion
+                      ? `${proxima.cuando} ${proxima.reunion.hora} · ${proxima.reunion.nombre}`
+                      : 'Consulta los horarios'}
+                  </span>
+                  <span
+                    class="mt-1 block text-sm text-amber-200"
+                    data-cambio
+                    hidden={!proxima.reunion?.aviso}
+                  >
+                    {proxima.reunion?.aviso}
+                  </span>
+                  <span
+                    class="mt-1 block text-sm text-red-300"
+                    data-suspendidas
+                    hidden={proxima.suspendidas.length === 0}
+                  >
+                    {proxima.suspendidas
+                      .map(
+                        (r) =>
+                          `Suspendida la del ${cuandoSuspendida(r)}${r.aviso ? `: ${r.aviso}` : ''}`,
+                      )
+                      .join(' · ')}
+                  </span>
+                </span>
+              </span>
+              <Icon
+                name="lucide:chevron-right"
+                class="h-5 w-5 shrink-0 self-center text-white/40"
+                aria-hidden="true"
+              />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="mt-8 flex flex-col gap-3" aria-label="Más enlaces">
+    <a href="/estudio-biblico" class="enlace-boton" style="--acento:#d0a35c">
+      <span class="enlace-icono"><Icon name="lucide:book-open" class="h-5 w-5" /></span>
+      <span class="min-w-0 flex-1">
+        <span class="block font-medium text-white">Instituto Bíblico Bet-El</span>
+        <span class="block text-sm text-white/55">Todos los lunes · escucha los estudios</span>
+      </span>
+      <Icon name="lucide:chevron-right" class="h-5 w-5 shrink-0 text-white/40" />
+    </a>
+
+    <a
+      href={YOUTUBE_CHANNEL}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="enlace-boton"
+      style="--acento:#ff4e45"
+    >
+      <span class="enlace-icono"><Icon name="lucide:youtube" class="h-5 w-5" /></span>
+      <span class="min-w-0 flex-1">
+        <span class="block font-medium text-white">YouTube</span>
+        <span class="block text-sm text-white/55">@lacasadedioscl</span>
+      </span>
+      <Icon name="lucide:arrow-up-right" class="h-5 w-5 shrink-0 text-white/40" />
+    </a>
+
+    <a href="/" class="enlace-boton" style="--acento:#7d9ce0">
+      <span class="enlace-icono"><Icon name="lucide:globe" class="h-5 w-5" /></span>
+      <span class="min-w-0 flex-1">
+        <span class="block font-medium text-white">Nuestra web</span>
+        <span class="block text-sm text-white/55">lacasadedios.cl</span>
+      </span>
+      <Icon name="lucide:chevron-right" class="h-5 w-5 shrink-0 text-white/40" />
+    </a>
+  </section>
+</EnlacesLayout>
+
+<script>
+  import { momentoEnChile, proximaReunion, type Reunion } from '../lib/reuniones';
+
+  /*
+   * La próxima reunión se vuelve a calcular acá, con el reloj de quien mira.
+   *
+   * La página sale de la caché de la CDN hasta once minutos después de
+   * armarse: sin esto, a las 20:05 seguiría diciendo «Hoy 20:00» de un culto
+   * que ya empezó. Lo del servidor queda para quien no tiene JavaScript.
+   */
+  const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const ahora = momentoEnChile();
+
+  document.querySelectorAll<HTMLElement>('[data-reuniones]').forEach((ficha) => {
+    let propias: Reunion[];
+    try {
+      propias = JSON.parse(ficha.dataset.reuniones ?? '[]');
+    } catch {
+      return;
+    }
+    const p = proximaReunion(propias, ahora);
+    const linea = ficha.querySelector<HTMLElement>('[data-linea]');
+    const cambio = ficha.querySelector<HTMLElement>('[data-cambio]');
+    const suspendidas = ficha.querySelector<HTMLElement>('[data-suspendidas]');
+
+    if (linea) {
+      linea.textContent = p.reunion
+        ? `${p.cuando} ${p.reunion.hora} · ${p.reunion.nombre}`
+        : 'Consulta los horarios';
+    }
+    if (cambio) {
+      cambio.textContent = p.reunion?.aviso ?? '';
+      cambio.hidden = !p.reunion?.aviso;
+    }
+    if (suspendidas) {
+      suspendidas.textContent = p.suspendidas
+        .map((r) => `Suspendida la del ${DIAS[r.dia]} ${r.hora}${r.aviso ? `: ${r.aviso}` : ''}`)
+        .join(' · ');
+      suspendidas.hidden = p.suspendidas.length === 0;
+    }
+  });
+</script>

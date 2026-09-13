@@ -64,8 +64,11 @@ export const api = {
       method: 'DELETE',
     }),
 
-  reordenar: (ids: string[]) =>
-    pedir<{ ok: true }>('/api/admin/orden', { method: 'POST', body: JSON.stringify({ ids }) }),
+  reordenar: (recurso: Recurso, ids: string[]) =>
+    pedir<{ ok: true }>('/api/admin/orden', {
+      method: 'POST',
+      body: JSON.stringify({ recurso, ids }),
+    }),
 
   ajustes: <T>() => pedir<{ ajustes: T }>('/api/admin/ajustes').then((r) => r.ajustes),
 

@@ -8,7 +8,8 @@ import { DIAS } from '../../../lib/reuniones';
 export const prerender = false;
 
 /**
- * CRUD del panel: `/api/admin/eventos`, `/noticias`, `/videos`, `/estudios`.
+ * CRUD del panel: `/api/admin/eventos`, `/noticias`, `/videos`, `/instagram`,
+ * `/reuniones`, `/enlaces`, `/estudios`.
  *
  *   GET                  todo lo que hay, borradores incluidos
  *   POST                 crea; devuelve el id
@@ -96,6 +97,25 @@ function detalleDeReunion(fila: Record<string, unknown>): { detalle?: string } {
   };
 }
 
+/**
+ * Una comprobación de la base que no se cumplió, dicha para quien administra.
+ *
+ * La base rechaza por su cuenta lo que no tiene el formato esperado —un link
+ * que no empieza por https://, una hora que no es HH:MM— y el error sale como
+ * «D1_ERROR: CHECK constraint failed», que el panel mostraba tal cual con un
+ * 500. Es un dato mal puesto, no una caída: se responde 400 y en castellano.
+ */
+function rechazoDeLaBase(e: unknown): Response | null {
+  if (!String((e as Error)?.message ?? e).includes('CHECK constraint failed')) return null;
+  return json(
+    {
+      error:
+        'La base rechazó un dato con formato incorrecto. Revisa que los links empiecen por https:// y que las horas y fechas estén completas.',
+    },
+    400,
+  );
+}
+
 export const GET: APIRoute = async ({ params }) => {
   const recurso = recursoDe(params);
   if (!recurso) return json({ error: 'recurso desconocido' }, 404);
@@ -109,7 +129,14 @@ export const POST: APIRoute = async ({ params, request, url }) => {
   if (!mismoOrigen(request, url)) return json({ error: 'origen no permitido' }, 403);
 
   const base = await baseDeDatos();
-  const id = await crear(base, recurso, await cuerpo(request));
+  let id: string;
+  try {
+    id = await crear(base, recurso, await cuerpo(request));
+  } catch (e) {
+    const rechazo = rechazoDeLaBase(e);
+    if (rechazo) return rechazo;
+    throw e;
+  }
   // Se devuelve la fila tal como quedó, no solo el id: el slug lo calcula el
   // servidor, y el correo de aviso a suscriptores tiene que enlazar a la
   // dirección legible y no a /noticias/<uuid>.
@@ -125,7 +152,14 @@ export const PUT: APIRoute = async ({ params, request, url }) => {
   const id = (url.searchParams.get('id') ?? '').trim();
   if (!id) return json({ error: 'falta el id' }, 400);
 
-  const hecho = await actualizar(await baseDeDatos(), recurso, id, await cuerpo(request));
+  let hecho: boolean;
+  try {
+    hecho = await actualizar(await baseDeDatos(), recurso, id, await cuerpo(request));
+  } catch (e) {
+    const rechazo = rechazoDeLaBase(e);
+    if (rechazo) return rechazo;
+    throw e;
+  }
   // `false` significa que no llegó ninguna columna válida. Se avisa en vez de
   // responder que sí: un formulario mal armado se descubriría meses después,
   // cuando alguien note que sus cambios no se guardan.

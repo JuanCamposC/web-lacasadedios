@@ -93,3 +93,75 @@ export function porDia(reuniones: Reunion[]): DiaDeReuniones[] {
 /** Cuántas reuniones hay en la semana sin contar las suspendidas. */
 export const enPie = (reuniones: Reunion[]) =>
   reuniones.filter((r) => r.estado !== 'suspendida').length;
+
+// ── La próxima reunión ──────────────────────────────────────────────────────
+
+/** Un momento de la semana en Chile: día (0 = domingo) y minutos desde las 00:00. */
+export interface MomentoSemana {
+  dia: number;
+  minutos: number;
+}
+
+/** El momento de la semana en Chile, sin importar el huso de quien pregunta. */
+export function momentoEnChile(ahora = new Date()): MomentoSemana {
+  const partes = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Santiago',
+    // `h23`: con `hour12: false` hay motores que dan «24» a medianoche.
+    hourCycle: 'h23',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).formatToParts(ahora);
+  const v = Object.fromEntries(partes.map((p) => [p.type, p.value])) as Record<string, string>;
+  const dia = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(v.weekday);
+  return { dia: Math.max(0, dia), minutos: Number(v.hour) * 60 + Number(v.minute) };
+}
+
+export interface Proxima {
+  /** La próxima reunión que SÍ se hace, o `null` si el templo no tiene ninguna. */
+  reunion: Reunion | null;
+  /** «Hoy», «Mañana» o el nombre del día. */
+  cuando: string;
+  /**
+   * Las suspendidas que caen ANTES de la próxima. Quien ve «próxima: domingo»
+   * un jueves tiene que saber por qué no es hoy: que la de hoy se suspendió.
+   */
+  suspendidas: Reunion[];
+}
+
+const SEMANA = 7 * 24 * 60;
+
+/** Minutos que faltan para una reunión, dando la vuelta a la semana si ya pasó. */
+function faltanMinutos(r: Reunion, ahora: MomentoSemana): number {
+  const [h, m] = r.hora.split(':').map(Number);
+  const diferencia = (r.dia - ahora.dia) * 24 * 60 + (h * 60 + m) - ahora.minutos;
+  // Una que empieza justo ahora cuenta como próxima; una de hace un minuto, no.
+  return ((diferencia % SEMANA) + SEMANA) % SEMANA;
+}
+
+/**
+ * La próxima reunión de una lista, en hora de Chile.
+ *
+ * Las suspendidas no pueden ser «la próxima» —se llegaría a un templo cerrado—
+ * pero tampoco se esconden: vuelven aparte, para decir que no hay.
+ */
+export function proximaReunion(reuniones: Reunion[], ahora: MomentoSemana): Proxima {
+  const enOrden = reuniones
+    .map((r) => ({ r, faltan: faltanMinutos(r, ahora) }))
+    .sort((a, b) => a.faltan - b.faltan);
+
+  const i = enOrden.findIndex(({ r }) => r.estado !== 'suspendida');
+  if (i === -1) return { reunion: null, cuando: '', suspendidas: reuniones.slice() };
+
+  const { r, faltan } = enOrden[i];
+  // Se cuenta en días de calendario, no en horas: el sábado a las 23:00, una
+  // reunión del domingo a las 10:00 es «mañana» aunque falten once horas.
+  const dias = Math.floor((ahora.minutos + faltan) / (24 * 60));
+  const cuando = dias === 0 ? 'Hoy' : dias === 1 ? 'Mañana' : DIAS[r.dia];
+
+  return {
+    reunion: r,
+    cuando,
+    suspendidas: enOrden.slice(0, i).map(({ r }) => r),
+  };
+}

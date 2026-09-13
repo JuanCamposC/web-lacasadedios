@@ -1,0 +1,121 @@
+---
+/**
+ * La pantalla de las páginas de enlaces: /nuestrostemplos y /jovenes.
+ *
+ * Son la puerta de entrada desde la biografía de Instagram, así que casi
+ * siempre se abren en el navegador interno de Instagram, en un teléfono y con
+ * el pulgar. Por eso van sin el menú ni el pie de la web: quien toca el enlace
+ * de la bio busca un templo o una playlist, y lo tiene que encontrar sin bajar
+ * más allá de la primera pantalla.
+ *
+ * No carga el script del tema ni las transiciones de vista: la pantalla tiene
+ * un solo aspecto, el azul noche del cartel de horarios, y así no hay nada que
+ * esperar antes de pintar.
+ */
+import '@fontsource-variable/fraunces/opsz.css';
+import '@fontsource-variable/archivo/wght.css';
+import '@fontsource-variable/archivo-narrow/wght.css';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const ruta = Astro.url.pathname.replace(/(.)\/+$/, '$1');
+const canonical = Astro.site ? new URL(ruta, Astro.site).href : Astro.url.href;
+const ogImage = new URL('/og-image.png', Astro.site ?? Astro.url).href;
+---
+
+<!doctype html>
+<html lang="es" data-theme="church">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0a1730" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="La Casa de Dios" />
+    <meta property="og:locale" content="es_CL" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+
+  <body class="enlaces on-dark">
+    <main class="enlaces-hoja">
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  @layer components {
+    .enlaces {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background:
+        radial-gradient(120% 60% at 50% -10%, rgba(125, 156, 224, 0.22), transparent 60%), #0a1730;
+      color: #e4e9f2;
+    }
+    /* Una columna del ancho de un teléfono, también en escritorio: en una
+       pantalla ancha, botones de lado a lado se leen como una tabla. */
+    .enlaces-hoja {
+      margin-inline: auto;
+      max-width: 32rem;
+      padding: max(2.5rem, env(safe-area-inset-top)) 1rem max(2.5rem, env(safe-area-inset-bottom));
+    }
+    .enlace-boton {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.055);
+      padding: 0.85rem 1rem;
+      transition:
+        background-color 0.15s,
+        border-color 0.15s,
+        transform 0.15s;
+    }
+    .enlace-boton:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.24);
+    }
+    .enlace-boton:active {
+      transform: scale(0.985);
+    }
+    .enlace-boton:focus-visible {
+      outline: 2px solid #d0a35c;
+      outline-offset: 2px;
+    }
+    .enlace-icono {
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 0.8rem;
+      background: color-mix(in srgb, var(--acento, #d0a35c) 18%, transparent);
+      color: var(--acento, #d0a35c);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .enlace-boton {
+        transition: none;
+      }
+      .enlace-boton:active {
+        transform: none;
+      }
+    }
+  }
+</style>

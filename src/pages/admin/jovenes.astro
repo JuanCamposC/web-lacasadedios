@@ -1,0 +1,42 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout
+  title="Jóvenes"
+  description="Los botones de lacasadedios.cl/jovenes. Se arrastran para cambiarlos de orden."
+  active="jovenes"
+>
+  <div id="crud-root"></div>
+
+  <script>
+    import { setupCrud } from '../../scripts/adminCrud';
+    setupCrud({
+      table: 'enlaces',
+      singular: 'enlace',
+      titleField: 'titulo',
+      subtitleField: 'url',
+      mostrarFecha: false,
+      orderBy: { column: 'orden', ascending: true },
+      orderable: { column: 'orden' },
+      fields: [
+        {
+          name: 'titulo',
+          label: 'Texto del botón',
+          type: 'text',
+          required: true,
+          help: 'Ej.: «Playlist Retiro 2026». No hace falta poner la plataforma: Spotify, YouTube, Instagram… se reconocen solos por el link y salen con su icono.',
+        },
+        {
+          name: 'url',
+          label: 'Link',
+          type: 'url',
+          required: true,
+          help: 'Tiene que empezar por https://. En Spotify: los tres puntos → Compartir → Copiar enlace.',
+        },
+        { name: 'publicado', label: 'Publicado', type: 'checkbox' },
+      ],
+    });
+  </script>
+</AdminLayout>

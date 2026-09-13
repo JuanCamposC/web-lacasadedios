@@ -49,6 +49,7 @@ const COLUMNAS = {
   ],
   videos: ['titulo', 'youtube_url', 'descripcion', 'templo', 'publicado', 'orden'],
   instagram: ['imagen_clave', 'alt', 'enlace', 'publicado', 'orden'],
+  enlaces: ['titulo', 'url', 'publicado', 'orden'],
   reuniones: ['templo', 'dia', 'hora', 'nombre', 'estado', 'aviso', 'aviso_hasta', 'publicado'],
   estudios: [
     'titulo',
@@ -75,6 +76,7 @@ const ORDEN: Record<Recurso, string> = {
   videos: 'orden asc, creado_en desc',
   estudios: 'fecha desc',
   instagram: 'orden asc, creado_en desc',
+  enlaces: 'orden asc, creado_en asc',
   // Como se lee un tablero: por templo, y dentro de cada templo la semana en
   // orden. Así en el panel se encuentran juntas las de un mismo lugar.
   reuniones: 'templo asc, dia asc, hora asc',
@@ -279,15 +281,29 @@ export async function borrar(base: Base, recurso: Recurso, id: string): Promise<
   await base.prepare(`delete from ${recurso} where id = ?`).bind(id).first();
 }
 
+/** Las tablas que se ordenan arrastrando: las que tienen columna `orden`. */
+const ORDENABLES = ['videos', 'instagram', 'enlaces'] as const satisfies readonly Recurso[];
+export type Ordenable = (typeof ORDENABLES)[number];
+
+export const esOrdenable = (valor: unknown): valor is Ordenable =>
+  (ORDENABLES as readonly unknown[]).includes(valor);
+
 /**
- * Reordena los videos según el orden en que llegan los identificadores.
+ * Reordena una tabla según el orden en que llegan los identificadores.
+ *
+ * Antes solo sabía de videos, con la tabla escrita en el SQL: al arrastrar las
+ * fotos de Instagram en el panel, el aviso decía «Orden guardado», las fotos
+ * seguían igual y lo que se reordenaba eran los videos.
  *
  * Va de uno en uno en vez de con un `case when` gigante: son unas pocas filas,
  * se hace al soltar el ratón, y el SQL se lee.
  */
-export async function reordenar(base: Base, ids: string[]): Promise<void> {
+export async function reordenar(base: Base, recurso: Ordenable, ids: string[]): Promise<void> {
+  // La tabla va al SQL; se comprueba acá aunque el tipo ya lo diga, porque el
+  // tipo no existe cuando el valor llega por la red.
+  if (!esOrdenable(recurso)) throw new Error(`no se puede reordenar ${String(recurso)}`);
   for (const [i, id] of ids.entries()) {
-    await base.prepare('update videos set orden = ? where id = ?').bind(i, id).first();
+    await base.prepare(`update ${recurso} set orden = ? where id = ?`).bind(i, id).first();
   }
 }
 

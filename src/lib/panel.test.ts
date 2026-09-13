@@ -299,13 +299,25 @@ describe('actualizar', () => {
 describe('reordenar', () => {
   it('guarda la posición de cada uno según el orden recibido', async () => {
     const { base, llamadas } = espia();
-    await reordenar(base, ['c', 'a', 'b']);
+    await reordenar(base, 'videos', ['c', 'a', 'b']);
     expect(llamadas).toHaveLength(3);
     expect(llamadas.map((l) => l.valores)).toEqual([
       [0, 'c'],
       [1, 'a'],
       [2, 'b'],
     ]);
+  });
+
+  it('escribe en la tabla que se le pide, no siempre en videos', async () => {
+    const { base, llamadas } = espia();
+    await reordenar(base, 'instagram', ['a']);
+    expect(llamadas[0].sql).toContain('update instagram');
+  });
+
+  it('rechaza una tabla sin orden, aunque llegue saltándose el tipo', async () => {
+    const { base, llamadas } = espia();
+    await expect(reordenar(base, 'eventos' as never, ['a'])).rejects.toThrow();
+    expect(llamadas).toHaveLength(0);
   });
 });
 

@@ -380,6 +380,27 @@ export function instagramPublicado(base: Base, limite = 4): Promise<PostIg[]> {
   );
 }
 
+// ── Enlaces de /jovenes ─────────────────────────────────────────────────────
+
+export interface Enlace {
+  id: string;
+  titulo: string;
+  url: string;
+}
+
+/** Los enlaces publicados de /jovenes, en el orden que se les dio en el panel. */
+export function enlacesPublicados(base: Base): Promise<Enlace[]> {
+  return listar<Enlace>(
+    base,
+    `select id, titulo, url
+       from enlaces
+      where publicado = 1
+      order by orden asc, creado_en asc
+      limit ?`,
+    [TOPE_MAXIMO],
+  );
+}
+
 // ── Ajustes ─────────────────────────────────────────────────────────────────
 
 export function ajustes(base: Base): Promise<Ajustes | null> {

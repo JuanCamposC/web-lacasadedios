@@ -35,7 +35,7 @@ export function initArrastre(ctx: Contexto) {
       });
 
       try {
-        await ctx.api.reordenar(enOrden);
+        await ctx.api.reordenar(ctx.recurso, enOrden);
         toast('Orden guardado');
       } catch (e) {
         toast('No se pudo guardar el nuevo orden: ' + (e as Error).message, 'error');

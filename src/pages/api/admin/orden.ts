@@ -1,11 +1,12 @@
 import type { APIRoute } from 'astro';
 import { baseDeDatos } from '../../../lib/base';
-import { reordenar } from '../../../lib/panel';
+import { reordenar, esOrdenable } from '../../../lib/panel';
 
 export const prerender = false;
 
 /**
- * Guarda el orden de los videos: `POST /api/admin/orden` con `{ ids: [...] }`.
+ * Guarda el orden de una tabla: `POST /api/admin/orden` con
+ * `{ recurso: 'videos' | 'instagram' | 'enlaces', ids: [...] }`.
  *
  * Va aparte del CRUD porque no es una fila lo que cambia sino la relación entre
  * todas. Meterlo en el PUT de un recurso obligaría a inventar un campo que no
@@ -24,8 +25,9 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
 
   let ids: unknown;
+  let recurso: unknown;
   try {
-    ({ ids } = (await request.json()) as { ids?: unknown });
+    ({ ids, recurso } = (await request.json()) as { ids?: unknown; recurso?: unknown });
   } catch {
     return new Response('cuerpo ilegible', { status: 400 });
   }
@@ -34,7 +36,11 @@ export const POST: APIRoute = async ({ request, url }) => {
     return new Response('se esperaba { ids: string[] }', { status: 400 });
   }
 
-  await reordenar(await baseDeDatos(), ids as string[]);
+  if (!esOrdenable(recurso)) {
+    return new Response('esa tabla no se ordena', { status: 400 });
+  }
+
+  await reordenar(await baseDeDatos(), recurso, ids as string[]);
   return new Response(JSON.stringify({ ok: true }), {
     headers: { 'content-type': 'application/json; charset=utf-8' },
   });
