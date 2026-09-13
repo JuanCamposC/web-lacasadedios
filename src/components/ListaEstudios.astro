@@ -8,15 +8,12 @@ import type { Episodio } from '../lib/rss';
 /**
  * La lista de estudios en audio.
  *
- * Está aparte de la página porque la usan DOS sitios: los audios de verdad, que
- * vienen del feed de RSS.com, y el bloque de vista previa que enseña cómo
- * quedaría lo mismo con los audios en nuestro propio servidor. Que sea el mismo
- * componente no es economía de líneas: es lo que hace honesta la comparación,
- * porque si cada una tuviera su plantilla, «se ven iguales» sería una promesa
- * mía en vez de un hecho.
+ * Está aparte de la página porque se pinta dos veces: los doce más recientes y,
+ * dentro de un desplegable, los anteriores.
  *
- * Recibe `Episodio`, que es la forma que sale del feed. La vista previa traduce
- * las filas de la base a esa misma forma (ver estudio-biblico.astro).
+ * SIN ENLACES A RSS.COM. Los audios se escuchan acá y solo acá: así se pidió.
+ * Antes cada tarjeta llevaba «Ver este estudio en RSS.com», que sacaba a la
+ * gente del sitio hacia una página ajena.
  */
 interface Props {
   estudios: Episodio[];
@@ -66,17 +63,6 @@ const { estudios, class: className = '' } = Astro.props;
               Tu navegador no puede reproducir este audio.
               <a href={ep.audio}>Descargar el archivo</a>.
             </audio>
-
-            {ep.enlace && (
-              <a
-                href={ep.enlace}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="link-hover link mt-3 inline-flex items-center gap-1.5 text-sm text-base-content/60"
-              >
-                <Icon name="lucide:external-link" class="h-3.5 w-3.5" /> Ver este estudio en RSS.com
-              </a>
-            )}
           </article>
         </Reveal>
       </li>

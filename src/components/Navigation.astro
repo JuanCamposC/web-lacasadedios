@@ -70,11 +70,14 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
               </details>
             </li>
           ) : (
-            <li>
+            <li data-solo-en-vivo={entry.soloEnVivo ? '' : undefined} hidden={entry.soloEnVivo}>
+              {/* `flex items-center`, igual que los desplegables. Como enlace en
+                  línea, se asentaba sobre la línea base del texto y quedaba unos
+                  píxeles más abajo que «Nosotros» y «Templos», que son flex. */}
               <a
                 href={entry.href}
                 data-activo={activo ? '' : undefined}
-                class={`${pill} ${activo ? pillActive : pillIdle}`}
+                class={`${pill} ${activo ? pillActive : pillIdle} flex items-center`}
                 aria-current={activo ? 'page' : undefined}
               >
                 {entry.label}
@@ -163,7 +166,7 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
               </details>
             </li>
           ) : (
-            <li>
+            <li data-solo-en-vivo={entry.soloEnVivo ? '' : undefined} hidden={entry.soloEnVivo}>
               <a
                 href={entry.href}
                 class={`block rounded-xl px-4 py-3 text-base font-medium ${activo ? 'bg-primary/10 text-primary' : 'hover:bg-base-200'}`}

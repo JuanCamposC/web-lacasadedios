@@ -103,7 +103,7 @@ export async function avisarSuscriptores(ctx: Contexto, row: Fila) {
     // Los videos no tienen imagen y una noticia puede ir sin bajada: el
     // servidor descarta lo que llegue vacío.
     excerpt: subtitleField ? String(row[subtitleField] ?? '') : '',
-    image: String(row.image_url ?? ''),
+    image: String(row.imagen_url ?? ''),
   });
 }
 

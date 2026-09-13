@@ -1,23 +1,30 @@
 ---
-import { Image } from 'astro:assets';
+import Foto from './Foto.astro';
 import { Icon } from 'astro-icon/components';
-import { parseService, type Templo } from '../data/templos';
+import { type Templo } from '../data/templos';
 import { IMG } from '../assets/images';
+import { porDia, enPie, type Reunion } from '../lib/reuniones';
 
 interface Props {
   templo: Templo;
   /** `compact` para la portada, `detailed` para el listado de templos. */
   variant?: 'compact' | 'detailed';
+  /**
+   * Las reuniones de ESTE templo. Solo las usa la variante detallada, y las
+   * trae la página: la portada, que usa la compacta, es un archivo fijo y no
+   * lee la base.
+   */
+  reuniones?: Reunion[];
 }
-const { templo: t, variant = 'compact' } = Astro.props;
+const { templo: t, variant = 'compact', reuniones: suyas = [] } = Astro.props;
 
-// En la variante detallada se muestra el próximo tipo de reunión de cada día.
-const dias = t.schedule.map((s) => ({
-  day: s.day,
-  first: parseService(s.services[0]).time,
-  count: s.services.length,
+// En la variante detallada se muestra la primera reunión de cada día.
+const dias = porDia(suyas).map((d) => ({
+  day: d.nombre,
+  first: d.reuniones[0].hora,
+  count: d.reuniones.length,
 }));
-const reuniones = t.schedule.reduce((n, s) => n + s.services.length, 0);
+const reuniones = enPie(suyas);
 ---
 
 {
@@ -27,10 +34,9 @@ const reuniones = t.schedule.reduce((n, s) => n + s.services.length, 0);
       class="panel panel-sm panel-lift group block h-full overflow-hidden"
     >
       <div class="relative h-44 overflow-hidden">
-        <Image
+        <Foto
           src={IMG[t.image]}
           alt={t.name}
-          widths={[400, 700]}
           sizes="(max-width:640px) 100vw, 25vw"
           class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
@@ -56,10 +62,9 @@ const reuniones = t.schedule.reduce((n, s) => n + s.services.length, 0);
   ) : (
     <article class="panel panel-lift group flex h-full flex-col overflow-hidden">
       <a href={`/templos/${t.slug}`} class="relative block h-52 overflow-hidden">
-        <Image
+        <Foto
           src={IMG[t.image]}
           alt={t.name}
-          widths={[500, 900]}
           sizes="(max-width:768px) 100vw, 50vw"
           class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
         />

@@ -156,6 +156,9 @@ import { IMG } from '../assets/images';
                         {correoDe(t.leader)}
                       </a>
                     )}
+                    {correoDe(t.leader) && t.leader.correoNota && (
+                      <p class="mt-1 text-xs text-base-content/55">{t.leader.correoNota}</p>
+                    )}
                   </div>
                   {t.matriz && (
                     <span class="shrink-0 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-content">

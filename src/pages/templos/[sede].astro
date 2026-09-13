@@ -1,18 +1,30 @@
 ---
-// Una sola ruta para los cuatro templos. Antes eran cuatro archivos idénticos
-// de cinco líneas que solo cambiaban el slug: añadir un templo obligaba a crear
-// otro, y era fácil olvidarlo porque el listado sí se generaba solo.
+// Una sola ruta para los cuatro templos.
 //
-// Las URLs no cambian: `getStaticPaths` las saca de los mismos slugs de
-// templos.ts que usaban los archivos anteriores.
+// Se arma al servir y no con `getStaticPaths`: la ficha enseña los horarios
+// del templo, y esos se editan desde el panel. Un slug que no es de ningún
+// templo da 404 en vez de una página vacía.
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
+
 import TemploPage from '../../components/TemploPage.astro';
-import { templos } from '../../data/templos';
+import { getTemplo } from '../../data/templos';
+import { baseDeDatos } from '../../lib/base';
+import { reunionesPublicadas } from '../../lib/datos';
+import type { Reunion } from '../../lib/reuniones';
 
-export function getStaticPaths() {
-  return templos.map((t) => ({ params: { sede: t.slug } }));
+const templo = getTemplo(Astro.params.sede ?? '');
+// Un 404 sin cuerpo: Astro lo sustituye por la página de error del sitio.
+// `Astro.rewrite('/404')` no sirve acá — esa página es estática y en el Worker
+// no existe como componente ("Unexpectedly unable to find a component").
+if (!templo) return new Response(null, { status: 404 });
+
+let reuniones: Reunion[] = [];
+try {
+  reuniones = await reunionesPublicadas(await baseDeDatos(), templo.slug);
+} catch (e) {
+  console.error('[templo]', e);
 }
-
-const { sede } = Astro.params;
 ---
 
-<TemploPage slug={sede!} />
+<TemploPage templo={templo} reuniones={reuniones} />

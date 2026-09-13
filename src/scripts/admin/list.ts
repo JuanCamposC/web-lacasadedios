@@ -2,11 +2,18 @@ import { youtubeId } from '../../lib/youtube';
 import type { Contexto, Fila } from './tipos';
 import { esc, fechaCorta } from './ui';
 
-/** Miniatura: del campo de imagen si existe, si no de YouTube. */
+/**
+ * Miniatura: del campo de imagen si existe, si no de YouTube.
+ *
+ * Las pantallas sin ninguno de los dos —los horarios— no llevan columna de
+ * miniatura: era un recuadro gris vacío en cada fila, dieciséis veces.
+ */
 function miniatura(ctx: Contexto, row: Fila): string {
   const { campoImagen, campoYoutube } = ctx;
-  if (campoImagen && row[campoImagen]) {
-    return `<img src="${esc(row[campoImagen])}" alt="" class="h-full w-full object-cover" loading="lazy" />`;
+  // `imagen_url` la arma el servidor a partir de la clave de R2. Con la clave
+  // sola el navegador pedía una ruta relativa que no existe.
+  if (campoImagen && row.imagen_url) {
+    return `<img src="${esc(row.imagen_url)}" alt="" class="h-full w-full object-cover" loading="lazy" />`;
   }
   if (campoYoutube && row[campoYoutube]) {
     const id = youtubeId(row[campoYoutube]);
@@ -23,8 +30,10 @@ function miniatura(ctx: Contexto, row: Fila): string {
 export function visibles(ctx: Contexto): Fila[] {
   const q = ctx.buscarEl.value.trim().toLowerCase();
   return ctx.filas.filter((r) => {
-    if (ctx.estado === 'publicados' && !r.published) return false;
-    if (ctx.estado === 'borradores' && r.published) return false;
+    // `publicado`, no `published`: el nombre de Supabase se quedó aquí tras la
+    // migración, y como la fila de D1 no lo trae, TODO salía como borrador.
+    if (ctx.estado === 'publicados' && !r.publicado) return false;
+    if (ctx.estado === 'borradores' && r.publicado) return false;
     if (!q) return true;
     const campos = [
       r[ctx.config.titleField],
@@ -65,9 +74,12 @@ export function pintar(ctx: Contexto) {
   listEl.innerHTML = datos
     .map((row: Fila) => {
       const sub = config.subtitleField ? String(row[config.subtitleField] ?? '') : '';
-      const fecha = ctx.campoFecha
-        ? fechaCorta(row[ctx.campoFecha])
-        : fechaCorta(row.created_at ?? null);
+      const fecha =
+        config.mostrarFecha === false
+          ? ''
+          : ctx.campoFecha
+            ? fechaCorta(row[ctx.campoFecha])
+            : fechaCorta(row.creado_en ?? null);
       const asa = config.orderable
         ? `<button type="button" data-asa aria-label="Arrastrar para reordenar"
                class="flex w-8 shrink-0 cursor-grab items-center justify-center text-base-content/30 transition-colors hover:text-primary active:cursor-grabbing">
@@ -76,7 +88,7 @@ export function pintar(ctx: Contexto) {
         : '';
       return `<article data-fila="${row.id}" class="panel flex items-stretch gap-0 overflow-hidden transition-shadow">
           ${asa}
-          <div class="hidden h-auto w-24 shrink-0 bg-base-200 sm:block">${miniatura(ctx, row)}</div>
+          ${ctx.campoImagen || ctx.campoYoutube ? `<div class="hidden h-auto w-24 shrink-0 bg-base-200 sm:block">${miniatura(ctx, row)}</div>` : ''}
           <div class="flex min-w-0 flex-1 items-center gap-3 p-3">
             <div class="min-w-0 flex-1">
               <h3 class="truncate text-sm font-semibold">${esc(row[config.titleField])}</h3>
@@ -85,9 +97,9 @@ export function pintar(ctx: Contexto) {
             </div>
             <div class="flex shrink-0 flex-col items-end gap-1.5">
               <button type="button" data-toggle="${row.id}"
-                class="badge badge-sm cursor-pointer gap-1 ${row.published ? 'badge-success' : 'badge-ghost'}"
-                title="${row.published ? 'Pasar a borrador' : 'Publicar ahora'}">
-                ${row.published ? 'Publicado' : 'Borrador'}
+                class="badge badge-sm cursor-pointer gap-1 ${row.publicado ? 'badge-success' : 'badge-ghost'}"
+                title="${row.publicado ? 'Pasar a borrador' : 'Publicar ahora'}">
+                ${row.publicado ? 'Publicado' : 'Borrador'}
               </button>
               <div class="flex gap-0.5">
                 <button type="button" class="btn btn-ghost btn-xs" data-edit="${row.id}">Editar</button>

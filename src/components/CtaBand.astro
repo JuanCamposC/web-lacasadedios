@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import Foto from './Foto.astro';
 import type { ImageMetadata } from 'astro';
 import Reveal from './Reveal.astro';
 
@@ -21,14 +21,7 @@ const { eyebrow, title, text, image, compact = false } = Astro.props;
   {
     image ? (
       <>
-        <Image
-          src={image}
-          alt=""
-          widths={[768, 1280, 1600]}
-          sizes="100vw"
-          loading="lazy"
-          class="absolute inset-0 h-full w-full object-cover opacity-25"
-        />
+        <Foto src={image} alt="" class="absolute inset-0 h-full w-full object-cover opacity-25" />
         <div class="absolute inset-0 bg-gradient-to-b from-[#0a1730]/88 via-[#0a1730]/72 to-[#0a1730]/96" />
       </>
     ) : (

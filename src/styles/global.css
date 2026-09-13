@@ -571,6 +571,39 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   EL DISTINTIVO DE CADA TEMPLO
+   Una píldora con el nombre del templo en su color propio. Los colores vienen
+   por variables desde src/data/templos.ts (`--d-fondo`, `--d-claro`), así un
+   templo nuevo no pide tocar este archivo.
+
+   Sobre fondo claro va el tono oscuro con letra blanca; sobre el cartel azul
+   noche y en el tema oscuro, el tono claro con letra azul noche. Las dos
+   combinaciones pasan de 4,5:1.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@layer components {
+  .distintivo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    background: var(--d-fondo);
+    color: #ffffff;
+  }
+  .cartel .distintivo,
+  .on-dark .distintivo,
+  [data-theme='churchdark'] .distintivo {
+    background: var(--d-claro);
+    color: #0a1730;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    EL CARTEL
    La firma del sitio: el tablero de horarios que la iglesia cuelga en la
    puerta. No es decoración — el horario es lo que más se pregunta, y ponerlo
@@ -778,7 +811,7 @@
     background: rgba(0, 0, 0, 0.22);
     border-block: 1px solid var(--cartel-linea);
   }
-  .cartel-seccion h2 {
+  .cartel-seccion :is(h2, h3) {
     font-family: var(--font-data);
     font-size: 0.86rem;
     font-weight: 700;
@@ -812,20 +845,33 @@
     font-weight: 600;
     color: #eef2f9;
   }
+  /* El templo, en su color. Antes era letra gris al final de la línea y se
+     pidió que se viera mucho más: ahora es lo que primero se distingue al
+     bajar la semana. El color sale de `.distintivo` (más abajo). */
   .cartel-lugar {
     grid-column: 2;
     justify-self: start;
-    font-family: var(--font-data);
-    font-size: 0.74rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: rgba(238, 242, 249, 0.5);
     text-decoration: none;
-    border-bottom: 1px solid transparent;
   }
   .cartel-lugar:hover {
-    color: #e0bd7d;
-    border-bottom-color: rgba(224, 189, 125, 0.5);
+    filter: brightness(1.1);
+  }
+
+  /* Una reunión suspendida se tacha pero se sigue viendo: si desapareciera,
+     quien la busca pensaría que la web está mal, no que se suspendió. */
+  .cartel-linea[data-estado='suspendida'] .cartel-hora,
+  .cartel-linea[data-estado='suspendida'] .cartel-nombre {
+    text-decoration: line-through;
+    opacity: 0.55;
+  }
+  .cartel-aviso {
+    grid-column: 2 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #f3d9a8;
   }
   @media (min-width: 640px) {
     .cartel-linea {

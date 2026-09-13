@@ -49,6 +49,7 @@ const COLUMNAS = {
   ],
   videos: ['titulo', 'youtube_url', 'descripcion', 'templo', 'publicado', 'orden'],
   instagram: ['imagen_clave', 'alt', 'enlace', 'publicado', 'orden'],
+  reuniones: ['templo', 'dia', 'hora', 'nombre', 'estado', 'aviso', 'aviso_hasta', 'publicado'],
   estudios: [
     'titulo',
     'slug',
@@ -74,6 +75,9 @@ const ORDEN: Record<Recurso, string> = {
   videos: 'orden asc, creado_en desc',
   estudios: 'fecha desc',
   instagram: 'orden asc, creado_en desc',
+  // Como se lee un tablero: por templo, y dentro de cada templo la semana en
+  // orden. Así en el panel se encuentran juntas las de un mismo lugar.
+  reuniones: 'templo asc, dia asc, hora asc',
 };
 
 /** ¿Es un nombre de recurso válido? Se comprueba antes de tocar nada. */
@@ -106,7 +110,12 @@ function limpiar(recurso: Recurso, datos: Record<string, unknown>) {
 
     if (columna === 'publicado') {
       valor = bruto === true || bruto === 1 || bruto === '1' || bruto === 'on' ? 1 : 0;
-    } else if (columna === 'orden' || columna === 'duracion_seg' || columna === 'bytes') {
+    } else if (
+      columna === 'orden' ||
+      columna === 'duracion_seg' ||
+      columna === 'bytes' ||
+      columna === 'dia'
+    ) {
       const n = Number(bruto);
       valor = Number.isFinite(n) ? Math.trunc(n) : null;
     } else if (typeof bruto === 'string') {

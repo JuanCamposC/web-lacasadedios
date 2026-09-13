@@ -191,6 +191,15 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
       }
       pill.classList.toggle('hidden', !estaEnVivo);
       pill.classList.toggle('inline-flex', estaEnVivo);
+
+      // Todo lo que apunta a la transmisión —el menú, la tarjeta de redes, los
+      // botones de /videos— nace oculto y se destapa solo si hay algo en vivo.
+      // Se usa el atributo `hidden` y no una clase: el preflight de Tailwind
+      // lo fuerza con !important, así que ninguna clase de `display` del
+      // propio elemento puede volver a mostrarlo por descuido.
+      document.querySelectorAll<HTMLElement>('[data-solo-en-vivo]').forEach((el) => {
+        el.hidden = !estaEnVivo;
+      });
     } catch {
       /* sin conexión: la pastilla simplemente no aparece */
     }

@@ -1,14 +1,40 @@
 ---
+/**
+ * Se arma al servir: los horarios se editan desde el panel (ver
+ * /admin/horarios) y una página generada al compilar los congelaría hasta el
+ * siguiente despliegue — que es justo lo que el panel viene a evitar. Si alguien
+ * suspende el culto del jueves, esta página tiene que decirlo ese mismo día.
+ *
+ * La CDN la sirve ya hecha un minuto y la rehace por detrás hasta diez más: un
+ * cambio en el panel se ve en uno o dos minutos, y cien visitas seguidas son
+ * una sola consulta a la base.
+ */
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
+
 import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Reveal from '../components/Reveal.astro';
 import CtaBand from '../components/CtaBand.astro';
 import { Icon } from 'astro-icon/components';
-import { templos, weekSchedule, totalServices } from '../data/templos';
+import Distintivo from '../components/Distintivo.astro';
+import { templos, estiloDistintivo } from '../data/templos';
 import { IMG } from '../assets/images';
+import { baseDeDatos } from '../lib/base';
+import { reunionesPublicadas } from '../lib/datos';
+import { porDia, enPie, type Reunion } from '../lib/reuniones';
 
-const semana = weekSchedule();
+let reuniones: Reunion[] = [];
+try {
+  reuniones = await reunionesPublicadas(await baseDeDatos());
+} catch (e) {
+  // Sin base no hay horarios que enseñar, pero la página no se cae: el aviso de
+  // «sin resultados» y el enlace de contacto siguen sirviendo.
+  console.error('[horarios]', e);
+}
+const semana = porDia(reuniones);
+const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
 ---
 
 <Layout
@@ -20,7 +46,7 @@ const semana = weekSchedule();
     alt="Biblia abierta"
     eyebrow="Toda la semana"
     title="Horarios de cultos"
-    subtitle={`${totalServices()} reuniones semanales entre nuestros ${templos.length} templos.`}
+    subtitle={`${enPie(reuniones)} reuniones semanales entre nuestros ${templos.length} templos.`}
     height="min-h-[46vh]"
   />
 
@@ -118,30 +144,46 @@ const semana = weekSchedule();
 
           {
             semana.map((dia) => (
-              <details data-dia data-dia-indice={dia.dayIndex} open>
+              <details data-dia data-dia-indice={dia.dia} open>
                 <summary class="cartel-seccion">
-                  <h2>{dia.day}</h2>
+                  <h2>{dia.nombre}</h2>
                   <span class="cartel-conteo" data-conteo>
-                    {dia.services.length} {dia.services.length === 1 ? 'reunión' : 'reuniones'}
+                    {dia.reuniones.length} {dia.reuniones.length === 1 ? 'reunión' : 'reuniones'}
                   </span>
                 </summary>
                 <ul class="cartel-lista">
-                  {dia.services.map((s) => (
-                    <li
-                      class="cartel-linea"
-                      data-servicio
-                      data-templo={s.templo.slug}
-                      data-hora={s.time}
-                      data-nombre={s.name}
-                      data-sede={s.templo.short}
-                    >
-                      <span class="cartel-hora">{s.time}</span>
-                      <span class="cartel-nombre">{s.name}</span>
-                      <a class="cartel-lugar" href={`/templos/${s.templo.slug}`}>
-                        {s.templo.short}
-                      </a>
-                    </li>
-                  ))}
+                  {dia.reuniones.map((r) => {
+                    const t = temploDe(r.templo);
+                    return (
+                      <li
+                        class="cartel-linea"
+                        data-servicio
+                        data-templo={t.slug}
+                        data-hora={r.hora}
+                        data-nombre={r.nombre}
+                        data-sede={t.short}
+                        data-estado={r.estado}
+                        data-distintivo={estiloDistintivo(t)}
+                      >
+                        <span class="cartel-hora">{r.hora}</span>
+                        <span class="cartel-nombre">
+                          {r.nombre}
+                          {r.estado === 'suspendida' && <span class="sr-only"> (suspendida)</span>}
+                        </span>
+                        <Distintivo templo={t} href={`/templos/${t.slug}`} class="cartel-lugar" />
+                        {r.estado !== 'normal' && (
+                          <span class="cartel-aviso">
+                            <Icon
+                              name={r.estado === 'suspendida' ? 'lucide:ban' : 'lucide:clock-alert'}
+                              class="h-4 w-4 shrink-0"
+                            />
+                            {r.aviso ??
+                              (r.estado === 'suspendida' ? 'Suspendida' : 'Cambio de horario')}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </details>
             ))
@@ -251,6 +293,8 @@ const semana = weekSchedule();
         sede: fila.dataset.sede ?? '',
         slug: fila.dataset.templo ?? '',
         hora: fila.dataset.hora ?? '',
+        suspendida: fila.dataset.estado === 'suspendida',
+        distintivo: fila.dataset.distintivo ?? '',
       }));
     });
 
@@ -277,7 +321,9 @@ const semana = weekSchedule();
       hoy.forEach((r) => {
         const li = document.createElement('li');
         li.className = 'flex items-baseline gap-3';
-        const pasada = r.minutos < ahora.minutos;
+        // Una suspendida se enseña tachada, igual que una que ya pasó: está en
+        // la lista para que nadie crea que falta, pero no se va a hacer.
+        const pasada = r.minutos < ahora.minutos || r.suspendida;
 
         const hora = document.createElement('span');
         hora.className = `font-data text-lg font-bold ${pasada ? 'text-base-content/35' : 'text-primary'}`;
@@ -287,12 +333,14 @@ const semana = weekSchedule();
         texto.className = pasada ? 'text-base-content/35 line-through' : '';
         texto.textContent = r.nombre;
 
+        // El templo en su color, igual que en el cartel de abajo: en «hoy» es
+        // donde más importa saber de un vistazo a qué templo hay que ir.
         const sede = document.createElement('span');
-        sede.className = 'text-base-content/60';
-        sede.textContent = ` · ${r.sede}`;
-        texto.appendChild(sede);
+        sede.className = 'distintivo ml-2 align-middle';
+        sede.setAttribute('style', r.distintivo);
+        sede.textContent = r.sede;
 
-        li.append(hora, texto);
+        li.append(hora, texto, sede);
         elHoy.appendChild(li);
       });
       elSinHoy?.classList.toggle('hidden', hoy.length > 0);
@@ -302,6 +350,9 @@ const semana = weekSchedule();
       let proxima: (typeof suyas)[number] | null = null;
       let espera = Infinity;
       for (const r of suyas) {
+        // «La próxima reunión» nunca puede ser una suspendida: sería mandar a
+        // alguien a una puerta cerrada.
+        if (r.suspendida) continue;
         const d = (r.diaIndice - ahora.dia + 7) % 7;
         let mins = d * 1440 + r.minutos - ahora.minutos;
         if (mins < 0) mins += 7 * 1440; // ya pasó hoy: toca la semana que viene

@@ -39,7 +39,9 @@ export function setupCrud(config: CrudConfig) {
   const plural = config.plural ?? `${config.singular}s`;
   // Concordancia de género a partir de la palabra: noticia → nueva/creada,
   // evento y video → nuevo/creado.
-  const femenino = /a$/.test(config.singular);
+  // Se adivina por la última letra, que acierta con «noticia» y falla con
+  // «reunión» o «publicación»: para esas, la pantalla lo dice explícitamente.
+  const femenino = config.femenino ?? /a$/.test(config.singular);
   const articulo = femenino ? 'Nueva' : 'Nuevo';
   const creado = femenino ? 'creada' : 'creado';
 
@@ -102,7 +104,7 @@ export function setupCrud(config: CrudConfig) {
   async function togglePublicado(ctx: Contexto, id: string) {
     const row = ctx.filas.find((r) => r.id === id);
     if (!row) return;
-    const nuevo = !row.published;
+    const nuevo = !row.publicado;
 
     // Al encender, se pregunta antes de mandar correos.
     let avisar = false;
@@ -154,11 +156,14 @@ export function setupCrud(config: CrudConfig) {
 
       // Al crear hace falta el id de vuelta para enlazar al elemento concreto
       // en el correo de aviso, no al listado.
+      let creada: Record<string, unknown> | null = null;
       let creadoId = id;
       if (id) {
         await api.actualizar(recurso, id, payload);
       } else {
-        creadoId = await api.crear(recurso, payload);
+        const r = await api.crear(recurso, payload);
+        creadoId = r.id;
+        creada = r.fila;
       }
 
       // Aviso a suscriptores al CREAR contenido ya publicado.
@@ -167,7 +172,9 @@ export function setupCrud(config: CrudConfig) {
         if (notifyEl?.checked) {
           // El id lo devuelve el servidor al crear: hace falta para enlazar al
           // elemento concreto en el correo, no al listado.
-          await avisarSuscriptores(ctx, { ...payload, id: creadoId });
+          // La fila que devuelve el servidor, no el formulario: trae el slug que
+          // se calculó al guardar y la dirección pública de la imagen.
+          await avisarSuscriptores(ctx, creada ?? { ...payload, id: creadoId });
         }
       }
 

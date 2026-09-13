@@ -48,10 +48,10 @@ export const api = {
     pedir<{ filas: T[] }>(`/api/admin/${recurso}`).then((r) => r.filas),
 
   crear: (recurso: Recurso, datos: Record<string, unknown>) =>
-    pedir<{ id: string }>(`/api/admin/${recurso}`, {
+    pedir<{ id: string; fila: Record<string, unknown> | null }>(`/api/admin/${recurso}`, {
       method: 'POST',
       body: JSON.stringify(datos),
-    }).then((r) => r.id),
+    }),
 
   actualizar: (recurso: Recurso, id: string, datos: Record<string, unknown>) =>
     pedir<{ ok: true }>(`/api/admin/${recurso}?id=${encodeURIComponent(id)}`, {

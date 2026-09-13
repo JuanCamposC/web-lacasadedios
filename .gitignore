@@ -59,3 +59,7 @@ textos-del-sitio.txt
 # Variables locales de wrangler (pueden llevar claves).
 .dev.vars
 .dev.vars.*
+
+# Fotos en WebP generadas por scripts/fotos.mjs antes de cada compilación.
+# Salen de src/assets/img, que es lo que se versiona.
+public/fotos/

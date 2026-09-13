@@ -23,102 +23,27 @@ import { ESTUDIO } from '../data/estudio';
 import { templos, correoDe } from '../data/templos';
 import { SOCIAL } from '../data/site';
 import { leerFeed } from '../lib/rss';
-import { baseDeDatos } from '../lib/base';
-import { estudiosPublicados } from '../lib/datos';
-import { urlMedio } from '../lib/medios';
 
 /**
  * Cuántas grabaciones se enseñan.
  *
  * El tope no es una precaución teórica: probando con un feed real de 355
  * episodios, esta página medía 336 664 px de alto —trescientas setenta y cuatro
- * pantallas— y traía 355 reproductores. A un año de estudios semanales le
- * sobran doce en portada; quien quiera los viejos tiene el enlace al programa
- * completo, donde además hay buscador.
+ * pantallas— y traía 355 reproductores.
+ *
+ * Los que pasan del tope NO se mandan a RSS.com: los audios tienen que poder
+ * escucharse solo desde esta página. Van dentro de un desplegable cerrado, que
+ * no pesa nada hasta que alguien lo abre (`preload="none"` en cada audio).
  */
 const MAXIMO = 12;
 
 const feed = await leerFeed();
 const episodios = feed?.episodios.slice(0, MAXIMO) ?? [];
-const hayMas = (feed?.episodios.length ?? 0) > MAXIMO;
+const anteriores = feed?.episodios.slice(MAXIMO) ?? [];
 
-/**
- * ── BLOQUE TEMPORAL: la otra opción, para decidir ───────────────────────────
- *
- * Enseña cómo quedaría esta misma lista si los audios se subieran al panel y
- * vivieran en nuestro propio almacenamiento, en vez de en RSS.com. Está en la
- * página pública porque así se pidió, para poder verlo sin abrir otra
- * dirección.
- *
- * PARA QUITARLO cuando esté decidido: poner `false` acá abajo y borrar la
- * sección «La otra opción» del final del archivo. No hay nada más que tocar.
- *
- * Si la tabla `estudios` tiene filas de verdad, se enseñan esas. Si está vacía
- * —que es lo normal hoy— se enseñan tres de ejemplo, rotuladas como tales: un
- * ejemplo sin rótulo en una web de iglesia es una prédica que nadie dio.
- */
-const MOSTRAR_COMPARATIVA = true;
-
-// El `try` envuelve también a `baseDeDatos()`, que lanza si falta la binding.
-// Esto es un bloque para decidir, no contenido: que falle no puede tumbar una
-// página que lleva los horarios de cuatro templos.
-let propios: Awaited<ReturnType<typeof estudiosPublicados>> = [];
-if (MOSTRAR_COMPARATIVA) {
-  try {
-    propios = await estudiosPublicados(await baseDeDatos(), { limite: 3 });
-  } catch {
-    propios = [];
-  }
-}
-
-const EJEMPLOS = [
-  {
-    titulo: 'Efesios 2: salvos por gracia',
-    fecha: '2026-09-07T23:00:00Z',
-    duracionSeg: 3750,
-    resumen:
-      'Primera parte del capítulo. Leemos el pasaje completo y nos detenemos en qué significa que la salvación sea un regalo y no un logro.',
-  },
-  {
-    titulo: 'Mateo 6: no os afanéis',
-    fecha: '2026-08-31T23:00:00Z',
-    duracionSeg: 2715,
-    resumen: 'Sobre la preocupación por el día de mañana y a qué nos llama Jesús en su lugar.',
-  },
-  {
-    titulo: 'Salmo 23: el pastor que no falta',
-    fecha: '2026-08-24T23:00:00Z',
-    duracionSeg: 3180,
-    resumen: 'Un salmo que casi todos sabemos de memoria, leído despacio y por partes.',
-  },
-];
-
-/** Los estudios de la base, con la forma que espera la lista. */
-const comparativa = propios.length
-  ? propios.map((e) => ({
-      guid: e.id,
-      titulo: e.titulo,
-      resumen: e.descripcion ?? '',
-      enlace: null,
-      audio: urlMedio(e.archivo_clave) ?? '',
-      tipoMime: e.tipo_mime,
-      duracionSeg: e.duracion_seg,
-      fecha: e.fecha,
-      temporada: null,
-      numero: null,
-    }))
-  : EJEMPLOS.map((e, i) => ({
-      guid: `ejemplo-${i}`,
-      titulo: e.titulo,
-      resumen: e.resumen,
-      enlace: null,
-      audio: '',
-      tipoMime: 'audio/mpeg',
-      duracionSeg: e.duracionSeg,
-      fecha: e.fecha,
-      temporada: null,
-      numero: null,
-    }));
+// La descripción del programa, tal como se escribió en RSS.com. Sin texto de
+// respaldo: si allá no hay nada, la sección enseña solo el nombre.
+const descripcion = feed?.descripcion?.trim() ?? '';
 
 const sanMiguel = templos.find((t) => t.estudio === 'presencial')!;
 const porZoom = templos.filter((t) => t.estudio === 'zoom');
@@ -186,9 +111,15 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
   <section class="section bg-base-200">
     <div class="wrap">
       <SectionHeading eyebrow="En curso" title={ESTUDIO.programa} align="left" />
-      <Reveal>
-        <p class="mt-6 max-w-prose leading-relaxed text-base-content/85">{ESTUDIO.serie.texto}</p>
-      </Reveal>
+      {
+        descripcion && (
+          <Reveal>
+            <p class="mt-6 max-w-prose leading-relaxed whitespace-pre-line text-base-content/85">
+              {descripcion}
+            </p>
+          </Reveal>
+        )
+      }
     </div>
   </section>
 
@@ -242,18 +173,18 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
       }
 
       {
-        hayMas && feed?.enlace && (
-          <Reveal class="mt-10 text-center">
-            <a
-              href={feed.enlace}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn btn-outline gap-2"
-            >
-              Ver los {feed.episodios.length} estudios
-              <Icon name="lucide:external-link" class="h-4 w-4" />
-            </a>
-          </Reveal>
+        anteriores.length > 0 && (
+          <details class="group/ant mt-10">
+            <summary class="btn btn-outline mx-auto flex w-fit cursor-pointer list-none gap-2 [&::-webkit-details-marker]:hidden">
+              <span class="group-open/ant:hidden">Ver {anteriores.length} estudios anteriores</span>
+              <span class="hidden group-open/ant:inline">Ocultar los anteriores</span>
+              <Icon
+                name="lucide:chevron-down"
+                class="h-4 w-4 transition-transform group-open/ant:rotate-180"
+              />
+            </summary>
+            <ListaEstudios estudios={anteriores} class="mt-8" />
+          </details>
         )
       }
     </div>
@@ -355,53 +286,6 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
       </div>
     </div>
   </section>
-
-  {
-    /* ══ TEMPORAL · La otra opción ══════════════════════════════════════
-       Para decidir dónde viven los audios. Se borra entera cuando esté
-       decidido; ver `MOSTRAR_COMPARATIVA` arriba. */
-    MOSTRAR_COMPARATIVA && (
-      <section class="section bg-base-100">
-        <div class="wrap">
-          <div class="rounded-2xl border-2 border-dashed border-warning/50 bg-warning/5 p-6 sm:p-9">
-            <span class="badge badge-warning badge-sm gap-1.5">
-              <Icon name="lucide:flask-conical" class="h-3.5 w-3.5" /> Vista previa · no es parte
-              del sitio
-            </span>
-
-            <h2 class="mt-4 font-display text-2xl">Si los audios vivieran en nuestro servidor</h2>
-
-            <div class="mt-4 grid max-w-4xl gap-6 sm:grid-cols-2">
-              <div>
-                <h3 class="font-bold">Cómo se ve</h3>
-                <p class="mt-1 text-sm text-base-content/75">
-                  Igual. Las mismas tarjetas y el mismo reproductor: la lista de abajo está armada
-                  sobre nuestra propia base de datos y no se distingue de la de arriba.
-                </p>
-              </div>
-              <div>
-                <h3 class="font-bold">Qué cambia de verdad</h3>
-                <ul class="mt-1 space-y-1 text-sm text-base-content/75">
-                  <li>· El audio se sube desde el panel, no desde RSS.com.</li>
-                  <li>· Deja de aparecer en Spotify y Apple Podcasts.</li>
-                  <li>· El alojamiento pasa a ser nuestro, y se paga por lo que ocupe.</li>
-                  <li>· Nada depende de que un tercero siga existiendo.</li>
-                </ul>
-              </div>
-            </div>
-
-            {propios.length === 0 && (
-              <p class="mt-6 text-sm font-medium text-warning">
-                Los tres estudios de abajo son inventados, para poder verlo. No existen.
-              </p>
-            )}
-
-            <ListaEstudios estudios={comparativa} class="mt-6" />
-          </div>
-        </div>
-      </section>
-    )
-  }
 
   <CtaBand
     eyebrow="Sigue estudiando"

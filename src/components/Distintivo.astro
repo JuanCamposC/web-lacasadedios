@@ -1,0 +1,21 @@
+---
+import { estiloDistintivo, type Templo } from '../data/templos';
+
+/**
+ * El nombre de un templo en su color. Ver `.distintivo` en global.css.
+ *
+ * Con `href` es un enlace a la ficha del templo; sin él, una etiqueta.
+ */
+interface Props {
+  templo: Templo;
+  href?: string;
+  class?: string;
+}
+
+const { templo, href, class: className = '' } = Astro.props;
+const Tag = href ? 'a' : 'span';
+---
+
+<Tag href={href} class={`distintivo ${className}`} style={estiloDistintivo(templo)}>
+  {templo.short}
+</Tag>

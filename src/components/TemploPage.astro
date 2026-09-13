@@ -1,40 +1,51 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import PageHero from './PageHero.astro';
 import Breadcrumbs from './Breadcrumbs.astro';
 import Reveal from './Reveal.astro';
-import ScheduleList from './ScheduleList.astro';
-import CtaBand from './CtaBand.astro';
+import Foto from './Foto.astro';
+import Distintivo from './Distintivo.astro';
+import TemploCard from './TemploCard.astro';
 import { Icon } from 'astro-icon/components';
-import { getTemplo, getSiblings, templos, correoDe } from '../data/templos';
+import { templos, correoDe, cargoDe, type Templo } from '../data/templos';
 import { CONTACT, hasPhone } from '../data/site';
 import { IMG } from '../assets/images';
+import { DIAS, porDia, enPie, type Reunion } from '../lib/reuniones';
 
+/**
+ * La ficha de un templo.
+ *
+ * ── POR QUÉ SE REHIZO ───────────────────────────────────────────────────────
+ * La anterior era una portada centrada igual a la de cualquier otra página, y
+ * debajo cuatro tarjetas del mismo peso: ubicación, horarios, pastor y un
+ * selector de templos. Nada decía qué mirar primero, y «Cómo llegar» aparecía
+ * tres veces.
+ *
+ * Ahora la página responde en orden a las tres preguntas de quien la abre:
+ *
+ *   1. ¿Dónde queda y a quién le escribo?  → la portada y la ficha lateral.
+ *   2. ¿Cuándo se reúnen?                  → el tablero de la semana, el mismo
+ *                                            de /horarios, que es la firma del
+ *                                            sitio.
+ *   3. ¿Cómo llego?                        → el mapa, a lo ancho.
+ *
+ * Y cierra con los otros tres templos con su foto, que es lo que de verdad
+ * invita a mirarlos, en vez de una fila de botones con nombres.
+ */
 interface Props {
-  slug: string;
+  templo: Templo;
+  reuniones: Reunion[];
 }
 
-const { slug } = Astro.props;
-const templo = getTemplo(slug);
-if (!templo) {
-  throw new Error(`Templo no encontrado: ${slug}`);
-}
+const { templo, reuniones } = Astro.props;
 
-const { prev, next } = getSiblings(slug);
+const semana = porDia(reuniones);
+const correo = correoDe(templo.leader);
+const otros = templos.filter((t) => t.slug !== templo.slug);
+const contactoTemplo = `/contacto?templo=${encodeURIComponent(templo.short)}`;
 
-/** Correo del pastor de este templo, si su buzón ya existe. */
-const correoPersonal = correoDe(templo.leader);
-
-// Iniciales del líder (sin el título Pastor/Hermano)
-const initials = templo.leader.name
-  .replace(/^(Pastor|Pastora|Hermano|Hermana|Rev\.?)\s+/i, '')
-  .split(/\s+/)
-  .slice(0, 2)
-  .map((w) => w[0])
-  .join('')
-  .toUpperCase();
-
-const reuniones = templo.schedule.reduce((n, s) => n + s.services.length, 0);
+// Si alguna reunión está suspendida o cambió, se avisa arriba para que no haga falta
+// recorrer el tablero para enterarse.
+const conAviso = reuniones.filter((r) => r.estado !== 'normal');
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -49,6 +60,7 @@ const jsonLd = {
   },
   geo: { '@type': 'GeoCoordinates', latitude: templo.coords.lat, longitude: templo.coords.lng },
   hasMap: templo.mapLink,
+  ...(correo ? { email: correo } : {}),
 };
 ---
 
@@ -58,23 +70,73 @@ const jsonLd = {
 >
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
 
-  <PageHero
-    image={IMG[templo.image]}
-    alt={templo.name}
-    eyebrow={templo.region}
-    title={templo.name}
-    subtitle={templo.address}
-  >
-    {
-      templo.matriz && (
-        <div data-reveal data-reveal-delay="160" class="mt-5">
-          <span class="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-sm font-semibold text-accent-content">
-            <Icon name="lucide:star" class="h-4 w-4" /> Iglesia Matriz
-          </span>
+  <!-- ══ Portada ═════════════════════════════════════════════════════════
+       Alineada a la izquierda y no centrada como las demás portadas: acá lo
+       que se lee es una dirección y dos acciones, y eso se escanea mejor como
+       una ficha que como un titular. La foto queda a la derecha, donde el velo
+       se abre.
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section class="on-dark relative -mt-16 overflow-hidden">
+    <Foto
+      src={IMG[templo.image]}
+      alt=""
+      aria-hidden="true"
+      loading="eager"
+      class="absolute inset-0 h-full w-full object-cover"
+    />
+    <div class="absolute inset-0 bg-gradient-to-r from-[#0a1730] via-[#0a1730]/88 to-[#0a1730]/35">
+    </div>
+    <div class="rule absolute inset-x-0 bottom-0" aria-hidden="true"></div>
+
+    <div class="wrap relative z-10 px-4 pb-16 pt-32 text-white lg:pb-20 lg:pt-40">
+      <div class="max-w-2xl">
+        <div data-reveal class="flex flex-wrap items-center gap-2">
+          <Distintivo templo={templo} />
+          {
+            templo.matriz && (
+              <span class="inline-flex items-center gap-1.5 rounded-full border border-white/25 px-2.5 py-0.5 text-xs font-semibold text-white/85">
+                <Icon name="lucide:star" class="h-3.5 w-3.5 text-accent" /> Iglesia Matriz
+              </span>
+            )
+          }
         </div>
-      )
-    }
-  </PageHero>
+
+        <p data-reveal data-reveal-delay="40" class="eyebrow mt-6 text-accent">Templo</p>
+        <h1
+          data-reveal
+          data-reveal-delay="60"
+          class="mt-1 text-[clamp(2.6rem,7vw,4.5rem)] leading-none"
+        >
+          {templo.short}
+        </h1>
+        <p data-reveal data-reveal-delay="100" class="mt-4 text-lg text-white/75">
+          {templo.tagline}
+        </p>
+
+        <p data-reveal data-reveal-delay="140" class="mt-6 flex items-start gap-2 text-white/90">
+          <Icon name="lucide:map-pin" class="mt-1 h-5 w-5 shrink-0 text-accent" />
+          <span>
+            {templo.address}
+            <span class="block text-sm text-white/60">{templo.city} · {templo.region}</span>
+          </span>
+        </p>
+
+        <div data-reveal data-reveal-delay="180" class="mt-8 flex flex-wrap gap-3">
+          <a
+            href={templo.mapLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-primary gap-2"
+          >
+            <Icon name="lucide:navigation" class="h-5 w-5" /> Cómo llegar
+          </a>
+          <a href="#semana" class="btn gap-2 btn-invert">
+            <Icon name="lucide:calendar-days" class="h-5 w-5" /> Horarios
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <Breadcrumbs
     items={[
@@ -84,221 +146,217 @@ const jsonLd = {
     ]}
   />
 
-  <!-- Info -->
-  <section class="section bg-base-100">
-    <div class="wrap">
-      <div class="grid gap-6 md:grid-cols-2">
-        <!-- Ubicación -->
-        <Reveal class="md:col-span-2">
-          <div class="panel overflow-hidden">
-            <div class="grid md:grid-cols-2">
-              <div class="p-8">
-                <div class="mb-4 flex items-center gap-3">
-                  <span class="tile">
-                    <Icon name="lucide:map-pin" class="h-6 w-6" />
-                  </span>
-                  <h2 class="card-title text-2xl">Ubicación</h2>
+  <!-- ══ La semana y la ficha ══════════════════════════════════════════════ -->
+  <section id="semana" class="section scroll-mt-20 bg-base-100">
+    <div class="wrap grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+      <div>
+        <Reveal>
+          <span class="eyebrow text-primary">Cuándo nos reunimos</span>
+          <h2 class="mt-2 font-display text-3xl md:text-4xl">La semana en {templo.short}</h2>
+          <p class="mt-2 text-base-content/70">
+            {`${enPie(reuniones)} ${enPie(reuniones) === 1 ? 'reunión' : 'reuniones'} por semana.`} No
+            hace falta avisar: llega unos minutos antes.
+          </p>
+        </Reveal>
+
+        {
+          conAviso.length > 0 && (
+            <Reveal class="mt-6">
+              <div role="status" class="alert alert-warning items-start text-sm">
+                <Icon name="lucide:megaphone" class="h-5 w-5 shrink-0" />
+                <div>
+                  <p class="font-bold">Avisos de horario</p>
+                  <ul class="mt-1 space-y-0.5">
+                    {conAviso.map((r) => (
+                      <li>
+                        {r.nombre} del {DIAS[r.dia].toLowerCase()} ({r.hora}):{' '}
+                        {r.aviso ??
+                          (r.estado === 'suspendida' ? 'suspendida' : 'cambio de horario')}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul class="space-y-2 text-base-content/80">
-                  <li class="flex items-center gap-2">
-                    <Icon name="lucide:navigation" class="h-4 w-4 shrink-0 text-accent" />
-                    {templo.address}
-                  </li>
-                  <li class="flex items-center gap-2">
-                    <Icon name="lucide:building-2" class="h-4 w-4 shrink-0 text-accent" />
-                    {templo.city}
-                  </li>
-                  <li class="flex items-center gap-2">
-                    <Icon name="lucide:map" class="h-4 w-4 shrink-0 text-accent" />
-                    {templo.region}
-                  </li>
-                </ul>
-                <a
-                  href={templo.mapLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="btn btn-primary btn-sm mt-5 gap-2"
-                >
-                  <Icon name="lucide:navigation" class="h-4 w-4" /> Cómo llegar
-                </a>
               </div>
-              <iframe
-                src={templo.mapEmbed}
-                title={`Mapa de ${templo.name}`}
-                class="h-64 w-full md:h-full md:min-h-[20rem]"
-                style="border:0;"
-                allowfullscreen
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"></iframe>
-            </div>
-          </div>
-        </Reveal>
+            </Reveal>
+          )
+        }
 
-        <!-- Horarios -->
-        <Reveal delay={80}>
-          <div class="panel h-full p-8">
-            <div class="mb-5 flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3">
-                <span class="tile tile-secondary">
-                  <Icon name="lucide:clock" class="h-6 w-6" />
-                </span>
-                <h2 class="card-title text-2xl">Horarios</h2>
+        <Reveal class="mt-6">
+          {
+            semana.length === 0 ? (
+              <div class="rounded-lg border border-dashed border-base-300 px-6 py-10 text-center text-base-content/60">
+                Todavía no hay reuniones cargadas para este templo.{' '}
+                <a href={contactoTemplo} class="link link-primary">
+                  Escríbenos
+                </a>{' '}
+                y te contamos.
               </div>
-              <span class="text-xs text-base-content/55">{reuniones} por semana</span>
-            </div>
-
-            <ScheduleList schedule={templo.schedule} />
-
-            <a
-              href={`/horarios?templo=${templo.slug}`}
-              class="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-accent"
-            >
-              Ver esta sede en el calendario semanal <Icon
-                name="lucide:arrow-right"
-                class="h-4 w-4"
-              />
-            </a>
-          </div>
-        </Reveal>
-
-        <!-- Líder -->
-        <Reveal delay={160}>
-          <div class="panel flex h-full flex-col p-8">
-            <div class="mb-5 flex items-center gap-3">
-              <span class="tile tile-accent">
-                <Icon name="lucide:user" class="h-6 w-6" />
-              </span>
-              <h2 class="card-title text-2xl">
-                {templo.leader.role.startsWith('Obrero') ? 'Hermano a cargo' : 'Pastor a cargo'}
-              </h2>
-            </div>
-            <div class="flex items-center gap-4">
-              <div
-                class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary font-data text-xl font-bold text-primary-content"
-              >
-                {initials}
-              </div>
-              <div class="min-w-0">
-                <h3 class="text-lg font-bold">{templo.leader.name}</h3>
-                <p class="text-sm text-base-content/60">{templo.leader.role}</p>
-              </div>
-            </div>
-
-            <div class="mt-6 space-y-2 text-sm">
-              {
-                /* El correo personal solo aparece cuando su buzón existe de
-                   verdad (ver `emailListo` en src/data/templos.ts). Mientras
-                   tanto queda el de la iglesia, que sí se lee. */
-                correoPersonal && (
-                  <a
-                    href={`mailto:${correoPersonal}`}
-                    class="flex items-center gap-2 break-all font-medium text-base-content/80 hover:text-primary"
-                  >
-                    <Icon name="lucide:mail" class="h-4 w-4 shrink-0 text-accent" />
-                    {correoPersonal}
+            ) : (
+              <div class="cartel">
+                <header class="cartel-cab">
+                  <span class="cartel-titulo">{templo.short}</span>
+                  <a href={`/horarios?templo=${templo.slug}`} class="cartel-hoy hover:text-white">
+                    Ver en el horario general →
                   </a>
-                )
-              }
-              <a
-                href={`mailto:${CONTACT.email}`}
-                class="flex items-center gap-2 break-all text-base-content/80 hover:text-primary"
-              >
-                <Icon
-                  name={correoPersonal ? 'lucide:building-2' : 'lucide:mail'}
-                  class="h-4 w-4 shrink-0 text-accent"
-                />
-                {CONTACT.email}
+                </header>
+                {semana.map((dia) => (
+                  <div>
+                    <div class="cartel-seccion">
+                      <h3>{dia.nombre}</h3>
+                      <span class="cartel-conteo">
+                        {dia.reuniones.length}{' '}
+                        {dia.reuniones.length === 1 ? 'reunión' : 'reuniones'}
+                      </span>
+                    </div>
+                    <ul class="cartel-lista">
+                      {dia.reuniones.map((r) => (
+                        <li class="cartel-linea" data-estado={r.estado}>
+                          <span class="cartel-hora">{r.hora}</span>
+                          <span class="cartel-nombre">
+                            {r.nombre}
+                            {r.estado === 'suspendida' && (
+                              <span class="sr-only"> (suspendida)</span>
+                            )}
+                          </span>
+                          {r.estado !== 'normal' && (
+                            <span class="cartel-aviso">
+                              <Icon
+                                name={
+                                  r.estado === 'suspendida' ? 'lucide:ban' : 'lucide:clock-alert'
+                                }
+                                class="h-4 w-4 shrink-0"
+                              />
+                              {r.aviso ??
+                                (r.estado === 'suspendida' ? 'Suspendida' : 'Cambio de horario')}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )
+          }
+        </Reveal>
+      </div>
+
+      <!-- Ficha lateral. Fija al bajar en escritorio: mientras se lee la semana,
+           a quién escribir sigue a la vista. -->
+      <aside class="space-y-5 lg:sticky lg:top-24">
+        <Reveal delay={80}>
+          <div class="panel p-6">
+            <span class="eyebrow text-primary">{cargoDe(templo.leader)}</span>
+            <h3 class="mt-2 font-display text-2xl leading-tight">{templo.leader.name}</h3>
+            <p class="text-sm text-base-content/60">{templo.leader.role}</p>
+
+            {
+              correo && (
+                <div class="mt-5 rounded-lg bg-base-200/70 p-4">
+                  <a
+                    href={`mailto:${correo}`}
+                    class="flex items-center gap-2 break-all font-medium text-primary hover:underline"
+                  >
+                    <Icon name="lucide:mail" class="h-4 w-4 shrink-0" />
+                    {correo}
+                  </a>
+                  {templo.leader.correoNota && (
+                    <p class="mt-2 flex items-start gap-1.5 text-xs text-base-content/65">
+                      <Icon name="lucide:info" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      {templo.leader.correoNota}
+                    </p>
+                  )}
+                </div>
+              )
+            }
+
+            <div class="mt-5 flex flex-col gap-2">
+              <a href={contactoTemplo} class="btn btn-outline btn-sm gap-2">
+                <Icon name="lucide:message-square" class="h-4 w-4" /> Escribir por el formulario
               </a>
               {
                 hasPhone && (
-                  <a
-                    href={`tel:${CONTACT.phoneHref}`}
-                    class="flex items-center gap-2 text-base-content/80 hover:text-primary"
-                  >
-                    <Icon name="lucide:phone" class="h-4 w-4 shrink-0 text-accent" />{' '}
-                    {CONTACT.phone}
+                  <a href={`tel:${CONTACT.phoneHref}`} class="btn btn-ghost btn-sm gap-2">
+                    <Icon name="lucide:phone" class="h-4 w-4" /> {CONTACT.phone}
                   </a>
                 )
               }
             </div>
-
-            <a href="/contacto" class="btn btn-outline btn-sm mt-6 w-fit gap-2 md:mt-auto">
-              <Icon name="lucide:message-square" class="h-4 w-4" /> Escribir a la iglesia
-            </a>
           </div>
         </Reveal>
+
+        <Reveal delay={140}>
+          <a
+            href="/estudio-biblico"
+            class="panel panel-lift flex items-center gap-4 p-5 transition-colors"
+          >
+            <span class="tile tile-accent shrink-0">
+              <Icon name="lucide:book-open" class="h-5 w-5" />
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block font-bold">Estudio bíblico</span>
+              <span class="block text-sm text-base-content/65">
+                {templo.estudio === 'presencial' ? 'Presencial, los lunes' : 'Por Zoom, los lunes'}
+              </span>
+            </span>
+            <Icon name="lucide:arrow-right" class="h-4 w-4 shrink-0 text-primary" />
+          </a>
+        </Reveal>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ══ Mapa ════════════════════════════════════════════════════════════
+       A lo ancho y con la dirección encima: un mapa metido en media tarjeta
+       obligaba a hacer zoom con dos dedos para ver las calles de alrededor.
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section class="relative bg-base-200">
+    <iframe
+      src={templo.mapEmbed}
+      title={`Mapa de ${templo.name}`}
+      class="block h-[26rem] w-full md:h-[32rem]"
+      style="border:0;"
+      allowfullscreen
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+    <div class="wrap pointer-events-none relative md:absolute md:inset-x-0 md:bottom-8">
+      <div class="panel pointer-events-auto -mt-10 max-w-sm p-5 shadow-xl md:mt-0">
+        <p class="flex items-start gap-2 font-medium">
+          <Icon name="lucide:map-pin" class="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+          <span>
+            {templo.address}
+            <span class="block text-sm font-normal text-base-content/60">{templo.region}</span>
+          </span>
+        </p>
+        <a
+          href={templo.mapLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-primary btn-sm mt-4 gap-2"
+        >
+          <Icon name="lucide:navigation" class="h-4 w-4" /> Abrir en Google Maps
+        </a>
       </div>
     </div>
   </section>
 
-  <!-- Selector de templos -->
-  <section class="border-t border-base-300 bg-base-200/60 px-4 py-12">
+  <!-- ══ Los otros templos ═════════════════════════════════════════════════ -->
+  <section class="section bg-base-100">
     <div class="wrap">
-      <h2
-        class="mb-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-base-content/60"
-      >
-        Conoce nuestros templos
-      </h2>
-      <div class="flex flex-wrap justify-center gap-3">
+      <Reveal>
+        <span class="eyebrow text-primary">Una misma familia</span>
+        <h2 class="mt-2 font-display text-3xl">Nuestros otros templos</h2>
+      </Reveal>
+      <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {
-          templos.map((t) => (
-            <a
-              href={`/templos/${t.slug}`}
-              aria-current={t.slug === templo.slug ? 'page' : undefined}
-              class={`inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition ${t.slug === templo.slug ? 'border-primary bg-primary text-primary-content shadow-sm' : 'border-base-300 bg-base-100 hover:-translate-y-0.5 hover:border-primary hover:text-primary'}`}
-            >
-              <Icon name="lucide:map-pin" class="h-4 w-4" /> {t.short}
-            </a>
+          otros.map((t, i) => (
+            <Reveal delay={i * 80} class="h-full">
+              <TemploCard templo={t} />
+            </Reveal>
           ))
         }
       </div>
-
-      <!-- Anterior / siguiente -->
-      <div
-        class="mt-8 flex flex-col gap-3 border-t border-base-300 pt-6 sm:flex-row sm:justify-between"
-      >
-        <a
-          href={`/templos/${prev.slug}`}
-          class="group inline-flex items-center gap-2 text-sm text-base-content/70 hover:text-primary"
-        >
-          <Icon
-            name="lucide:arrow-left"
-            class="h-4 w-4 transition-transform group-hover:-translate-x-1"
-          />
-          <span><span class="hidden sm:inline">Anterior: </span>{prev.short}</span>
-        </a>
-        <a href="/templos" class="text-sm font-medium text-primary hover:text-accent"
-          >Ver los cuatro templos</a
-        >
-        <a
-          href={`/templos/${next.slug}`}
-          class="group inline-flex items-center gap-2 text-sm text-base-content/70 hover:text-primary"
-        >
-          <span><span class="hidden sm:inline">Siguiente: </span>{next.short}</span>
-          <Icon
-            name="lucide:arrow-right"
-            class="h-4 w-4 transition-transform group-hover:translate-x-1"
-          />
-        </a>
-      </div>
     </div>
   </section>
-
-  <CtaBand
-    title="¡Te esperamos!"
-    text={`Ven y sé parte de nuestra familia de fe en ${templo.short}.`}
-    compact
-  >
-    <a
-      href={templo.mapLink}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="btn btn-primary gap-2"
-    >
-      <Icon name="lucide:navigation" class="h-5 w-5" /> Cómo llegar
-    </a>
-    <a href="/contacto" class="btn gap-2 btn-invert">
-      <Icon name="lucide:mail" class="h-5 w-5" /> Escríbenos
-    </a>
-  </CtaBand>
 </Layout>

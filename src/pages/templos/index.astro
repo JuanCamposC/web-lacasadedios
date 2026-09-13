@@ -1,4 +1,9 @@
 ---
+// Se arma al servir por lo mismo que /horarios: cada tarjeta enseña los días de
+// reunión de su templo, y esos se editan desde el panel.
+export const prerender = false;
+Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
+
 import Layout from '../../layouts/Layout.astro';
 import PageHero from '../../components/PageHero.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
@@ -7,15 +12,25 @@ import SectionHeading from '../../components/SectionHeading.astro';
 import TemploCard from '../../components/TemploCard.astro';
 import CtaBand from '../../components/CtaBand.astro';
 import { Icon } from 'astro-icon/components';
-import { templos, totalServices } from '../../data/templos';
+import { templos } from '../../data/templos';
 import { IMG } from '../../assets/images';
+import { baseDeDatos } from '../../lib/base';
+import { reunionesPublicadas } from '../../lib/datos';
+import { enPie, type Reunion } from '../../lib/reuniones';
+
+let reuniones: Reunion[] = [];
+try {
+  reuniones = await reunionesPublicadas(await baseDeDatos());
+} catch (e) {
+  console.error('[templos]', e);
+}
 
 const regiones = [...new Set(templos.map((t) => t.region))];
 
 const cifras = [
   { value: templos.length, label: 'Templos', icon: 'lucide:church' },
   { value: regiones.length, label: 'Regiones', icon: 'lucide:map' },
-  { value: totalServices(), label: 'Reuniones por semana', icon: 'lucide:calendar-clock' },
+  { value: enPie(reuniones), label: 'Reuniones por semana', icon: 'lucide:calendar-clock' },
 ];
 ---
 
@@ -67,7 +82,11 @@ const cifras = [
         {
           templos.map((t, i) => (
             <Reveal delay={(i % 2) * 90} class="h-full">
-              <TemploCard templo={t} variant="detailed" />
+              <TemploCard
+                templo={t}
+                variant="detailed"
+                reuniones={reuniones.filter((r) => r.templo === t.slug)}
+              />
             </Reveal>
           ))
         }

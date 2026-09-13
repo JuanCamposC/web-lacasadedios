@@ -22,6 +22,8 @@
  * base como argumento estas consultas se pueden probar con una falsa.
  */
 
+import { hoyEnChile, vigente, type FilaReunion, type Reunion } from './reuniones';
+
 /** Lo mínimo de D1 que este archivo usa. Permite probar con una base falsa. */
 export interface Base {
   prepare(sql: string): {
@@ -326,6 +328,28 @@ export function seriesDeEstudios(base: Base): Promise<{ serie: string; total: nu
       order by max(fecha) desc`,
     [ahora()],
   );
+}
+
+// ── Reuniones semanales ─────────────────────────────────────────────────────
+
+/**
+ * Las reuniones publicadas, con el estado de HOY ya resuelto.
+ *
+ * Con `templo` trae solo las de ese templo. Lo de «hoy» es la fecha en Chile:
+ * un aviso «hasta el jueves» se sigue viendo todo el jueves de Santiago,
+ * aunque en UTC ya sea viernes. Ver `vigente` en src/lib/reuniones.ts.
+ */
+export async function reunionesPublicadas(base: Base, templo?: string): Promise<Reunion[]> {
+  const filas = await listar<FilaReunion>(
+    base,
+    `select id, templo, dia, hora, nombre, estado, aviso, aviso_hasta
+       from reuniones
+      where publicado = 1${templo ? ' and templo = ?' : ''}
+      order by dia asc, hora asc`,
+    templo ? [templo] : [],
+  );
+  const hoy = hoyEnChile();
+  return filas.map((f) => vigente(f, hoy));
 }
 
 // ── Instagram ───────────────────────────────────────────────────────────────

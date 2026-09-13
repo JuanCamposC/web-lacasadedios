@@ -1,60 +1,38 @@
 /**
  * Datos de los templos de La Casa de Dios.
  * Fuente: información real del proyecto y de lacasadedios.cl.
+ *
+ * LOS HORARIOS YA NO ESTÁN ACÁ. Viven en la tabla `reuniones` y se editan desde
+ * /admin/horarios (ver d1/0003_reuniones.sql y src/lib/reuniones.ts). Los que
+ * había escritos en este archivo se copiaron tal cual a esa tabla.
  */
 import type { ImgKey } from '../assets/images';
 
 // El contacto general vive en `site.ts`. Se reexporta para no romper imports.
 export { CONTACT, hasPhone } from './site';
 
-export interface ServiceDay {
-  day: DayName;
-  /** clave de tono; se traduce a clases estáticas en la vista */
-  tone: Tone;
-  /** cada servicio con el formato "HH:MM · Nombre" */
-  services: string[];
-}
-
-export type Tone = 'primary' | 'secondary' | 'accent' | 'neutral';
-
-export type DayName =
-  'Domingo' | 'Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes' | 'Sábado';
-
-/** Orden litúrgico de la semana (domingo primero). */
-export const DAYS: DayName[] = [
-  'Domingo',
-  'Lunes',
-  'Martes',
-  'Miércoles',
-  'Jueves',
-  'Viernes',
-  'Sábado',
-];
-
 export interface Leader {
   name: string;
   role: string;
   phone?: string;
-  /**
-   * Correo personal institucional.
-   *
-   * OJO: estar escrito acá NO basta para que salga en la web. Hace falta además
-   * `emailListo: true`. Ver el bloque de abajo.
-   */
+  /** Correo institucional de quien recibe los mensajes de este templo. */
   email?: string;
   /**
-   * ¿Existe ya el buzón en Google Workspace?
+   * ¿Se publica ya el correo?
    *
-   * Las direcciones de más abajo están decididas pero todavía no creadas. Una
-   * dirección publicada que rebota es peor que ninguna: quien escribe cree que
-   * su mensaje llegó, nadie lo lee, y la iglesia queda como que no responde.
-   *
-   * Por eso el interruptor va uno por uno. Cuando se cree el buzón de alguien,
-   * se pone `emailListo: true` en SU línea y solo esa dirección aparece —en la
-   * página de su templo y en /contacto—. El resto sigue oculto hasta que le
-   * toque.
+   * Existe para no anunciar un buzón que todavía no se ha creado: una dirección
+   * que rebota es peor que ninguna, porque quien escribe cree que su mensaje
+   * llegó. Se enciende uno por uno.
    */
   emailListo?: boolean;
+  /**
+   * Una aclaración junto al correo, cuando lo recibe otra persona.
+   *
+   * Coya no tiene pastor propio: el correo de su ficha es el del Pastor Arturo
+   * Salas. Sin la nota, quien escribe a Coya se sorprendería de que le conteste
+   * alguien de San Miguel.
+   */
+  correoNota?: string;
 }
 
 /**
@@ -81,11 +59,43 @@ export interface Templo {
   mapEmbed: string;
   mapLink: string;
   coords: { lat: number; lng: number };
-  schedule: ServiceDay[];
+  /**
+   * El color que identifica al templo en los horarios.
+   *
+   * En el cartel de /horarios el templo iba en letra gris al final de cada
+   * línea, y se pidió que se viera mucho más. Con un color fijo por templo, al
+   * bajar la semana se reconoce «lo de San Miguel» sin leer.
+   *
+   * Dos tonos del mismo color: `fondo`, oscuro, para páginas claras (con letra
+   * blanca), y `claro` para el cartel azul noche y el tema oscuro (con letra
+   * azul noche). No se usan los colores del tema porque primario, secundario y
+   * neutro son tres azules casi iguales: pintados así, los cuatro templos no se
+   * distinguían. Ver `.distintivo` en global.css.
+   */
+  color: { fondo: string; claro: string };
   /** Cómo se participa en el estudio bíblico de este templo. */
   estudio: ModalidadEstudio;
   leader: Leader;
 }
+
+/**
+ * Mapa incrustado a partir de una búsqueda.
+ *
+ * Limache y San Miguel están dados de alta en Google Maps como «La Casa de
+ * Dios» en su dirección. Buscando por el nombre y la dirección, el mapa abre la
+ * ficha de la iglesia —con su nombre, fotos y reseñas— y no un punto anónimo en
+ * la calle. Comprobado: las dos búsquedas devuelven la ficha correcta.
+ *
+ * Es la dirección final de Google y no `maps?q=…&output=embed`, que redirige
+ * aquí: la redirección sale con `X-Frame-Options: SAMEORIGIN` y hay navegadores
+ * que la cortan dentro de un iframe.
+ */
+const mapaDe = (busqueda: string) =>
+  `https://www.google.com/maps/embed?origin=mfe&pb=!1m2!2m1!1s${encodeURIComponent(busqueda).replace(/%20/g, '+')}`;
+
+/** Enlace que abre la misma búsqueda en la aplicación de mapas del teléfono. */
+const enlaceMapaDe = (busqueda: string) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(busqueda)}`;
 
 export const templos: Templo[] = [
   {
@@ -101,17 +111,13 @@ export const templos: Templo[] = [
       'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3328.6373709541012!2d-70.6543518!3d-33.45875300000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9662c511b52ee251%3A0x8664e86607630908!2sAldunate%201002%2C%208330983%20Santiago%2C%20Regi%C3%B3n%20Metropolitana!5e0!3m2!1ses!2scl!4v1771262117981!5m2!1ses!2scl',
     mapLink: 'https://maps.app.goo.gl/tfczT4jykWNNUKwC6',
     coords: { lat: -33.458753, lng: -70.6543518 },
-    schedule: [
-      { day: 'Domingo', tone: 'primary', services: ['11:00 · Culto General'] },
-      { day: 'Lunes', tone: 'accent', services: ['20:00 · Estudio Bíblico'] },
-      { day: 'Jueves', tone: 'neutral', services: ['20:00 · Culto General'] },
-    ],
+    color: { fondo: '#7d5518', claro: '#d9ae63' },
     estudio: 'zoom',
     leader: {
       name: 'Pastor Manuel Silva Salas',
       role: 'Pastor',
-      email: 'manuel.silva@lacasadedios.cl',
-      emailListo: false,
+      email: 'manuelsilva.pastor@lacasadedios.cl',
+      emailListo: true,
     },
   },
   {
@@ -124,28 +130,17 @@ export const templos: Templo[] = [
     address: 'Santa Ester #623, San Miguel',
     city: 'Comuna de San Miguel',
     region: 'Región Metropolitana',
-    mapEmbed:
-      'https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d6654.282422153114!2d-70.642289!3d-33.497703!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9662dbc22648bd85%3A0x299ae248a4c10e5!2sLa%20Casa%20de%20Dios!5e0!3m2!1ses!2scl!4v1771263375995!5m2!1ses!2scl',
-    mapLink: 'https://maps.app.goo.gl/GfSjQ3v7yJURcXU26',
+    mapEmbed: mapaDe('La Casa de Dios San Miguel, Santa Ester 623, San Miguel'),
+    mapLink: enlaceMapaDe('La Casa de Dios, Santa Ester 623, San Miguel'),
     coords: { lat: -33.497703, lng: -70.642289 },
-    schedule: [
-      {
-        day: 'Domingo',
-        tone: 'primary',
-        services: ['10:30 · Culto General', '19:00 · Culto General'],
-      },
-      { day: 'Lunes', tone: 'secondary', services: ['20:00 · Estudio Bíblico'] },
-      { day: 'Martes', tone: 'accent', services: ['20:00 · Discipulado'] },
-      { day: 'Jueves', tone: 'neutral', services: ['20:00 · Reunión General'] },
-      { day: 'Sábado', tone: 'accent', services: ['17:30 · Reunión de Jóvenes'] },
-    ],
+    color: { fondo: '#23448f', claro: '#8aa9e8' },
     // El único templo donde el estudio bíblico es presencial.
     estudio: 'presencial',
     leader: {
       name: 'Pastor Arturo Salas Olguín',
       role: 'Pastor',
-      email: 'arturo.salas@lacasadedios.cl',
-      emailListo: false,
+      email: 'arturosalas.pastor@lacasadedios.cl',
+      emailListo: true,
     },
   },
   {
@@ -157,26 +152,16 @@ export const templos: Templo[] = [
     address: 'El Espino #352, Limache',
     city: 'Comuna de Limache',
     region: 'Región de Valparaíso',
-    mapEmbed:
-      'https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d6691.570331957979!2d-71.262398!3d-33.009439!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9689d447746777f3%3A0x3694a4f7e329f1d1!2sEl%20Espino%20352%2C%202240599%20Limache%2C%20Valpara%C3%ADso!5e0!3m2!1ses!2scl!4v1771263852661!5m2!1ses!2scl',
-    mapLink: 'https://maps.app.goo.gl/N8GFkvGRdPNp3aiu5',
+    mapEmbed: mapaDe('La Casa de Dios Limache, El Espino 352, Limache'),
+    mapLink: enlaceMapaDe('La Casa de Dios Limache, El Espino 352, Limache'),
     coords: { lat: -33.009439, lng: -71.262398 },
-    schedule: [
-      { day: 'Sábado', tone: 'primary', services: ['19:00 · Culto General'] },
-      { day: 'Lunes', tone: 'neutral', services: ['20:00 · Estudio Bíblico'] },
-      {
-        day: 'Miércoles',
-        tone: 'secondary',
-        services: ['20:00 · Reunión de Jóvenes y Preadolescentes'],
-      },
-      { day: 'Jueves', tone: 'accent', services: ['20:00 · Culto General'] },
-    ],
+    color: { fondo: '#2f6b4f', claro: '#86c7a3' },
     estudio: 'zoom',
     leader: {
       name: 'Pastor Alberto Gutiérrez Plaza',
       role: 'Pastor',
-      email: 'alberto.gutierrez@lacasadedios.cl',
-      emailListo: false,
+      email: 'albertogutierrez.pastor@lacasadedios.cl',
+      emailListo: true,
     },
   },
   {
@@ -192,17 +177,14 @@ export const templos: Templo[] = [
       "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3299.7453213108574!2d-70.528772!3d-34.203983!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9663517e65647063%3A0xdb02756c3ccb4607!2sC.%20Pedro%20Aguirre%20Cerda%20623%2C%20Coya%2C%20Machal%C3%AD%2C%20O'Higgins!5e0!3m2!1ses!2scl!4v1771264305348!5m2!1ses!2scl",
     mapLink: 'https://maps.app.goo.gl/ZKd69AjzgSLTLzk59',
     coords: { lat: -34.203983, lng: -70.528772 },
-    schedule: [
-      { day: 'Sábado', tone: 'primary', services: ['19:00 · Culto General'] },
-      { day: 'Lunes', tone: 'secondary', services: ['20:00 · Estudio Bíblico'] },
-      { day: 'Miércoles', tone: 'accent', services: ['20:00 · Culto General'] },
-    ],
+    color: { fondo: '#8a3b3b', claro: '#e3a0a0' },
     estudio: 'zoom',
     leader: {
       name: 'Hermano Juan Enrique Plaza Morales',
       role: 'Obrero a cargo',
-      email: 'juan.plaza@lacasadedios.cl',
-      emailListo: false,
+      email: 'arturosalas.pastor@lacasadedios.cl',
+      emailListo: true,
+      correoNota: 'Los correos de Coya los recibe el Pastor Arturo Salas.',
     },
   },
 ];
@@ -212,45 +194,18 @@ export function getTemplo(slug: string): Templo | undefined {
 }
 
 /**
- * El correo de un líder, o `null` si su buzón todavía no existe.
+ * El correo de un líder, o `null` si todavía no se publica.
  *
- * Toda la web pasa por acá para pintar una dirección personal. Que haya un solo
- * sitio donde se decide es lo que permite encender los correos de uno en uno
- * sin repasar cada plantilla. Ver `Leader.emailListo`.
+ * Toda la web pasa por acá para pintar una dirección personal: un solo sitio
+ * donde se decide. Ver `Leader.emailListo`.
  */
 export function correoDe(leader: Leader): string | null {
   return leader.emailListo && leader.email ? leader.email : null;
 }
 
-export interface EstudioDeTemplo {
-  templo: Templo;
-  modalidad: ModalidadEstudio;
-  /** Día y hora sacados del horario del templo; `null` si ahí no figura. */
-  day: DayName | null;
-  time: string | null;
-}
-
-/**
- * Cuándo y cómo es el estudio bíblico en cada templo.
- *
- * El día y la hora NO se escriben aparte: se leen del mismo `schedule` que
- * alimenta /horarios y la página de cada templo. Duplicarlos garantizaría que
- * algún día digan cosas distintas —y quien llegue al templo con el horario
- * equivocado se encuentra la puerta cerrada—.
- */
-export function estudiosBiblicos(): EstudioDeTemplo[] {
-  return templos.map((templo) => {
-    for (const dia of templo.schedule) {
-      for (const bruto of dia.services) {
-        const { time, name } = parseService(bruto);
-        if (/estudio b[íi]blico/i.test(name)) {
-          return { templo, modalidad: templo.estudio, day: dia.day, time };
-        }
-      }
-    }
-    return { templo, modalidad: templo.estudio, day: null, time: null };
-  });
-}
+/** «Pastor a cargo» u «Hermano a cargo», según el rol. */
+export const cargoDe = (leader: Leader) =>
+  leader.role.startsWith('Obrero') ? 'Hermano a cargo' : 'Pastor a cargo';
 
 /** Devuelve el templo anterior y siguiente (circular) para la navegación. */
 export function getSiblings(slug: string): { prev: Templo; next: Templo } {
@@ -260,66 +215,11 @@ export function getSiblings(slug: string): { prev: Templo; next: Templo } {
   return { prev, next };
 }
 
-/** Separa "20:00 · Estudio Bíblico" en hora y nombre. */
-export function parseService(raw: string): { time: string; name: string } {
-  const i = raw.indexOf('·');
-  if (i === -1) return { time: '', name: raw.trim() };
-  return { time: raw.slice(0, i).trim(), name: raw.slice(i + 1).trim() };
-}
-
-export interface WeekEntry {
-  day: DayName;
-  /** índice 0=domingo … 6=sábado, para resaltar "hoy" en el navegador */
-  dayIndex: number;
-  services: { time: string; name: string; templo: Templo }[];
-}
-
 /**
- * Todos los cultos de todos los templos, agrupados por día y ordenados por hora.
- * Es la base de la página /horarios.
- */
-export function weekSchedule(): WeekEntry[] {
-  return DAYS.map((day, dayIndex) => {
-    const services = templos.flatMap((templo) =>
-      (templo.schedule.find((s) => s.day === day)?.services ?? []).map((raw) => ({
-        ...parseService(raw),
-        templo,
-      })),
-    );
-    services.sort((a, b) => a.time.localeCompare(b.time));
-    return { day, dayIndex, services };
-  }).filter((d) => d.services.length > 0);
-}
-
-export interface TimeSlot {
-  time: string;
-  /** Sedes que se reúnen a esa hora ese día. */
-  sedes: Templo[];
-  /** Nombres distintos de la reunión (a veces varían entre sedes). */
-  names: string[];
-}
-
-/**
- * Agrupa las reuniones de un día por hora.
+ * Las variables de color del distintivo de un templo, para un atributo `style`.
  *
- * Varias sedes coinciden a la misma hora —los lunes y jueves, tres templos a
- * las 20:00—, así que listarlas una por una repite el número tres veces. Es
- * más claro y más cierto decirlo al revés: a esta hora, estos templos.
+ * Van como variables CSS y no como clases porque son valores de datos, no del
+ * tema: añadir un quinto templo es añadir sus dos colores acá, sin tocar CSS.
  */
-export function groupByTime(
-  services: { time: string; name: string; templo: Templo }[],
-): TimeSlot[] {
-  const mapa = new Map<string, TimeSlot>();
-  for (const s of services) {
-    const slot = mapa.get(s.time) ?? { time: s.time, sedes: [], names: [] };
-    slot.sedes.push(s.templo);
-    if (!slot.names.includes(s.name)) slot.names.push(s.name);
-    mapa.set(s.time, slot);
-  }
-  return [...mapa.values()].sort((a, b) => a.time.localeCompare(b.time));
-}
-
-/** Nº total de reuniones semanales en toda la congregación. */
-export function totalServices(): number {
-  return templos.reduce((n, t) => n + t.schedule.reduce((m, s) => m + s.services.length, 0), 0);
-}
+export const estiloDistintivo = (t: Templo) =>
+  `--d-fondo:${t.color.fondo};--d-claro:${t.color.claro}`;

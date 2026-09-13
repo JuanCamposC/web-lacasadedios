@@ -11,6 +11,10 @@ export type Field = {
     /** textarea con barra de formato y vista previa */
     | 'markdown'
     | 'datetime-local'
+    /** «HH:MM». El navegador pone su propio selector de hora. */
+    | 'time'
+    /** «AAAA-MM-DD», sin hora. */
+    | 'date'
     | 'number'
     | 'checkbox'
     /** desplegable de opciones fijas; requiere `options` */
@@ -25,12 +29,20 @@ export type Field = {
 export type CrudConfig = {
   table: string;
   singular: string;
+  /** Para la concordancia («Nueva reunión»). Si falta, se deduce de si termina en «a». */
+  femenino?: boolean;
   /** plural en minúscula, para los textos de la interfaz */
   plural?: string;
   fields: Field[];
   orderBy: { column: string; ascending: boolean };
   titleField: string;
   subtitleField?: string;
+  /**
+   * Enseñar la fecha de creación bajo cada fila. Por defecto sí. En los
+   * horarios no dice nada útil —cuándo se cargó el culto del domingo— y ocupa
+   * la línea donde se lee el estado.
+   */
+  mostrarFecha?: boolean;
   /**
    * Si se define, la lista se puede reordenar arrastrando y el nuevo orden se
    * guarda en esa columna. Sustituye al campo numérico «orden», que obligaba a

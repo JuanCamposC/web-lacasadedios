@@ -16,6 +16,7 @@ interface Props {
     | 'noticias'
     | 'videos'
     | 'instagram'
+    | 'horarios'
     | 'suscriptores'
     | 'en-vivo'
     | 'aviso';
@@ -30,6 +31,7 @@ const motivo = Astro.locals.motivoAcceso;
 
 const links = [
   { href: '/admin', label: 'Inicio', key: 'inicio', icon: 'lucide:layout-dashboard' },
+  { href: '/admin/horarios', label: 'Horarios', key: 'horarios', icon: 'lucide:clock' },
   { href: '/admin/eventos', label: 'Eventos', key: 'eventos', icon: 'lucide:calendar-days' },
   { href: '/admin/noticias', label: 'Noticias', key: 'noticias', icon: 'lucide:newspaper' },
   { href: '/admin/videos', label: 'Videos', key: 'videos', icon: 'lucide:youtube' },
@@ -171,10 +173,15 @@ const links = [
       class="fixed inset-x-0 bottom-0 z-40 border-t border-base-300 bg-base-100/95 backdrop-blur lg:hidden"
       aria-label="Secciones del panel"
     >
-      <ul class="flex">
+      {
+        /* Con nueve secciones ya no caben repartidas en el ancho de un teléfono
+          (quedaban a 40 px cada una, con el texto cortado): la barra se desliza
+          de lado y cada botón conserva un ancho que se puede tocar. */
+      }
+      <ul class="flex overflow-x-auto">
         {
           links.map((l) => (
-            <li class="flex-1">
+            <li class="min-w-[4.5rem] flex-1">
               <a
                 href={l.href}
                 aria-current={active === l.key ? 'page' : undefined}

@@ -46,9 +46,11 @@ export function startEdit(ctx: Contexto, row: Fila) {
       (el as HTMLInputElement).value = val ? deIsoAChile(String(val)) : '';
     else if (f.type === 'image') {
       const prev = ctx.root.querySelector(`[data-preview="${f.name}"]`);
+      // `imagen_url` y no `val`: `val` es la clave de R2, que en un `src` se lee
+      // como ruta relativa y no carga. Ver `conUrl` en /api/admin/[recurso].
       if (prev)
-        prev.innerHTML = val
-          ? `<img src="${esc(val)}" class="h-20 rounded border border-base-300" alt="" /><span class="mt-1 block text-xs text-base-content/55">Sube otra imagen para reemplazarla</span>`
+        prev.innerHTML = row.imagen_url
+          ? `<img src="${esc(row.imagen_url)}" class="h-20 rounded border border-base-300" alt="" /><span class="mt-1 block text-xs text-base-content/55">Sube otra imagen para reemplazarla</span>`
           : '';
     } else (el as HTMLInputElement).value = val ?? '';
   });

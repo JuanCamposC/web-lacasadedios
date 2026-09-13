@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { crearTransporte } from '../../lib/envio';
 import { CONTACT } from '../../data/site';
+import { templos } from '../../data/templos';
 import { conNombre, resolverRemitente } from '../../lib/correo';
 import { construirCorreo } from '../../lib/correo-plantilla';
 
@@ -51,7 +52,11 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   const nombre = (body.nombre ?? '').trim();
   const email = (body.email ?? '').trim();
   const telefono = (body.telefono ?? '').trim();
-  const templo = (body.templo ?? '').trim();
+  // El templo se COMPARA contra la lista y no se usa tal cual: sube al asunto
+  // del correo, y un formulario manipulado no tiene por qué decidir qué texto
+  // aparece ahí. Lo que no calce es una consulta general.
+  const temploElegido = templos.find((t) => t.short === (body.templo ?? '').trim());
+  const templo = temploElegido?.short ?? '';
   const asunto = (body.asunto ?? '').trim();
   const mensaje = (body.mensaje ?? '').trim();
 
@@ -102,7 +107,10 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       from,
       to: CONTACT.email,
       replyTo: email,
-      subject: `Contacto web — ${asunto} (${nombre})`,
+      // Lo primero que se lee en la bandeja es a qué templo va: «Contacto Coya»,
+      // «Contacto San Miguel», «Contacto general». Así quien reparte los
+      // correos sabe a quién reenviarlo sin abrirlo.
+      subject: `Contacto ${templo || 'general'} · ${asunto} · ${nombre}`,
       text: texto,
       html,
     });

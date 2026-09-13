@@ -54,8 +54,8 @@ export const SOCIAL: SocialLink[] = [
   {
     key: 'youtube',
     label: 'YouTube',
-    handle: 'Conociendo la Palabra',
-    href: 'https://www.youtube.com/@casadediosconociendolapalabrad',
+    handle: '@lacasadedioscl',
+    href: 'https://www.youtube.com/@lacasadedioscl',
     icon: 'lucide:youtube',
   },
 ];

@@ -10,6 +10,14 @@ export interface NavLink {
   /** Descripción corta para los menús desplegables. */
   desc?: string;
   icon?: string;
+  /**
+   * Solo se enseña mientras hay transmisión encendida en el panel.
+   *
+   * Se pinta oculto y lo destapa el navegador al preguntar a /api/estado (ver
+   * Layout.astro). Un enlace a «En vivo» cuando no hay nada en vivo lleva a una
+   * página vacía, y eso se lee como que la iglesia dejó de transmitir.
+   */
+  soloEnVivo?: boolean;
 }
 
 export interface NavGroup {
@@ -91,7 +99,7 @@ export const MAIN_NAV: NavEntry[] = [
   { href: '/eventos', label: 'Eventos' },
   { href: '/noticias', label: 'Noticias' },
   { href: '/videos', label: 'Videos' },
-  { href: '/en-vivo', label: 'En vivo' },
+  { href: '/en-vivo', label: 'En vivo', soloEnVivo: true },
 ];
 
 /**

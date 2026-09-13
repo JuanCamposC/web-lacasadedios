@@ -1,0 +1,43 @@
+---
+import type { ImageMetadata } from 'astro';
+import { anchosDe, nombreDe, rutaFoto } from '../lib/fotos.mjs';
+
+/**
+ * Una foto del sitio, servida desde las variantes WebP preparadas al compilar.
+ *
+ * Reemplaza a `<Image />` en los componentes que se usan dentro de páginas que
+ * se arman al servir. El porqué, en src/lib/fotos.mjs.
+ *
+ * Recibe el mismo `ImageMetadata` que `<Image />` para no cambiar cómo se
+ * eligen las fotos (`IMG.biblia`): de ahí saca el nombre y el ancho real.
+ */
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  /** Qué ancho ocupa en pantalla. Por defecto, la pantalla entera. */
+  sizes?: string;
+  loading?: 'lazy' | 'eager';
+  class?: string;
+  'aria-hidden'?: 'true';
+}
+
+const { src, alt, sizes = '100vw', loading = 'lazy', class: className, ...resto } = Astro.props;
+
+const nombre = nombreDe(src.src);
+const anchos = anchosDe(src.width);
+const mayor = anchos[anchos.length - 1];
+const srcset = anchos.map((a) => `${rutaFoto(nombre, a)} ${a}w`).join(', ');
+---
+
+<img
+  src={rutaFoto(nombre, mayor)}
+  srcset={srcset}
+  sizes={sizes}
+  alt={alt}
+  width={mayor}
+  height={Math.round((src.height * mayor) / src.width)}
+  loading={loading}
+  decoding="async"
+  class={className}
+  {...resto}
+/>

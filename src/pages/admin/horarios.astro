@@ -1,0 +1,78 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout
+  title="Horarios"
+  description="Las reuniones de cada semana. Suspende o cambia una sin borrarla."
+  active="horarios"
+>
+  <div id="crud-root"></div>
+
+  <script>
+    import { setupCrud } from '../../scripts/adminCrud';
+    import { templos } from '../../data/templos';
+    import { DIAS } from '../../lib/reuniones';
+
+    // Las opciones salen de los mismos datos que usa la web: el desplegable no
+    // puede ofrecer un templo que no existe. (La base, además, lo rechazaría:
+    // ver el `check` de la migración 0003.)
+    const opcionesTemplo = templos.map((t) => ({ value: t.slug, label: t.short }));
+    const opcionesDia = DIAS.map((label, i) => ({ value: String(i), label }));
+
+    setupCrud({
+      table: 'reuniones',
+      singular: 'reunión',
+      femenino: true,
+      plural: 'reuniones',
+      titleField: 'nombre',
+      subtitleField: 'detalle',
+      mostrarFecha: false,
+      orderBy: { column: 'dia', ascending: true },
+      fields: [
+        {
+          name: 'templo',
+          label: 'Templo',
+          type: 'select',
+          required: true,
+          options: opcionesTemplo,
+        },
+        { name: 'dia', label: 'Día', type: 'select', required: true, options: opcionesDia },
+        { name: 'hora', label: 'Hora', type: 'time', required: true },
+        {
+          name: 'nombre',
+          label: 'Reunión',
+          type: 'text',
+          required: true,
+          help: 'Ej.: Culto General, Estudio Bíblico, Reunión de Jóvenes.',
+        },
+        {
+          name: 'estado',
+          label: 'Estado',
+          type: 'select',
+          required: true,
+          options: [
+            { value: 'normal', label: 'Normal' },
+            { value: 'suspendida', label: 'Suspendida' },
+            { value: 'cambiada', label: 'Cambio de horario (temporal)' },
+          ],
+          help: 'Si el cambio de hora es para siempre, deja «Normal» y cambia la hora arriba.',
+        },
+        {
+          name: 'aviso',
+          label: 'Aviso para la gente (opcional)',
+          type: 'text',
+          help: 'Lo que se lee junto a la reunión. Ej.: «Este jueves se hace a las 19:00» o «Suspendida por el feriado».',
+        },
+        {
+          name: 'aviso_hasta',
+          label: 'El aviso dura hasta (opcional)',
+          type: 'date',
+          help: 'Al día siguiente la reunión vuelve sola a la normalidad. Si lo dejas vacío, dura hasta que lo quites.',
+        },
+        { name: 'publicado', label: 'Se muestra en la web', type: 'checkbox' },
+      ],
+    });
+  </script>
+</AdminLayout>

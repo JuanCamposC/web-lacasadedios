@@ -1,6 +1,9 @@
 import type { APIRoute } from 'astro';
 import { baseDeDatos } from '../../../lib/base';
-import { esRecurso, listarTodo, crear, actualizar, borrar } from '../../../lib/panel';
+import { esRecurso, listarTodo, crear, actualizar, borrar, unaFila } from '../../../lib/panel';
+import { urlMedio } from '../../../lib/medios';
+import { templos } from '../../../data/templos';
+import { DIAS } from '../../../lib/reuniones';
 
 export const prerender = false;
 
@@ -61,10 +64,43 @@ function recursoDe(params: Record<string, string | undefined>) {
   return esRecurso(nombre) ? nombre : null;
 }
 
+/**
+ * Añade la dirección pública de la imagen a cada fila.
+ *
+ * En la base se guarda la CLAVE de R2 («eventos/2026/09/…jpg»), no una
+ * dirección. El listado del panel la ponía tal cual en el `src` de la
+ * miniatura, el navegador la resolvía como ruta relativa a /admin/eventos, y
+ * ninguna imagen cargaba. El navegador no sabe cuál es el dominio del bucket,
+ * así que la dirección se arma acá, que sí lo sabe.
+ */
+function conUrl<T extends Record<string, unknown>>(fila: T): T & { imagen_url: string | null } {
+  const clave = typeof fila.imagen_clave === 'string' ? fila.imagen_clave : null;
+  return { ...fila, ...detalleDeReunion(fila), imagen_url: urlMedio(clave) };
+}
+
+const ESTADOS: Record<string, string> = { suspendida: 'Suspendida', cambiada: 'Cambio de horario' };
+
+/**
+ * «San Miguel · Lunes 20:00 · Suspendida», para el listado del panel.
+ *
+ * Una reunión sola no tiene título que la distinga: hay cinco «Culto General».
+ * El listado solo sabe enseñar una columna debajo del nombre, así que se le
+ * arma una con lo que de verdad hace falta ver de un vistazo.
+ */
+function detalleDeReunion(fila: Record<string, unknown>): { detalle?: string } {
+  if (typeof fila.dia !== 'number' || typeof fila.hora !== 'string') return {};
+  const templo = templos.find((t) => t.slug === fila.templo)?.short ?? String(fila.templo);
+  const estado = ESTADOS[String(fila.estado)];
+  return {
+    detalle: [templo, `${DIAS[fila.dia] ?? '?'} ${fila.hora}`, estado].filter(Boolean).join(' · '),
+  };
+}
+
 export const GET: APIRoute = async ({ params }) => {
   const recurso = recursoDe(params);
   if (!recurso) return json({ error: 'recurso desconocido' }, 404);
-  return json({ filas: await listarTodo(await baseDeDatos(), recurso) });
+  const filas = await listarTodo<Record<string, unknown>>(await baseDeDatos(), recurso);
+  return json({ filas: filas.map(conUrl) });
 };
 
 export const POST: APIRoute = async ({ params, request, url }) => {
@@ -72,8 +108,13 @@ export const POST: APIRoute = async ({ params, request, url }) => {
   if (!recurso) return json({ error: 'recurso desconocido' }, 404);
   if (!mismoOrigen(request, url)) return json({ error: 'origen no permitido' }, 403);
 
-  const id = await crear(await baseDeDatos(), recurso, await cuerpo(request));
-  return json({ id }, 201);
+  const base = await baseDeDatos();
+  const id = await crear(base, recurso, await cuerpo(request));
+  // Se devuelve la fila tal como quedó, no solo el id: el slug lo calcula el
+  // servidor, y el correo de aviso a suscriptores tiene que enlazar a la
+  // dirección legible y no a /noticias/<uuid>.
+  const fila = await unaFila<Record<string, unknown>>(base, recurso, id);
+  return json({ id, fila: fila ? conUrl(fila) : null }, 201);
 };
 
 export const PUT: APIRoute = async ({ params, request, url }) => {

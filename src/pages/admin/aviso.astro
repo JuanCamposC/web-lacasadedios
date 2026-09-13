@@ -8,6 +8,7 @@ import { templos } from '../../data/templos';
 import { almacen, baseDeDatos } from '../../lib/base';
 import { ajustes } from '../../lib/datos';
 import { urlMedio } from '../../lib/medios';
+import { deIsoAChile } from '../../lib/hora';
 
 const fila = await ajustes(await baseDeDatos());
 
@@ -84,12 +85,15 @@ const POSICIONES = [
   'abajo-derecha',
 ];
 
-const paraInput = (iso: string | null) => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
-};
+/**
+ * Las fechas del aviso, en hora de Chile.
+ *
+ * Esto antes usaba `getHours()`, que en el Worker da la hora UTC, y al guardar
+ * el navegador leía lo escrito en SU huso. Resultado: cada vez que se guardaba
+ * el aviso sin tocar las fechas, la ventana se corría tres horas. Ver
+ * src/lib/hora.ts, que es donde vive la regla para todo el sitio.
+ */
+const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
 ---
 
 <AdminLayout
@@ -362,8 +366,15 @@ const paraInput = (iso: string | null) => {
     </form>
 
     {/* ── Vista previa ───────────────────────────────────────────────── */}
-    <aside class="space-y-4 xl:col-span-2">
-      <div class="panel sticky top-4 p-5">
+    {
+      /* Lo que se queda fijo al bajar es la COLUMNA entera, no la tarjeta de la
+        vista previa. Con la tarjeta sola `sticky`, al bajar se deslizaba por
+        encima de «Cómo se comporta» —su hermana dentro de la misma columna— y,
+        con `top-4`, se metía debajo de la cabecera del panel, que también es
+        fija y mide unos 5 rem. `top-24` la deja justo por debajo. */
+    }
+    <aside class="space-y-4 xl:sticky xl:top-24 xl:col-span-2 xl:self-start">
+      <div class="panel p-5">
         <h2 class="flex items-center gap-2 text-base font-bold">
           <Icon name="lucide:eye" class="h-4 w-4 text-primary" /> Vista previa
         </h2>
@@ -426,6 +437,7 @@ const paraInput = (iso: string | null) => {
   <script>
     import { api } from '../../scripts/admin/api';
     import { prepararImagen, subirImagen } from '../../scripts/admin/upload';
+    import { deChileAIso } from '../../lib/hora';
 
     const form = document.getElementById('aviso-form') as HTMLFormElement;
     const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -586,7 +598,8 @@ const paraInput = (iso: string | null) => {
     });
 
     const vacio = (v: string) => v.trim() || null;
-    const fecha = (v: string) => (v.trim() ? new Date(v).toISOString() : null);
+    // Lo escrito es hora de Chile, no la del reloj de quien administra.
+    const fecha = (v: string) => (v.trim() ? deChileAIso(v) : null);
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
