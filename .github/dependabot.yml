@@ -8,7 +8,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: "09:00"
+      time: '09:00'
       timezone: America/Santiago
     open-pull-requests-limit: 5
     # TypeScript 7 todavía no: el peer de @astrojs/check@0.9.10 —la última
@@ -16,22 +16,19 @@ updates:
     # con ERESOLVE. Se revisa cuando salga una versión que lo acepte.
     ignore:
       - dependency-name: typescript
-        update-types: ["version-update:semver-major"]
+        update-types: ['version-update:semver-major']
     commit-message:
-      prefix: "chore(deps)"
-      prefix-development: "chore(deps-dev)"
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
     groups:
       astro:
         patterns:
           - astro
-          - "@astrojs/*"
-      supabase:
-        patterns:
-          - "@supabase/*"
+          - '@astrojs/*'
       tailwind:
         patterns:
           - tailwindcss
-          - "@tailwindcss/*"
+          - '@tailwindcss/*'
           - daisyui
 
   - package-ecosystem: github-actions
@@ -39,4 +36,4 @@ updates:
     schedule:
       interval: weekly
     commit-message:
-      prefix: "chore(ci)"
+      prefix: 'chore(ci)'

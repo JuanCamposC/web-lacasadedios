@@ -36,9 +36,6 @@ export function urlMedio(clave: string | null | undefined): string | null {
   return `https://${base}/${ruta}`;
 }
 
-/** ¿Está configurado el dominio de medios? Para avisar en el panel. */
-export const mediosConfigurados = (): boolean => dominio() !== null;
-
 /**
  * Duración en un formato legible: «1 h 2 min», «47 min», «—».
  *

@@ -17,11 +17,9 @@ jobs:
     timeout-minutes: 10
 
     env:
-      # Valores de mentira: la compilación necesita que EXISTAN, no que sirvan.
-      # Las páginas del panel y las de contenido se compilan sin tocar la red;
+      # Un valor de mentira: la compilación necesita que EXISTA, no que sirva.
+      # Las páginas se compilan sin tocar la red;
       # las consultas reales ocurren en cada petición, ya en producción.
-      PUBLIC_SUPABASE_URL: https://ejemplo.supabase.co
-      PUBLIC_SUPABASE_ANON_KEY: clave-anonima-de-mentira
       SITE_URL: https://ejemplo.test
 
     steps:

@@ -63,3 +63,15 @@ textos-del-sitio.txt
 # Fotos en WebP generadas por scripts/fotos.mjs antes de cada compilación.
 # Salen de src/assets/img, que es lo que se versiona.
 public/fotos/
+
+# ── Zona DNS ────────────────────────────────────────────────────────────────
+# `dns/` se queda en el disco y fuera del repositorio.
+#
+# El archivo es la copia de la zona de lacasadedios.cl, y este repositorio es
+# PÚBLICO: publicaba la IP del servidor de origen (el de Netexplora). Con la IP
+# a la vista, quien quiera puede saltarse el proxy de Cloudflare y golpear
+# directo al servidor, que es justo lo que el proxy viene a evitar.
+#
+# Sigue haciendo falta como respaldo y como plan de vuelta atrás, así que no se
+# borra: solo deja de publicarse.
+dns/

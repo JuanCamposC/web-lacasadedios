@@ -198,11 +198,6 @@ export async function listarSuscriptores(base: Base): Promise<Suscriptor[]> {
   return results;
 }
 
-/** Borra una suscripción desde el panel, por id. */
-export async function borrarSuscriptor(base: Base, id: string): Promise<void> {
-  await base.prepare('delete from suscriptores where id = ?').bind(id).first();
-}
-
 /**
  * Marca una transmisión como ya avisada, para no escribir dos veces por lo
  * mismo. Cuando empiece la siguiente el enlace cambiará, dejará de coincidir, y

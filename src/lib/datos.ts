@@ -186,33 +186,6 @@ export function eventosPasados(base: Base, filtro: Filtro = {}): Promise<Evento[
   );
 }
 
-export function eventoPorSlug(base: Base, slug: string): Promise<Evento | null> {
-  return base
-    .prepare(
-      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo
-         from eventos where publicado = 1 and slug = ?`,
-    )
-    .bind(slug)
-    .first<Evento>();
-}
-
-/**
- * Un evento por su identificador. Lo usa el archivo de calendario.
- *
- * Lleva `publicado = 1` como todo lo demás: un borrador tiene que dar 404
- * igual que un identificador inventado, o el enlace del calendario sería una
- * forma de espiar lo que aún no se anuncia.
- */
-export function eventoPorId(base: Base, id: string): Promise<Evento | null> {
-  return base
-    .prepare(
-      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo
-         from eventos where publicado = 1 and id = ?`,
-    )
-    .bind(id)
-    .first<Evento>();
-}
-
 // ── Noticias ────────────────────────────────────────────────────────────────
 
 /**
@@ -297,17 +270,6 @@ export function estudiosPublicados(base: Base, filtro: Filtro = {}): Promise<Est
       limit ? offset ?`,
     [...valores, ahora(), limite, desplazamiento],
   );
-}
-
-export function estudioPorSlug(base: Base, slug: string): Promise<Estudio | null> {
-  return base
-    .prepare(
-      `select id, titulo, slug, descripcion, predicador, serie, fecha,
-              archivo_clave, tipo_mime, duracion_seg, bytes, templo
-         from estudios where publicado = 1 and fecha <= ? and slug = ?`,
-    )
-    .bind(ahora(), slug)
-    .first<Estudio>();
 }
 
 /**
