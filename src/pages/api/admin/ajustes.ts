@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { baseDeDatos } from '../../../lib/base';
 import { ajustes } from '../../../lib/datos';
-import { guardarAjustes } from '../../../lib/panel';
+import { guardarAjustes, DatoInvalido } from '../../../lib/panel';
 
 export const prerender = false;
 
@@ -40,7 +40,15 @@ export const PUT: APIRoute = async ({ request, url }) => {
     return json({ error: 'cuerpo ilegible' }, 400);
   }
 
-  const hecho = await guardarAjustes(await baseDeDatos(), datos);
+  let hecho: boolean;
+  try {
+    hecho = await guardarAjustes(await baseDeDatos(), datos);
+  } catch (e) {
+    // Un enlace mal escrito es culpa de quien lo pegó, no una caída: se
+    // responde 400 con la frase que el panel sabe enseñar.
+    if (e instanceof DatoInvalido) return json({ error: e.message }, 400);
+    throw e;
+  }
   if (!hecho) return json({ error: 'no hay nada que guardar' }, 400);
   return json({ ok: true });
 };

@@ -229,6 +229,7 @@ describe('permitirPanel', () => {
 
   afterEach(() => {
     delete process.env.PANEL_ABIERTO;
+    delete process.env.SITE_URL;
   });
 
   it('deja entrar con un token de Access válido', async () => {
@@ -284,6 +285,8 @@ describe('permitirPanel', () => {
 
   it('PANEL_ABIERTO=1 abre a propósito; cualquier otro valor no', async () => {
     const { permitirPanel } = await moduloLimpio();
+    // Fuera de producción, que es donde esta variable sirve para algo.
+    process.env.SITE_URL = 'http://localhost:4321';
     process.env.PANEL_ABIERTO = '1';
     expect((await permitirPanel(sinToken(), publica)).motivo).toBe('abierto-a-proposito');
 
@@ -291,5 +294,22 @@ describe('permitirPanel', () => {
       process.env.PANEL_ABIERTO = valor;
       expect((await permitirPanel(sinToken(), publica)).permitido).toBe(false);
     }
+  });
+
+  it('en producción, PANEL_ABIERTO no abre nada', async () => {
+    // El descuido que esto evita: añadir la variable en el panel de Cloudflare
+    // y dejar el panel entero sin puerta, sin que nada lo impida.
+    const { permitirPanel } = await moduloLimpio();
+    process.env.SITE_URL = 'https://lacasadedios.cl';
+    process.env.PANEL_ABIERTO = '1';
+    const r = await permitirPanel(sinToken(), publica);
+    expect(r.permitido).toBe(false);
+    expect(r.motivo).toBe('denegado');
+  });
+
+  it('sin SITE_URL se asume producción: tampoco abre', async () => {
+    const { permitirPanel } = await moduloLimpio();
+    process.env.PANEL_ABIERTO = '1';
+    expect((await permitirPanel(sinToken(), publica)).permitido).toBe(false);
   });
 });

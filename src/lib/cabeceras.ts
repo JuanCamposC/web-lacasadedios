@@ -58,7 +58,7 @@ const PRODUCCION = new Set(['lacasadedios.cl', 'www.lacasadedios.cl']);
  * sitio real del buscador es mucho peor que indexar de más uno de pruebas —que
  * además está detrás de Access, donde Google ni entra—.
  */
-function esProduccion(): boolean {
+export function esProduccion(): boolean {
   const crudo = (process.env.SITE_URL ?? '').trim();
   if (!crudo) return true;
   try {

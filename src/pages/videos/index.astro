@@ -48,6 +48,7 @@ const videosJsonLd =
         })),
       }
     : null;
+import { jsonLd as comoJsonLd } from '../../lib/jsonld';
 ---
 
 <Layout
@@ -65,7 +66,7 @@ const videosJsonLd =
 
   {
     videosJsonLd && (
-      <script type="application/ld+json" set:html={JSON.stringify(videosJsonLd)} is:inline />
+      <script type="application/ld+json" set:html={comoJsonLd(videosJsonLd)} is:inline />
     )
   }
 

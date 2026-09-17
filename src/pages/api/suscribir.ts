@@ -19,6 +19,7 @@ import { resolverRemitente } from '../../lib/correo';
 import { construirCorreo } from '../../lib/correo-plantilla';
 import { baseDeDatos } from '../../lib/base';
 import { altaSuscriptor, registrarIntento } from '../../lib/boletin';
+import { ipDe } from '../../lib/ip';
 
 export const prerender = false;
 
@@ -58,23 +59,6 @@ const CORREO = /^[^\s@,;<>()[\]\\]+@[^\s@.]+(\.[^\s@.]+)*\.[a-z]{2,}$/i;
 
 function correoValido(email: string): boolean {
   return email.length <= 254 && CORREO.test(email);
-}
-
-/**
- * IP del visitante.
- *
- * En Cloudflare se lee `CF-Connecting-IP`, que la pone el propio borde y **no
- * se puede falsear desde fuera**: si la petición la trae, viene de Cloudflare.
- * `x-forwarded-for` sí es falsificable —cualquiera puede mandarla— y por eso
- * queda de respaldo y no de primera opción; con ella sola, saltarse el freno
- * por IP sería tan fácil como inventar una dirección distinta en cada intento.
- */
-function ipDe(request: Request): string {
-  const cf = request.headers.get('cf-connecting-ip')?.trim();
-  if (cf) return cf;
-  const xff = request.headers.get('x-forwarded-for') ?? '';
-  const primera = xff.split(',')[0]?.trim();
-  return primera || request.headers.get('x-real-ip')?.trim() || 'desconocida';
 }
 
 export const POST: APIRoute = async ({ request, url: reqUrl }) => {

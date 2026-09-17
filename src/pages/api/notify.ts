@@ -37,18 +37,41 @@ function clasificar(mensaje: string): string {
 }
 
 export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
-  // Quien autentica es Cloudflare Access, en el borde; el middleware ya
-  // verificó la firma del token antes de llegar acá (ver src/lib/access.ts).
-  // Este endpoint escribe a TODA la lista: no se sirve si el middleware no
-  // dejó identidad.
+  // Quien autentica es Cloudflare Access, en el borde; el middleware verifica
+  // la firma del token antes de llegar acá (ver src/lib/access.ts).
+  //
+  // ── POR QUÉ SE VUELVE A COMPROBAR ACÁ ──────────────────────────────────────
+  // Porque el comentario que había en este sitio decía «no se sirve si el
+  // middleware no dejó identidad» y eso no era verdad: la comprobación no
+  // existía. Este endpoint le escribe a TODA la lista de suscriptores desde el
+  // dominio de la iglesia; que esté protegido no puede depender de que otro
+  // archivo acierte con una lista de prefijos, ni de dónde se dibuje mañana la
+  // política de Cloudflare Access.
   const identidad = locals.identidad;
+  if (!identidad) return json({ ok: false, reason: 'no_autorizado' }, 403);
+
+  // Y el mismo cerrojo que el resto del panel: una cookie de Access la manda
+  // el navegador sola, también cuando quien pide es otro sitio. Sin esto, una
+  // página cualquiera podría hacer que el navegador de alguien del equipo
+  // —con su sesión abierta— le escribiera a toda la lista.
+  const origen = request.headers.get('Origin');
+  if (origen) {
+    try {
+      if (new URL(origen).host !== reqUrl.host) {
+        return json({ ok: false, reason: 'origen_no_permitido' }, 403);
+      }
+    } catch {
+      return json({ ok: false, reason: 'origen_no_permitido' }, 403);
+    }
+  }
 
   // `db` y no `base`: más abajo `base` ya es la dirección del sitio.
   let db;
   try {
     db = await baseDeDatos();
   } catch (e) {
-    return json({ ok: false, reason: 'db_error', detalle: (e as Error).message });
+    console.error(`[notify] ${(e as Error).message}`);
+    return json({ ok: false, reason: 'db_error' });
   }
 
   const body = await request.json().catch(() => ({}));
@@ -96,7 +119,8 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
     try {
       aj = await ajustes(db);
     } catch (e) {
-      return json({ ok: false, reason: 'db_error', detalle: (e as Error).message });
+      console.error(`[notify] ${(e as Error).message}`);
+      return json({ ok: false, reason: 'db_error' });
     }
     if (aj?.vivo_activo !== 1) return json({ ok: false, reason: 'no_en_vivo' });
 
@@ -128,7 +152,8 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
     try {
       destinatarios = await confirmados(db);
     } catch (e) {
-      return json({ ok: false, reason: 'db_error', detalle: (e as Error).message });
+      console.error(`[notify] ${(e as Error).message}`);
+      return json({ ok: false, reason: 'db_error' });
     }
 
     destinatarios = destinatarios.filter((s) => s.correo && s.token);
@@ -161,11 +186,13 @@ export const POST: APIRoute = async ({ request, locals, url: reqUrl }) => {
   // arrastre a los correos del formulario de contacto. Ver resolverRemitente.
   const remitente = resolverRemitente('BOLETIN_FROM');
   if (!remitente.ok) {
-    return json({
-      ok: false,
-      reason: 'from_invalido',
-      detalle: `BOLETIN_FROM/CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
-    });
+    // El valor de la variable se registra, no se responde: esto mismo ya se
+    // corrigió en /api/suscribir —«llegó a repetir el contenido literal de una
+    // variable de entorno mal pegada»— y acá había quedado igual que antes.
+    console.error(
+      `[notify] BOLETIN_FROM/CONTACT_FROM mal escrito: «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>».`,
+    );
+    return json({ ok: false, reason: 'from_invalido' });
   }
   const from = remitente.from;
   const base = process.env.SITE_URL || reqUrl.origin;

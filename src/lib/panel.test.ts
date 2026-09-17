@@ -348,3 +348,25 @@ describe('guardarAjustes', () => {
 // Comprobación de tipos: que `Recurso` no admita cualquier cadena.
 const _tipo: Recurso = 'eventos';
 void _tipo;
+
+describe('direcciones web', () => {
+  it('rechaza un enlace que no es http(s) en vez de guardarlo', async () => {
+    const { base } = espia();
+    await expect(
+      crear(base, 'instagram', { imagen_clave: 'x.webp', alt: 'x', enlace: 'javascript:alert(1)' }),
+    ).rejects.toThrow(/https/);
+  });
+
+  it('el botón del aviso emergente pasa por la misma comprobación', async () => {
+    const { base } = espia();
+    await expect(guardarAjustes(base, { aviso_boton_url: 'javascript:alert(1)' })).rejects.toThrow(
+      /https/,
+    );
+  });
+
+  it('un enlace normal se guarda sin ruido', async () => {
+    const { base, llamadas } = espia();
+    await guardarAjustes(base, { aviso_boton_url: 'https://lacasadedios.cl/eventos' });
+    expect(llamadas.some((l) => l.sql.includes('aviso_boton_url = ?'))).toBe(true);
+  });
+});

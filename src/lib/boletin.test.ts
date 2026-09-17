@@ -135,16 +135,26 @@ describe('registrarIntento', () => {
     const previos = await registrarIntento(base, '1.2.3.4', 60);
 
     expect(previos).toBe(3);
-    expect(plano(llamadas[0].sql)).toContain('where ip = ? and intentado_en >=');
+    expect(plano(llamadas[0].sql)).toContain('where accion = ? and ip = ? and intentado_en >=');
     // Y limpia lo viejo, para que la tabla no crezca sin fin.
     expect(plano(llamadas[1].sql)).toContain('delete from intentos_alta');
     expect(plano(llamadas[2].sql)).toContain('insert into intentos_alta');
   });
 
+  it('cada acción lleva su propia cuenta', async () => {
+    // El formulario de contacto y el alta al boletín comparten tabla y freno;
+    // quien escribe un mensaje no debe gastar el cupo de quien se suscribe.
+    const { base, llamadas } = espia([{ n: 0 }]);
+    await registrarIntento(base, '1.2.3.4', 60, 'contacto');
+    expect(llamadas[0].valores[0]).toBe('contacto');
+    expect(llamadas[2].valores[2]).toBe('contacto');
+  });
+
   it('la ventana se calcula hacia atrás desde ahora', async () => {
     const { base, llamadas } = espia([{ n: 0 }]);
     await registrarIntento(base, '1.2.3.4', 60);
-    const desde = Date.parse(llamadas[0].valores[1] as string);
+    // Los parámetros son (accion, ip, desde): la ventana es el tercero.
+    const desde = Date.parse(llamadas[0].valores[2] as string);
     const esperado = Date.now() - 60 * 60_000;
     expect(Math.abs(desde - esperado)).toBeLessThan(5000);
   });

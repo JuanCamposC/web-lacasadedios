@@ -87,6 +87,7 @@ const eventosJsonLd =
         })),
       }
     : null;
+import { jsonLd as comoJsonLd } from '../../lib/jsonld';
 ---
 
 <Layout
@@ -104,7 +105,7 @@ const eventosJsonLd =
 
   {
     eventosJsonLd && (
-      <script type="application/ld+json" set:html={JSON.stringify(eventosJsonLd)} is:inline />
+      <script type="application/ld+json" set:html={comoJsonLd(eventosJsonLd)} is:inline />
     )
   }
 

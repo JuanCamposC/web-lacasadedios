@@ -62,13 +62,14 @@ const jsonLd = {
   hasMap: templo.mapLink,
   ...(correo ? { email: correo } : {}),
 };
+import { jsonLd as comoJsonLd } from '../lib/jsonld';
 ---
 
 <Layout
   title={`${templo.name} · La Casa de Dios`}
   description={`${templo.name} — ${templo.address}. Horarios de cultos y reuniones de La Casa de Dios en ${templo.city}.`}
 >
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+  <script type="application/ld+json" set:html={comoJsonLd(jsonLd)} is:inline />
 
   <!-- ══ Portada ═════════════════════════════════════════════════════════
        Alineada a la izquierda y no centrada como las demás portadas: acá lo

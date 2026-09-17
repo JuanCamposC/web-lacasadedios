@@ -6,9 +6,23 @@ import { permitirPanel } from './lib/access';
 // aquí en producción: las sirve el binding de assets sin tocar el Worker.
 const SSR_PREFIXES = ['/admin', '/eventos', '/noticias', '/videos', '/en-vivo', '/api'];
 
-/** Todo lo que hay debajo de /admin, más los endpoints que escriben. */
+/**
+ * Todo lo que hay debajo de /admin, más los endpoints que escriben.
+ *
+ * `/api/notify` está en la lista y no es un detalle: escribe a TODA la lista
+ * de suscriptores. Vive fuera de /api/admin por su ruta, así que antes caía en
+ * la rama de abajo —que deja pasar sin identidad— y el único motivo por el que
+ * no se podía usar desde fuera era que Access cubre el host entero del sitio de
+ * pruebas. El día que Access se limite a /admin, esa dirección habría quedado
+ * abierta a internet.
+ */
 function esPanel(path: string): boolean {
-  return path === '/admin' || path.startsWith('/admin/') || path.startsWith('/api/admin/');
+  return (
+    path === '/admin' ||
+    path.startsWith('/admin/') ||
+    path.startsWith('/api/admin/') ||
+    path === '/api/notify'
+  );
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {

@@ -1,4 +1,5 @@
 import type { Base } from './datos';
+import { esEnlaceSeguro } from './enlaces';
 
 /**
  * Lecturas y escrituras del panel.
@@ -24,6 +25,37 @@ import type { Base } from './datos';
  * podría mandar `{"publicado": 1}` a una tabla donde no toca, o peor, nombres
  * de columna inventados que se concatenarían al SQL.
  */
+
+/**
+ * Un dato que el panel mandó mal escrito. Se responde 400, no 500.
+ *
+ * Existe para poder rechazar desde acá sin que quien llama tenga que adivinar
+ * si el fallo fue suyo o de la base.
+ */
+export class DatoInvalido extends Error {}
+
+/**
+ * Columnas que guardan una dirección web.
+ *
+ * Tres tablas ya lo comprueban en la base (`enlaces`, con `check`), pero
+ * `instagram.enlace` y `aviso_boton_url` nacieron sin nada: un
+ * `javascript:…` pegado por descuido en el botón del aviso emergente quedaba
+ * como enlace de una página pública. La política de seguridad del sitio impide
+ * que llegue a ejecutarse, pero un botón que lleva a cualquier parte tampoco es
+ * lo que nadie quiso guardar.
+ *
+ * SQLite no admite añadir un `check` a una columna que ya existe sin recrear
+ * la tabla entera, así que la comprobación vive acá, que además da un mensaje
+ * en castellano en vez de un error de la base.
+ */
+const COLUMNAS_URL = new Set(['enlace', 'url', 'youtube_url', 'aviso_boton_url', 'vivo_url']);
+
+function comprobarUrl(columna: string, valor: unknown): void {
+  if (!COLUMNAS_URL.has(columna) || typeof valor !== 'string' || valor === '') return;
+  if (!esEnlaceSeguro(valor)) {
+    throw new DatoInvalido(`«${columna}» tiene que ser un enlace que empiece por https://`);
+  }
+}
 
 /** Las tablas que el panel puede tocar, y qué columnas de cada una. */
 const COLUMNAS = {
@@ -127,6 +159,7 @@ function limpiar(recurso: Recurso, datos: Record<string, unknown>) {
       valor = bruto ?? null;
     }
 
+    comprobarUrl(columna, valor);
     campos.push(columna);
     valores.push(valor);
   }
@@ -346,6 +379,7 @@ export async function guardarAjustes(base: Base, datos: Record<string, unknown>)
       valores.push(Number.isFinite(n) ? Math.trunc(n) : 1);
     } else if (typeof bruto === 'string') {
       const recortado = bruto.trim();
+      comprobarUrl(columna, recortado);
       valores.push(recortado === '' ? null : recortado);
     } else {
       valores.push(bruto ?? null);

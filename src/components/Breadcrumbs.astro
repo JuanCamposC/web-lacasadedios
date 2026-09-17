@@ -30,6 +30,7 @@ const jsonLd = {
     ...(c.href ? { item: `${site}${c.href}` } : {}),
   })),
 };
+import { jsonLd as comoJsonLd } from '../lib/jsonld';
 ---
 
-<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+<script type="application/ld+json" set:html={comoJsonLd(jsonLd)} is:inline />

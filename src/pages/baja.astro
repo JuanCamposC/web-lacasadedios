@@ -1,6 +1,15 @@
 ---
 // Baja del boletín. Se llega desde el enlace del pie de cada correo, sin
 // sesión: el token del enlace es la única credencial.
+//
+// ── POR QUÉ NO SE DA DE BAJA AL ABRIR EL ENLACE ──
+// Porque los enlaces de los correos no los abre solo la persona. Los antivirus
+// de correo, los filtros de empresa y los escáneres de seguridad los visitan
+// por su cuenta, sin que nadie pulse nada. Con la acción en el GET, eso
+// daba de baja a gente que no lo había pedido, y era indepurable:
+// la queja es «dejé de recibir el boletín sin hacer nada».
+// Por eso al abrir se enseña un botón, y lo que actúa es el POST de ese botón:
+// un escáner no rellena formularios.
 export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
@@ -10,15 +19,23 @@ import { baseDeDatos } from '../lib/base';
 import { bajaSuscriptor } from '../lib/boletin';
 import { CONTACT } from '../data/site';
 
-const token = Astro.url.searchParams.get('t')?.trim() ?? '';
 const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const esPeticionDeBaja = Astro.request.method === 'POST';
 
-type Estado = 'sin-token' | 'listo' | 'no-encontrado' | 'error';
+let token = Astro.url.searchParams.get('t')?.trim() ?? '';
+if (esPeticionDeBaja) {
+  const datos = await Astro.request.formData();
+  token = String(datos.get('t') ?? '').trim();
+}
+
+type Estado = 'sin-token' | 'confirmar' | 'listo' | 'no-encontrado' | 'error';
 let estado: Estado = 'sin-token';
 
 if (token) {
   if (!ES_UUID.test(token)) {
     estado = 'no-encontrado';
+  } else if (!esPeticionDeBaja) {
+    estado = 'confirmar';
   } else {
     // `true` si borró una fila. Quien ya se dio de baja y vuelve a pulsar el
     // enlace ve «no encontrado», que en la práctica dice lo mismo: no está.
@@ -33,6 +50,11 @@ if (token) {
 }
 
 const TEXTOS: Record<Estado, { icono: string; titulo: string; texto: string }> = {
+  confirmar: {
+    icono: 'lucide:mail-x',
+    titulo: '¿Quieres darte de baja?',
+    texto: 'Pulsa el botón y dejarás de recibir el boletín. No te pedimos ningún dato más.',
+  },
   'sin-token': {
     icono: 'lucide:link-2-off',
     titulo: 'Enlace incompleto',
@@ -69,8 +91,19 @@ const t = TEXTOS[estado];
   <section class="section flex min-h-[70vh] items-center bg-base-100">
     <div class="wrap-narrow">
       <EmptyState icon={t.icono} title={t.titulo} text={t.texto}>
-        <a href="/" class="btn btn-primary gap-2">
-          <Icon name="lucide:home" class="h-5 w-5" /> Ir al inicio
+        {
+          estado === 'confirmar' && (
+            <form method="post" class="contents">
+              <input type="hidden" name="t" value={token} />
+              <button type="submit" class="btn btn-primary gap-2">
+                <Icon name="lucide:mail-x" class="h-5 w-5" /> Darme de baja
+              </button>
+            </form>
+          )
+        }
+        <a href="/" class={`btn gap-2 ${estado === 'confirmar' ? 'btn-ghost' : 'btn-primary'}`}>
+          <Icon name="lucide:home" class="h-5 w-5" />
+          {estado === 'confirmar' ? 'Seguir recibiéndolo' : 'Ir al inicio'}
         </a>
         {
           estado === 'listo' && (

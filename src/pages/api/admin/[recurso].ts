@@ -1,6 +1,14 @@
 import type { APIRoute } from 'astro';
 import { baseDeDatos } from '../../../lib/base';
-import { esRecurso, listarTodo, crear, actualizar, borrar, unaFila } from '../../../lib/panel';
+import {
+  esRecurso,
+  listarTodo,
+  crear,
+  actualizar,
+  borrar,
+  unaFila,
+  DatoInvalido,
+} from '../../../lib/panel';
 import { urlMedio } from '../../../lib/medios';
 import { templos } from '../../../data/templos';
 import { DIAS } from '../../../lib/reuniones';
@@ -106,6 +114,9 @@ function detalleDeReunion(fila: Record<string, unknown>): { detalle?: string } {
  * 500. Es un dato mal puesto, no una caída: se responde 400 y en castellano.
  */
 function rechazoDeLaBase(e: unknown): Response | null {
+  // Lo que rechaza el propio panel (una dirección que no es https) llega con su
+  // frase ya escrita: se pasa tal cual.
+  if (e instanceof DatoInvalido) return json({ error: e.message }, 400);
   if (!String((e as Error)?.message ?? e).includes('CHECK constraint failed')) return null;
   return json(
     {

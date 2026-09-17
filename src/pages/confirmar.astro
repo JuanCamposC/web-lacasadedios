@@ -5,6 +5,16 @@
 // El alta queda `pending` hasta que se pasa por aquí. Ese es todo el sentido
 // del doble opt-in: dejar un correo en un formulario no prueba que sea tuyo,
 // abrir el mensaje que llega a esa dirección sí.
+//
+// ── POR QUÉ NO SE CONFIRMA AL ABRIR EL ENLACE ──
+// Porque los enlaces de los correos no los abre solo la persona. Los antivirus
+// de correo, los filtros de empresa y los escáneres de seguridad los visitan
+// por su cuenta, sin que nadie pulse nada. Con la acción en el GET, eso
+// confirmaba suscripciones que nadie confirmó, que es exactamente lo que
+// el doble opt-in existe para impedir: bastaba con escribir la dirección de
+// otra persona y esperar a que su antivirus abriera el enlace.
+// Por eso al abrir se enseña un botón, y lo que actúa es el POST de ese botón:
+// un escáner no rellena formularios.
 export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
@@ -14,15 +24,23 @@ import { baseDeDatos } from '../lib/base';
 import { confirmarSuscriptor } from '../lib/boletin';
 import { CONTACT } from '../data/site';
 
-const token = Astro.url.searchParams.get('t')?.trim() ?? '';
 const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const esConfirmacion = Astro.request.method === 'POST';
 
-type Estado = 'sin-token' | 'listo' | 'no-encontrado' | 'error';
+let token = Astro.url.searchParams.get('t')?.trim() ?? '';
+if (esConfirmacion) {
+  const datos = await Astro.request.formData();
+  token = String(datos.get('t') ?? '').trim();
+}
+
+type Estado = 'sin-token' | 'confirmar' | 'listo' | 'no-encontrado' | 'error';
 let estado: Estado = 'sin-token';
 
 if (token) {
   if (!ES_UUID.test(token)) {
     estado = 'no-encontrado';
+  } else if (!esConfirmacion) {
+    estado = 'confirmar';
   } else {
     // `true` si esta llamada fue la que confirmó. Confirmar dos veces no da
     // «listo» la segunda, y está bien: quien recarga ya está dentro y lo que
@@ -38,6 +56,12 @@ if (token) {
 }
 
 const TEXTOS: Record<Estado, { icono: string; titulo: string; texto: string }> = {
+  confirmar: {
+    icono: 'lucide:mail-check',
+    titulo: 'Confirma tu suscripción',
+    texto:
+      'Un último paso: pulsa el botón y empezarás a recibir el boletín con eventos, noticias y prédicas.',
+  },
   'sin-token': {
     icono: 'lucide:link-2-off',
     titulo: 'Enlace incompleto',
@@ -74,8 +98,19 @@ const t = TEXTOS[estado];
   <section class="section flex min-h-[70vh] items-center bg-base-100">
     <div class="wrap-narrow">
       <EmptyState icon={t.icono} title={t.titulo} text={t.texto}>
-        <a href="/" class="btn btn-primary gap-2">
-          <Icon name="lucide:home" class="h-5 w-5" /> Ir al inicio
+        {
+          estado === 'confirmar' && (
+            <form method="post" class="contents">
+              <input type="hidden" name="t" value={token} />
+              <button type="submit" class="btn btn-primary gap-2">
+                <Icon name="lucide:mail-check" class="h-5 w-5" /> Confirmar mi suscripción
+              </button>
+            </form>
+          )
+        }
+        <a href="/" class={`btn gap-2 ${estado === 'confirmar' ? 'btn-ghost' : 'btn-primary'}`}>
+          <Icon name="lucide:home" class="h-5 w-5" />
+          Ir al inicio
         </a>
         {
           estado === 'listo' && (

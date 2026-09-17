@@ -36,8 +36,12 @@ export interface Suscriptor {
 }
 
 /**
- * Freno por IP: cuántas altas se han intentado desde esta dirección en la
- * ventana. Devuelve el número de intentos PREVIOS y apunta el actual.
+ * Freno por IP: cuántos intentos de esta `accion` se han hecho desde esta
+ * dirección en la ventana. Devuelve los PREVIOS y apunta el actual.
+ *
+ * `accion` separa las cuentas: las altas al boletín y los envíos del
+ * formulario de contacto usan el mismo mecanismo y la misma tabla, pero quien
+ * escribe un mensaje no debe gastar el cupo de quien se suscribe.
  *
  * ── POR QUÉ EN LA BASE Y NO EN MEMORIA ──────────────────────────────────────
  * Cada isolate de Workers tiene su propia memoria y se recicla sin avisar: un
@@ -58,18 +62,23 @@ export async function registrarIntento(
   base: Base,
   ip: string,
   ventanaMin: number,
+  accion = 'alta',
 ): Promise<number> {
   const desde = new Date(Date.now() - ventanaMin * 60_000).toISOString().slice(0, 19) + 'Z';
 
   const fila = await base
-    .prepare('select count(*) as n from intentos_alta where ip = ? and intentado_en >= ?')
-    .bind(ip, desde)
+    .prepare(
+      'select count(*) as n from intentos_alta where accion = ? and ip = ? and intentado_en >= ?',
+    )
+    .bind(accion, ip, desde)
     .first<{ n: number }>();
 
+  // El borrado de lo viejo no filtra por acción a propósito: la tabla se limpia
+  // entera, la pidan desde donde la pidan.
   await base.prepare('delete from intentos_alta where intentado_en < ?').bind(desde).first();
   await base
-    .prepare('insert into intentos_alta (ip, intentado_en) values (?, ?)')
-    .bind(ip, ahora())
+    .prepare('insert into intentos_alta (ip, intentado_en, accion) values (?, ?, ?)')
+    .bind(ip, ahora(), accion)
     .first();
 
   return fila?.n ?? 0;

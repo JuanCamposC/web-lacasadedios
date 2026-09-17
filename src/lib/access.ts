@@ -25,6 +25,8 @@
  */
 
 /** Lo poco que necesitamos saber de quien entró. */
+import { esProduccion } from './cabeceras';
+
 export interface Identidad {
   correo: string;
   /** Identificador estable de la persona dentro de Access. */
@@ -157,8 +159,18 @@ export async function verificarToken(
   if (!clave) return null;
 
   const firmado = new TextEncoder().encode(`${partes[0]}.${partes[1]}`);
-  const firma = b64url(partes[2]);
-  const valida = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', clave, firma, firmado);
+  // `b64url` usa `atob`, que LANZA con caracteres que no son base64. Sin este
+  // try, un token con la firma mal escrita subía la excepción hasta el
+  // middleware y salía un 500 en vez del 403 que promete el encabezado de este
+  // archivo. No abría nada; decía otra cosa, que en un registro de errores es
+  // suficiente para perseguir el problema equivocado.
+  let valida = false;
+  try {
+    const firma = b64url(partes[2]);
+    valida = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', clave, firma, firmado);
+  } catch {
+    return null;
+  }
   if (!valida) return null;
 
   // ── El token está firmado. Ahora, si es PARA NOSOTROS y está vigente. ──
@@ -210,12 +222,16 @@ export interface Acceso {
  * deliberadas:
  *
  *   · `localhost` — en desarrollo no hay Access delante de nada, y sin esto el
- *     panel sería imposible de trabajar. Un atacante no puede fingir ser
- *     localhost: el nombre lo pone el propio servidor al recibir la petición.
+ *     panel sería imposible de trabajar. Lo que impide fingirse localhost NO es
+ *     este código: `url.hostname` sale de la cabecera `Host`, que la pone
+ *     quien pide. Lo impide el enrutamiento de Cloudflare, que solo manda al
+ *     Worker lo que llega por sus dominios. Por eso la excepción de abajo se
+ *     apoya además en que no haya token, y por eso conviene no encender el
+ *     subdominio `*.workers.dev` ni poner otro proxy por delante.
  *
- *   · `PANEL_ABIERTO` — una variable que hay que poner a mano. Existe para
- *     poder abrir el panel a propósito y por un rato, no por descuido: la
- *     diferencia entre las dos es que esto exige que alguien lo escriba.
+ *   · `PANEL_ABIERTO` — una variable que hay que poner a mano, y que **no
+ *     funciona en producción**. Existe para abrir el panel a propósito y por un
+ *     rato mientras se trabaja; en el dominio real, escribirla no abre nada.
  *
  * Lo que NO se hace es dejar entrar «si no se pudo comprobar». Ese es el fallo
  * que no se ve hasta que alguien lo encuentra.
@@ -229,7 +245,11 @@ export async function permitirPanel(request: Request, url: URL): Promise<Acceso>
     return { permitido: true, identidad: null, motivo: 'local' };
   }
 
-  if ((process.env.PANEL_ABIERTO ?? '') === '1') {
+  // En producción esta variable no abre nada. Antes bastaba con añadirla en el
+  // panel de Cloudflare para dejar el panel entero —contenidos, ajustes,
+  // subidas y la lista de suscriptores— sin puerta, y nada ataba la variable a
+  // un entorno. Un descuido de un minuto no debería poder hacer eso.
+  if ((process.env.PANEL_ABIERTO ?? '') === '1' && !esProduccion()) {
     return { permitido: true, identidad: null, motivo: 'abierto-a-proposito' };
   }
 
