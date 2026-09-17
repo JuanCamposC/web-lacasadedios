@@ -19,7 +19,7 @@ import { initMarkdown } from './admin/markdown-editor';
 import { initArrastre } from './admin/sortable';
 import { avisarSuscriptores } from './admin/notificar';
 import { preguntar, toast } from './admin/ui';
-import type { Contexto, CrudConfig, Estado } from './admin/tipos';
+import type { Contexto, CrudConfig, Estado, Fila } from './admin/tipos';
 
 export type { Field, CrudConfig } from './admin/tipos';
 
@@ -101,9 +101,28 @@ export function setupCrud(config: CrudConfig) {
   initImagenes(ctx);
 
   /* ── Acciones ────────────────────────────────────────────────────────── */
+  /**
+   * Filas cuyo cambio de estado está en marcha.
+   *
+   * Sin esto, un doble clic sobre la insignia «Borrador» lanzaba dos veces el
+   * mismo cambio: las dos lecturas veían `publicado = 0` —el valor solo se
+   * actualiza al volver la respuesta—, las dos preguntaban si avisar y las dos
+   * mandaban el correo. Dos boletines a toda la lista por la misma noticia.
+   */
+  const enMarcha = new Set<string>();
+
   async function togglePublicado(ctx: Contexto, id: string) {
     const row = ctx.filas.find((r) => r.id === id);
-    if (!row) return;
+    if (!row || enMarcha.has(id)) return;
+    enMarcha.add(id);
+    try {
+      await cambiarEstado(ctx, row, id);
+    } finally {
+      enMarcha.delete(id);
+    }
+  }
+
+  async function cambiarEstado(ctx: Contexto, row: Fila, id: string) {
     const nuevo = !row.publicado;
 
     // Al encender, se pregunta antes de mandar correos.
@@ -198,9 +217,15 @@ export function setupCrud(config: CrudConfig) {
   ctx.buscarEl.addEventListener('input', ctx.pintar);
 
   // Ctrl/Cmd + S guarda sin tener que buscar el botón.
+  //
+  // `requestSubmit()` NO mira si el botón de guardar está deshabilitado:
+  // dispara el envío igual. Con dos pulsaciones seguidas se creaba la noticia
+  // dos veces, se subía la imagen dos veces y —si estaba marcado el aviso— se
+  // escribía DOS VECES a toda la lista de suscriptores.
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
       e.preventDefault();
+      if (ctx.saveBtn.disabled) return;
       ctx.form.requestSubmit();
     }
   });

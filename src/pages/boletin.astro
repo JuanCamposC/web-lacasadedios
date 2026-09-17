@@ -1,0 +1,67 @@
+---
+/**
+ * Adónde vuelve quien se suscribe SIN JavaScript.
+ *
+ * El formulario del pie manda a /api/suscribir, que responde con una
+ * redirección hasta acá. Con JavaScript nadie pasa por esta página: el script
+ * del pie intercepta el envío y enseña el mismo mensaje sin recargar.
+ *
+ * No dice nunca si la dirección ya estaba en la lista. Distinguirlo permitiría
+ * comprobar desde fuera quién está suscrito, así que un alta nueva y una
+ * repetida ven exactamente lo mismo.
+ */
+export const prerender = false;
+
+import Layout from '../layouts/Layout.astro';
+import EmptyState from '../components/EmptyState.astro';
+import { Icon } from 'astro-icon/components';
+import { CONTACT } from '../data/site';
+
+type Estado = 'enviado' | 'invalido' | 'muchos' | 'error';
+const crudo = Astro.url.searchParams.get('estado') ?? '';
+const estado: Estado = (['enviado', 'invalido', 'muchos'] as const).includes(crudo as never)
+  ? (crudo as Estado)
+  : 'error';
+
+const TEXTOS: Record<Estado, { icono: string; titulo: string; texto: string }> = {
+  enviado: {
+    icono: 'lucide:mail-check',
+    titulo: 'Revisa tu correo',
+    texto:
+      'Te mandamos un mensaje con un botón para confirmar. Hasta que lo pulses no te escribimos nada más. Si no llega en unos minutos, mira en la carpeta de correo no deseado.',
+  },
+  invalido: {
+    icono: 'lucide:mail-x',
+    titulo: 'Esa dirección no parece válida',
+    texto: 'Revísala y vuelve a intentarlo desde el formulario del pie del sitio.',
+  },
+  muchos: {
+    icono: 'lucide:hourglass',
+    titulo: 'Demasiados intentos',
+    texto: `Se han hecho varias suscripciones seguidas desde tu conexión. Espera un rato y vuelve a intentarlo, o escríbenos a ${CONTACT.email}.`,
+  },
+  error: {
+    icono: 'lucide:alert-triangle',
+    titulo: 'No pudimos completar la suscripción',
+    texto: `Hubo un problema de nuestro lado. Escríbenos a ${CONTACT.email} y te agregamos a mano.`,
+  },
+};
+
+const t = TEXTOS[estado];
+---
+
+<Layout
+  title="Boletín · La Casa de Dios"
+  description="Suscripción al boletín de La Casa de Dios."
+  noindex
+>
+  <section class="section flex min-h-[70vh] items-center bg-base-100">
+    <div class="wrap-narrow">
+      <EmptyState icon={t.icono} title={t.titulo} text={t.texto}>
+        <a href="/" class="btn btn-primary gap-2">
+          <Icon name="lucide:home" class="h-5 w-5" /> Ir al inicio
+        </a>
+      </EmptyState>
+    </div>
+  </section>
+</Layout>

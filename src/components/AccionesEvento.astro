@@ -70,9 +70,19 @@ const google = enlaceGoogleCalendar({
    * Va por delegación en el documento: hay un botón por evento y no tiene
    * sentido colgar un escuchador de cada uno.
    */
+  /*
+   * La guardia es una variable del módulo y no una marca en el <body>.
+   *
+   * Con las transiciones de vista, Astro REEMPLAZA el <body> entero en cada
+   * navegación: la marca se iba con el body viejo, la función volvía a colgar
+   * su escuchador, y al cabo de tres páginas «Compartir» se ejecutaba tres
+   * veces. El módulo, en cambio, se evalúa una sola vez por sesión.
+   */
+  let listo = false;
+
   function initCompartirEventos() {
-    if (document.body.dataset.compartirEventos) return;
-    document.body.dataset.compartirEventos = '1';
+    if (listo) return;
+    listo = true;
 
     document.addEventListener('click', async (ev) => {
       const btn = (ev.target as HTMLElement)?.closest?.('[data-compartir]') as HTMLElement | null;

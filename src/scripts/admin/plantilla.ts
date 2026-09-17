@@ -78,7 +78,11 @@ function campoHtml(f: CrudConfig['fields'][number]): string {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 text-base-content/40"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
             <span class="text-sm font-medium">Arrastra una imagen o toca para elegirla</span>
             <span class="text-xs text-base-content/50">Se reduce sola antes de subirse</span>
-            <input type="file" name="${f.name}" accept="image/*" class="hidden" />
+            <!-- sr-only y no hidden: con display:none el campo sale del orden
+                 de foco y subir una imagen era IMPOSIBLE sin ratón: al tabular,
+                 el foco saltaba del cuerpo directo al templo. Así sigue sin
+                 verse, pero se alcanza con el teclado y se abre con Enter. -->
+            <input type="file" name="${f.name}" accept="image/*" class="sr-only" />
           </label>
           <div data-preview="${f.name}" class="mt-2"></div>${help}
         </div>`;

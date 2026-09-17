@@ -3,9 +3,22 @@ import { Icon } from 'astro-icon/components';
 import { templos } from '../data/templos';
 import { CONTACT } from '../data/site';
 
-// Formulario de contacto con mejora progresiva:
-//  · sin JavaScript envía por POST normal y vuelve con ?enviado=1
-//  · con JavaScript envía por fetch y muestra el resultado sin recargar
+/**
+ * Formulario de contacto con mejora progresiva:
+ *  · sin JavaScript envía por POST a /contacto, que vuelve a dibujar la página
+ *    con lo escrito y el resultado
+ *  · con JavaScript envía por fetch y muestra el resultado sin recargar
+ *
+ * `valores` son los campos que vuelven tras un envío fallido. Antes el envío
+ * sin JavaScript iba al endpoint y redirigía: el formulario volvía EN BLANCO y
+ * el mensaje entero se perdía.
+ */
+interface Props {
+  valores?: Record<string, string>;
+  resultado?: 'ok' | 'error' | null;
+  motivo?: string | null;
+}
+const { valores = {}, resultado = null, motivo = null } = Astro.props;
 const asuntos = [
   'Quiero visitar la iglesia',
   'Petición de oración',
@@ -14,7 +27,9 @@ const asuntos = [
   'Otro',
 ];
 
-const enviado = Astro.url.searchParams.get('enviado');
+// `?enviado=` se conserva para los enlaces antiguos.
+const porUrl = Astro.url.searchParams.get('enviado');
+const enviado = resultado === 'ok' ? '1' : resultado === 'error' ? '0' : porUrl;
 
 /**
  * El formulario llega preparado cuando se entra desde otra página.
@@ -34,11 +49,35 @@ const pedido = {
   asunto: Astro.url.searchParams.get('asunto'),
   templo: Astro.url.searchParams.get('templo'),
 };
-const asuntoElegido = asuntos.find((a) => a === pedido.asunto) ?? '';
-const temploElegido = templos.find((t) => t.short === pedido.templo || t.slug === pedido.templo);
+const asuntoElegido = valores.asunto || (asuntos.find((a) => a === pedido.asunto) ?? '');
+const temploElegido = templos.find(
+  (t) => t.short === (valores.templo || pedido.templo) || t.slug === pedido.templo,
+);
+
+/** Cada motivo de fallo con su salida, en vez de una sola frase para todo. */
+const ERRORES: Record<string, string> = {
+  demasiados_intentos:
+    'Se han enviado varios mensajes seguidos desde tu conexión. Espera un rato o escríbenos a ' +
+    CONTACT.email +
+    '.',
+  no_email_provider:
+    'El envío por el sitio todavía no está habilitado. Escríbenos a ' +
+    CONTACT.email +
+    ' y te respondemos igual.',
+  invalid: 'Revisa los campos obligatorios e inténtalo de nuevo.',
+};
+const textoError =
+  (motivo && ERRORES[motivo]) ||
+  'No pudimos enviar el mensaje. Escríbenos directamente a ' + CONTACT.email + '.';
 ---
 
-<form id="contact-form" method="post" action="/api/contacto" class="panel p-6 sm:p-8" novalidate>
+{
+  /* Sin `novalidate`: esa marca apagaba la validación del navegador, y quien no
+    tiene JavaScript se quedaba sin ninguna. Con JavaScript la apaga el script,
+    que valida y avisa por su cuenta. El destino es la propia página, que
+    conserva lo escrito si el envío falla. */
+}
+<form id="contact-form" method="post" action="/contacto#contacto" class="panel p-6 sm:p-8">
   <h2 class="font-display text-2xl">Escríbenos</h2>
   <p class="mt-1 text-sm text-base-content/70">
     Cuéntanos en qué podemos ayudarte. Respondemos al correo que nos dejes.
@@ -62,6 +101,8 @@ const temploElegido = templos.find((t) => t.short === pedido.templo || t.slug ==
         id="cf-nombre"
         name="nombre"
         type="text"
+        value={valores.nombre ?? ''}
+        maxlength="100"
         required
         autocomplete="name"
         placeholder="Tu nombre"
@@ -77,6 +118,8 @@ const temploElegido = templos.find((t) => t.short === pedido.templo || t.slug ==
         id="cf-email"
         name="email"
         type="email"
+        value={valores.email ?? ''}
+        maxlength="254"
         required
         autocomplete="email"
         placeholder="tucorreo@ejemplo.cl"
@@ -94,6 +137,8 @@ const temploElegido = templos.find((t) => t.short === pedido.templo || t.slug ==
         id="cf-telefono"
         name="telefono"
         type="tel"
+        value={valores.telefono ?? ''}
+        maxlength="40"
         autocomplete="tel"
         placeholder="+56 9 ..."
         class="input input-bordered w-full"
@@ -142,8 +187,10 @@ const temploElegido = templos.find((t) => t.short === pedido.templo || t.slug ==
         required
         rows="5"
         minlength="10"
+        maxlength="4000"
         placeholder="Escribe tu mensaje…"
-        class="textarea textarea-bordered w-full"></textarea>
+        class="textarea textarea-bordered w-full">{valores.mensaje ?? ''}</textarea
+      >
     </div>
   </div>
 
@@ -169,7 +216,7 @@ const temploElegido = templos.find((t) => t.short === pedido.templo || t.slug ==
     ]}
   >
     {enviado === '1' && '¡Gracias! Recibimos tu mensaje y te responderemos pronto.'}
-    {enviado === '0' && `No pudimos enviar el mensaje. Escríbenos directamente a ${CONTACT.email}.`}
+    {enviado === '0' && textoError}
   </p>
 </form>
 
@@ -197,6 +244,10 @@ const temploElegido = templos.find((t) => t.short === pedido.templo || t.slug ==
             ? 'bg-warning/10 text-warning'
             : 'bg-error/10 text-error');
     };
+
+    // La validación del navegador se apaga ACÁ y no en el HTML: así quien no
+    // tiene JavaScript conserva la del navegador, que es la única que le queda.
+    form.noValidate = true;
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -227,6 +278,13 @@ const temploElegido = templos.find((t) => t.short === pedido.templo || t.slug ==
             'El envío por el sitio todavía no está habilitado. Escríbenos a ' +
               (data.email ?? 'contacto@lacasadedios.cl') +
               ' y te respondemos igual.',
+            'warn',
+          );
+        } else if (data.reason === 'demasiados_intentos') {
+          show(
+            'Se han enviado varios mensajes seguidos desde tu conexión. Espera un rato o escríbenos a ' +
+              (data.email ?? 'contacto@lacasadedios.cl') +
+              '.',
             'warn',
           );
         } else if (data.reason === 'invalid') {

@@ -200,7 +200,13 @@ const links = [
       </ul>
     </nav>
 
-    <div id="toast" class="toast toast-end z-50 pb-20 lg:pb-4"></div>
+    {
+      /* role="status" + aria-live: por acá pasan «Borrado», «No se pudo
+        guardar» y «Avisamos a 40 suscriptores». Sin esto, quien usa lector
+        de pantalla no se entera de si el guardado funcionó. */
+    }
+    <div id="toast" role="status" aria-live="polite" class="toast toast-end z-50 pb-20 lg:pb-4">
+    </div>
 
     <script>
       import '../scripts/reveal';

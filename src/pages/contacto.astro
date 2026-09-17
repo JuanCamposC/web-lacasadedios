@@ -13,6 +13,29 @@ import { Icon } from 'astro-icon/components';
 import { templos, correoDe } from '../data/templos';
 import { CONTACT, SOCIAL, hasPhone } from '../data/site';
 import { IMG } from '../assets/images';
+import { procesarContacto, readBody } from '../lib/contacto';
+
+/**
+ * El envío sin JavaScript se atiende ACÁ, no en /api/contacto.
+ *
+ * El endpoint solo puede redirigir, y una redirección se lleva por delante lo
+ * que la persona escribió: ante cualquier fallo, el formulario volvía vacío y
+ * había que teclear el mensaje entero otra vez. Desde la página se puede
+ * volver a dibujar el formulario con sus valores.
+ *
+ * Con JavaScript nadie pasa por acá: el script manda por fetch al endpoint.
+ */
+let valores: Record<string, string> = {};
+let resultado: 'ok' | 'error' | null = null;
+let motivo: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  const r = await procesarContacto(Astro.request, await readBody(Astro.request));
+  resultado = r.ok ? 'ok' : 'error';
+  motivo = r.reason ?? null;
+  // Si salió bien, el formulario vuelve limpio; si no, con todo lo escrito.
+  valores = r.ok ? {} : { ...r.valores };
+}
 ---
 
 <Layout
@@ -34,7 +57,7 @@ import { IMG } from '../assets/images';
   <section id="contacto" class="section bg-base-100">
     <div class="wrap grid gap-8 lg:grid-cols-12">
       <Reveal class="lg:col-span-7">
-        <ContactForm />
+        <ContactForm valores={valores} resultado={resultado} motivo={motivo} />
       </Reveal>
 
       <div class="space-y-5 lg:col-span-5">

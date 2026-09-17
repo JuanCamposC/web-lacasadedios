@@ -451,7 +451,9 @@ import { IMG } from '../assets/images';
         }
       }
 
-      pintarInstagram();
+      // Una sola vez: astro:page-load YA dispara en la carga inicial, así que
+      // llamar además al evaluar el módulo pedía /api/instagram dos veces y
+      // reconstruía la rejilla dos veces en cada visita a la portada.
       document.addEventListener('astro:page-load', pintarInstagram);
     </script>
   </section>

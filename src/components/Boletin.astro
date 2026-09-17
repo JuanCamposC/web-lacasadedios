@@ -23,8 +23,15 @@ import { SITE } from '../data/site';
     <p class="mx-auto mt-2 hidden max-w-lg text-sm opacity-70 sm:block sm:text-base">
       Suscríbete y entérate de eventos, prédicas y noticias de {SITE.name}.
     </p>
+    {
+      /* Con action y method el alta funciona también sin JavaScript: el
+        endpoint responde con una redirección a /boletin. Con JavaScript, el
+        script de más abajo intercepta el envío y no se recarga nada. */
+    }
     <form
       id="newsletter-form"
+      method="post"
+      action="/api/suscribir"
       class="mx-auto mt-4 flex max-w-md flex-col gap-2.5 sm:mt-6 sm:flex-row sm:gap-3"
     >
       <label for="newsletter-email" class="sr-only">Correo electrónico</label>

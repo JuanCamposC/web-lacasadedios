@@ -200,7 +200,74 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
     TEMA_POR_DEFECTO,
   } from '../lib/tema';
 
+  /*
+   * Dos clases de escuchadores, y confundirlas costaba una fuga de memoria.
+   *
+   * Con las transiciones de vista, Astro reemplaza el <body> —y con él la barra
+   * de navegación— en cada navegación. Las marcas del tipo `nav.dataset.bound`
+   * se iban con el elemento viejo, así que en cada página se colgaba OTRO
+   * escuchador de `scroll` en `window`; y cada uno seguía apuntando a la barra
+   * anterior, ya desconectada, que por eso no se podía liberar.
+   *
+   * Lo que se cuelga de `window` o de `document` sobrevive a la navegación:
+   * se engancha UNA vez por sesión (`globalesListas`, una variable del módulo,
+   * que es lo único que no se reemplaza) y busca los elementos en el momento de
+   * actuar. Lo que se cuelga de un elemento de la página muere con él, así que
+   * se vuelve a enganchar en cada página, que es lo correcto.
+   */
+  let globalesListas = false;
+
+  const laBarra = () => document.getElementById('site-nav');
+  const elMenu = () => document.getElementById('mobile-menu');
+  const elBoton = () => document.getElementById('nav-toggle');
+
+  function pintarScroll() {
+    laBarra()?.classList.toggle('is-scrolled', window.scrollY > 24);
+  }
+
+  function cerrarDesplegables(excepto: Element | null) {
+    laBarra()
+      ?.querySelectorAll('details.dropdown[open]')
+      .forEach((d) => {
+        if (d !== excepto) d.removeAttribute('open');
+      });
+  }
+
+  function abrirMenuMovil(open: boolean) {
+    const menu = elMenu();
+    const toggle = elBoton();
+    if (!menu || !toggle) return;
+    menu.classList.toggle('hidden', !open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+    toggle.querySelector('.nav-open')?.classList.toggle('hidden', open);
+    toggle.querySelector('.nav-close')?.classList.toggle('hidden', !open);
+  }
+
+  function engancharGlobales() {
+    if (globalesListas) return;
+    globalesListas = true;
+
+    window.addEventListener('scroll', pintarScroll, { passive: true });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 1280) abrirMenuMovil(false);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!(e.target as Element | null)?.closest('details.dropdown')) cerrarDesplegables(null);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      cerrarDesplegables(null);
+      if (!elMenu()?.classList.contains('hidden')) abrirMenuMovil(false);
+    });
+  }
+
   function initNav() {
+    engancharGlobales();
+
     const themeToggle = document.getElementById('theme-toggle') as HTMLInputElement | null;
 
     // La normalización y el guardado viven en src/lib/tema.ts, junto con el
@@ -209,14 +276,12 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
     aplicarTema(tema);
     if (themeToggle) themeToggle.checked = tema === TEMA_OSCURO;
 
-    if (themeToggle && !themeToggle.dataset.bound) {
-      themeToggle.dataset.bound = '1';
-      themeToggle.addEventListener('change', () =>
-        guardarTema(themeToggle.checked ? TEMA_OSCURO : TEMA_POR_DEFECTO),
-      );
-    }
+    // Este escuchador sí va en el elemento: se lo lleva la navegación con él.
+    themeToggle?.addEventListener('change', () =>
+      guardarTema(themeToggle.checked ? TEMA_OSCURO : TEMA_POR_DEFECTO),
+    );
 
-    const nav = document.getElementById('site-nav');
+    const nav = laBarra();
     if (nav) {
       // Si la página abre con una banda oscura a sangre, la barra se vuelve
       // transparente arriba del todo y se solidifica al bajar. Sin esto queda
@@ -224,59 +289,23 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
       const primero = document.querySelector('main > *');
       const sobreHero = primero instanceof Element && primero.matches('.section-dark, .on-dark');
       nav.toggleAttribute('data-sobre-hero', sobreHero);
+      pintarScroll();
 
-      if (!nav.dataset.scrollBound) {
-        nav.dataset.scrollBound = '1';
-        const onScroll = () => nav.classList.toggle('is-scrolled', window.scrollY > 24);
-        window.addEventListener('scroll', onScroll, { passive: true });
-        onScroll();
-      } else {
-        nav.classList.toggle('is-scrolled', window.scrollY > 24);
-      }
-    }
-
-    // Menús desplegables de escritorio: cerrar al hacer clic fuera o con Escape.
-    if (nav && !nav.dataset.ddBound) {
-      nav.dataset.ddBound = '1';
-      const cerrarTodos = (excepto: Element | null) => {
-        nav.querySelectorAll('details.dropdown[open]').forEach((d) => {
-          if (d !== excepto) d.removeAttribute('open');
-        });
-      };
+      // Menús desplegables de escritorio: al abrir uno se cierran los demás.
       nav.querySelectorAll('details.dropdown').forEach((d) => {
         d.addEventListener('toggle', () => {
-          if (d.hasAttribute('open')) cerrarTodos(d);
+          if (d.hasAttribute('open')) cerrarDesplegables(d);
         });
-      });
-      document.addEventListener('click', (e) => {
-        if (!(e.target as Element | null)?.closest('details.dropdown')) cerrarTodos(null);
-      });
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') cerrarTodos(null);
       });
     }
 
-    const toggle = document.getElementById('nav-toggle');
-    const menu = document.getElementById('mobile-menu');
-    if (toggle && menu && !toggle.dataset.bound) {
-      toggle.dataset.bound = '1';
-      const openI = toggle.querySelector('.nav-open');
-      const closeI = toggle.querySelector('.nav-close');
-      const setOpen = (open: boolean) => {
-        menu.classList.toggle('hidden', !open);
-        toggle.setAttribute('aria-expanded', String(open));
-        toggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
-        if (openI) openI.classList.toggle('hidden', open);
-        if (closeI) closeI.classList.toggle('hidden', !open);
-      };
-      toggle.addEventListener('click', () => setOpen(menu.classList.contains('hidden')));
-      menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !menu.classList.contains('hidden')) setOpen(false);
-      });
-      window.addEventListener('resize', () => {
-        if (window.innerWidth >= 1280) setOpen(false);
-      });
+    const toggle = elBoton();
+    const menu = elMenu();
+    if (toggle && menu) {
+      toggle.addEventListener('click', () => abrirMenuMovil(menu.classList.contains('hidden')));
+      menu
+        .querySelectorAll('a')
+        .forEach((a) => a.addEventListener('click', () => abrirMenuMovil(false)));
     }
   }
 

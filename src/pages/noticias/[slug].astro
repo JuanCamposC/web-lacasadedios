@@ -141,8 +141,19 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
     <div class="wrap-narrow">
       {
         item.imagen && (
-          <Reveal class="mb-10 block overflow-hidden rounded-xl">
-            <img src={item.imagen} alt={item.titulo} class="w-full object-cover" loading="eager" />
+          /* El hueco se reserva ANTES de que llegue la foto.
+
+             De la base sale una clave de R2, no el tamaño de la imagen, así que
+             el navegador no sabía cuánto alto reservar: la foto entraba de
+             golpe y empujaba el texto hacia abajo justo cuando se empezaba a
+             leer. Con una proporción fija, el sitio ya está hecho. */
+          <Reveal class="mb-10 block aspect-[16/9] overflow-hidden rounded-xl bg-base-200">
+            <img
+              src={item.imagen}
+              alt={item.titulo}
+              class="h-full w-full object-cover"
+              loading="eager"
+            />
           </Reveal>
         )
       }

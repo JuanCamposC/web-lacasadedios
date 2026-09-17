@@ -49,6 +49,17 @@ function fallo(reason: string, detalle: string, status = 200) {
   return json({ ok: false, reason }, status);
 }
 
+/** Igual que `fallo`, pero respetando cómo pidió quien llama. */
+function falloDe(
+  responder: (ok: boolean, motivo: string, status?: number) => Response,
+  reason: string,
+  detalle: string,
+  status = 200,
+) {
+  console.error(`[suscribir] ${reason}: ${detalle}`);
+  return responder(false, reason, status);
+}
+
 /**
  * Validación de formato, no de existencia. Deliberadamente más estricta que el
  * `type="email"` del navegador —sin espacios, un solo arroba, TLD de dos letras
@@ -61,15 +72,52 @@ function correoValido(email: string): boolean {
   return email.length <= 254 && CORREO.test(email);
 }
 
-export const POST: APIRoute = async ({ request, url: reqUrl }) => {
-  // El formato se valida antes que nada: una petición malformada se rechaza
-  // igual esté o no configurado el servidor, y sin gastar una consulta.
-  const body = await request.json().catch(() => ({}) as Record<string, unknown>);
-  const email = String((body as any)?.email ?? '')
-    .trim()
-    .toLowerCase();
+/**
+ * A dónde manda a quien se suscribió SIN JavaScript.
+ *
+ * El formulario del pie no tenía `action`: todo dependía del script. Sin
+ * JavaScript, pulsar Enter hacía un GET a la misma página y el correo de la
+ * persona quedaba escrito en la barra de direcciones —y en el historial, y en
+ * el registro del servidor— sin que nadie quedara suscrito.
+ *
+ * Los motivos se agrupan a propósito: «ya estaba» y «alta nueva» llevan al
+ * mismo sitio, porque distinguirlos permitiría comprobar desde fuera quién está
+ * en la lista.
+ */
+const DESTINOS: Record<string, string> = {
+  confirmacion_enviada: 'enviado',
+  ya_estaba: 'enviado',
+  correo_invalido: 'invalido',
+  demasiados_intentos: 'muchos',
+};
 
-  if (!correoValido(email)) return json({ ok: false, reason: 'correo_invalido' }, 400);
+export const POST: APIRoute = async ({ request, url: reqUrl }) => {
+  // Con JavaScript llega JSON; sin él, un formulario normal.
+  const esFormulario = !(request.headers.get('content-type') ?? '').includes('application/json');
+
+  const email = esFormulario
+    ? String((await request.formData()).get('email') ?? '')
+        .trim()
+        .toLowerCase()
+    : String(
+        ((await request.json().catch(() => ({}) as Record<string, unknown>)) as any)?.email ?? '',
+      )
+        .trim()
+        .toLowerCase();
+
+  /** Una sola salida para las dos formas de pedir. */
+  const responder = (ok: boolean, motivo: string, status = 200) => {
+    if (!esFormulario) {
+      return json(ok ? { ok, estado: motivo } : { ok, reason: motivo }, status);
+    }
+    const estado = DESTINOS[motivo] ?? 'error';
+    return new Response(null, {
+      status: 303,
+      headers: { Location: `/boletin?estado=${estado}`, 'Cache-Control': 'no-store' },
+    });
+  };
+
+  if (!correoValido(email)) return responder(false, 'correo_invalido', 400);
 
   let alta;
   try {
@@ -80,11 +128,11 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
     // la suya y se recicla sin avisar, así que un contador en una variable se
     // reinicia solo y bastaría con reintentar para saltárselo.
     const previos = await registrarIntento(base, ipDe(request), VENTANA_MIN);
-    if (previos >= LIMITE) return json({ ok: false, reason: 'demasiados_intentos' }, 429);
+    if (previos >= LIMITE) return responder(false, 'demasiados_intentos', 429);
 
     alta = await altaSuscriptor(base, email);
   } catch (e) {
-    return fallo('db_error', (e as Error).message);
+    return falloDe(responder, 'db_error', (e as Error).message);
   }
 
   // Al navegador se le responde lo mismo que a un alta nueva: distinguirlas
@@ -93,7 +141,7 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   // «dice que lo envió y no llega» es indistinguible de un fallo de entrega.
   if (alta.estado === 'ya_estaba') {
     console.info('[suscribir] ya_estaba: la dirección ya figuraba, no se envía correo');
-    return json({ ok: true, estado: 'ya_estaba' });
+    return responder(true, 'ya_estaba');
   }
 
   // ── Correo de confirmación ────────────────────────────────────────────────
@@ -111,14 +159,16 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
   // En ambos casos la fila queda pendiente a propósito: confirmar es lo que da
   // permiso para escribir a esa persona, y sin correo saliente no hay permiso.
   if (!transporte) {
-    return fallo(
+    return falloDe(
+      responder,
       'sin_proveedor_correo',
       'Falta RESEND_API_KEY: el alta quedó pendiente de confirmar.',
     );
   }
 
   if (!remitente.ok) {
-    return fallo(
+    return falloDe(
+      responder,
       'from_invalido',
       `BOLETIN_FROM/CONTACT_FROM = «${remitente.valor}». Debe ser «correo@dominio.cl» o «Nombre <correo@dominio.cl>», sin comillas.`,
     );
@@ -154,11 +204,11 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
       html,
     });
   } catch (e) {
-    return fallo('send_error', (e as Error).message);
+    return falloDe(responder, 'send_error', (e as Error).message);
   } finally {
     transporte.close();
   }
 
   console.info('[suscribir] confirmacion_enviada: el servidor de correo aceptó el envío');
-  return json({ ok: true, estado: 'confirmacion_enviada' });
+  return responder(true, 'confirmacion_enviada');
 };
