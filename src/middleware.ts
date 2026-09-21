@@ -25,14 +25,34 @@ function esPanel(path: string): boolean {
   );
 }
 
+/**
+ * El sitio vive en `lacasadedios.cl`, sin `www`.
+ *
+ * `www` se reclama igual y se redirige acá, en vez de con una regla del panel
+ * de Cloudflare: así la decisión vive en el repositorio, junto a las canónicas
+ * que apuntan al dominio sin `www`, y no en un sitio donde nadie la busca.
+ *
+ * 301 y no 302: el cambio es definitivo y así los buscadores trasladan lo que
+ * ya tuvieran indexado.
+ */
+function redirigirWww(url: URL): Response | null {
+  if (!url.hostname.startsWith('www.')) return null;
+  const destino = new URL(url);
+  destino.hostname = url.hostname.slice(4);
+  return Response.redirect(destino.toString(), 301);
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname;
+
+  const aSinWww = redirigirWww(context.url);
+  if (aSinWww) return aSinWww;
   const isSSR = SSR_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
 
   // Las cabeceras de seguridad van en TODA respuesta que salga de aquí. En
   // Cloudflare, `public/_headers` solo cubre lo estático: lo que arma el Worker
   // sale sin nada si no se le pone acá. Ver src/lib/cabeceras.ts.
-  if (!isSSR) return conSeguridad(await next());
+  if (!isSSR) return conSeguridad(await next(), context.url);
 
   // ── La puerta del panel ────────────────────────────────────────────────────
   //
@@ -54,6 +74,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
             'Si estás viendo esto, Cloudflare Access no está protegiendo esta dirección.',
           { status: 403, headers: { 'content-type': 'text/plain; charset=utf-8' } },
         ),
+        context.url,
       );
     }
     context.locals.identidad = acceso.identidad;
@@ -81,5 +102,5 @@ export const onRequest = defineMiddleware(async (context, next) => {
     response.headers.set('Cache-Control', 'no-store, must-revalidate');
   }
 
-  return conSeguridad(response);
+  return conSeguridad(response, context.url);
 });

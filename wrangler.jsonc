@@ -32,7 +32,11 @@
   "compatibility_flags": ["nodejs_compat"],
 
   "assets": {
-    "directory": "./dist",
+    // ./dist/client y no ./dist: en ./dist vive también dist/server, con la
+    // configuración del Worker dentro (identificador de Access, ids de la base y
+    // del bucket). El adaptador lo corrige al compilar, pero un despliegue hecho
+    // sin compilar antes publicaría esa carpeta como archivos descargables.
+    "directory": "./dist/client",
     "binding": "ASSETS",
 
     // Por defecto, Workers redirige /horarios → /horarios/ con un 307. El sitio
@@ -80,15 +84,23 @@
 
   // Dónde responde el Worker.
   //
-  // Por ahora SOLO pruebas: `lacasadedios.cl` y `www` los tiene el Worker de
-  // mantenimiento (mantenimiento/wrangler.jsonc), y una ruta no se puede
-  // reclamar desde dos sitios. Dos Workers separados y no uno con condicionales
-  // porque así el lanzamiento es un cambio de rutas, no un despliegue a ciegas:
-  // hasta ese día, romper esto no rompe lo que ve la gente.
+  // Desde el 21 de septiembre de 2026, los dominios reales. Antes los tenía el
+  // Worker de mantenimiento (mantenimiento/wrangler.jsonc), que quedó sin rutas
+  // y desplegado por si hubiera que volver a colgar la página de aviso.
   //
-  // `custom_domain` hace que Cloudflare cree y mantenga el registro DNS. Por eso
-  // `pruebas` no resolvía antes del primer despliegue: no había nada que crearlo.
-  "routes": [{ "pattern": "pruebas.lacasadedios.cl", "custom_domain": true }],
+  // `www` se reclama para poder REDIRIGIRLO: el Worker lo manda al dominio sin
+  // www (ver src/middleware.ts). Si no se reclamara, `www` quedaría sin dueño y
+  // daría error en vez de llevar al sitio.
+  //
+  // `pruebas` se conserva: mismo código, misma base. Sirve para mirar un cambio
+  // antes de anunciarlo, y va con `noindex` (ver src/lib/cabeceras.ts).
+  //
+  // `custom_domain` hace que Cloudflare cree y mantenga el registro DNS.
+  "routes": [
+    { "pattern": "lacasadedios.cl", "custom_domain": true },
+    { "pattern": "www.lacasadedios.cl", "custom_domain": true },
+    { "pattern": "pruebas.lacasadedios.cl", "custom_domain": true },
+  ],
 
   // Identidad de Cloudflare Access. NO son secretos: el dominio del equipo es
   // público y el AUD viaja dentro de cada token. Van acá y no en variables de
@@ -105,7 +117,7 @@
     // COMPILAR, y para eso la variable tiene que estar puesta en el shell antes
     // de `npm run build` (ver astro.config.mjs). Están las dos porque son dos
     // momentos distintos, no por duplicar.
-    "SITE_URL": "https://pruebas.lacasadedios.cl",
+    "SITE_URL": "https://lacasadedios.cl",
 
     // Dominio público del bucket. En la base se guardan CLAVES, no direcciones:
     // si esto cambia, se cambia acá y no en cada fila. Ver src/lib/medios.ts.

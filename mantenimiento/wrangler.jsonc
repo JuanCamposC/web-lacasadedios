@@ -37,10 +37,16 @@
   //
   // NO TOCA EL CORREO. Estas rutas gobiernan hostnames web; el MX, el DKIM, el
   // SPF y el DMARC son registros aparte y siguen intactos.
-  "routes": [
-    { "pattern": "lacasadedios.cl", "custom_domain": true },
-    { "pattern": "www.lacasadedios.cl", "custom_domain": true },
-  ],
+  // RUTAS LIBERADAS el 21 de septiembre de 2026: los dominios pasaron al sitio
+  // real (ver wrangler.jsonc en la raíz). Este Worker queda desplegado y sin
+  // tráfico, listo por si hiciera falta volver a colgar la página de aviso: se
+  // descomentan estas dos líneas, se despliega, y el sitio vuelve a estar
+  // detrás de ella.
+  //
+  // "routes": [
+  //   { "pattern": "lacasadedios.cl", "custom_domain": true },
+  //   { "pattern": "www.lacasadedios.cl", "custom_domain": true },
+  // ],
 
   "observability": {
     "enabled": true,

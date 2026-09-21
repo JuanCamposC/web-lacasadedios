@@ -75,3 +75,26 @@ describe('conSeguridad', () => {
     });
   });
 });
+
+describe('noindex por nombre de dominio', () => {
+  it('pruebas pide no indexarse aunque el despliegue sea el de producción', () => {
+    // Desde el lanzamiento, el MISMO Worker sirve el sitio y pruebas, con la
+    // misma SITE_URL. Sin mirar el nombre, pruebas quedó indexable.
+    process.env.SITE_URL = 'https://lacasadedios.cl';
+    const r = conSeguridad(new Response('x'), new URL('https://pruebas.lacasadedios.cl/horarios'));
+    expect(r.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+  });
+
+  it('el sitio real NO pide no indexarse', () => {
+    process.env.SITE_URL = 'https://lacasadedios.cl';
+    const r = conSeguridad(new Response('x'), new URL('https://lacasadedios.cl/horarios'));
+    expect(r.headers.get('X-Robots-Tag')).toBeNull();
+  });
+
+  it('sin nombre de petición manda SITE_URL, y producción se indexa', () => {
+    // El nombre no siempre llega. Ante la duda, lo caro es sacar del buscador
+    // el sitio de verdad, así que esa es la que no puede pasar por descuido.
+    process.env.SITE_URL = 'https://lacasadedios.cl';
+    expect(conSeguridad(new Response('x')).headers.get('X-Robots-Tag')).toBeNull();
+  });
+});

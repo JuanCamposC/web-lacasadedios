@@ -80,12 +80,39 @@ export function esProduccion(): boolean {
  * se cubre lo que arma el Worker, porque el middleware no llega a correr cuando
  * se sirve una página prerenderizada.
  */
-export function conSeguridad(response: Response): Response {
+/** Nombres que NO son el sitio público, aunque los sirva el mismo Worker. */
+const FUERA_DE_PRODUCCION = new Set(['pruebas.lacasadedios.cl']);
+
+/**
+ * ¿Hay que pedir que esta respuesta no se indexe?
+ *
+ * Dos motivos, y el orden importa:
+ *
+ *   1. El despliegue no es el de producción (lo dice `SITE_URL`).
+ *   2. La petición entró por un nombre que sabemos que no es el público.
+ *
+ * El segundo hizo falta el día del lanzamiento: hasta entonces cada dominio
+ * tenía su propio Worker y bastaba con `SITE_URL`. Ahora un mismo Worker sirve
+ * el sitio y `pruebas`, con la misma variable, y sin esto `pruebas` quedó de
+ * golpe indexable.
+ *
+ * Se SUMA a la comprobación de `SITE_URL` en vez de reemplazarla: el nombre de
+ * la petición no siempre es el que escribió el visitante —hay un salto interno
+ * entre el Worker de archivos y este—, así que solo se usa para AÑADIR noindex
+ * a un nombre conocido, nunca para quitárselo a producción. El error que eso
+ * evita es el caro: sacar el sitio real del buscador y no notarlo en semanas.
+ */
+function pedirNoIndexar(url?: URL): boolean {
+  if (!esProduccion()) return true;
+  return url ? FUERA_DE_PRODUCCION.has(url.hostname) : false;
+}
+
+export function conSeguridad(response: Response, url?: URL): Response {
   for (const [nombre, valor] of Object.entries(SEGURIDAD)) {
     if (!response.headers.has(nombre)) response.headers.set(nombre, valor);
   }
 
-  if (!esProduccion() && !response.headers.has('X-Robots-Tag')) {
+  if (pedirNoIndexar(url) && !response.headers.has('X-Robots-Tag')) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   }
 
