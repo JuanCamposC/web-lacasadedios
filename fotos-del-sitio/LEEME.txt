@@ -1,0 +1,156 @@
+FOTOS DEL SITIO — QUÉ VA EN CADA HUECO
+======================================
+Iglesia La Casa de Dios · lista generada el 21 de septiembre de 2026
+
+Para qué sirve esta carpeta
+---------------------------
+Hoy TODAS las fotos del sitio son de banco de imágenes (ver
+src/assets/img/CREDITS.md). Esta carpeta es donde se dejan las fotos reales a
+medida que se consiguen, con un nombre que dice exactamente en qué parte del
+sitio va cada una. Cuando un hueco esté cubierto, la foto se pasa a
+src/assets/img/ con el nombre que indica la columna «archivo final» y la de
+banco se reemplaza.
+
+Cómo se nombran
+---------------
+        pagina-uso-tema.jpg
+
+  pagina  dónde se ve: inicio, nosotros, templos, horarios, eventos,
+          noticias, videos, estudio, contacto, en-vivo
+  uso     qué papel cumple: portada (la franja grande de arriba),
+          cierre (la banda con el botón al final), u otro nombre propio
+  tema    qué se ve, en una palabra: congregacion, adoracion, biblia...
+
+  Ejemplos:  inicio-portada-congregacion.jpg
+             horarios-cierre-alabanza.jpg
+             templo-san-miguel-fachada.jpg
+
+Qué necesita cada foto
+----------------------
+  · Horizontal, y 1600 px de ancho como mínimo. Las portadas se ven a todo lo
+    ancho de la pantalla: para esas, 2000 px o más.
+  · JPG o PNG, sin recortar ni comprimir a mano. El sitio genera solo sus
+    versiones livianas en WebP (480, 768, 1280 y 1600 px).
+  · Sin texto encima ni marcas de agua: sobre varias de estas fotos va un
+    título blanco, y el texto incrustado choca.
+  · Que el motivo no quede pegado al borde: en pantallas angostas se recorta
+    por los lados.
+  · Con gente reconocible, conviene tener permiso para publicarla.
+
+  IMPORTANTE: cada vez que una foto real reemplace a una de banco, hay que
+  borrar su fila de src/assets/img/CREDITS.md. Ese archivo existe porque las
+  licencias de banco exigen atribución; si la foto ya no es de banco, la
+  atribución sobra y confunde.
+
+
+1. PORTADA (la página de inicio)
+================================
+  fotos-del-sitio/paginas/
+
+  inicio-portada-TEMA.jpg
+     Dónde     La franja a pantalla completa de la página de inicio.
+     Archivo final  src/assets/img/hero-congregados.jpg
+     Nota      Es la primera imagen que ve cualquiera. Encima va el nombre de
+               la iglesia en blanco, así que conviene que la mitad izquierda
+               no tenga detalle fino.
+
+  inicio-mosaico-TEMA.jpg
+     Dónde     El recuadro grande del mosaico, a media página.
+     Archivo final  src/assets/img/adoracion.jpg (compartida con el templo de
+               Limache y con la portada de /en-vivo)
+
+  inicio-estudio-TEMA.jpg
+     Dónde     La banda oscura que presenta el Instituto Bíblico Bet-El.
+     Archivo final  src/assets/img/estudio.jpg (compartida con la portada de
+               /estudio-biblico y el cierre de /videos)
+
+
+2. PORTADAS DE CADA PÁGINA
+==========================
+  fotos-del-sitio/paginas/
+
+  nosotros-portada-TEMA.jpg   → /sobre-nosotros   · archivo: congregacion.jpg
+  templos-portada-TEMA.jpg    → /templos          · archivo: auditorio.jpg
+  horarios-portada-TEMA.jpg   → /horarios         · archivo: biblia.jpg
+  eventos-portada-TEMA.jpg    → /eventos          · archivo: manos-alzadas.jpg
+  noticias-portada-TEMA.jpg   → /noticias         · archivo: comunidad.jpg
+  videos-portada-TEMA.jpg     → /videos           · archivo: camara.jpg
+  estudio-portada-TEMA.jpg    → /estudio-biblico  · archivo: estudio.jpg
+  contacto-portada-TEMA.jpg   → /contacto         · archivo: comunidad.jpg
+  envivo-portada-TEMA.jpg     → /en-vivo          · archivo: adoracion.jpg
+
+  Todas ocupan el mismo lugar: la franja de arriba, con el título encima.
+
+
+3. BANDAS DE CIERRE
+===================
+  fotos-del-sitio/paginas/
+
+  nosotros-cierre-TEMA.jpg    → final de /sobre-nosotros  · manos-alzadas.jpg
+  templos-cierre-TEMA.jpg     → final de /templos         · manos-alzadas.jpg
+  horarios-cierre-TEMA.jpg    → final de /horarios        · congregacion.jpg
+  eventos-cierre-TEMA.jpg     → final de /eventos         · evento-luces.jpg
+  noticias-cierre-TEMA.jpg    → final de cada noticia     · comunidad.jpg
+  videos-cierre-TEMA.jpg      → final de /videos          · estudio.jpg
+  estudio-cierre-TEMA.jpg     → final de /estudio-biblico · biblia.jpg
+
+  Son la banda oscura con un botón al final de la página. La foto va de fondo
+  y bastante oscurecida: sirve mejor una escena general que un primer plano.
+
+
+4. LOS CUATRO TEMPLOS
+=====================
+  fotos-del-sitio/templos/
+
+  templo-santiago-centro-TEMA.jpg   · archivo final: auditorio.jpg
+  templo-san-miguel-TEMA.jpg        · archivo final: congregacion.jpg
+  templo-limache-TEMA.jpg           · archivo final: adoracion.jpg
+  templo-coya-TEMA.jpg              · archivo final: comunidad.jpg
+
+  Dónde se ven: en la tarjeta de cada templo dentro de /templos, en la ficha
+  del templo, y en el bloque «Nuestros otros templos» del pie de esas fichas.
+
+  OJO CON ESTO: hoy estas cuatro fotos hacen doble papel. La misma imagen que
+  representa a San Miguel es además la portada de /sobre-nosotros y el cierre
+  de /horarios. Con fotos reales eso deja de funcionar —la foto del templo de
+  Coya no puede ser la portada de contacto—, así que al llegar las fotos de
+  verdad hay que separarlas: cada templo con la suya, y las portadas y bandas
+  con imágenes propias. Son 23 huecos en total, hoy cubiertos con 10 archivos.
+
+
+5. MARCA (ya está hecha, no hace falta conseguir nada)
+======================================================
+  fotos-del-sitio/marca/   · vacía a propósito, es solo la referencia
+
+  public/marca/logo-azul.png      Logo completo en azul. Menú y panel.
+  public/marca/logo-blanco.png    Logo completo en blanco. Sobre fondo oscuro.
+  public/marca/logo-blanco.svg    El mismo, vectorial. Pie del sitio y portada.
+  public/marca/logo-negro.png     Logo en negro. Hoy no lo usa el sitio.
+  public/marca/isotipo-azul.png   Solo el símbolo, azul. Origen de los iconos
+                                  de pestaña y cabecera de /nuestrostemplos.
+  public/marca/isotipo-blanco.png Solo el símbolo, blanco. Hoy sin uso.
+  public/marca/isotipo-negro.png  Solo el símbolo, negro. Hoy sin uso.
+  public/marca/filigrana.svg      La trama del fondo de la portada.
+  public/marca/logo-correo.png    Logo de la cabecera de los correos.
+                                  Se genera: node scripts/logo-correo.mjs
+  public/og-image.png             La tarjeta que aparece al compartir un
+                                  enlace en WhatsApp o redes.
+                                  Se genera: node scripts/og-image.mjs
+  public/favicon*.png, favicon.ico, apple-touch-icon.png
+                                  Iconos de pestaña.
+                                  Se generan: node scripts/favicons.mjs
+
+  Si algún día cambia el logo: se reemplaza isotipo-azul.png y logo-blanco.png
+  y se vuelven a correr esos tres scripts. Lo demás sale solo.
+
+
+6. LAS QUE NO VAN EN ESTA CARPETA
+=================================
+  Estas se suben desde el panel y viven en el bucket, no en el repositorio:
+
+  · Eventos y noticias: una foto por publicación. Horizontal.
+  · Instagram (portada): cuadradas o casi; el sitio las recorta a cuadrado.
+  · Aviso emergente: la que se enseña en la ventana que salta al entrar.
+
+  El panel las reduce solo antes de subirlas, así que se pueden cargar tal
+  como salen del teléfono.
