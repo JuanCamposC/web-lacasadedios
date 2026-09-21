@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { enlaceGoogleCalendar, fechaUtc, DURACION_MIN } from './ics';
+import { enlaceGoogleCalendar, fechaUtc, DURACION_MIN, construirIcs } from './ics';
 
 /**
  * Un enlace de calendario mal armado no avisa: abre Google Calendar con el
@@ -52,5 +52,62 @@ describe('enlaceGoogleCalendar', () => {
   it('mete el enlace del evento en el detalle, para poder volver', () => {
     const url = new URL(enlaceGoogleCalendar(evento));
     expect(url.searchParams.get('details')).toContain(evento.url);
+  });
+});
+
+describe('construirIcs', () => {
+  const evento = {
+    id: 'ev-1',
+    titulo: 'Culto de aniversario, con cena',
+    inicio: '2026-10-04T22:00:00Z',
+    descripcion: 'Traer algo para compartir; hay estacionamiento',
+    lugar: 'Templo San Miguel',
+    url: 'https://lacasadedios.cl/eventos',
+  };
+  const sello = new Date('2026-09-21T12:00:00Z');
+
+  it('separa las líneas con CRLF y termina con uno', () => {
+    // Outlook comprueba lo segundo y rechaza el archivo si falta.
+    const ics = construirIcs(evento, sello);
+    expect(ics.endsWith('\r\n')).toBe(true);
+    expect(ics.includes('\n\n')).toBe(false);
+  });
+
+  it('escapa las comas y los puntos y coma, que separan valores en el formato', () => {
+    const ics = construirIcs(evento, sello);
+    expect(ics).toContain(String.raw`SUMMARY:Culto de aniversario\, con cena`);
+    expect(ics).toContain(String.raw`DESCRIPTION:Traer algo para compartir\; hay estacionamiento`);
+  });
+
+  it('el identificador es el del evento: agendar dos veces no lo duplica', () => {
+    expect(construirIcs(evento, sello)).toContain('UID:ev-1@lacasadedios.cl');
+  });
+
+  it('pliega las líneas largas a 75 OCTETOS, no a 75 caracteres', () => {
+    // Con tildes y eñes, contar caracteres deja líneas más largas de lo que
+    // admite el formato y hay clientes que cortan el texto.
+    const largo = construirIcs(
+      {
+        ...evento,
+        titulo: 'Reunión de jóvenes con la congregación de Limache y sus años de servicio',
+      },
+      sello,
+    );
+    for (const linea of largo.split('\r\n')) {
+      expect(new TextEncoder().encode(linea).length).toBeLessThanOrEqual(75);
+    }
+  });
+
+  it('la continuación de una línea plegada empieza con un espacio', () => {
+    const largo = construirIcs({ ...evento, titulo: 'a'.repeat(200) }, sello);
+    const lineas = largo.split('\r\n');
+    const i = lineas.findIndex((l) => l.startsWith('SUMMARY:'));
+    expect(lineas[i + 1].startsWith(' ')).toBe(true);
+  });
+
+  it('sin lugar ni descripción, esas líneas no salen', () => {
+    const ics = construirIcs({ ...evento, descripcion: null, lugar: null }, sello);
+    expect(ics).not.toContain('LOCATION:');
+    expect(ics).not.toContain('DESCRIPTION:');
   });
 });

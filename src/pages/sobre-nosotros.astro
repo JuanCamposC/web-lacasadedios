@@ -145,252 +145,269 @@ const initials = (name: string) =>
   <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Nosotros' }]} />
 
   <!-- Índice de la página -->
-  <nav
-    aria-label="Secciones de la página"
-    class="sticky top-16 z-30 border-b border-base-300 bg-base-100/90 backdrop-blur-md"
-  >
-    {
-      /* El desplazamiento vive aquí y no en el `.wrap`: así los chips llegan
+  {
+    /* El índice y las secciones, en un mismo bloque: sin esto el índice sigue
+      pegado arriba cuando ya no hay secciones que indicar, y en el teléfono se
+      ve encima del cierre de la página. */
+  }
+  <div class="ambito-filtro">
+    <nav
+      aria-label="Secciones de la página"
+      class="sticky top-16 z-30 border-b border-base-300 bg-base-100"
+    >
+      {
+        /* El desplazamiento vive aquí y no en el `.wrap`: así los chips llegan
          hasta el borde de la pantalla en vez de cortarse contra un ancho
          centrado, que era lo que hacía parecer roto el último. Desde `md`
          dejan de desplazarse y se reparten en varias líneas. */
-    }
-    <div class="indice wrap overflow-x-auto px-4 py-3">
-      <ul
-        class="flex w-max items-center gap-2 pe-8 md:w-full md:flex-wrap md:justify-center md:pe-0"
-      >
-        {
-          secciones.map((s) => (
-            <li class="shrink-0">
-              <a
-                href={s.href}
-                class="rounded-full border border-base-300 px-4 py-1.5 text-sm font-medium transition hover:border-primary hover:text-primary"
-              >
-                {s.label}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-  </nav>
-
-  <!-- Declaración de fe -->
-  <section id="fe" class="section bg-base-100">
-    <div class="wrap">
-      <SectionHeading eyebrow="Nuestras creencias" title="Declaración de fe" />
-      <div class="mt-12 grid gap-6 md:grid-cols-3">
-        {
-          credo.map((c, i) => (
-            <Reveal delay={(i % 3) * 90} class="h-full">
-              <div class="panel panel-sm h-full p-7">
-                <div class="mb-3 tile">
-                  <Icon name={c.icon} class="h-6 w-6" />
-                </div>
-                <h3 class="card-title text-xl">{c.title}</h3>
-                {c.ref && (
-                  <span class="mt-1 inline-block rounded-full border border-base-300 px-2 py-0.5 text-xs text-base-content/60">
-                    {c.ref}
-                  </span>
-                )}
-                <p class="mt-2 text-base-content/70">{c.text}</p>
-              </div>
-            </Reveal>
-          ))
-        }
+      }
+      <div class="indice wrap overflow-x-auto px-4 py-3">
+        <ul
+          class="flex w-max items-center gap-2 pe-8 md:w-full md:flex-wrap md:justify-center md:pe-0"
+        >
+          {
+            secciones.map((s) => (
+              <li class="shrink-0">
+                <a
+                  href={s.href}
+                  data-indice
+                  data-seccion={s.href.slice(1)}
+                  class="indice-chip rounded-full border border-base-300 px-4 py-1.5 text-sm font-medium transition"
+                >
+                  {s.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
       </div>
-    </div>
-  </section>
+    </nav>
 
-  <!-- Estructura de liderazgo -->
-  <section id="estructura" class="section bg-base-200">
-    <div class="wrap">
-      <SectionHeading eyebrow="Cómo servimos" title="Estructura de liderazgo" />
-      <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {
-          liderazgo.map((l, i) => (
-            <Reveal delay={(i % 4) * 80} class="h-full">
-              <div class="panel panel-sm h-full p-7 text-center">
-                <div class="mx-auto mb-3 tile tile-lg">
-                  <Icon name={l.icon} class="h-7 w-7" />
+    <!-- Declaración de fe -->
+    <section id="fe" class="section bg-base-100">
+      <div class="wrap">
+        <SectionHeading eyebrow="Nuestras creencias" title="Declaración de fe" />
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+          {
+            credo.map((c, i) => (
+              <Reveal delay={(i % 3) * 90} class="h-full">
+                <div class="panel panel-sm h-full p-7">
+                  <div class="mb-3 tile">
+                    <Icon name={c.icon} class="h-6 w-6" />
+                  </div>
+                  <h3 class="card-title text-xl">{c.title}</h3>
+                  {c.ref && (
+                    <span class="mt-1 inline-block rounded-full border border-base-300 px-2 py-0.5 text-xs text-base-content/60">
+                      {c.ref}
+                    </span>
+                  )}
+                  <p class="mt-2 text-base-content/70">{c.text}</p>
                 </div>
-                <h3 class="card-title justify-center text-xl">{l.title}</h3>
-                <p class="mt-1 text-sm text-base-content/70">{l.text}</p>
-              </div>
-            </Reveal>
-          ))
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- Sacramentos -->
-  <section id="sacramentos" class="section bg-base-100">
-    <div class="wrap">
-      <SectionHeading eyebrow="Las dos ordenanzas" title="Sacramentos" />
-      <div class="mx-auto mt-12 grid max-w-4xl gap-5 md:grid-cols-2">
-        {
-          sacramentos.map((s, i) => (
-            <Reveal delay={(i % 2) * 90} class="h-full">
-              <div class="panel panel-sm flex h-full items-start gap-5 p-7">
-                <div class="tile">
-                  <Icon name={s.icon} class="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 class="card-title text-xl">{s.title}</h3>
-                  <p class="mt-1 text-base-content/70">{s.text}</p>
-                </div>
-              </div>
-            </Reveal>
-          ))
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- Misión y Visión -->
-  <section id="mision" class="section bg-base-200">
-    <div class="wrap">
-      <div class="grid gap-6 md:grid-cols-2">
-        <Reveal>
-          <div
-            class="h-full rounded-xl border border-base-300 bg-gradient-to-br from-primary/10 to-base-100 p-8"
-          >
-            <div class="mb-4 tile">
-              <Icon name="lucide:target" class="h-6 w-6" />
-            </div>
-            <h2 class="card-title text-3xl">Misión</h2>
-            <p class="mt-3 text-lg leading-relaxed text-base-content/80">
-              Predicar el evangelio, discipular creyentes y servir a otros con amor y excelencia.
-            </p>
-          </div>
-        </Reveal>
-        <Reveal delay={100}>
-          <div
-            class="h-full rounded-xl border border-base-300 bg-gradient-to-br from-accent/10 to-base-100 p-8"
-          >
-            <div class="mb-4 tile">
-              <Icon name="lucide:eye" class="h-6 w-6" />
-            </div>
-            <h2 class="card-title text-3xl">Visión</h2>
-            <p class="mt-3 text-lg leading-relaxed text-base-content/80">
-              Ser una iglesia vibrante que transforma vidas con el amor y la Palabra de Dios,
-              extendiendo su Reino.
-            </p>
-          </div>
-        </Reveal>
-      </div>
-    </div>
-  </section>
-
-  <!-- Historia -->
-  <section id="historia" class="section bg-base-100">
-    <div class="wrap">
-      <div class="grid items-center gap-10 lg:grid-cols-12">
-        <Reveal class="lg:col-span-5">
-          <div class="relative overflow-hidden rounded-xl">
-            <Image
-              src={IMG[HISTORIA.imagen]}
-              alt="Biblia abierta"
-              widths={[500, 900]}
-              sizes="(max-width:1024px) 100vw, 40vw"
-              class="aspect-[4/3] w-full object-cover"
-            />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent"></div>
-          </div>
-        </Reveal>
-
-        <div class="lg:col-span-7">
-          <SectionHeading
-            eyebrow={HISTORIA.eyebrow}
-            title={HISTORIA.title}
-            subtitle={HISTORIA.lead}
-            align="left"
-            tone="primary"
-          />
-          <div data-reveal data-reveal-delay="90" class="prose-lcd mt-6">
-            {HISTORIA.parrafos.map((p) => <p>{p}</p>)}
-          </div>
+              </Reveal>
+            ))
+          }
         </div>
       </div>
+    </section>
 
-      {
-        HISTORIA.hitos.length > 0 && (
-          <ol class="relative mt-16 space-y-8 border-l border-base-300 pl-6 sm:pl-8">
-            {HISTORIA.hitos.map((h, i) => (
-              <li data-reveal data-reveal-delay={Math.min(i, 5) * 70} class="relative">
-                <span class="absolute -left-[1.85rem] top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary ring-4 ring-base-200 sm:-left-[2.35rem]" />
-                <span class="eyebrow text-primary">{h.year}</span>
-                <h3 class="mt-1 font-display text-xl">{h.title}</h3>
-                <p class="mt-1 text-base-content/75">{h.text}</p>
-                {h.templo && (
-                  <a
-                    href={`/templos/${h.templo}`}
-                    class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-secondary"
-                  >
-                    <Icon name="lucide:map-pin" class="h-4 w-4" /> Ver el templo
-                  </a>
-                )}
-              </li>
-            ))}
-          </ol>
-        )
-      }
-    </div>
-  </section>
-
-  <!-- Valores -->
-  <section id="valores" class="section bg-base-200">
-    <div class="wrap">
-      <SectionHeading eyebrow="Nuestros principios" title="Valores" />
-      <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-        {
-          valores.map((v, i) => (
-            <Reveal delay={(i % 5) * 70} class="h-full">
-              <div class="panel panel-sm panel-lift group h-full p-6 text-center">
-                <div class="mx-auto mb-4 tile tile-lg transition-colors group-hover:bg-primary group-hover:text-primary-content">
-                  <Icon name={v.icon} class="h-7 w-7" />
+    <!-- Estructura de liderazgo -->
+    <section id="estructura" class="section bg-base-200">
+      <div class="wrap">
+        <SectionHeading eyebrow="Cómo servimos" title="Estructura de liderazgo" />
+        <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {
+            liderazgo.map((l, i) => (
+              <Reveal delay={(i % 4) * 80} class="h-full">
+                <div class="panel panel-sm h-full p-7 text-center">
+                  <div class="mx-auto mb-3 tile tile-lg">
+                    <Icon name={l.icon} class="h-7 w-7" />
+                  </div>
+                  <h3 class="card-title justify-center text-xl">{l.title}</h3>
+                  <p class="mt-1 text-sm text-base-content/70">{l.text}</p>
                 </div>
-                <h3 class="card-title justify-center text-xl">{v.title}</h3>
-                <p class="mt-1 text-sm text-base-content/70">{v.text}</p>
+              </Reveal>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Sacramentos -->
+    <section id="sacramentos" class="section bg-base-100">
+      <div class="wrap">
+        <SectionHeading eyebrow="Las dos ordenanzas" title="Sacramentos" />
+        <div class="mx-auto mt-12 grid max-w-4xl gap-5 md:grid-cols-2">
+          {
+            sacramentos.map((s, i) => (
+              <Reveal delay={(i % 2) * 90} class="h-full">
+                <div class="panel panel-sm flex h-full items-start gap-5 p-7">
+                  <div class="tile">
+                    <Icon name={s.icon} class="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 class="card-title text-xl">{s.title}</h3>
+                    <p class="mt-1 text-base-content/70">{s.text}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Misión y Visión -->
+    <section id="mision" class="section bg-base-200">
+      <div class="wrap">
+        <div class="grid gap-6 md:grid-cols-2">
+          {
+            /* El mismo `panel` que las tarjetas de credo, estructura y valores. Antes
+            estas dos llevaban un degradado propio que no usaba ninguna otra tarjeta
+            del sitio: parecían pegadas de otra página. */
+          }
+          <Reveal>
+            <div class="panel h-full p-8">
+              <div class="tile mb-4">
+                <Icon name="lucide:target" class="h-6 w-6" />
               </div>
-            </Reveal>
-          ))
-        }
+              <h2 class="font-display text-2xl">Misión</h2>
+              <p class="mt-3 text-lg leading-relaxed text-base-content/80">
+                Predicar el evangelio, discipular creyentes y servir a otros con amor y excelencia.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={100}>
+            <div class="panel h-full p-8">
+              <div class="tile tile-accent mb-4">
+                <Icon name="lucide:eye" class="h-6 w-6" />
+              </div>
+              <h2 class="font-display text-2xl">Visión</h2>
+              <p class="mt-3 text-lg leading-relaxed text-base-content/80">
+                Ser una iglesia vibrante que transforma vidas con el amor y la Palabra de Dios,
+                extendiendo su Reino.
+              </p>
+            </div>
+          </Reveal>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Pastores y líderes -->
-  <section id="liderazgo" class="section bg-base-100">
-    <div class="wrap">
-      <SectionHeading
-        eyebrow="Nuestro equipo"
-        title="Pastores"
-        subtitle="Quienes pastorean cada templo de la congregación."
-      />
-      <div class="mx-auto mt-12 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <!-- Historia -->
+    <section id="historia" class="section bg-base-100">
+      <div class="wrap">
+        <div class="grid items-center gap-10 lg:grid-cols-12">
+          <Reveal class="lg:col-span-5">
+            <div class="relative overflow-hidden rounded-xl">
+              <Image
+                src={IMG[HISTORIA.imagen]}
+                alt="Biblia abierta"
+                widths={[500, 900]}
+                sizes="(max-width:1024px) 100vw, 40vw"
+                class="aspect-[4/3] w-full object-cover"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent"></div>
+            </div>
+          </Reveal>
+
+          <div class="lg:col-span-7">
+            <SectionHeading
+              eyebrow={HISTORIA.eyebrow}
+              title={HISTORIA.title}
+              subtitle={HISTORIA.lead}
+              align="left"
+              tone="primary"
+            />
+            <div data-reveal data-reveal-delay="90" class="prose-lcd mt-6">
+              {HISTORIA.parrafos.map((p) => <p>{p}</p>)}
+            </div>
+          </div>
+        </div>
+
         {
-          pastores.map((p, i) => (
-            <Reveal delay={(i % 3) * 80} class="h-full">
-              <a
-                href={`/templos/${p.slug}`}
-                class="panel panel-sm panel-lift flex h-full items-center gap-4 p-5"
-              >
-                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary font-data text-lg font-bold text-primary-content">
-                  {initials(p.name)}
-                </div>
-                <div class="min-w-0">
-                  <h4 class="font-bold leading-tight">{p.name}</h4>
-                  <p class="text-sm text-primary">{p.place}</p>
-                </div>
-              </a>
-            </Reveal>
-          ))
+          HISTORIA.hitos.length > 0 && (
+            <ol class="relative mt-16 space-y-8 border-l border-base-300 pl-6 sm:pl-8">
+              {HISTORIA.hitos.map((h, i) => (
+                <li data-reveal data-reveal-delay={Math.min(i, 5) * 70} class="relative">
+                  <span class="absolute -left-[1.85rem] top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary ring-4 ring-base-200 sm:-left-[2.35rem]" />
+                  <span class="eyebrow text-primary">{h.year}</span>
+                  <h3 class="mt-1 font-display text-xl">{h.title}</h3>
+                  <p class="mt-1 text-base-content/75">{h.text}</p>
+                  {h.templo && (
+                    <a
+                      href={`/templos/${h.templo}`}
+                      class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-secondary"
+                    >
+                      <Icon name="lucide:map-pin" class="h-4 w-4" /> Ver el templo
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ol>
+          )
         }
       </div>
-    </div>
-  </section>
+    </section>
+
+    <!-- Valores -->
+    <section id="valores" class="section bg-base-200">
+      <div class="wrap">
+        <SectionHeading eyebrow="Nuestros principios" title="Valores" />
+        <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+          {
+            valores.map((v, i) => (
+              <Reveal delay={(i % 5) * 70} class="h-full">
+                <div class="panel panel-sm panel-lift group h-full p-6 text-center">
+                  <div class="mx-auto mb-4 tile tile-lg transition-colors group-hover:bg-primary group-hover:text-primary-content">
+                    <Icon name={v.icon} class="h-7 w-7" />
+                  </div>
+                  <h3 class="card-title justify-center text-xl">{v.title}</h3>
+                  <p class="mt-1 text-sm text-base-content/70">{v.text}</p>
+                </div>
+              </Reveal>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Pastores y líderes -->
+    <section id="liderazgo" class="section bg-base-100">
+      <div class="wrap">
+        <SectionHeading
+          eyebrow="Nuestro equipo"
+          title="Pastores"
+          subtitle="Quienes pastorean cada templo de la congregación."
+        />
+        {
+          /* Tarjetas verticales y con el retrato arriba: el día que haya fotos de
+          cada pastor entran en el hueco cuadrado sin mover nada más. Mientras
+          tanto ese hueco lo ocupan las iniciales, que ya tienen el tamaño y la
+          forma definitivos. */
+        }
+        <div class="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {
+            pastores.map((p, i) => (
+              <Reveal delay={(i % 3) * 80} class="h-full">
+                <a href={`/templos/${p.slug}`} class="pastor panel panel-lift">
+                  <span class="pastor-retrato">
+                    <span class="pastor-iniciales">{initials(p.name)}</span>
+                  </span>
+                  <span class="pastor-datos">
+                    <span class="pastor-nombre">{p.name}</span>
+                    <span class="pastor-lugar">{p.place}</span>
+                    <span class="pastor-ver">
+                      Ver su templo
+                      <Icon name="lucide:arrow-right" class="h-4 w-4" />
+                    </span>
+                  </span>
+                </a>
+              </Reveal>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+  </div>
 
   <CtaBand
     eyebrow="Da el primer paso"
@@ -414,4 +431,138 @@ const initials = (name: string) =>
   section[id] {
     scroll-margin-top: 9rem;
   }
+
+  /* ── El índice ──────────────────────────────────────────────────────── */
+  .indice-chip:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  /* La sección en la que estás. Lo marca el navegador según lo que se ve
+     (ver el script), no el clic: bajando con el dedo el índice acompaña. */
+  .indice-chip[aria-current='true'] {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+  }
+
+  /* ── Pastores ───────────────────────────────────────────────────────── */
+  .pastor {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .pastor-retrato {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    width: 100%;
+    background:
+      radial-gradient(120% 120% at 30% 10%, rgba(255, 255, 255, 0.22), transparent 60%),
+      linear-gradient(160deg, var(--color-primary), var(--color-secondary));
+  }
+  .pastor-iniciales {
+    font-family: var(--font-data);
+    font-size: clamp(2.5rem, 7vw, 3.25rem);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--color-primary-content);
+  }
+  .pastor-datos {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 1.15rem 1.25rem 1.25rem;
+  }
+  .pastor-nombre {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
+  .pastor-lugar {
+    font-size: 0.9rem;
+    color: var(--color-primary);
+  }
+  .pastor-ver {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: auto;
+    padding-top: 0.9rem;
+    font-family: var(--font-data);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--color-base-content) 55%, transparent);
+  }
+  .pastor:hover .pastor-ver {
+    color: var(--color-primary);
+  }
 </style>
+
+<script>
+  /**
+   * El índice sigue la lectura.
+   *
+   * Marca la sección que se está mirando y arrastra su chip a la vista dentro
+   * de la barra, que en el teléfono no cabe entera. Antes el índice era una
+   * fila de enlaces que no decía dónde estabas: al bajar, dejaba de servir.
+   *
+   * Se usa IntersectionObserver y no el evento de scroll: el navegador avisa
+   * cuando una sección entra o sale, en vez de preguntar en cada píxel.
+   */
+  function initIndice() {
+    const chips = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-indice]'));
+    if (!chips.length) return;
+
+    const barra = chips[0].closest('.indice') as HTMLElement | null;
+    const visibles = new Set<string>();
+
+    const marcar = () => {
+      // La ÚLTIMA visible en el orden del documento, no la primera: al llegar
+      // al borde entre dos secciones ambas tocan la franja, y la que se está
+      // empezando a leer es la de más abajo. Con la primera, el índice se
+      // quedaba siempre una sección atrás.
+      const actual = chips.filter((c) => visibles.has(c.dataset.seccion ?? '')).at(-1);
+      for (const c of chips) {
+        const on = c === actual;
+        c.setAttribute('aria-current', String(on));
+        if (!on || !barra) continue;
+        // Solo se mueve la barra si el chip no se ve entero, y solo en
+        // horizontal: nada de arrastrar la página.
+        const r = c.getBoundingClientRect();
+        const b = barra.getBoundingClientRect();
+        if (r.left < b.left + 8 || r.right > b.right - 8) {
+          barra.scrollTo({
+            left: barra.scrollLeft + (r.left - b.left) - 16,
+            behavior: 'smooth',
+          });
+        }
+      }
+    };
+
+    const vigia = new IntersectionObserver(
+      (entradas) => {
+        for (const e of entradas) {
+          if (e.isIntersecting) visibles.add(e.target.id);
+          else visibles.delete(e.target.id);
+        }
+        marcar();
+      },
+      // La franja activa es el tercio superior de la pantalla, descontando el
+      // menú y el índice pegados arriba (4rem + 3,3rem ≈ 144 px). En PÍXELES y
+      // no en rem: rootMargin solo admite píxeles y porcentajes, y con 'rem' el
+      // navegador rechaza el observador entero y el índice no marca nada.
+      { rootMargin: '-144px 0px -60% 0px', threshold: 0 },
+    );
+
+    for (const c of chips) {
+      const s = document.getElementById(c.dataset.seccion ?? '');
+      if (s) vigia.observe(s);
+    }
+  }
+
+  document.addEventListener('astro:page-load', initIndice);
+</script>

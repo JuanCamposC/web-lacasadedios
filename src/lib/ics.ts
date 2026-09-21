@@ -1,13 +1,20 @@
 /**
  * Agendar un evento en Google Calendar.
  *
- * ── HUBO UN `.ics` Y SE QUITÓ ───────────────────────────────────────────────
- * Antes se ofrecían dos caminos: este enlace y un archivo `.ics` descargable
- * para Apple Calendar y Outlook. Emitir ICS correcto es más trabajo del que
- * parece —plegar líneas a 75 OCTETOS contando bytes UTF-8, escapar comas y
- * puntos y coma, saltos CRLF que Outlook sí comprueba— y encima en Android baja
- * un archivo que hay que ir a buscar. Un enlace que abre el evento ya relleno
- * hace el trabajo para casi todo el mundo.
+ * ── DOS CAMINOS, Y EL TELÉFONO ELIGE ────────────────────────────────────────
+ * En Android y en el escritorio, un enlace a Google Calendar abre el evento ya
+ * relleno y listo para guardar. En iPhone y iPad ese camino es peor: lleva a
+ * una cuenta de Google que mucha gente no usa, y el calendario del teléfono se
+ * queda sin el evento. Ahí lo que funciona es un archivo `.ics`, que iOS abre
+ * en su propio calendario sin pedir cuenta de nada.
+ *
+ * Por eso conviven los dos: `enlaceGoogleCalendar` y `construirIcs`. Cuál se
+ * usa lo decide el navegador (ver src/components/AccionesEvento.astro).
+ *
+ * Emitir ICS correcto tiene tres trampas y las tres están cubiertas acá: las
+ * líneas se pliegan a 75 OCTETOS contando bytes UTF-8 —no caracteres—, los
+ * separadores son CRLF, y las comas, los puntos y coma y las barras invertidas
+ * van escapados.
  *
  * ── LOS EVENTOS NO GUARDAN HORA DE TÉRMINO ──────────────────────────────────
  * La tabla solo tiene `fecha`. Un evento sin duración deja un hueco raro en el
@@ -59,4 +66,82 @@ export function enlaceGoogleCalendar(e: EventoAgendable): string {
     location: e.lugar ?? '',
   });
   return `https://calendar.google.com/calendar/render?${p}`;
+}
+
+// ── El archivo .ics ─────────────────────────────────────────────────────────
+
+/**
+ * Escapa un texto para un valor de ICS (RFC 5545, §3.3.11).
+ *
+ * El orden importa: la barra invertida primero, o se escaparían las barras que
+ * este mismo escape acaba de introducir.
+ */
+function escapar(texto: string): string {
+  return texto
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
+
+/**
+ * Pliega una línea a 75 octetos, con un espacio al principio de cada
+ * continuación.
+ *
+ * Se cuenta en BYTES y no en caracteres: con tildes y con «ñ» —que en UTF-8
+ * ocupan dos— contar caracteres deja líneas más largas de lo que permite el
+ * formato, y hay clientes que entonces cortan el texto.
+ */
+const AOCTETOS = new TextEncoder();
+const ATEXTO = new TextDecoder();
+
+function plegar(linea: string): string {
+  // TextEncoder y no Buffer: esto corre en el Worker, y depender de Node ahí es
+  // depender de una bandera de compatibilidad que alguien puede quitar.
+  const bytes = AOCTETOS.encode(linea);
+  if (bytes.length <= 75) return linea;
+
+  const trozos: string[] = [];
+  let desde = 0;
+  let tope = 75;
+  while (desde < bytes.length) {
+    let hasta = Math.min(desde + tope, bytes.length);
+    // No se parte un carácter por la mitad: los bytes de continuación de UTF-8
+    // empiezan por 10xxxxxx.
+    while (hasta < bytes.length && (bytes[hasta] & 0xc0) === 0x80) hasta--;
+    trozos.push(ATEXTO.decode(bytes.subarray(desde, hasta)));
+    desde = hasta;
+    // Las continuaciones llevan un espacio delante, que también cuenta.
+    tope = 74;
+  }
+  return trozos.join('\r\n ');
+}
+
+/**
+ * El archivo de calendario de un evento, listo para servir.
+ *
+ * `UID` es el identificador del evento en la base: si alguien agenda dos veces
+ * el mismo evento, el calendario lo reconoce y lo actualiza en vez de duplicarlo.
+ */
+export function construirIcs(e: EventoAgendable, sello = new Date()): string {
+  const lineas = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//La Casa de Dios//Eventos//ES',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${e.id}@lacasadedios.cl`,
+    `DTSTAMP:${fechaUtc(sello.toISOString())}`,
+    `DTSTART:${fechaUtc(e.inicio)}`,
+    `DTEND:${fechaUtc(e.inicio, DURACION_MIN)}`,
+    `SUMMARY:${escapar(e.titulo)}`,
+    `URL:${escapar(e.url)}`,
+  ];
+  if (e.descripcion) lineas.push(`DESCRIPTION:${escapar(e.descripcion)}`);
+  if (e.lugar) lineas.push(`LOCATION:${escapar(e.lugar)}`);
+  lineas.push('END:VEVENT', 'END:VCALENDAR');
+
+  // CRLF entre líneas y al final: Outlook comprueba lo segundo.
+  return lineas.map(plegar).join('\r\n') + '\r\n';
 }

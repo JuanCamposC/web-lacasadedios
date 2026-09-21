@@ -6,12 +6,20 @@ import type { Evento } from '../lib/datos';
 /**
  * Compartir un evento y agendarlo.
  *
- * SOLO GOOGLE CALENDAR. Antes había también un `.ics` descargable para Apple
- * Calendar y Outlook. Se quitó: mantener un generador de ICS correcto —plegado
- * de líneas a 75 octetos, escapes, saltos CRLF que Outlook comprueba— es mucho
- * trabajo para un formato que, en Android, además baja un archivo que hay que
- * ir a buscar. Google Calendar es un enlace que abre el evento ya rellenado, y
- * es lo que usa la congregación.
+ * ── UN SOLO BOTÓN, DOS DESTINOS ─────────────────────────────────────────────
+ * «Agregar al calendario» lleva a sitios distintos según el aparato:
+ *
+ *   · iPhone y iPad → el archivo `.ics` (/api/evento/<id>.ics), que iOS abre en
+ *     el calendario del propio teléfono sin pedir cuenta de nada.
+ *   · Todo lo demás → Google Calendar, que abre el evento ya relleno.
+ *
+ * El motivo de no ofrecer los dos: en iOS, el enlace de Google lleva a una
+ * cuenta que mucha gente no usa y el evento no llega nunca al calendario; y en
+ * Android el archivo baja a Descargas y hay que ir a buscarlo. Cada aparato
+ * recibe el que de verdad le sirve, y quien mira ve un botón, no una elección.
+ *
+ * El enlace del `.ics` está SIEMPRE en el `href`: sin JavaScript se agenda
+ * igual, y es el camino que nunca depende de una cuenta ajena.
  */
 interface Props {
   evento: Evento;
@@ -21,6 +29,7 @@ interface Props {
 const { evento, sitio } = Astro.props;
 
 const enlace = `${sitio}/eventos#e-${evento.id}`;
+const archivoIcs = `/api/evento/${evento.id}.ics`;
 const google = enlaceGoogleCalendar({
   id: evento.id,
   titulo: evento.titulo,
@@ -44,16 +53,14 @@ const google = enlaceGoogleCalendar({
       <span data-rotulo>Compartir</span>
     </button>
 
-    <!-- Con una sola opción ya no hace falta desplegable: era un clic de más
-         para llegar a lo único que había dentro. -->
     <a
-      href={google}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={archivoIcs}
+      data-agendar
+      data-google={google}
       class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
     >
       <Icon name="lucide:calendar-plus" class="h-4 w-4" />
-      Agregar a Google Calendar
+      Agregar al calendario
     </a>
   </div>
 </div>
@@ -80,9 +87,39 @@ const google = enlaceGoogleCalendar({
    */
   let listo = false;
 
+  /**
+   * ¿Es un iPhone o un iPad?
+   *
+   * Los iPad modernos se anuncian como «Macintosh», así que un iPad con
+   * ratón conectado no cae en la primera prueba; la segunda lo caza: un Mac
+   * de verdad no tiene pantalla táctil.
+   *
+   * `MSStream` descarta Internet Explorer móvil, que mentía diciendo ser
+   * iPhone. Queda por si alguien abre el sitio desde un teléfono viejo.
+   */
+  function esApple(): boolean {
+    const ua = navigator.userAgent || navigator.vendor || '';
+    if (/iPad|iPhone|iPod/.test(ua) && !('MSStream' in window)) return true;
+    return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+  }
+
   function initCompartirEventos() {
     if (listo) return;
     listo = true;
+
+    // En todo lo que no sea iPhone o iPad, el botón pasa a Google Calendar.
+    // El `href` del HTML sigue siendo el archivo .ics, que es lo que se usa
+    // sin JavaScript y lo que ve quien copia el enlace.
+    document.addEventListener('click', (ev) => {
+      const btn = (ev.target as HTMLElement)?.closest?.(
+        '[data-agendar]',
+      ) as HTMLAnchorElement | null;
+      if (!btn || esApple()) return;
+      const google = btn.dataset.google;
+      if (!google) return;
+      ev.preventDefault();
+      window.open(google, '_blank', 'noopener');
+    });
 
     document.addEventListener('click', async (ev) => {
       const btn = (ev.target as HTMLElement)?.closest?.('[data-compartir]') as HTMLElement | null;

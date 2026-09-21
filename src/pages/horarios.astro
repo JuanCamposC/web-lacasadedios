@@ -24,6 +24,7 @@ import { IMG } from '../assets/images';
 import { baseDeDatos } from '../lib/base';
 import { reunionesPublicadas } from '../lib/datos';
 import { porDia, enPie, type Reunion } from '../lib/reuniones';
+import type { Templo } from '../data/templos';
 
 let reuniones: Reunion[] = [];
 try {
@@ -33,8 +34,55 @@ try {
   // «sin resultados» y el enlace de contacto siguen sirviendo.
   console.error('[horarios]', e);
 }
-const semana = porDia(reuniones);
 const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
+
+/**
+ * Las reuniones que coinciden en día, hora y nombre se enseñan en UNA línea
+ * con las etiquetas de los templos que las tienen.
+ *
+ * Antes cada templo ponía su propia línea: los domingos aparecían cuatro
+ * «Reunión General» seguidas, con la misma hora, y lo único que cambiaba era
+ * la etiqueta del final. Eso es ruido: lo que se lee es el horario, y el
+ * templo es el matiz.
+ *
+ * El estado entra en la clave a propósito: si en San Miguel se suspende la
+ * del domingo y en Limache no, son dos cosas distintas y no pueden compartir
+ * línea, porque la línea diría que ambas están suspendidas.
+ */
+interface Grupo {
+  hora: string;
+  nombre: string;
+  estado: Reunion['estado'];
+  aviso: string | null;
+  sedes: Templo[];
+}
+
+function agrupar(deEseDia: Reunion[]): Grupo[] {
+  const grupos = new Map<string, Grupo>();
+  for (const r of deEseDia) {
+    const clave = `${r.hora}|${r.nombre}|${r.estado}|${r.aviso ?? ''}`;
+    const grupo = grupos.get(clave);
+    if (grupo) grupo.sedes.push(temploDe(r.templo));
+    else {
+      grupos.set(clave, {
+        hora: r.hora,
+        nombre: r.nombre,
+        estado: r.estado,
+        aviso: r.aviso,
+        sedes: [temploDe(r.templo)],
+      });
+    }
+  }
+  // Las sedes, en el orden en que están los templos en el sitio, para que la
+  // misma reunión no cambie de orden de un día a otro.
+  const orden = templos.map((t) => t.slug);
+  return [...grupos.values()].map((g) => ({
+    ...g,
+    sedes: g.sedes.sort((a, b) => orden.indexOf(a.slug) - orden.indexOf(b.slug)),
+  }));
+}
+
+const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones) }));
 ---
 
 <Layout
@@ -58,156 +106,171 @@ const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
     ]}
   />
 
-  <!-- Filtro por templo -->
-  <section
-    class="sticky top-16 z-30 border-b border-base-300 bg-base-100/92 px-4 py-3 backdrop-blur-md"
-  >
-    <div class="wrap">
-      <div
-        class="flex items-center gap-2 overflow-x-auto pb-1"
-        role="group"
-        aria-label="Filtrar por templo"
-      >
-        <span
-          class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/45 sm:inline"
-        >
-          Filtrar
-        </span>
-        <button
-          type="button"
-          data-filter="all"
-          aria-pressed="true"
-          class="filtro-chip shrink-0 rounded-full border border-primary bg-primary px-4 py-1.5 text-sm font-medium text-primary-content transition"
-        >
-          Todos
-        </button>
-        {
-          templos.map((t) => (
-            <button
-              type="button"
-              data-filter={t.slug}
-              aria-pressed="false"
-              class="filtro-chip shrink-0 rounded-full border border-base-300 bg-base-100 px-4 py-1.5 text-sm font-medium transition hover:border-primary hover:text-primary"
-            >
-              {t.short}
-            </button>
-          ))
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- El cartel: la semana completa -->
   {
-    /* Lo primero: qué hay HOY y cuál es la próxima reunión.
-
-       Se rellena en el navegador y no en el servidor porque estas páginas van
-       con caché de CDN: un «hoy» renderizado arriba llegaría caducado al
-       segundo visitante. Y se calcula en hora de Chile a propósito —no en la
-       del visitante—, que es la que rige las reuniones.
-
-       Sin JavaScript no aparece nada de esto y la semana completa se ve igual
-       que siempre: es un añadido, no un requisito. */
+    /* El filtro y el tablero, en un mismo bloque: así la barra deja de estar
+      pegada arriba cuando termina el horario, en vez de seguir flotando sobre
+      el cierre de la página. */
   }
-  <section class="section-sm section bg-base-100">
-    <div class="wrap">
-      <div class="hidden" data-ahora>
-        <div class="grid gap-5 md:grid-cols-2">
-          <div class="panel p-6 sm:p-7">
-            <span class="eyebrow text-primary" data-ahora-dia></span>
-            <ul class="mt-4 flex flex-col gap-3" data-ahora-hoy></ul>
-            <p class="mt-4 hidden text-base-content/70" data-ahora-sinhoy>
-              Hoy no hay reuniones. La próxima está aquí al lado.
-            </p>
-          </div>
-          <div class="panel p-6 sm:p-7">
-            <span class="eyebrow text-primary">Próxima reunión</span>
-            <p class="mt-4 font-display text-2xl leading-tight" data-ahora-prox></p>
-            <p class="mt-1 text-base-content/70" data-ahora-cuando></p>
-            <a class="btn btn-primary btn-sm mt-5 gap-2" data-ahora-enlace>
-              <Icon name="lucide:map-pin" class="h-4 w-4" /> Cómo llegar
-            </a>
+  <div class="ambito-filtro">
+    <!-- Filtro por templo -->
+    <section class="sticky top-16 z-30 border-b border-base-300 bg-base-100 px-4 py-3">
+      <div class="wrap">
+        <div
+          class="flex items-center gap-2 overflow-x-auto pb-1"
+          role="group"
+          aria-label="Filtrar por templo"
+        >
+          <span
+            class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/45 sm:inline"
+          >
+            Filtrar
+          </span>
+          <button
+            type="button"
+            data-filter="all"
+            aria-pressed="true"
+            class="filtro-chip shrink-0 rounded-full border border-primary bg-primary px-4 py-1.5 text-sm font-medium text-primary-content transition"
+          >
+            Todos
+          </button>
+          {
+            templos.map((t) => (
+              <button
+                type="button"
+                data-filter={t.slug}
+                aria-pressed="false"
+                class="filtro-chip shrink-0 rounded-full border border-base-300 bg-base-100 px-4 py-1.5 text-sm font-medium transition hover:border-primary hover:text-primary"
+              >
+                {t.short}
+              </button>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- El cartel: la semana completa -->
+    {
+      /* Lo primero: qué hay HOY y cuál es la próxima reunión.
+  
+         Se rellena en el navegador y no en el servidor porque estas páginas van
+         con caché de CDN: un «hoy» renderizado arriba llegaría caducado al
+         segundo visitante. Y se calcula en hora de Chile a propósito —no en la
+         del visitante—, que es la que rige las reuniones.
+  
+         Sin JavaScript no aparece nada de esto y la semana completa se ve igual
+         que siempre: es un añadido, no un requisito. */
+    }
+    <section class="section-sm section bg-base-100">
+      <div class="wrap">
+        <div class="hidden" data-ahora>
+          <div class="grid gap-5 md:grid-cols-2">
+            <div class="panel p-6 sm:p-7">
+              <span class="eyebrow text-primary" data-ahora-dia></span>
+              <ul class="mt-4 flex flex-col gap-3" data-ahora-hoy></ul>
+              <p class="mt-4 hidden text-base-content/70" data-ahora-sinhoy>
+                Hoy no hay reuniones. La próxima está aquí al lado.
+              </p>
+            </div>
+            <div class="panel p-6 sm:p-7">
+              <span class="eyebrow text-primary">Próxima reunión</span>
+              <p class="mt-4 font-display text-2xl leading-tight" data-ahora-prox></p>
+              <p class="mt-1 text-base-content/70" data-ahora-cuando></p>
+              <a class="btn btn-primary btn-sm mt-5 gap-2" data-ahora-enlace>
+                <Icon name="lucide:map-pin" class="h-4 w-4" /> Cómo llegar
+              </a>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="section bg-base-200">
-    <div class="wrap">
-      <Reveal>
-        <div class="cartel" data-cartel-semana>
-          <header class="cartel-cab">
-            <span class="cartel-titulo">La semana completa</span>
-            <span class="cartel-hoy" data-hoy aria-live="polite"></span>
-          </header>
+    <section class="section bg-base-200">
+      <div class="wrap">
+        <Reveal>
+          <div class="cartel" data-cartel-semana>
+            <header class="cartel-cab">
+              <span class="cartel-titulo">La semana completa</span>
+              <span class="cartel-hoy" data-hoy aria-live="polite"></span>
+            </header>
 
-          {
-            semana.map((dia) => (
-              <details data-dia data-dia-indice={dia.dia} open>
-                <summary class="cartel-seccion">
-                  <h2>{dia.nombre}</h2>
-                  <span class="cartel-conteo" data-conteo>
-                    {dia.reuniones.length} {dia.reuniones.length === 1 ? 'reunión' : 'reuniones'}
-                  </span>
-                </summary>
-                <ul class="cartel-lista">
-                  {dia.reuniones.map((r) => {
-                    const t = temploDe(r.templo);
-                    return (
+            {
+              semana.map((dia) => (
+                <details data-dia data-dia-indice={dia.dia} open>
+                  <summary class="cartel-seccion">
+                    <h2>{dia.nombre}</h2>
+                    <span class="cartel-conteo" data-conteo>
+                      {dia.reuniones.length} {dia.reuniones.length === 1 ? 'reunión' : 'reuniones'}
+                    </span>
+                  </summary>
+                  <ul class="cartel-lista">
+                    {dia.grupos.map((g) => (
                       <li
                         class="cartel-linea"
                         data-servicio
-                        data-templo={t.slug}
-                        data-hora={r.hora}
-                        data-nombre={r.nombre}
-                        data-sede={t.short}
-                        data-estado={r.estado}
-                        data-distintivo={estiloDistintivo(t)}
+                        data-templos={g.sedes.map((t) => t.slug).join(' ')}
+                        data-hora={g.hora}
+                        data-nombre={g.nombre}
+                        data-sedes={JSON.stringify(
+                          g.sedes.map((t) => ({
+                            slug: t.slug,
+                            short: t.short,
+                            estilo: estiloDistintivo(t),
+                          })),
+                        )}
+                        data-estado={g.estado}
                       >
-                        <span class="cartel-hora">{r.hora}</span>
+                        <span class="cartel-hora">{g.hora}</span>
                         <span class="cartel-nombre">
-                          {r.nombre}
-                          {r.estado === 'suspendida' && <span class="sr-only"> (suspendida)</span>}
+                          {g.nombre}
+                          {g.estado === 'suspendida' && <span class="sr-only"> (suspendida)</span>}
                         </span>
-                        <Distintivo templo={t} href={`/templos/${t.slug}`} class="cartel-lugar" />
-                        {r.estado !== 'normal' && (
+                        <span class="cartel-lugares">
+                          {g.sedes.map((t) => (
+                            <Distintivo
+                              templo={t}
+                              href={`/templos/${t.slug}`}
+                              class="cartel-lugar"
+                            />
+                          ))}
+                        </span>
+                        {g.estado !== 'normal' && (
                           <span class="cartel-aviso">
                             <Icon
-                              name={r.estado === 'suspendida' ? 'lucide:ban' : 'lucide:clock-alert'}
+                              name={g.estado === 'suspendida' ? 'lucide:ban' : 'lucide:clock-alert'}
                               class="h-4 w-4 shrink-0"
                             />
-                            {r.aviso ??
-                              (r.estado === 'suspendida' ? 'Suspendida' : 'Cambio de horario')}
+                            {g.aviso ??
+                              (g.estado === 'suspendida' ? 'Suspendida' : 'Cambio de horario')}
                           </span>
                         )}
                       </li>
-                    );
-                  })}
-                </ul>
-              </details>
-            ))
-          }
+                    ))}
+                  </ul>
+                </details>
+              ))
+            }
 
-          <footer class="cartel-pie">
-            Los horarios pueden cambiar en fechas especiales. Ante la duda, escríbenos.
-          </footer>
-        </div>
-      </Reveal>
+            <footer class="cartel-pie">
+              Los horarios pueden cambiar en fechas especiales. Ante la duda, escríbenos.
+            </footer>
+          </div>
+        </Reveal>
 
-      <p
-        id="sin-resultados"
-        class="mt-6 hidden rounded-lg border border-dashed border-base-300 px-6 py-10 text-center text-base-content/60"
-      >
-        Ese templo no tiene reuniones cargadas.
-      </p>
+        <p
+          id="sin-resultados"
+          class="mt-6 hidden rounded-lg border border-dashed border-base-300 px-6 py-10 text-center text-base-content/60"
+        >
+          Ese templo no tiene reuniones cargadas.
+        </p>
 
-      <p class="mt-8 text-center text-sm text-base-content/60">
-        ¿Cambió un horario o falta una reunión?
-        <a href="/contacto" class="link link-primary">Avísanos</a>.
-      </p>
-    </div>
-  </section>
+        <p class="mt-8 text-center text-sm text-base-content/60">
+          ¿Cambió un horario o falta una reunión?
+          <a href="/contacto" class="link link-primary">Avísanos</a>.
+        </p>
+      </div>
+    </section>
+  </div>
 
   <CtaBand
     eyebrow="Ven cuando quieras"
@@ -286,16 +349,22 @@ const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
 
     const reuniones = dias.flatMap((dia) => {
       const diaIndice = Number(dia.dataset.diaIndice);
-      return Array.from(dia.querySelectorAll<HTMLElement>('[data-servicio]')).map((fila) => ({
-        diaIndice,
-        minutos: aMinutos(fila.dataset.hora ?? '') ?? 0,
-        nombre: fila.dataset.nombre ?? '',
-        sede: fila.dataset.sede ?? '',
-        slug: fila.dataset.templo ?? '',
-        hora: fila.dataset.hora ?? '',
-        suspendida: fila.dataset.estado === 'suspendida',
-        distintivo: fila.dataset.distintivo ?? '',
-      }));
+      return Array.from(dia.querySelectorAll<HTMLElement>('[data-servicio]')).map((fila) => {
+        let sedes: { slug: string; short: string; estilo: string }[] = [];
+        try {
+          sedes = JSON.parse(fila.dataset.sedes ?? '[]');
+        } catch {
+          /* una línea sin sedes legibles se cuenta igual, sin etiquetas */
+        }
+        return {
+          diaIndice,
+          minutos: aMinutos(fila.dataset.hora ?? '') ?? 0,
+          nombre: fila.dataset.nombre ?? '',
+          hora: fila.dataset.hora ?? '',
+          suspendida: fila.dataset.estado === 'suspendida',
+          sedes,
+        };
+      });
     });
 
     /* ── Panel de arriba ─────────────────────────────────────────────────── */
@@ -309,7 +378,7 @@ const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
 
     function pintarAhora(slug: string) {
       if (!panel || !elDia || !elHoy || !elProx || !elCuando || !elEnlace) return;
-      const suyas = reuniones.filter((r) => slug === 'all' || r.slug === slug);
+      const suyas = reuniones.filter((r) => slug === 'all' || r.sedes.some((s) => s.slug === slug));
 
       elDia.textContent = `Hoy · ${DIAS[ahora.dia]}`;
       const hoy = suyas.filter((r) => r.diaIndice === ahora.dia);
@@ -320,7 +389,9 @@ const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
       // de inyección por muy propio que parezca el contenido.
       hoy.forEach((r) => {
         const li = document.createElement('li');
-        li.className = 'flex items-baseline gap-3';
+        // Envuelve: una reunión que coincide en los cuatro templos lleva cuatro
+        // etiquetas, y en el teléfono no caben en una línea.
+        li.className = 'flex flex-wrap items-baseline gap-x-3 gap-y-1';
         // Una suspendida se enseña tachada, igual que una que ya pasó: está en
         // la lista para que nadie crea que falta, pero no se va a hacer.
         const pasada = r.minutos < ahora.minutos || r.suspendida;
@@ -333,14 +404,17 @@ const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
         texto.className = pasada ? 'text-base-content/35 line-through' : '';
         texto.textContent = r.nombre;
 
-        // El templo en su color, igual que en el cartel de abajo: en «hoy» es
-        // donde más importa saber de un vistazo a qué templo hay que ir.
-        const sede = document.createElement('span');
-        sede.className = 'distintivo ml-2 align-middle';
-        sede.setAttribute('style', r.distintivo);
-        sede.textContent = r.sede;
-
-        li.append(hora, texto, sede);
+        // Los templos en su color, igual que en el cartel de abajo: en «hoy» es
+        // donde más importa saber de un vistazo a qué templo hay que ir. Si la
+        // reunión coincide en varios, van todas las etiquetas en la misma línea.
+        li.append(hora, texto);
+        for (const s of r.sedes) {
+          const sede = document.createElement('span');
+          sede.className = 'distintivo ml-2 align-middle';
+          sede.setAttribute('style', s.estilo);
+          sede.textContent = s.short;
+          li.append(sede);
+        }
         elHoy.appendChild(li);
       });
       elSinHoy?.classList.toggle('hidden', hoy.length > 0);
@@ -363,9 +437,12 @@ const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
       }
 
       if (proxima) {
-        elProx.textContent = `${proxima.nombre} · ${proxima.sede}`;
+        // Con el filtro puesto se enlaza a ESE templo; sin filtro, al primero
+        // de los que la tienen, que es el orden en que están en el sitio.
+        const sede = proxima.sedes.find((s) => s.slug === slug) ?? proxima.sedes[0];
+        elProx.textContent = `${proxima.nombre} · ${proxima.sedes.map((s) => s.short).join(' · ')}`;
         elCuando.textContent = `${DIAS[proxima.diaIndice]} a las ${proxima.hora} — ${faltan(espera)}`;
-        elEnlace.href = `/templos/${proxima.slug}`;
+        elEnlace.href = sede ? `/templos/${sede.slug}` : '/templos';
         elEnlace.classList.remove('hidden');
       } else {
         elProx.textContent = 'Ese templo no tiene reuniones cargadas.';
@@ -388,9 +465,12 @@ const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
       dias.forEach((dia) => {
         let n = 0;
         dia.querySelectorAll<HTMLElement>('[data-servicio]').forEach((fila) => {
-          const ok = slug === 'all' || fila.dataset.templo === slug;
+          const suyos = (fila.dataset.templos ?? '').split(' ').filter(Boolean);
+          const ok = slug === 'all' || suyos.includes(slug);
           fila.classList.toggle('hidden', !ok);
-          if (ok) n++;
+          // Cuenta reuniones, no líneas: una línea puede ser la misma reunión en
+          // tres templos, y el día tiene tres.
+          if (ok) n += slug === 'all' ? suyos.length : 1;
         });
 
         const conteo = dia.querySelector<HTMLElement>('[data-conteo]');

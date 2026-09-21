@@ -72,64 +72,71 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
 
   <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Videos' }]} />
 
-  <FiltroTemplos plural="videos" />
+  {
+    /* La barra de filtro y lo que filtra viven en el mismo bloque a propósito:
+      así la barra deja de estar pegada arriba cuando termina el listado, en vez
+      de seguir flotando sobre el pie de página. */
+  }
+  <div class="ambito-filtro">
+    <FiltroTemplos plural="videos" />
 
-  <section class="section bg-base-100">
-    <div class="wrap">
-      {
-        withId.length === 0 ? (
-          <EmptyState
-            icon="lucide:youtube"
-            title="Pronto publicaremos más videos"
-            text="Mientras tanto, en nuestro canal de YouTube están todas las prédicas y transmisiones anteriores."
-          >
-            <a
-              href={YOUTUBE_CHANNEL}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn btn-primary gap-2"
+    <section class="section bg-base-100">
+      <div class="wrap">
+        {
+          withId.length === 0 ? (
+            <EmptyState
+              icon="lucide:youtube"
+              title="Pronto publicaremos más videos"
+              text="Mientras tanto, en nuestro canal de YouTube están todas las prédicas y transmisiones anteriores."
             >
-              <Icon name="lucide:youtube" class="h-5 w-5" /> Ver canal en YouTube
-            </a>
-            <a href="/en-vivo" class="btn btn-ghost gap-2" data-solo-en-vivo hidden>
-              <Icon name="lucide:radio" class="h-5 w-5" /> Transmisión en vivo
-            </a>
-          </EmptyState>
-        ) : (
-          <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {withId.map((v, i) => (
-              <Reveal delay={(i % 3) * 80} class="h-full" data-etiqueta={v.templo}>
-                <div class="panel panel-sm panel-lift flex h-full flex-col overflow-hidden">
-                  <div class="aspect-video overflow-hidden bg-black">
-                    {/* Este `allow` no basta por sí solo: la cabecera
+              <a
+                href={YOUTUBE_CHANNEL}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-primary gap-2"
+              >
+                <Icon name="lucide:youtube" class="h-5 w-5" /> Ver canal en YouTube
+              </a>
+              <a href="/en-vivo" class="btn btn-ghost gap-2" data-solo-en-vivo hidden>
+                <Icon name="lucide:radio" class="h-5 w-5" /> Transmisión en vivo
+              </a>
+            </EmptyState>
+          ) : (
+            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {withId.map((v, i) => (
+                <Reveal delay={(i % 3) * 80} class="h-full" data-etiqueta={v.templo}>
+                  <div class="panel panel-sm panel-lift flex h-full flex-col overflow-hidden">
+                    <div class="aspect-video overflow-hidden bg-black">
+                      {/* Este `allow` no basta por sí solo: la cabecera
                          Permissions-Policy de public/_headers es el techo, y si allí
                          una función no incluye "https://www.youtube-nocookie.com"
                          el navegador la deniega aunque el iframe la pida. Así se
                          rompió el botón de pantalla completa: la cabecera decía
                          `fullscreen=(self)` y el reproductor es otro origen. */}
-                    <iframe
-                      class="h-full w-full"
-                      src={`https://www.youtube-nocookie.com/embed/${v.vid}`}
-                      title={v.titulo}
-                      loading="lazy"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture"
-                      allowfullscreen
-                    />
+                      <iframe
+                        class="h-full w-full"
+                        src={`https://www.youtube-nocookie.com/embed/${v.vid}`}
+                        title={v.titulo}
+                        loading="lazy"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture"
+                        allowfullscreen
+                      />
+                    </div>
+                    <div class="flex flex-1 flex-col p-5">
+                      <h2 class="card-title text-lg leading-snug">{v.titulo}</h2>
+                      {v.descripcion && (
+                        <p class="mt-1 text-sm text-base-content/75">{v.descripcion}</p>
+                      )}
+                    </div>
                   </div>
-                  <div class="flex flex-1 flex-col p-5">
-                    <h2 class="card-title text-lg leading-snug">{v.titulo}</h2>
-                    {v.descripcion && (
-                      <p class="mt-1 text-sm text-base-content/75">{v.descripcion}</p>
-                    )}
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        )
-      }
-    </div>
-  </section>
+                </Reveal>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </section>
+  </div>
 
   {
     withId.length > 0 && (

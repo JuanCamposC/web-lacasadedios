@@ -325,9 +325,15 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
       border-color 0.35s ease,
       box-shadow 0.35s ease;
   }
+  /* Opaca del todo, no al 95 %.
+     Ese 5 % bastaba para que el contenido oscuro de debajo —los botones de una
+     banda de cierre, un título sobre foto— se transparentara al pasar bajo la
+     barra, y en el teléfono parecía texto fantasma flotando en el encabezado.
+     El desenfoque lo disimulaba en los navegadores que lo aplican, que no son
+     todos. */
   #site-nav.is-scrolled {
     box-shadow: 0 6px 24px -12px rgba(0, 0, 0, 0.25);
-    background-color: color-mix(in oklab, var(--color-base-100) 95%, transparent);
+    background-color: var(--color-base-100);
   }
 
   /* ── Barra transparente sobre una banda oscura ──────────────────────────

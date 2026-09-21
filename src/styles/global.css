@@ -242,6 +242,13 @@
     .section-sm { padding-block: 4.5rem; }
   }
 
+  /* Contenedor de una barra pegada arriba: la barra se despega al llegar al
+     final de este bloque. Ver .sticky en FiltroTemplos y en el índice de
+     «Nosotros». */
+  .ambito-filtro {
+    position: relative;
+  }
+
   .wrap {
     margin-inline: auto;
     width: 100%;
@@ -848,6 +855,20 @@
   /* El templo, en su color. Antes era letra gris al final de la línea y se
      pidió que se viera mucho más: ahora es lo que primero se distingue al
      bajar la semana. El color sale de `.distintivo` (más abajo). */
+  /* Varias etiquetas en la misma línea, cuando la reunión coincide en más de
+     un templo: se envuelven en vez de empujar la hora. */
+  .cartel-lugares {
+    /* Las reglas de posición viven ACÁ y no en cada etiqueta: al agrupar varios
+       templos en una línea, las etiquetas pasaron a ir dentro de este
+       contenedor, y las que tenía cada una dejaron de colocar nada. En el
+       teléfono eso mandaba la primera etiqueta fuera de la pantalla. */
+    grid-column: 2;
+    justify-self: start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
   .cartel-lugar {
     grid-column: 2;
     justify-self: start;
@@ -878,9 +899,10 @@
       grid-template-columns: 4.5rem minmax(0, 1fr) auto;
       align-items: center;
     }
-    .cartel-lugar {
+    .cartel-lugares {
       grid-column: 3;
       justify-self: end;
+      justify-content: flex-end;
     }
   }
 

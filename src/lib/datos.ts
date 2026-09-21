@@ -186,6 +186,23 @@ export function eventosPasados(base: Base, filtro: Filtro = {}): Promise<Evento[
   );
 }
 
+/**
+ * Un evento por su identificador. Lo usa el archivo de calendario.
+ *
+ * Lleva `publicado = 1` como todo lo demás: un borrador tiene que dar 404
+ * igual que un identificador inventado, o el enlace del archivo .ics sería
+ * una forma de espiar lo que aún no se anuncia.
+ */
+export function eventoPorId(base: Base, id: string): Promise<Evento | null> {
+  return base
+    .prepare(
+      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo
+         from eventos where publicado = 1 and id = ?`,
+    )
+    .bind(id)
+    .first<Evento>();
+}
+
 // ── Noticias ────────────────────────────────────────────────────────────────
 
 /**
