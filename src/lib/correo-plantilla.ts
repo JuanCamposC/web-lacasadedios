@@ -83,7 +83,7 @@ export function esc(s: unknown): string {
 export type Bloque =
   /** Texto corriente. */
   | { tipo: 'parrafo'; texto: string }
-  /** Lo que el correo viene a decir: el título de la noticia, el del culto. */
+  /** Lo que el correo viene a decir: el título de la noticia, el de la reunión. */
   | { tipo: 'destacado'; texto: string }
   /** La acción. Uno por correo: dos botones es ninguno. */
   | { tipo: 'boton'; texto: string; url: string }

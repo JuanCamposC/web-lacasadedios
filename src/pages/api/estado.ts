@@ -13,7 +13,7 @@ export const prerender = false;
  * ── POR QUÉ EXISTE ──────────────────────────────────────────────────────────
  * La portada, los horarios y las páginas de templos son estáticas: se generan
  * al compilar y se sirven como archivos. Eso es lo que las hace rápidas, y
- * también lo que impide que sepan si AHORA MISMO hay culto en vivo. Así que ese
+ * también lo que impide que sepan si AHORA MISMO hay una reunión en vivo. Así que ese
  * pedazo se pide desde el navegador, después de pintar.
  *
  * Antes se pedía directamente a Supabase con la clave pública, lo que obligaba

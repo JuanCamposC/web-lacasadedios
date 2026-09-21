@@ -3,7 +3,7 @@
  * Se arma al servir: los horarios se editan desde el panel (ver
  * /admin/horarios) y una página generada al compilar los congelaría hasta el
  * siguiente despliegue — que es justo lo que el panel viene a evitar. Si alguien
- * suspende el culto del jueves, esta página tiene que decirlo ese mismo día.
+ * suspende la reunión del jueves, esta página tiene que decirlo ese mismo día.
  *
  * La CDN la sirve ya hecha un minuto y la rehace por detrás hasta diez más: un
  * cambio en el panel se ve en uno o dos minutos, y cien visitas seguidas son
@@ -38,14 +38,14 @@ const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
 ---
 
 <Layout
-  title="Horarios de cultos · La Casa de Dios"
-  description="Todos los cultos, estudios bíblicos y reuniones de La Casa de Dios en Santiago Centro, San Miguel, Limache y Coya, día por día."
+  title="Horarios de reuniones · La Casa de Dios"
+  description="Todas las reuniones y estudios bíblicos de La Casa de Dios en Santiago Centro, San Miguel, Limache y Coya, día por día."
 >
   <PageHero
     image={IMG.biblia}
     alt="Biblia abierta"
     eyebrow="Toda la semana"
-    title="Horarios de cultos"
+    title="Horarios de reuniones"
     subtitle={`${enPie(reuniones)} reuniones semanales entre nuestros ${templos.length} templos.`}
     height="min-h-[46vh]"
   />
@@ -104,7 +104,7 @@ const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
        Se rellena en el navegador y no en el servidor porque estas páginas van
        con caché de CDN: un «hoy» renderizado arriba llegaría caducado al
        segundo visitante. Y se calcula en hora de Chile a propósito —no en la
-       del visitante—, que es la que rige los cultos.
+       del visitante—, que es la que rige las reuniones.
 
        Sin JavaScript no aparece nada de esto y la semana completa se ve igual
        que siempre: es un añadido, no un requisito. */
@@ -231,7 +231,7 @@ const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
   /**
    * El momento actual EN CHILE, no en el reloj de quien mira.
    *
-   * Los cultos son a una hora concreta en Santiago: para alguien que abra la
+   * Las reuniones son a una hora concreta en Santiago: para alguien que abra la
    * página desde otro huso, «hoy» y «la próxima» tienen que seguir siendo las
    * de la iglesia. Y se calcula aquí y no en el servidor porque estas páginas
    * van con caché de CDN — un «hoy» renderizado arriba llegaría caducado al

@@ -1,7 +1,7 @@
 /**
  * De una clave de R2 a una dirección pública.
  *
- * En la base no se guardan URL sino CLAVES («noticias/2026/09/culto.webp»). La
+ * En la base no se guardan URL sino CLAVES («noticias/2026/09/reunion.webp»). La
  * diferencia importa: si mañana cambia el dominio desde el que se sirven los
  * archivos, se cambia una variable y no cuatro mil filas.
  *

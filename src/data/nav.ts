@@ -84,7 +84,7 @@ export const MAIN_NAV: NavEntry[] = [
       },
       {
         href: '/horarios',
-        label: 'Horarios de cultos',
+        label: 'Horarios de reuniones',
         desc: 'Todas las reuniones de la semana',
         icon: 'lucide:clock',
       },

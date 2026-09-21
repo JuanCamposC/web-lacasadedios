@@ -11,7 +11,7 @@
  *
  * ── LOS EVENTOS NO GUARDAN HORA DE TÉRMINO ──────────────────────────────────
  * La tabla solo tiene `fecha`. Un evento sin duración deja un hueco raro en el
- * calendario, así que se asumen dos horas, que es lo que dura un culto largo.
+ * calendario, así que se asumen dos horas, que es lo que dura una reunión larga.
  *
  * ── LA HORA ─────────────────────────────────────────────────────────────────
  * Lo que se guarda es un instante en UTC (ver src/lib/hora.ts), y a Google se le

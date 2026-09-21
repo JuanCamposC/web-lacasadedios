@@ -86,14 +86,35 @@ export default defineConfig({
         // RSS.com (los estudios bíblicos). Sin esta directiva caerían en
         // `default-src 'self'` y no sonaría ninguno.
         `media-src 'self' https://${medios} ${fuentesAudio}`,
-        // El navegador solo habla con este mismo sitio: el panel con /api/admin,
-        // y las páginas públicas con /api/estado. Ya no hay ningún tercero.
-        "connect-src 'self'",
+        // El navegador habla con este mismo sitio —el panel con /api/admin, las
+        // páginas públicas con /api/estado— y con el contador de visitas de
+        // Cloudflare, que manda su medición a cloudflareinsights.com.
+        "connect-src 'self' https://cloudflareinsights.com",
         // Los dos únicos embebidos: el reproductor de YouTube sin cookies y el
         // mapa de cada templo. Cualquier otro iframe queda bloqueado.
         'frame-src https://www.youtube-nocookie.com https://www.google.com',
         'upgrade-insecure-requests',
       ],
+      // Cloudflare inyecta solo el script del contador de visitas (Web
+      // Analytics) en cada página que sirve. No lo pone Astro, así que no lleva
+      // hash, y la política lo rechazaba: la consola mostraba el bloqueo en
+      // cada visita y la medición no llegaba nunca.
+      //
+      // Va en las dos directivas a propósito: los hashes de este sitio viven en
+      // `script-src-elem` (ver `insertScriptHash` en Layout.astro), y cuando esa
+      // directiva existe el navegador deja de mirar `script-src` para los
+      // <script> del documento.
+      //
+      // Si algún día se prefiere no cargar nada de terceros, la otra salida es
+      // apagar Web Analytics en el panel de Cloudflare y borrar estas líneas.
+      scriptDirective: {
+        resources: [
+          { resource: "'self'", kind: 'default' },
+          { resource: "'self'", kind: 'element' },
+          { resource: 'https://static.cloudflareinsights.com', kind: 'default' },
+          { resource: 'https://static.cloudflareinsights.com', kind: 'element' },
+        ],
+      },
       styleDirective: {
         resources: [
           { resource: "'self'", kind: 'default' },

@@ -47,7 +47,7 @@ export function hoyEnChile(ahora = new Date()): string {
  * Un aviso con `aviso_hasta` ya pasado se da por terminado y la reunión vuelve
  * a ser normal. Es lo que evita el caso de siempre: se suspende la reunión de
  * esta semana y nadie se acuerda de volver a encenderla, así que durante meses
- * la web dice que no hay culto los jueves.
+ * la web dice que no hay reunión los jueves.
  *
  * «Pasado» significa DESPUÉS de ese día: un aviso hasta el jueves se sigue
  * enseñando todo el jueves.

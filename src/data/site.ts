@@ -8,7 +8,7 @@ import type { ImgKey } from '../assets/images';
 
 export const SITE = {
   name: 'La Casa de Dios',
-  legalName: 'Iglesia Evangélica La Casa de Dios',
+  legalName: 'Iglesia La Casa de Dios',
   tagline: 'Iglesia Cristiana',
   claim: 'La Palabra de Dios es el fundamento de todo lo que hacemos.',
   intro: 'Comunidad de fe cristiana con templos en Santiago, San Miguel, Limache y Coya.',
@@ -99,5 +99,5 @@ export const INSTAGRAM_POSTS: PostInstagram[] = [
   { img: 'congregacion', href: INSTAGRAM.href, alt: 'La congregación reunida en el templo' },
   { img: 'manosAlzadas', href: INSTAGRAM.href, alt: 'Manos alzadas durante la alabanza' },
   { img: 'estudio', href: INSTAGRAM.href, alt: 'Biblia y cuaderno abiertos durante el estudio' },
-  { img: 'comunidad', href: INSTAGRAM.href, alt: 'Hermanos compartiendo después del culto' },
+  { img: 'comunidad', href: INSTAGRAM.href, alt: 'Hermanos compartiendo después de la reunión' },
 ];

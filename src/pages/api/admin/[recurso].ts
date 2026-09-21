@@ -92,7 +92,7 @@ const ESTADOS: Record<string, string> = { suspendida: 'Suspendida', cambiada: 'C
 /**
  * «San Miguel · Lunes 20:00 · Suspendida», para el listado del panel.
  *
- * Una reunión sola no tiene título que la distinga: hay cinco «Culto General».
+ * Una reunión sola no tiene título que la distinga: hay varias «Reunión General».
  * El listado solo sabe enseñar una columna debajo del nombre, así que se le
  * arma una con lo que de verdad hace falta ver de un vistazo.
  */

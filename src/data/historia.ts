@@ -27,8 +27,8 @@ export const HISTORIA = {
   lead: 'Una congregación que creció desde San Miguel hacia el resto del país.',
 
   parrafos: [
-    'La Casa de Dios es una congregación evangélica chilena cuya iglesia matriz se encuentra en San Miguel. Desde allí la comunidad se ha extendido a Santiago Centro, Limache y Coya, donde hoy funcionan templos con vida propia, cultos semanales y equipos de servicio.',
-    'A lo largo de los años el fundamento se ha mantenido igual: la Palabra de Dios como máxima autoridad en la fe y en la práctica. Cada templo sostiene cultos generales, estudios bíblicos, discipulado y reuniones de jóvenes, sirviendo a su barrio y acompañando a las familias que lo componen.',
+    'La Casa de Dios es una congregación chilena cuya iglesia matriz se encuentra en San Miguel. Desde allí la comunidad se ha extendido a Santiago Centro, Limache y Coya, donde hoy funcionan templos con vida propia, reuniones semanales y equipos de servicio.',
+    'A lo largo de los años el fundamento se ha mantenido igual: la Palabra de Dios como máxima autoridad en la fe y en la práctica. Cada templo sostiene reuniones generales, estudios bíblicos, discipulado y reuniones de jóvenes, sirviendo a su barrio y acompañando a las familias que lo componen.',
   ],
 
   imagen: 'biblia' as ImgKey,

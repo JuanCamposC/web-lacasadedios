@@ -39,7 +39,7 @@ export type CrudConfig = {
   subtitleField?: string;
   /**
    * Enseñar la fecha de creación bajo cada fila. Por defecto sí. En los
-   * horarios no dice nada útil —cuándo se cargó el culto del domingo— y ocupa
+   * horarios no dice nada útil —cuándo se cargó la reunión del domingo— y ocupa
    * la línea donde se lee el estado.
    */
   mostrarFecha?: boolean;
