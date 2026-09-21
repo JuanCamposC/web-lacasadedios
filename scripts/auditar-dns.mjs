@@ -21,7 +21,17 @@ import { Resolver } from 'node:dns/promises';
  * Devuelve 0 si todo cuadra y 1 si hay alguna falla, así que se puede encadenar.
  */
 const D = 'lacasadedios.cl';
-const IP_NETEXPLORA = '190.113.1.162';
+/**
+ * La IP del servidor viejo, que se pasa por el entorno:
+ *
+ *   IP_ANTIGUA=1.2.3.4 node scripts/auditar-dns.mjs
+ *
+ * Estaba escrita aquí, y este repositorio es público: publicar la IP de origen
+ * permite saltarse el proxy de Cloudflare y golpear al servidor directo. Sin la
+ * variable, las comprobaciones que dependen de ella se saltan y el resto del
+ * informe funciona igual.
+ */
+const IP_NETEXPLORA = (process.env.IP_ANTIGUA ?? '').trim();
 
 const NS_VIEJO = 'ns308.netexplora.com';
 const NS_NUEVO = 'barbara.ns.cloudflare.com';
@@ -115,7 +125,7 @@ for (const n of [D, `www.${D}`]) {
   if (!ip) {
     errores++;
     linea('FALLA', `${n} no resuelve`);
-  } else if (ip.includes(IP_NETEXPLORA)) {
+  } else if (IP_NETEXPLORA && ip.includes(IP_NETEXPLORA)) {
     errores++;
     linea('FALLA', `${n} sigue apuntando a Netexplora`, ip);
   } else {
@@ -137,7 +147,7 @@ for (const n of [D, `www.${D}`]) {
 {
   const ip = await pedir(nuevo, `mail.${D}`, 'A');
   if (!ip) linea('OK', 'sin mail', 'borrado el 2026-09-10; el correo va por el MX');
-  else if (ip === IP_NETEXPLORA) linea('OK', `mail → ${IP_NETEXPLORA}`);
+  else if (IP_NETEXPLORA && ip === IP_NETEXPLORA) linea('OK', 'mail → servidor antiguo');
   else {
     avisos++;
     linea('AVISO', 'mail resuelve a algo inesperado', ip);
@@ -147,7 +157,10 @@ for (const n of [D, `www.${D}`]) {
 console.log('\n── cPanel (hasta cancelar Netexplora) ────────────────────────────');
 for (const n of ['webmail', 'cpanel', 'whm', 'webdisk', 'ftp']) {
   const b = await pedir(nuevo, `${n}.${D}`, 'A');
-  if (b === IP_NETEXPLORA) linea('OK', `${n} → ${IP_NETEXPLORA}`);
+  if (!IP_NETEXPLORA) {
+    linea('AVISO', `${n}`, 'sin IP_ANTIGUA no se puede comprobar');
+    avisos++;
+  } else if (b === IP_NETEXPLORA) linea('OK', `${n} → servidor antiguo`);
   else {
     errores++;
     linea('FALLA', `${n}`, `Cloudflare responde: ${b}`);

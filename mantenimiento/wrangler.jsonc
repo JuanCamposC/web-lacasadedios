@@ -32,7 +32,8 @@
   // del hostname, reemplazando el A que apuntaba a Netexplora.
   //
   // Para volver atrás: comentar este bloque, `wrangler deploy`, y devolver a
-  // mano el A de lacasadedios.cl a 190.113.1.162 con el CNAME de www.
+  // mano el A de lacasadedios.cl al servidor antiguo (la IP está en la copia
+  // de la zona, fuera del repositorio) con el CNAME de www.
   //
   // NO TOCA EL CORREO. Estas rutas gobiernan hostnames web; el MX, el DKIM, el
   // SPF y el DMARC son registros aparte y siguen intactos.
