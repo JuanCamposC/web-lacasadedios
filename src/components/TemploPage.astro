@@ -9,6 +9,7 @@ import { templos, correoDe, cargoDe, estiloDistintivo, type Templo } from '../da
 import { CONTACT, hasPhone } from '../data/site';
 import { IMG } from '../assets/images';
 import { jsonLd as comoJsonLd } from '../lib/jsonld';
+import { enChile, horaCorta } from '../lib/hora';
 import { DIAS, momentoEnChile, proximaReunion, enPie, type Reunion } from '../lib/reuniones';
 
 /**
@@ -37,12 +38,33 @@ import { DIAS, momentoEnChile, proximaReunion, enPie, type Reunion } from '../li
  * servidor llegaría caducado al segundo visitante. Sin JavaScript se ve la
  * semana completa igual, que es lo que de verdad importa.
  */
+/** Un evento que le toca a este templo, ya listo para pintar. */
+export interface Agenda {
+  id: string;
+  titulo: string;
+  slug: string | null;
+  fecha: string;
+  lugar: string | null;
+  imagen: string | null;
+  /** `false` cuando es un evento de toda la iglesia. */
+  deEsteTemplo: boolean;
+}
+
 interface Props {
   templo: Templo;
   reuniones: Reunion[];
+  agenda?: Agenda[];
 }
 
-const { templo, reuniones } = Astro.props;
+const { templo, reuniones, agenda = [] } = Astro.props;
+
+// Las iniciales sin el tratamiento: «Pastor Alberto Gutiérrez» da AG, no PA.
+const iniciales = templo.leader.name
+  .replace(/^(Pastor|Pastora|Hermano|Hermana)\s+/i, '')
+  .split(' ')
+  .slice(0, 2)
+  .map((parte) => parte[0])
+  .join('');
 
 const correo = correoDe(templo.leader);
 const otros = templos.filter((t) => t.slug !== templo.slug);
@@ -267,101 +289,169 @@ const jsonLd = {
       </div>
     </section>
 
-    <!-- ══ Quién te recibe ═════════════════════════════════════════════════
-         Una sola tarjeta ancha en vez de una barra lateral: en un templo hay
-         una persona a cargo, y ponerla en una columna estrecha junto a los
-         horarios la convertía en un dato más del formulario.
+    <!-- ══ Visítanos ═══════════════════════════════════════════════════════
+         El mapa y el contacto eran dos secciones separadas: un mapa a sangre
+         con una tarjeta flotando encima, y más abajo una banda ancha con el
+         encargado solo en medio. Las dos contestan lo mismo —cómo llego y a
+         quién le escribo— así que van juntas en una sola pieza.
     ══════════════════════════════════════════════════════════════════════ -->
-    <section class="section-sm section bg-base-200">
+    <section class="section bg-base-200">
       <div class="wrap">
         <Reveal>
-          <div class="recibe">
-            <div class="recibe-quien">
-              <span class="eyebrow text-[var(--d-tinte)]">{cargoDe(templo.leader)}</span>
-              <p class="recibe-nombre">{templo.leader.name}</p>
-              <p class="recibe-rol">{templo.leader.role} · {templo.short}</p>
-
-              {
-                correo && (
-                  <p class="recibe-correo">
-                    <a href={`mailto:${correo}`}>
-                      <Icon name="lucide:mail" class="h-4 w-4 shrink-0" />
-                      {correo}
-                    </a>
-                    {templo.leader.correoNota && (
-                      <span class="recibe-nota">{templo.leader.correoNota}</span>
-                    )}
-                  </p>
-                )
-              }
-
-              <div class="recibe-acciones">
-                <a href={contactoTemplo} class="btn btn-sm btn-primary gap-2">
-                  <Icon name="lucide:message-square" class="h-4 w-4" /> Escribir a {templo.short}
-                </a>
-                {
-                  hasPhone && (
-                    <a href={`tel:${CONTACT.phoneHref}`} class="btn btn-ghost btn-sm gap-2">
-                      <Icon name="lucide:phone" class="h-4 w-4" /> {CONTACT.phone}
-                    </a>
-                  )
-                }
-              </div>
+          <div class="visita">
+            <div class="visita-mapa">
+              <iframe
+                src={templo.mapEmbed}
+                title={`Mapa de ${templo.name}`}
+                class="visita-marco"
+                style="border:0;"
+                allowfullscreen
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
 
-            <a href="/estudio-biblico" class="recibe-estudio">
-              <span class="tile tile-accent shrink-0">
-                <Icon name="lucide:book-open" class="h-5 w-5" />
-              </span>
-              <span class="min-w-0">
-                <span class="block font-bold">Instituto Bíblico Bet-El</span>
-                <span class="block text-sm text-base-content/65">
-                  {
-                    templo.estudio === 'presencial'
-                      ? 'Presencial en este templo, los lunes'
-                      : `Por Zoom los lunes. El enlace se pide a ${templo.leader.name.split(' ').slice(0, 2).join(' ')}`
-                  }
+            <div class="visita-datos">
+              <h2 class="visita-titulo">Cómo llegar y con quién hablar</h2>
+
+              <div class="dato">
+                <span class="dato-icono" aria-hidden="true">
+                  <Icon name="lucide:map-pin" class="h-5 w-5" />
                 </span>
-              </span>
-              <Icon name="lucide:arrow-right" class="h-4 w-4 shrink-0 text-primary" />
-            </a>
+                <div class="min-w-0">
+                  <p class="dato-etiqueta">Dirección</p>
+                  <p class="dato-valor">{templo.address}</p>
+                  <p class="dato-nota">{templo.city} · {templo.region}</p>
+                  <a
+                    href={templo.mapLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="dato-enlace"
+                  >
+                    Abrir en Google Maps
+                    <Icon name="lucide:arrow-up-right" class="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+
+              <div class="dato">
+                {
+                  /* Sin foto del encargado: las iniciales dicen quién es sin
+                    inventar un retrato que no tenemos. */
+                }
+                <span class="dato-iniciales" aria-hidden="true">{iniciales}</span>
+                <div class="min-w-0">
+                  <p class="dato-etiqueta">{cargoDe(templo.leader)}</p>
+                  <p class="dato-valor">{templo.leader.name}</p>
+                  {
+                    correo && (
+                      <a href={`mailto:${correo}`} class="dato-enlace break-all">
+                        <Icon name="lucide:mail" class="h-4 w-4 shrink-0" />
+                        {correo}
+                      </a>
+                    )
+                  }
+                  {
+                    correo && templo.leader.correoNota && (
+                      <p class="dato-nota">{templo.leader.correoNota}</p>
+                    )
+                  }
+                  <div class="dato-acciones">
+                    <a href={contactoTemplo} class="btn btn-sm btn-primary gap-2">
+                      <Icon name="lucide:message-square" class="h-4 w-4" />
+                      Escribir a {templo.short}
+                    </a>
+                    {
+                      hasPhone && (
+                        <a href={`tel:${CONTACT.phoneHref}`} class="btn btn-ghost btn-sm gap-2">
+                          <Icon name="lucide:phone" class="h-4 w-4" /> {CONTACT.phone}
+                        </a>
+                      )
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <a href="/estudio-biblico" class="dato dato-enlazado">
+                <span class="dato-icono" aria-hidden="true">
+                  <Icon name="lucide:book-open" class="h-5 w-5" />
+                </span>
+                <div class="min-w-0">
+                  <p class="dato-etiqueta">Instituto Bíblico Bet-El</p>
+                  <p class="dato-valor">
+                    {
+                      templo.estudio === 'presencial'
+                        ? 'Presencial en este templo, los lunes'
+                        : 'Por Zoom, los lunes'
+                    }
+                  </p>
+                  <p class="dato-nota">
+                    {
+                      templo.estudio === 'presencial'
+                        ? 'Se estudia un libro completo por semestre.'
+                        : `El enlace se pide a ${templo.leader.name}.`
+                    }
+                  </p>
+                </div>
+                <Icon name="lucide:arrow-right" class="dato-flecha h-4 w-4" />
+              </a>
+            </div>
           </div>
         </Reveal>
       </div>
     </section>
 
-    <!-- ══ El mapa ═════════════════════════════════════════════════════════ -->
-    <section class="mapa">
-      <iframe
-        src={templo.mapEmbed}
-        title={`Mapa de ${templo.name}`}
-        class="mapa-marco"
-        style="border:0;"
-        allowfullscreen
-        loading="lazy"
-        referrerpolicy="no-referrer-when-downgrade"></iframe>
+    {
+      /* ══ Lo que viene ══════════════════════════════════════════════════
+        Solo aparece si hay algo anotado: una sección de próximos eventos
+        vacía dice que en este templo no pasa nada, y lo que pasa de verdad
+        es que nadie lo cargó todavía. */
+    }
+    {
+      agenda.length > 0 && (
+        <section class="section bg-base-100">
+          <div class="wrap">
+            <Reveal>
+              <div class="semana-cab">
+                <div>
+                  <span class="eyebrow text-[var(--d-tinte)]">Lo que viene</span>
+                  <h2 class="mt-2 font-display text-3xl">Próximos encuentros</h2>
+                </div>
+                <a href="/eventos" class="semana-enlace">
+                  Ver todos los eventos
+                  <Icon name="lucide:arrow-right" class="h-4 w-4" />
+                </a>
+              </div>
+            </Reveal>
 
-      <div class="wrap mapa-encima">
-        <div class="mapa-tarjeta">
-          <p class="flex items-start gap-2 font-medium">
-            <Icon name="lucide:map-pin" class="mt-0.5 h-5 w-5 shrink-0 text-[var(--d-tinte)]" />
-            <span>
-              {templo.address}
-              <span class="block text-sm font-normal text-base-content/60">{templo.region}</span>
-            </span>
-          </p>
-          <a
-            href={templo.mapLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="btn btn-primary btn-sm mt-4 gap-2"
-          >
-            <Icon name="lucide:navigation" class="h-4 w-4" /> Abrir en Google Maps
-          </a>
-        </div>
-      </div>
-    </section>
-
+            <ul class="agenda">
+              {agenda.map((e, i) => (
+                <Reveal delay={i * 80} class="h-full">
+                  <li class="evento">
+                    <p class="evento-fecha">
+                      <span class="evento-dia">{enChile(e.fecha, { day: '2-digit' })}</span>
+                      <span class="evento-mes">
+                        {enChile(e.fecha, { month: 'short' }).replace('.', '')}
+                      </span>
+                    </p>
+                    <div class="min-w-0">
+                      <p class="evento-titulo">{e.titulo}</p>
+                      <p class="evento-dato">
+                        <Icon name="lucide:clock" class="h-3.5 w-3.5 shrink-0" />
+                        {horaCorta(e.fecha)}
+                        {e.lugar && <span class="truncate">· {e.lugar}</span>}
+                      </p>
+                      <p class="evento-marca">
+                        {e.deEsteTemplo ? `En ${templo.short}` : 'De toda la iglesia'}
+                      </p>
+                    </div>
+                  </li>
+                </Reveal>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )
+    }
     <!-- ══ Los otros templos ═══════════════════════════════════════════════ -->
     <section class="section bg-base-100">
       <div class="wrap">
@@ -680,117 +770,204 @@ const jsonLd = {
     box-shadow: 0 0 0 1px var(--d-tinte);
   }
 
-  /* ── Quién te recibe ─────────────────────────────────────────────────── */
-  .recibe {
+  /* ── Visítanos: mapa y datos en una sola pieza ───────────────────────
+     El mapa ya no va a sangre con una tarjeta encima. Va dentro de la misma
+     caja que los datos, a media altura en pantalla ancha: se ve dónde queda y
+     a quién escribir sin que una cosa tape a la otra. */
+  .visita {
     display: grid;
-    gap: 1.5rem;
-    align-items: center;
+    overflow: hidden;
     border-radius: 1rem;
     border: 1px solid var(--color-base-300);
     background: var(--color-base-100);
-    padding: clamp(1.25rem, 4vw, 2rem);
+    box-shadow: 0 12px 34px -26px rgba(10, 23, 48, 0.55);
   }
-  @media (min-width: 900px) {
-    .recibe {
-      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-      gap: 2.5rem;
+  @media (min-width: 960px) {
+    .visita {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
     }
   }
-  .recibe-nombre {
-    margin-top: 0.4rem;
+  .visita-mapa {
+    position: relative;
+    min-height: 18rem;
+    background: var(--color-base-200);
+  }
+  .visita-marco {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 18rem;
+  }
+  @media (min-width: 960px) {
+    .visita-marco {
+      min-height: 100%;
+      position: absolute;
+      inset: 0;
+    }
+  }
+  .visita-datos {
+    padding: clamp(1.25rem, 3.5vw, 2rem);
+  }
+  .visita-titulo {
     font-family: var(--font-display);
-    font-size: clamp(1.6rem, 3.5vw, 2.1rem);
-    line-height: 1.1;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    line-height: 1.15;
+    margin-bottom: 0.5rem;
   }
-  .recibe-rol {
-    margin-top: 0.25rem;
+
+  /* Cada dato es una fila con su marca a la izquierda, separadas por una
+     línea fina: se recorren de arriba abajo como una ficha, no como tarjetas
+     sueltas que compiten entre sí. */
+  .dato {
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    gap: 0.9rem;
+    align-items: start;
+    border-top: 1px solid var(--color-base-300);
+    padding-block: 1.1rem;
+  }
+  .dato:last-child {
+    padding-bottom: 0;
+  }
+  .dato-icono,
+  .dato-iniciales {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.8rem;
+    background: color-mix(in srgb, var(--d-tinte) 14%, transparent);
+    color: var(--d-tinte);
+  }
+  .dato-iniciales {
+    font-family: var(--font-data);
     font-size: 0.95rem;
-    color: color-mix(in srgb, var(--color-base-content) 65%, transparent);
+    font-weight: 700;
+    letter-spacing: 0.05em;
   }
-  .recibe-correo {
-    margin-top: 1rem;
+  .dato-etiqueta {
+    font-family: var(--font-data);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--color-base-content) 55%, transparent);
   }
-  .recibe-correo a {
+  .dato-valor {
+    margin-top: 0.15rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .dato-nota {
+    margin-top: 0.15rem;
+    font-size: 0.85rem;
+    color: color-mix(in srgb, var(--color-base-content) 60%, transparent);
+  }
+  .dato-enlace {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    overflow-wrap: anywhere;
+    gap: 0.35rem;
+    margin-top: 0.45rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--d-tinte);
   }
-  .recibe-correo a:hover {
+  .dato-enlace:hover {
     text-decoration: underline;
   }
-  .recibe-nota {
-    display: block;
-    margin-top: 0.35rem;
-    font-size: 0.8rem;
-    color: color-mix(in srgb, var(--color-base-content) 60%, transparent);
-  }
-  .recibe-acciones {
+  .dato-acciones {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
-    margin-top: 1.25rem;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
   }
-  .recibe-estudio {
-    display: flex;
+  /* La fila del estudio bíblico es un enlace entero. */
+  .dato-enlazado {
+    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
     align-items: center;
-    gap: 0.9rem;
-    border-radius: 0.85rem;
-    border: 1px solid var(--color-base-300);
-    background: var(--color-base-200);
-    padding: 1rem;
-    transition: border-color 0.15s;
+    transition: background-color 0.15s;
   }
-  .recibe-estudio:hover {
-    border-color: var(--d-tinte);
+  .dato-enlazado:hover {
+    background: color-mix(in srgb, var(--d-tinte) 6%, transparent);
+  }
+  .dato-flecha {
+    color: var(--d-tinte);
   }
 
-  /* ── El mapa ─────────────────────────────────────────────────────────── */
-  .mapa {
-    position: relative;
-    background: var(--color-base-200);
-  }
-  .mapa-marco {
-    display: block;
-    width: 100%;
-    height: 26rem;
+  /* ── Lo que viene ────────────────────────────────────────────────────── */
+  .agenda {
+    display: grid;
+    gap: 1rem;
+    margin-top: 2rem;
   }
   @media (min-width: 768px) {
-    .mapa-marco {
-      height: 32rem;
+    .agenda {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
-  .mapa-encima {
-    position: relative;
-    pointer-events: none;
-  }
-  @media (min-width: 768px) {
-    .mapa-encima {
-      position: absolute;
-      inset-inline: 0;
-      bottom: 2rem;
-    }
-  }
-  .mapa-tarjeta {
-    pointer-events: auto;
-    max-width: 24rem;
-    margin-top: -2.5rem;
+  .evento {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    gap: 0.9rem;
+    height: 100%;
     border-radius: 0.85rem;
     border: 1px solid var(--color-base-300);
     background: var(--color-base-100);
-    padding: 1.25rem;
-    box-shadow: 0 12px 30px -18px rgba(10, 23, 48, 0.6);
+    padding: 1rem;
   }
-  @media (min-width: 768px) {
-    .mapa-tarjeta {
-      margin-top: 0;
-    }
+  .evento-fecha {
+    display: grid;
+    place-content: center;
+    border-radius: 0.6rem;
+    background: color-mix(in srgb, var(--d-tinte) 12%, transparent);
+    padding: 0.4rem;
+    text-align: center;
+    color: var(--d-tinte);
+  }
+  .evento-dia {
+    display: block;
+    font-family: var(--font-data);
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .evento-mes {
+    display: block;
+    font-family: var(--font-data);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .evento-titulo {
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  .evento-dato {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+    font-size: 0.85rem;
+    color: color-mix(in srgb, var(--color-base-content) 62%, transparent);
+  }
+  .evento-marca {
+    display: inline-block;
+    margin-top: 0.6rem;
+    border-radius: 999px;
+    background: var(--color-base-200);
+    padding: 0.1rem 0.55rem;
+    font-family: var(--font-data);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--color-base-content) 65%, transparent);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .recibe-estudio {
+    .dato-enlazado {
       transition: none;
     }
   }

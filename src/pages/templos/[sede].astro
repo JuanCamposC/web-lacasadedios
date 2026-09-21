@@ -10,8 +10,10 @@ Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate
 import TemploPage from '../../components/TemploPage.astro';
 import { getTemplo } from '../../data/templos';
 import { baseDeDatos } from '../../lib/base';
-import { reunionesPublicadas } from '../../lib/datos';
+import { reunionesPublicadas, eventosProximos } from '../../lib/datos';
+import { urlMedio } from '../../lib/medios';
 import type { Reunion } from '../../lib/reuniones';
+import type { Agenda } from '../../components/TemploPage.astro';
 
 const templo = getTemplo(Astro.params.sede ?? '');
 // Un 404 sin cuerpo: Astro lo sustituye por la página de error del sitio.
@@ -20,11 +22,35 @@ const templo = getTemplo(Astro.params.sede ?? '');
 if (!templo) return new Response(null, { status: 404 });
 
 let reuniones: Reunion[] = [];
+let agenda: Agenda[] = [];
 try {
-  reuniones = await reunionesPublicadas(await baseDeDatos(), templo.slug);
+  const base = await baseDeDatos();
+
+  // Dos consultas y no una: lo que pasa en este templo y lo que es de toda la
+  // iglesia. Un encuentro general también ocurre para quien mira esta ficha, y
+  // filtrar solo por el templo lo escondería.
+  const [reunionesDelTemplo, propios, generales] = await Promise.all([
+    reunionesPublicadas(base, templo.slug),
+    eventosProximos(base, { templo: templo.slug, limite: 3 }),
+    eventosProximos(base, { templo: 'general', limite: 3 }),
+  ]);
+
+  reuniones = reunionesDelTemplo;
+  agenda = [...propios, ...generales]
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .slice(0, 3)
+    .map((e) => ({
+      id: e.id,
+      titulo: e.titulo,
+      slug: e.slug,
+      fecha: e.fecha,
+      lugar: e.lugar,
+      imagen: urlMedio(e.imagen_clave),
+      deEsteTemplo: e.templo === templo.slug,
+    }));
 } catch (e) {
   console.error('[templo]', e);
 }
 ---
 
-<TemploPage templo={templo} reuniones={reuniones} />
+<TemploPage templo={templo} reuniones={reuniones} agenda={agenda} />
