@@ -15,14 +15,22 @@
  * cada foto renombrada o borrada deja para siempre sus cuatro WebP colgando en
  * producción. Pasó: quedaban ahí `cruz-cielo` y `hero-worship`, borradas del
  * repositorio semanas antes.
+ *
+ * Por último avisa de las fotos que no usa ninguna página. Las fotos se
+ * reemplazan dejando el archivo con el nombre exacto del hueco (ver
+ * src/assets/img/LEEME.txt), y un nombre mal escrito —«templo coya.jpg»,
+ * «Templo-Coya.jpg»— no da ningún error: la página sigue mostrando la foto
+ * vieja y no hay forma de notarlo hasta que alguien mira el sitio. Este aviso
+ * es lo único que separa «la subí y no se ve» de «la subí con el nombre mal».
  */
-import { mkdir, readdir, stat, unlink } from 'node:fs/promises';
+import { mkdir, readdir, readFile, stat, unlink } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 import sharp from 'sharp';
 import { anchosDe, rutaFoto } from '../src/lib/fotos.mjs';
 
 const ORIGEN = 'src/assets/img';
 const DESTINO = 'public';
+const MAPA = 'src/assets/images.ts';
 
 await mkdir(join(DESTINO, 'fotos'), { recursive: true });
 
@@ -72,3 +80,25 @@ console.log(
   `fotos: ${hechas} generadas, ${saltadas} ya estaban al día` +
     (borradas ? `, ${borradas} sobrantes borradas` : ''),
 );
+
+// ── ¿Alguna foto no la usa nadie? ───────────────────────────────────────────
+// Los nombres válidos son los que importa el mapa de imágenes, sacados del
+// propio archivo para que esta lista no se quede atrás cuando cambie.
+const mapa = await readFile(MAPA, 'utf8');
+const conocidas = new Set([...mapa.matchAll(/'\.\/img\/([^']+)'/g)].map((m) => m[1]));
+const huerfanas = archivos.filter((f) => !conocidas.has(f));
+
+if (huerfanas.length > 0) {
+  console.warn('');
+  console.warn('  ⚠ Estas fotos no las usa ninguna página del sitio:');
+  for (const f of huerfanas) console.warn(`      ${f}`);
+  console.warn('');
+  console.warn('    Casi siempre es el nombre. Tiene que ser uno de estos, exacto,');
+  console.warn('    en minúsculas y con la misma extensión:');
+  console.warn('');
+  for (const f of [...conocidas].sort()) console.warn(`      ${f}`);
+  console.warn('');
+  console.warn('    La lista completa, con qué se ve en cada hueco, está en');
+  console.warn('    src/assets/img/LEEME.txt');
+  console.warn('');
+}

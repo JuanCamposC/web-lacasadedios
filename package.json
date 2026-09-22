@@ -13,6 +13,7 @@
     "format": "prettier --write \"src/**/*.{ts,astro,css}\" \"scripts/**/*.mjs\" \"*.{json,mjs}\"",
     "format:check": "prettier --check \"src/**/*.{ts,astro,css}\" \"scripts/**/*.mjs\" \"*.{json,mjs}\"",
     "test": "vitest run",
+    "publicar": "npm run build && wrangler deploy",
     "test:watch": "vitest",
     "textos": "npm run build && node scripts/textos.mjs"
   },
