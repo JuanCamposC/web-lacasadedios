@@ -262,7 +262,23 @@ const textoError =
       msg.className = 'mt-4 hidden';
 
       try {
-        const res = await fetch(form.action, {
+        // La dirección va ESCRITA y no se toma de `form.action`.
+        //
+        // `action` apunta a /contacto, y tiene que seguir apuntando ahí: es la
+        // página que atiende el envío de quien no tiene JavaScript y la única
+        // que puede volver a dibujar el formulario con lo que la persona
+        // escribió. Pero esa página devuelve HTML.
+        //
+        // Cuando este fetch usaba `form.action`, el envío funcionaba —el correo
+        // salía— y la respuesta era una página entera. `res.json()` reventaba,
+        // el catch dejaba un objeto vacío, y sin `ok` ni `reason` el mensaje
+        // caía en el «No pudimos enviar el mensaje» de más abajo. O sea: se
+        // enviaba y se decía que no. Quien lo intentara de nuevo mandaba otra
+        // copia, y a la quinta el freno por IP lo dejaba fuera de verdad.
+        //
+        // /api/contacto hace exactamente lo mismo y responde JSON, que es lo
+        // que este código sabe leer.
+        const res = await fetch('/api/contacto', {
           method: 'POST',
           headers: { Accept: 'application/json' },
           body: new FormData(form),
