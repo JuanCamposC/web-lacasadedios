@@ -20,10 +20,22 @@
 
 export const ESTUDIO = {
   eyebrow: 'Conociendo la Palabra',
-  titulo: 'Estudio bíblico',
-  bajada: 'Todos los lunes, en los cuatro templos, abrimos juntos la Palabra de Dios.',
 
-  /** El nombre del programa, tal como debe leerse. */
+  /**
+   * El nombre propio, que es como se llama de verdad.
+   *
+   * Antes el título decía «Estudio bíblico» y el nombre real vivía en un
+   * campo aparte, así que el sitio hablaba de dos cosas que eran una sola.
+   * Ahora el nombre manda, y «estudio bíblico» queda como lo que es: la
+   * descripción de lo que se hace ahí.
+   */
+  titulo: 'Instituto Bíblico Bet-El',
+  /** Para cuando el nombre entero no cabe: menú, migas, botones. */
+  corto: 'Instituto Bíblico',
+  bajada:
+    'El estudio bíblico de La Casa de Dios: todos los lunes, en los cuatro templos, abrimos juntos la Palabra de Dios.',
+
+  /** @deprecated Usa `titulo`. Se conserva para no romper importaciones. */
   programa: 'Instituto Bíblico Bet-El',
 
   /** Cuándo se reúne. Uno solo porque los cuatro templos coinciden. */

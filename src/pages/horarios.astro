@@ -173,7 +173,11 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
               </p>
             </div>
             <div class="panel p-6 sm:p-7">
-              <span class="eyebrow text-primary">Próxima reunión</span>
+              {
+                /* El rótulo cambia a «Ahora mismo» cuando hay una reunión pasando;
+                  lo pone el script, que es quien sabe la hora de Chile. */
+              }
+              <span class="eyebrow text-primary" data-ahora-rotulo>Próxima reunión</span>
               <p class="mt-4 font-display text-2xl leading-tight" data-ahora-prox></p>
               <p class="mt-1 text-base-content/70" data-ahora-cuando></p>
               <a class="btn btn-primary btn-sm mt-5 gap-2" data-ahora-enlace>
@@ -292,6 +296,15 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
   const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
   /**
+   * Cuánto se da por que dura una reunión, para decir «en curso».
+   *
+   * La tabla guarda la hora de inicio y nada más. Dos horas es la misma cifra
+   * que usa el resto del sitio (ver DURACION_REUNION_MIN en src/lib/reuniones.ts);
+   * acá va suelta porque este script no importa ese módulo.
+   */
+  const DURACION_MIN = 120;
+
+  /**
    * El momento actual EN CHILE, no en el reloj de quien mira.
    *
    * Las reuniones son a una hora concreta en Santiago: para alguien que abra la
@@ -392,9 +405,13 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
         // Envuelve: una reunión que coincide en los cuatro templos lleva cuatro
         // etiquetas, y en el teléfono no caben en una línea.
         li.className = 'flex flex-wrap items-baseline gap-x-3 gap-y-1';
-        // Una suspendida se enseña tachada, igual que una que ya pasó: está en
-        // la lista para que nadie crea que falta, pero no se va a hacer.
-        const pasada = r.minutos < ahora.minutos || r.suspendida;
+
+        // Tres estados y no dos: la que está PASANDO ahora no puede verse igual
+        // que una que ya terminó. Antes se tachaba en cuanto daba la hora, así
+        // que a las 19:05 la web daba por perdida una reunión recién empezada.
+        const enCurso =
+          !r.suspendida && ahora.minutos >= r.minutos && ahora.minutos < r.minutos + DURACION_MIN;
+        const pasada = !enCurso && (r.minutos < ahora.minutos || r.suspendida);
 
         const hora = document.createElement('span');
         hora.className = `font-data text-lg font-bold ${pasada ? 'text-base-content/35' : 'text-primary'}`;
@@ -404,10 +421,25 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
         texto.className = pasada ? 'text-base-content/35 line-through' : '';
         texto.textContent = r.nombre;
 
+        // La marca de «en curso», con el punto que late. Se arma con elementos y
+        // textContent, como el resto de esta lista: nada de concatenar HTML con
+        // datos que se editan desde el panel.
+        let marca: HTMLElement | null = null;
+        if (enCurso) {
+          marca = document.createElement('span');
+          marca.className =
+            'inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-success';
+          const punto = document.createElement('span');
+          punto.className = 'pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-success';
+          punto.setAttribute('aria-hidden', 'true');
+          marca.append(punto, document.createTextNode('En curso'));
+        }
+
         // Los templos en su color, igual que en el cartel de abajo: en «hoy» es
         // donde más importa saber de un vistazo a qué templo hay que ir. Si la
         // reunión coincide en varios, van todas las etiquetas en la misma línea.
         li.append(hora, texto);
+        if (marca) li.append(marca);
         for (const s of r.sedes) {
           const sede = document.createElement('span');
           sede.className = 'distintivo ml-2 align-middle';
@@ -434,6 +466,29 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
           espera = mins;
           proxima = r;
         }
+      }
+
+      // ¿Hay algo pasando ahora mismo? Es lo primero que mira quien abre esta
+      // página a la hora de una reunión, y hasta ahora no se decía en ninguna
+      // parte: había que deducirlo del horario.
+      const corriendo = suyas.find(
+        (r) =>
+          !r.suspendida &&
+          r.diaIndice === ahora.dia &&
+          ahora.minutos >= r.minutos &&
+          ahora.minutos < r.minutos + DURACION_MIN,
+      );
+      const rotulo = document.querySelector<HTMLElement>('[data-ahora-rotulo]');
+      if (rotulo) rotulo.textContent = corriendo ? 'Ahora mismo' : 'Próxima reunión';
+
+      if (corriendo) {
+        const sede = corriendo.sedes.find((s) => s.slug === slug) ?? corriendo.sedes[0];
+        elProx.textContent = `${corriendo.nombre} · ${corriendo.sedes.map((s) => s.short).join(' · ')}`;
+        elCuando.textContent = `En curso · empezó a las ${corriendo.hora}`;
+        elEnlace.href = sede ? `/templos/${sede.slug}` : '/templos';
+        elEnlace.classList.remove('hidden');
+        panel.classList.remove('hidden');
+        return;
       }
 
       if (proxima) {

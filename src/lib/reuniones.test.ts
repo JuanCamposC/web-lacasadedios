@@ -160,3 +160,50 @@ describe('momentoEnChile', () => {
     });
   });
 });
+
+describe('proximaReunion · en curso', () => {
+  const r = (id: string, dia: number, hora: string, estado: FilaReunion['estado'] = 'normal') =>
+    vigente(
+      { ...base, id, dia, hora, estado, aviso: estado === 'normal' ? null : 'Aviso' },
+      '2026-01-01',
+    );
+  const semana = [r('jue', 4, '20:00'), r('dom', 0, '11:00')];
+
+  it('media hora después de empezar, la reunión está EN CURSO', () => {
+    const p = proximaReunion(semana, { dia: 4, minutos: 20 * 60 + 30 });
+    expect(p.enCurso?.id).toBe('jue');
+    expect(p.llevaMinutos).toBe(30);
+  });
+
+  it('pasadas las dos horas ya no está en curso', () => {
+    const p = proximaReunion(semana, { dia: 4, minutos: 22 * 60 + 1 });
+    expect(p.enCurso).toBeNull();
+  });
+
+  it('antes de empezar no hay nada en curso', () => {
+    expect(proximaReunion(semana, { dia: 4, minutos: 19 * 60 }).enCurso).toBeNull();
+  });
+
+  it('mientras una está en curso, la próxima sigue siendo la siguiente', () => {
+    // Las dos cosas a la vez: «esto está pasando» y «lo que viene después».
+    const p = proximaReunion(semana, { dia: 4, minutos: 20 * 60 + 30 });
+    expect(p.enCurso?.id).toBe('jue');
+    expect(p.reunion?.id).toBe('dom');
+  });
+
+  it('una suspendida nunca está en curso', () => {
+    const p = proximaReunion([r('jue', 4, '20:00', 'suspendida'), r('dom', 0, '11:00')], {
+      dia: 4,
+      minutos: 20 * 60 + 30,
+    });
+    expect(p.enCurso).toBeNull();
+  });
+
+  it('una que empezó anoche y cruzó la medianoche sigue en curso', () => {
+    // El caso que rompe una resta ingenua: son las 00:30 del lunes y la
+    // reunión empezó el domingo a las 23:00.
+    const p = proximaReunion([r('dom', 0, '23:00')], { dia: 1, minutos: 30 });
+    expect(p.enCurso?.id).toBe('dom');
+    expect(p.llevaMinutos).toBe(90);
+  });
+});

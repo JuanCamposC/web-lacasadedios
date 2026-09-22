@@ -112,13 +112,18 @@ const lineaSuspendidas = (lista: Reunion[]) =>
                 <span class="e-suave mt-0.5 block text-sm">{t.address}</span>
 
                 <span class="mt-2.5 block">
-                  <span class="font-data block text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#53697e]">
-                    Próxima reunión
+                  <span
+                    class="font-data block text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#53697e]"
+                    data-etiqueta
+                  >
+                    {proxima.enCurso ? 'Ahora mismo' : 'Próxima reunión'}
                   </span>
                   <span class="mt-0.5 block font-semibold" data-linea>
-                    {proxima.reunion
-                      ? `${proxima.cuando} ${proxima.reunion.hora} · ${proxima.reunion.nombre}`
-                      : 'Consulta los horarios'}
+                    {proxima.enCurso
+                      ? `En curso · ${proxima.enCurso.nombre}`
+                      : proxima.reunion
+                        ? `${proxima.cuando} ${proxima.reunion.hora} · ${proxima.reunion.nombre}`
+                        : 'Consulta los horarios'}
                   </span>
                   <span
                     class="mt-1 block text-sm font-medium text-[#8a5a00]"
@@ -205,10 +210,17 @@ const lineaSuspendidas = (lista: Reunion[]) =>
     const cambio = ficha.querySelector<HTMLElement>('[data-cambio]');
     const suspendidas = ficha.querySelector<HTMLElement>('[data-suspendidas]');
 
+    const etiqueta = ficha.querySelector<HTMLElement>('[data-etiqueta]');
+    if (etiqueta) etiqueta.textContent = p.enCurso ? 'Ahora mismo' : 'Próxima reunión';
+
     if (linea) {
-      linea.textContent = p.reunion
-        ? `${p.cuando} ${p.reunion.hora} · ${p.reunion.nombre}`
-        : 'Consulta los horarios';
+      // Lo que está pasando ahora va primero: es lo que decide si alguien sale
+      // de casa en este momento.
+      linea.textContent = p.enCurso
+        ? `En curso · ${p.enCurso.nombre}`
+        : p.reunion
+          ? `${p.cuando} ${p.reunion.hora} · ${p.reunion.nombre}`
+          : 'Consulta los horarios';
     }
     if (cambio) {
       cambio.textContent = p.reunion?.aviso ?? '';

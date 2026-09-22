@@ -117,7 +117,30 @@ export function momentoEnChile(ahora = new Date()): MomentoSemana {
   return { dia: Math.max(0, dia), minutos: Number(v.hour) * 60 + Number(v.minute) };
 }
 
+/**
+ * Cuánto se da por que dura una reunión.
+ *
+ * La tabla guarda la hora de inicio y nada más, así que «está pasando ahora»
+ * hay que decidirlo con una duración supuesta. Dos horas es lo que dura una
+ * reunión larga, y es la misma cifra que ya asumen los eventos al agendarse
+ * (ver DURACION_MIN en src/lib/ics.ts).
+ *
+ * Pasarse es mejor que quedarse corto: si alguien mira a la hora y media y la
+ * web ya no dice nada, parece que no hay reunión.
+ */
+export const DURACION_REUNION_MIN = 120;
+
 export interface Proxima {
+  /**
+   * La que está pasando AHORA MISMO, si hay alguna.
+   *
+   * Se separa de `reunion` a propósito: quien abre la página a las 20:30 un
+   * domingo no quiere leer «próxima reunión: el jueves», quiere saber que la de
+   * ahora ya empezó y que todavía llega.
+   */
+  enCurso: Reunion | null;
+  /** Minutos que lleva la reunión en curso. 0 si no hay ninguna. */
+  llevaMinutos: number;
   /** La próxima reunión que SÍ se hace, o `null` si el templo no tiene ninguna. */
   reunion: Reunion | null;
   /** «Hoy», «Mañana» o el nombre del día. */
@@ -150,8 +173,33 @@ export function proximaReunion(reuniones: Reunion[], ahora: MomentoSemana): Prox
     .map((r) => ({ r, faltan: faltanMinutos(r, ahora) }))
     .sort((a, b) => a.faltan - b.faltan);
 
+  /*
+   * Lo que está pasando ahora es lo que EMPEZÓ hace menos de dos horas, y
+   * `faltanMinutos` cuenta hacia delante dando la vuelta a la semana: una
+   * reunión que empezó hace media hora devuelve «faltan 10.050 minutos». Por
+   * eso se busca desde el otro extremo de la semana.
+   *
+   * Una suspendida nunca está en curso: sería anunciar que hay algo pasando en
+   * una puerta cerrada.
+   */
+  const empezoHace = (faltan: number) => (SEMANA - faltan) % SEMANA;
+  const corriendo = enOrden
+    .filter(
+      ({ r, faltan }) => r.estado !== 'suspendida' && empezoHace(faltan) < DURACION_REUNION_MIN,
+    )
+    .sort((a, b) => empezoHace(a.faltan) - empezoHace(b.faltan));
+  const enCurso = corriendo[0] ?? null;
+
   const i = enOrden.findIndex(({ r }) => r.estado !== 'suspendida');
-  if (i === -1) return { reunion: null, cuando: '', suspendidas: reuniones.slice() };
+  if (i === -1) {
+    return {
+      enCurso: enCurso?.r ?? null,
+      llevaMinutos: enCurso ? empezoHace(enCurso.faltan) : 0,
+      reunion: null,
+      cuando: '',
+      suspendidas: reuniones.slice(),
+    };
+  }
 
   const { r, faltan } = enOrden[i];
   // Se cuenta en días de calendario, no en horas: el sábado a las 23:00, una
@@ -160,6 +208,8 @@ export function proximaReunion(reuniones: Reunion[], ahora: MomentoSemana): Prox
   const cuando = dias === 0 ? 'Hoy' : dias === 1 ? 'Mañana' : DIAS[r.dia];
 
   return {
+    enCurso: enCurso?.r ?? null,
+    llevaMinutos: enCurso ? empezoHace(enCurso.faltan) : 0,
     reunion: r,
     cuando,
     suspendidas: enOrden.slice(0, i).map(({ r }) => r),

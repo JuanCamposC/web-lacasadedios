@@ -138,19 +138,32 @@ const jsonLd = {
           </p>
 
           <!-- El dato que la gente viene a buscar, arriba del todo. -->
-          <p class="placa-proxima" data-proxima>
+          <p class="placa-proxima" data-proxima data-en-curso={proxima.enCurso ? '1' : null}>
             <span class="placa-punto" aria-hidden="true"></span>
             {
-              proxima.reunion ? (
+              proxima.enCurso ? (
                 <span>
-                  <span class="placa-etiqueta">Próxima reunión</span>
+                  <span class="placa-etiqueta" data-proxima-etiqueta>
+                    Ahora mismo
+                  </span>
+                  <span class="placa-cuando" data-proxima-texto>
+                    En curso · {proxima.enCurso.nombre}
+                  </span>
+                </span>
+              ) : proxima.reunion ? (
+                <span>
+                  <span class="placa-etiqueta" data-proxima-etiqueta>
+                    Próxima reunión
+                  </span>
                   <span class="placa-cuando" data-proxima-texto>
                     {proxima.cuando} {proxima.reunion.hora} · {proxima.reunion.nombre}
                   </span>
                 </span>
               ) : (
                 <span>
-                  <span class="placa-etiqueta">Horarios</span>
+                  <span class="placa-etiqueta" data-proxima-etiqueta>
+                    Horarios
+                  </span>
                   <span class="placa-cuando" data-proxima-texto>
                     Escríbenos y te contamos cuándo nos reunimos
                   </span>
@@ -590,6 +603,25 @@ const jsonLd = {
     background: var(--d-claro);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--d-claro) 25%, transparent);
   }
+  /* Mientras hay una reunión pasando, el punto late: es lo único de la
+     página que se mueve, y solo se mueve cuando hay algo ocurriendo. */
+  [data-en-curso] .placa-punto {
+    animation: latir 2s ease-in-out infinite;
+  }
+  @keyframes latir {
+    0%,
+    100% {
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--d-claro) 25%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 9px color-mix(in srgb, var(--d-claro) 8%, transparent);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-en-curso] .placa-punto {
+      animation: none;
+    }
+  }
   .placa-etiqueta {
     display: block;
     font-family: var(--font-data);
@@ -764,6 +796,13 @@ const jsonLd = {
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #fff;
+  }
+  .reunion.es-en-curso {
+    background: color-mix(in srgb, var(--d-tinte) 20%, transparent);
+    box-shadow: 0 0 0 2px var(--d-tinte);
+  }
+  .reunion.es-en-curso .reunion-marca {
+    background: var(--d-tinte);
   }
   .reunion.es-proxima {
     background: color-mix(in srgb, var(--d-tinte) 14%, transparent);
@@ -1012,19 +1051,45 @@ const jsonLd = {
     });
 
     const p = proximaReunion(reuniones, ahora);
-    if (!p.reunion) return;
 
-    // La reunión que viene, marcada donde está.
-    const marcada = ficha.querySelector<HTMLElement>(
-      `.reunion[data-id="${CSS.escape(p.reunion.id)}"]`,
-    );
-    marcada?.classList.add('es-proxima');
-    const marca = marcada?.querySelector<HTMLElement>('[data-marca]');
-    if (marca) marca.hidden = false;
+    /*
+     * Dos marcas distintas y una sola a la vez por reunión: «EN CURSO» para
+     * la que está pasando —que es la que importa si alguien mira el reloj y
+     * duda si todavía llega— y «PRÓXIMA» para la siguiente.
+     */
+    const marcar = (r: Reunion | null, texto: string, clase: string) => {
+      if (!r) return;
+      const fila = ficha.querySelector<HTMLElement>(`.reunion[data-id="${CSS.escape(r.id)}"]`);
+      if (!fila) return;
+      fila.classList.add(clase);
+      const marca = fila.querySelector<HTMLElement>('[data-marca]');
+      if (!marca) return;
+      marca.textContent = texto;
+      marca.hidden = false;
+    };
 
-    // Y la línea de la portada, con cuánto falta.
+    marcar(p.enCurso, 'En curso', 'es-en-curso');
+    if (p.enCurso?.id !== p.reunion?.id) marcar(p.reunion, 'Próxima', 'es-proxima');
+
+    if (!p.reunion && !p.enCurso) return;
+
+    // Y la línea de la portada.
     const texto = ficha.querySelector<HTMLElement>('[data-proxima-texto]');
+    const etiqueta = ficha.querySelector<HTMLElement>('[data-proxima-etiqueta]');
+    const placa = ficha.querySelector<HTMLElement>('[data-proxima]');
     if (!texto) return;
+
+    // Lo que está pasando manda sobre lo que viene: quien abre la página a las
+    // 20:30 quiere leer que la reunión empezó, no cuándo es la del jueves.
+    if (p.enCurso) {
+      if (etiqueta) etiqueta.textContent = 'Ahora mismo';
+      texto.textContent = `En curso · ${p.enCurso.nombre}`;
+      placa?.setAttribute('data-en-curso', '1');
+      return;
+    }
+    placa?.removeAttribute('data-en-curso');
+    if (etiqueta) etiqueta.textContent = 'Próxima reunión';
+    if (!p.reunion) return;
 
     const [h, m] = p.reunion.hora.split(':').map(Number);
     const SEMANA = 7 * 24 * 60;
