@@ -23,6 +23,13 @@ const site = process.env.SITE_URL || 'https://lacasadedios.cl';
 // imágenes, y esta decide si el navegador las deja cargar.
 const medios = process.env.MEDIOS_DOMINIO || 'medios.lacasadedios.cl';
 
+// Los cuatro templos, para el sitemap. Se escriben aquí y no se importan de
+// src/data/templos.ts porque ese archivo arrastra las fotos y los tipos del
+// sitio, y esta configuración la lee Node antes de compilar nada. Si algún
+// día se agrega un templo hay que tocar los dos sitios; son cuatro, no
+// cambian, y la alternativa era peor.
+const TEMPLOS = ['santiago-centro', 'san-miguel', 'limache', 'coya'];
+
 // Servidores desde los que RSS.com entrega los audios y la portada del estudio
 // bíblico (ver src/lib/rss.ts). Va aparte de la dirección del feed —que es una
 // variable del Worker y se lee al servir— porque la CSP se calcula AL COMPILAR
@@ -143,12 +150,23 @@ export default defineConfig({
   }),
   integrations: [
     sitemap({
+      // Las fichas de cada templo se listan a mano. Son páginas que se arman
+      // al servir —los horarios se editan desde el panel— y de esas Astro no
+      // sabe nada al compilar: el sitemap ofrecía /templos pero ninguno de los
+      // cuatro, que es justo lo que la gente busca («iglesia en Limache»). Las
+      // noticias también son dinámicas, pero esas salen de la base y no se
+      // pueden listar aquí; para ellas el camino es el enlace desde /noticias,
+      // que sí está en el sitemap.
+      customPages: TEMPLOS.map((t) => `${site}/templos/${t}`),
       // Qué NO se le ofrece a Google:
       //   · /admin — el panel entero. Estaba saliendo en el sitemap, que es
       //     publicar la dirección de la puerta de servicio. Access la protege,
       //     pero eso no es razón para anunciarla.
-      //   · /baja — solo se alcanza con el enlace personal de cada correo.
-      filter: (page) => !page.includes('/admin') && !page.includes('/baja'),
+      //   · /baja y /confirmar — las dos se alcanzan solo con el enlace
+      //     personal que lleva cada correo del boletín, y fuera de ese enlace
+      //     no hacen nada. /confirmar estaba saliendo.
+      filter: (page) =>
+        !page.includes('/admin') && !page.includes('/baja') && !page.includes('/confirmar'),
 
       // Sin barra final, igual que las canónicas de Layout.astro. Astro las
       // genera con barra porque compila en carpetas; Cloudflare sirve sin ella

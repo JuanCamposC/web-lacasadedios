@@ -34,6 +34,25 @@ function esPanel(path: string): boolean {
  *
  * 301 y no 302: el cambio es definitivo y así los buscadores trasladan lo que
  * ya tuvieran indexado.
+ *
+ * CUBRE TODO EL SITIO MENOS LA PORTADA. Las páginas ya compiladas —hoy la
+ * portada y la de error— las sirve Cloudflare desde el almacén de archivos sin
+ * pasar por aquí, así que www.lacasadedios.cl/ devuelve la portada con un 200
+ * en vez de redirigir. No es un descuido, es que desde el código no se alcanza:
+ *
+ *   · public/_redirects no sirve: rechaza dominios en el origen (100324).
+ *   · `run_worker_first` tampoco: el adaptador comprueba si hay un archivo
+ *     compilado ANTES de montar el middleware (utils/handler.js), así que
+ *     seguiría sin llegar aquí.
+ *   · Hacer la portada dinámica sí funcionaría, y cuesta más de un mega por
+ *     visita en fotos sin optimizar (el porqué, arriba del todo en
+ *     src/pages/index.astro).
+ *
+ * Se deja así. El daño es pequeño: la portada en www lleva su canónica al
+ * dominio sin www, que es lo que miran los buscadores, y en cuanto la persona
+ * pincha cualquier enlace esta función la trae al dominio bueno. Cerrarlo del
+ * todo pide una regla de redirección en el panel de Cloudflare, fuera del
+ * repositorio.
  */
 function redirigirWww(url: URL): Response | null {
   if (!url.hostname.startsWith('www.')) return null;

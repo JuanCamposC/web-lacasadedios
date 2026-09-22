@@ -1,0 +1,24 @@
+# Redirecciones que atiende Cloudflare ANTES de que la petición llegue al sitio.
+#
+# Va aquí y no en src/middleware.ts por un motivo concreto: las páginas ya
+# compiladas —hoy la portada y la de error— las sirve Cloudflare directamente
+# desde el almacén de archivos, sin pasar por nuestro código, así que el
+# middleware nunca las ve.
+#
+# Formato: origen destino código. Se aplica la primera regla que calce.
+#
+# OJO: aquí el origen tiene que ser una ruta. Un dominio completo —para mandar
+# www.lacasadedios.cl a lacasadedios.cl desde este archivo— lo rechaza el
+# despliegue: «Only relative URLs are allowed» (código 100324). Eso sí funciona
+# en Cloudflare Pages, pero este sitio no es Pages. El caso de «www» se explica
+# en redirigirWww(), en src/middleware.ts.
+
+# ── Direcciones del sitio anterior ──────────────────────────────────────────
+# En el WordPress, «quiénes somos» vivía en /nosotros. Quien la tenga guardada
+# o la encuentre en un buscador se topaba con un error. 301 y no 302: el cambio
+# es definitivo, y así los buscadores trasladan lo que tuvieran indexado.
+/nosotros /sobre-nosotros 301
+
+# Con barra al final es otra dirección para Cloudflare, y hay que escribirla:
+# quien la tenga guardada así, la tiene así.
+/nosotros/ /sobre-nosotros 301

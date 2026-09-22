@@ -103,3 +103,43 @@ describe('markdownAResumen', () => {
     expect(markdownAResumen(undefined)).toBe('');
   });
 });
+
+/**
+ * Los seis formatos que ofrece la barra del panel (src/scripts/admin/
+ * markdown-editor.ts). Si el panel lo ofrece, la noticia publicada tiene que
+ * mostrarlo: la cita se publicaba como un párrafo que empezaba con «>».
+ */
+describe('los formatos que ofrece la barra del panel', () => {
+  it('la cita se publica como cita', () => {
+    const html = renderMarkdown('> Dios es bueno todo el tiempo.');
+    expect(html).toContain('<blockquote>');
+    expect(html).toContain('Dios es bueno todo el tiempo.');
+  });
+
+  it('la cita de varias líneas queda en una sola cita', () => {
+    const html = renderMarkdown('> Primera línea.\n> Segunda línea.');
+    expect(html.match(/<blockquote>/g)).toHaveLength(1);
+  });
+
+  it('la cita admite formato dentro', () => {
+    const html = renderMarkdown('> Una **cita** con negrita.');
+    expect(html).toContain('<blockquote>');
+    expect(html).toContain('<strong>cita</strong>');
+  });
+
+  it('negrita, cursiva, subtítulo, lista y enlace', () => {
+    expect(renderMarkdown('**negrita**')).toContain('<strong>negrita</strong>');
+    expect(renderMarkdown('_cursiva_')).toContain('<em>cursiva</em>');
+    expect(renderMarkdown('## Un subtítulo')).toContain('<h2>Un subtítulo</h2>');
+    expect(renderMarkdown('- uno\n- dos')).toContain('<li>uno</li>');
+    expect(renderMarkdown('[el sitio](https://lacasadedios.cl)')).toContain(
+      'href="https://lacasadedios.cl"',
+    );
+  });
+
+  it('un mayor-que escrito en mitad de una frase sale como texto', () => {
+    const html = renderMarkdown('Llegaron 5 > 3 hermanos.');
+    expect(html).not.toContain('<blockquote>');
+    expect(html).toContain('&gt;');
+  });
+});

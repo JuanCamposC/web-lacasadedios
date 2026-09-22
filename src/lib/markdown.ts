@@ -11,8 +11,24 @@ import { marked } from 'marked';
  * texto literal y no como etiqueta. Solo existen las etiquetas que genera el
  * propio Markdown, y los enlaces con esquema peligroso se descartan.
  */
+
+/**
+ * Deja el texto sin poder abrir etiquetas, y NADA MÁS.
+ *
+ * Se escapan solo `&` y `<`. El `>` no: escaparlo rompía las citas. La barra
+ * de formato del panel escribe una cita como «> texto», el texto llegaba aquí
+ * convertido en «&gt; texto», y marked ya no veía una cita: publicaba un
+ * párrafo que empezaba con un mayor-que. En la vista previa del panel sí se
+ * veía la cita, porque esa la resuelve el navegador por su cuenta, así que el
+ * fallo solo aparecía después de publicar.
+ *
+ * No escaparlo es seguro: una etiqueta necesita un `<` para empezar, y ese
+ * sigue escapado. Comprobado con el marked instalado: `<script>`,
+ * `<img onerror=…>` y `<b>` salen como texto literal igual que antes, y un
+ * «5 > 3» escrito a mano también, porque marked escapa lo que publica.
+ */
 function escaparHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 }
 
 const ESQUEMA_SEGURO = /^(https?:|mailto:|tel:|\/|#)/i;
