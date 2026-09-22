@@ -277,9 +277,13 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
     if (themeToggle) themeToggle.checked = tema === TEMA_OSCURO;
 
     // Este escuchador sí va en el elemento: se lo lleva la navegación con él.
-    themeToggle?.addEventListener('change', () =>
-      guardarTema(themeToggle.checked ? TEMA_OSCURO : TEMA_POR_DEFECTO),
-    );
+    // Con la misma marca, para que dos arranques no lo dupliquen.
+    if (themeToggle && !themeToggle.dataset.listo) {
+      themeToggle.dataset.listo = '1';
+      themeToggle.addEventListener('change', () =>
+        guardarTema(themeToggle.checked ? TEMA_OSCURO : TEMA_POR_DEFECTO),
+      );
+    }
 
     const nav = laBarra();
     if (nav) {
@@ -292,7 +296,9 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
       pintarScroll();
 
       // Menús desplegables de escritorio: al abrir uno se cierran los demás.
-      nav.querySelectorAll('details.dropdown').forEach((d) => {
+      nav.querySelectorAll<HTMLElement>('details.dropdown').forEach((d) => {
+        if (d.dataset.listo) return;
+        d.dataset.listo = '1';
         d.addEventListener('toggle', () => {
           if (d.hasAttribute('open')) cerrarDesplegables(d);
         });
@@ -301,7 +307,22 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
 
     const toggle = elBoton();
     const menu = elMenu();
-    if (toggle && menu) {
+    /*
+     * La marca en el propio botón evita engancharlo dos veces.
+     *
+     * Hacía falta: en la PRIMERA carga esta función corre dos veces —una por
+     * `astro:page-load` y otra por el respaldo de más abajo, que existe para el
+     * panel, donde ese evento no llega nunca—. Con dos escuchas, un toque abría
+     * el menú y cerraba al instante, así que el botón parecía muerto; después de
+     * navegar sin recargar funcionaba, porque ahí solo corre una vez. Eso es lo
+     * que se veía como «a veces no funciona».
+     *
+     * La marca va en el elemento y no en una variable del módulo porque el
+     * botón se reemplaza en cada navegación: lo que hay que recordar es si ESTE
+     * botón ya está enganchado, no si alguna vez se enganchó alguno.
+     */
+    if (toggle && menu && !toggle.dataset.listo) {
+      toggle.dataset.listo = '1';
       toggle.addEventListener('click', () => abrirMenuMovil(menu.classList.contains('hidden')));
       menu
         .querySelectorAll('a')
@@ -311,6 +332,12 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
 
   // `astro:page-load` cubre la carga inicial y cada navegación del ClientRouter.
   document.addEventListener('astro:page-load', initNav);
+
+  // Y este respaldo cubre donde ese evento no existe. Sí, en las páginas
+  // públicas significa que `initNav` corre dos veces en la primera carga; por
+  // eso cada escuchador se engancha una sola vez por elemento (ver las marcas
+  // `dataset.listo` de arriba). Quitar el respaldo sin más dejaría el menú
+  // muerto en cualquier página que no monte el ClientRouter.
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initNav);
   } else {
