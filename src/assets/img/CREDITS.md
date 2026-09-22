@@ -11,9 +11,8 @@ foto real en `src/assets/img/` con ese mismo nombre y ya está: no hay que tocar
 licencias de banco piden atribución; si la foto ya no es de banco, la atribución sobra y
 confunde a quien venga después. Cuando la tabla quede vacía, el archivo se borra.
 
-Varias filas comparten origen: hoy diez fotos de banco cubren los veintiocho huecos, así que
-la misma imagen aparece copiada con varios nombres. Eso es a propósito y deja de pasar solo
-cuando lleguen las fotos reales.
+Varias filas comparten origen: mientras queden fotos de banco, la misma imagen aparece copiada
+con varios nombres. Eso es a propósito y deja de pasar a medida que llegan las reales.
 
 | Archivo                      | Dónde se ve                               | Fuente (Unsplash photo id)       |
 | ---------------------------- | ----------------------------------------- | -------------------------------- |
@@ -37,8 +36,6 @@ cuando lleguen las fotos reales.
 | `contacto-portada.jpg`       | Portada de /contacto                      | photo-1529070538774-1843cb3265df |
 | `envivo-portada.jpg`         | Portada de /en-vivo                       | photo-1507692049790-de58290a4334 |
 | `templo-santiago-centro.jpg` | Templo de Santiago Centro                 | photo-1477281765962-ef34e8bb0967 |
-| `templo-san-miguel.jpg`      | Templo de San Miguel                      | photo-1579975096649-e773152b04cb |
-| `templo-limache.jpg`         | Templo de Limache                         | photo-1507692049790-de58290a4334 |
 | `templo-coya.jpg`            | Templo de Coya                            | photo-1529070538774-1843cb3265df |
 | `instagram-1.jpg`            | Mosaico de Instagram de la portada        | photo-1579975096649-e773152b04cb |
 | `instagram-2.jpg`            | Mosaico de Instagram de la portada        | photo-1438232992991-995b7058bbb3 |

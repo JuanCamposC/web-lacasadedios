@@ -507,6 +507,18 @@ const jsonLd = {
     height: 100%;
     width: 100%;
     object-fit: cover;
+    /* El recorte se ancla ARRIBA, no al centro.
+     *
+     * Esta franja es mucho más ancha que alta, y las fotos de los templos vienen
+     * de un teléfono en 4:3. Recortando por el centro, lo que quedaba a la vista
+     * era la mitad del muro: el letrero con el nombre de la iglesia —lo único
+     * que identifica el edificio— se iba por arriba, y la foto parecía un primer
+     * plano de hormigón.
+     *
+     * 28 % sube el encuadre lo justo para que entre el letrero y siga entrando
+     * la puerta, sin que el título de la página se le monte encima. Comprobado
+     * en los cuatro templos y en las dos pantallas. */
+    object-position: 50% 28%;
   }
   /* El velo sube desde abajo: la foto se ve arriba, y el texto descansa sobre
      el tono del templo, no sobre un gris cualquiera. */
