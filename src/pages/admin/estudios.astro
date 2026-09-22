@@ -1,0 +1,147 @@
+---
+export const prerender = false;
+
+/**
+ * Qué episodios del Instituto se enseñan en el sitio.
+ *
+ * ── POR QUÉ NO USA EL CRUD DE SIEMPRE ───────────────────────────────────────
+ * Las demás pantallas del panel editan filas de la base: se crean, se cambian y
+ * se borran. Acá no hay nada que crear. Los episodios los publica RSS.com y el
+ * sitio solo los lee; lo único que se decide desde aquí es cuáles NO se
+ * enseñan. Por eso la lista viene del feed y no de la base, y lo único que se
+ * guarda es una fila por episodio escondido.
+ *
+ * Quien quiera borrar un episodio de verdad tiene que hacerlo en RSS.com, y
+ * ahí desaparece también de Spotify, Apple y las demás aplicaciones. Esa
+ * diferencia está escrita en la pantalla, porque es justo lo que se malentiende.
+ */
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { Icon } from 'astro-icon/components';
+import { leerFeed } from '../../lib/rss';
+import { baseDeDatos } from '../../lib/base';
+import { guidsOcultos } from '../../lib/datos';
+import { listarTodo } from '../../lib/panel';
+
+const feed = await leerFeed();
+
+// El id de la fila hace falta para poder borrarla al volver a enseñar el
+// episodio: la API genérica borra por id, no por guid.
+let filas: { id: string; guid: string }[] = [];
+let ocultos = new Set<string>();
+let fallo = false;
+try {
+  const base = await baseDeDatos();
+  filas = await listarTodo<{ id: string; guid: string }>(base, 'estudios_ocultos');
+  ocultos = await guidsOcultos(base);
+} catch (e) {
+  console.error('[admin/estudios]', e);
+  fallo = true;
+}
+const idPorGuid = Object.fromEntries(filas.map((f) => [f.guid, f.id]));
+
+const fechaCorta = (iso: string | null) =>
+  iso
+    ? new Intl.DateTimeFormat('es-CL', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'America/Santiago',
+      }).format(new Date(iso))
+    : '';
+
+const duracion = (seg: number | null) => {
+  if (!seg) return '';
+  const m = Math.round(seg / 60);
+  return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
+};
+---
+
+<AdminLayout
+  title="Instituto Bíblico"
+  description="Qué episodios se enseñan en la página del Instituto. Se publican en RSS.com; acá solo se decide cuáles se ven."
+  active="estudios"
+>
+  <div class="mb-6 rounded-lg border border-base-300 bg-base-200/60 p-4 text-sm">
+    <p class="flex items-start gap-2">
+      <Icon name="lucide:info" class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+      <span>
+        Esconder un episodio lo quita <strong>solo de lacasadedios.cl</strong>. Sigue publicado en
+        RSS.com y en Spotify, Apple Podcasts y donde esté el programa. Para quitarlo de todas partes
+        hay que borrarlo en RSS.com, y eso no tiene vuelta atrás.
+      </span>
+    </p>
+  </div>
+
+  {
+    fallo && (
+      <p class="mb-6 rounded-lg border border-warning/40 bg-warning/10 p-4 text-sm">
+        No se pudo leer qué episodios están escondidos. La lista de abajo puede no reflejar lo que
+        se ve en el sitio.
+      </p>
+    )
+  }
+
+  {
+    !feed && (
+      <p class="rounded-lg border border-base-300 p-6 text-sm text-base-content/70">
+        RSS.com no respondió, así que no hay episodios que enseñar acá. La página del Instituto
+        sigue funcionando: enseña todo lo demás y avisa de que los audios no cargaron.
+      </p>
+    )
+  }
+
+  {
+    feed && feed.episodios.length === 0 && (
+      <p class="rounded-lg border border-base-300 p-6 text-sm text-base-content/70">
+        Todavía no hay episodios publicados en RSS.com.
+      </p>
+    )
+  }
+
+  {
+    feed && feed.episodios.length > 0 && (
+      <ul class="divide-y divide-base-300 rounded-lg border border-base-300">
+        {feed.episodios.map((ep) => (
+          <li
+            class="flex flex-wrap items-start gap-x-4 gap-y-3 p-4 transition-opacity"
+            data-episodio
+            data-guid={ep.guid}
+            data-fila={idPorGuid[ep.guid] ?? ''}
+            data-titulo={ep.titulo}
+          >
+            <div class="min-w-0 flex-1">
+              <p class="font-medium" data-nombre>
+                {ep.titulo}
+              </p>
+              <p class="mt-0.5 text-xs text-base-content/60">
+                {[fechaCorta(ep.fecha), duracion(ep.duracionSeg)].filter(Boolean).join(' · ')}
+              </p>
+            </div>
+
+            <span class="badge badge-sm shrink-0" data-etiqueta hidden={!ocultos.has(ep.guid)}>
+              Escondido
+            </span>
+
+            <label class="flex shrink-0 cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                class="toggle toggle-sm toggle-primary"
+                id={`ver-${ep.guid}`}
+                data-ver
+                checked={!ocultos.has(ep.guid)}
+              />
+              <span class="select-none">Se ve en el sitio</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  <p class="mt-4 text-xs text-base-content/55" aria-live="polite" data-estado></p>
+
+  <script>
+    import { setupOcultos } from '../../scripts/admin/estudiosOcultos';
+    setupOcultos();
+  </script>
+</AdminLayout>

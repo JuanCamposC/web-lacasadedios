@@ -15,6 +15,7 @@ interface Props {
     | 'eventos'
     | 'noticias'
     | 'videos'
+    | 'estudios'
     | 'instagram'
     | 'jovenes'
     | 'horarios'
@@ -36,6 +37,9 @@ const links = [
   { href: '/admin/eventos', label: 'Eventos', key: 'eventos', icon: 'lucide:calendar-days' },
   { href: '/admin/noticias', label: 'Noticias', key: 'noticias', icon: 'lucide:newspaper' },
   { href: '/admin/videos', label: 'Videos', key: 'videos', icon: 'lucide:youtube' },
+  // Los audios del Instituto no se editan acá: se publican en RSS.com y esta
+  // pantalla solo decide cuáles se enseñan en el sitio.
+  { href: '/admin/estudios', label: 'Instituto', key: 'estudios', icon: 'lucide:headphones' },
   { href: '/admin/instagram', label: 'Instagram', key: 'instagram', icon: 'lucide:instagram' },
   { href: '/admin/jovenes', label: 'Jóvenes', key: 'jovenes', icon: 'lucide:music' },
   { href: '/admin/en-vivo', label: 'En vivo', key: 'en-vivo', icon: 'lucide:radio' },

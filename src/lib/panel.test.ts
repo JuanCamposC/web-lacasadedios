@@ -396,3 +396,33 @@ describe('direcciones web', () => {
     await expect(guardarAjustes(base, { vivo_url: '/en-vivo' })).rejects.toThrow(DatoInvalido);
   });
 });
+
+/**
+ * Los episodios escondidos del Instituto.
+ *
+ * La tabla existe porque RSS.com no sabe ocultar un episodio: o está
+ * publicado o está borrado. Lo que se guarda acá es solo el `guid`, y la
+ * lista blanca tiene que impedir que por esta puerta se toque otra cosa.
+ */
+describe('estudios_ocultos', () => {
+  it('es un recurso que el panel reconoce', () => {
+    expect(esRecurso('estudios_ocultos')).toBe(true);
+  });
+
+  it('guarda el guid y el título, y nada más', async () => {
+    const { base, llamadas } = espia();
+    await crear(base, 'estudios_ocultos', {
+      guid: 'abc-123',
+      titulo: 'Introducción a Josué',
+      // Lo de abajo no está en la lista blanca y tiene que caerse por el
+      // camino, no llegar al SQL.
+      publicado: 0,
+      creado_en: '1999-01-01',
+    });
+    const sql = llamadas.find((l) => l.sql.includes('insert into estudios_ocultos'))!.sql;
+    expect(sql).toContain('guid');
+    expect(sql).toContain('titulo');
+    expect(sql).not.toContain('publicado');
+    expect(sql).not.toContain('creado_en');
+  });
+});

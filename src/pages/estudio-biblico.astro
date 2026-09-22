@@ -24,7 +24,7 @@ import { templos, correoDe } from '../data/templos';
 import { SOCIAL } from '../data/site';
 import { leerFeed } from '../lib/rss';
 import { baseDeDatos } from '../lib/base';
-import { reunionesPublicadas } from '../lib/datos';
+import { reunionesPublicadas, guidsOcultos } from '../lib/datos';
 import { DIAS, type Reunion } from '../lib/reuniones';
 
 /**
@@ -41,8 +41,29 @@ import { DIAS, type Reunion } from '../lib/reuniones';
 const MAXIMO = 12;
 
 const feed = await leerFeed();
-const episodios = feed?.episodios.slice(0, MAXIMO) ?? [];
-const anteriores = feed?.episodios.slice(MAXIMO) ?? [];
+
+/*
+ * Los episodios que el panel marcó como ocultos no llegan a la página.
+ *
+ * RSS.com no sabe ocultar: un episodio está publicado o borrado, no hay
+ * término medio. Así que lo que se esconde acá sigue publicado allá y en
+ * todas las aplicaciones de podcast; lo único que cambia es que no aparece en
+ * lacasadedios.cl. Se marca en /admin/estudios.
+ *
+ * Si la base no responde no se esconde nada, y es lo correcto: lo normal es
+ * que no haya ninguno oculto, y dejar la página sin audios por un fallo de la
+ * base sería peor que enseñar de más algo que casi nunca hay.
+ */
+let ocultos = new Set<string>();
+try {
+  ocultos = await guidsOcultos(await baseDeDatos());
+} catch (e) {
+  console.error('[estudio-biblico] ocultos', e);
+}
+const visibles = (feed?.episodios ?? []).filter((e) => !ocultos.has(e.guid));
+
+const episodios = visibles.slice(0, MAXIMO);
+const anteriores = visibles.slice(MAXIMO);
 
 // La descripción del programa, tal como se escribió en RSS.com. Sin texto de
 // respaldo: si allá no hay nada, la sección enseña solo el nombre.

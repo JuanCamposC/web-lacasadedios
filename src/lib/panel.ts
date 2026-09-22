@@ -101,6 +101,10 @@ const COLUMNAS = {
   videos: ['titulo', 'youtube_url', 'descripcion', 'templo', 'publicado', 'orden'],
   instagram: ['imagen_clave', 'alt', 'enlace', 'publicado', 'orden'],
   enlaces: ['titulo', 'url', 'publicado', 'orden'],
+  // Episodios del Instituto que no se enseñan en el sitio. Solo dos columnas
+  // porque no se edita nada: una fila existe o no existe (ver
+  // d1/0008_estudios_ocultos.sql).
+  estudios_ocultos: ['guid', 'titulo'],
   reuniones: ['templo', 'dia', 'hora', 'nombre', 'estado', 'aviso', 'aviso_hasta', 'publicado'],
   estudios: [
     'titulo',
@@ -128,6 +132,7 @@ const ORDEN: Record<Recurso, string> = {
   estudios: 'fecha desc',
   instagram: 'orden asc, creado_en desc',
   enlaces: 'orden asc, creado_en asc',
+  estudios_ocultos: 'creado_en desc',
   // Como se lee un tablero: por templo, y dentro de cada templo la semana en
   // orden. Así en el panel se encuentran juntas las de un mismo lugar.
   reuniones: 'templo asc, dia asc, hora asc',

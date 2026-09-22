@@ -331,6 +331,21 @@ export async function reunionesPublicadas(base: Base, templo?: string): Promise<
   return filas.map((f) => vigente(f, hoy));
 }
 
+// ── Estudios ocultos ────────────────────────────────────────────────────────
+
+/**
+ * Los episodios del Instituto que no se enseñan en el sitio.
+ *
+ * Devuelve un conjunto de `guid` para poder filtrar el feed de RSS.com sin
+ * recorrer una lista por cada episodio. Si la base falla, quien llama decide;
+ * acá no se traga el error, porque devolver «no hay ninguno oculto» ante un
+ * fallo enseñaría justo lo que alguien pidió esconder.
+ */
+export async function guidsOcultos(base: Base): Promise<Set<string>> {
+  const filas = await listar<{ guid: string }>(base, 'select guid from estudios_ocultos', []);
+  return new Set(filas.map((f) => f.guid));
+}
+
 // ── Instagram ───────────────────────────────────────────────────────────────
 
 export interface PostIg {
