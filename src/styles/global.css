@@ -242,11 +242,55 @@
     .section-sm { padding-block: 4.5rem; }
   }
 
+  /* ── El anuncio de cambio de página ──────────────────────────────────────
+     Astro crea este elemento al navegar y le escribe el título de la página,
+     para que un lector de pantalla diga dónde acaba de llegar. Tiene que oírse
+     y NO verse.
+
+     Astro trae su propia regla para ocultarlo, pero no llega a todas partes: en
+     la portada no venía, y al navegar desde ahí con el menú el título aparecía
+     escrito al final de la página, debajo del pie. Repetirla acá cuesta ocho
+     líneas y no depende de cómo Astro reparta su CSS entre páginas.
+
+     No se esconde apagándolo —ni display:none ni visibility:hidden—: eso lo
+     callaría también para el lector de pantalla, que es justo lo único que este
+     elemento viene a hacer. Se saca de la vista dejándolo de un píxel y
+     recortado. ────────────────────────────────────────────────────────────── */
+  .astro-route-announcer {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   /* Contenedor de una barra pegada arriba: la barra se despega al llegar al
      final de este bloque. Ver .sticky en FiltroTemplos y en el índice de
      «Nosotros». */
   .ambito-filtro {
     position: relative;
+  }
+  /* Cuando termina lo que la barra filtra, la barra se va en vez de quedarse
+     apoyada en el borde —que en páginas cortas cae dentro de la pantalla y
+     parece flotar sobre el pie—. Lo enciende src/scripts/barraPegada.ts. */
+  .barra-fuera {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-0.5rem);
+  }
+  .ambito-filtro > .sticky {
+    transition:
+      opacity 0.18s ease,
+      transform 0.18s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ambito-filtro > .sticky {
+      transition: none;
+    }
   }
 
   .wrap {

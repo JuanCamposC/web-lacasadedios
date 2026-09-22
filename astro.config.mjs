@@ -158,6 +158,26 @@ export default defineConfig({
     }),
     icon(),
   ],
+  build: {
+    // El CSS de cada página, en archivos aparte y NUNCA incrustado en el HTML.
+    //
+    // Por omisión Astro incrusta las hojas pequeñas en un <style> dentro del
+    // <head>. Eso ahorra una petición y rompía la navegación del sitio: al
+    // cambiar de página con el menú, ClientRouter intercambia el contenido sin
+    // recargar y ese bloque incrustado no llegaba a la página nueva. Medido: de
+    // la portada a /horarios el documento quedaba con UNA hoja en vez de dos.
+    //
+    // Lo que se perdía eran los estilos propios de cada página y de cada
+    // componente, y se notaba en dos cosas: la barra superior volvía a ser
+    // semitransparente —los títulos de debajo se leían a través— y el anuncio de
+    // cambio de página, que Astro crea para los lectores de pantalla, aparecía
+    // escrito al final de la página porque perdía su regla de ocultamiento.
+    //
+    // Es el mismo problema que ya obligó a sacar el JavaScript del HTML, unas
+    // líneas más abajo: lo incrustado no sobrevive a una navegación del cliente.
+    inlineStylesheets: 'never',
+  },
+
   vite: {
     plugins: [tailwindcss()],
     build: {

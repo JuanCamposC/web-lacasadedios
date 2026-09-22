@@ -173,6 +173,7 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
   // dependa del DOM de la página se cuelga de `astro:page-load`, que además
   // dispara en la carga inicial.
   import '../scripts/reveal';
+  import { initBarrasPegadas } from '../scripts/barraPegada';
   let estaEnVivo: boolean | null = null;
 
   async function pastillaEnVivo() {
@@ -227,5 +228,6 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
   document.addEventListener('astro:page-load', () => {
     pastillaEnVivo();
     anclasSuaves();
+    initBarrasPegadas();
   });
 </script>
