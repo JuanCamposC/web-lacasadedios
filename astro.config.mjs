@@ -35,15 +35,34 @@ const TEMPLOS = ['santiago-centro', 'san-miguel', 'limache', 'coya'];
 // variable del Worker y se lee al servir— porque la CSP se calcula AL COMPILAR
 // y queda escrita dentro de cada página.
 //
-// `media.rss.com` es el que usa RSS.com hoy: responde, y los otros nombres
-// candidatos (`feeds.rss.com`, `anchor.rss.com`) ni siquiera existen. Aun así
-// acepta una lista separada por comas, porque el día que cambien de servidor el
-// síntoma es feo y mudo: la lista de estudios se ve entera, con sus títulos y
-// sus fechas, y ningún reproductor suena. El error solo sale en la consola del
-// navegador. Con la lista, eso se arregla con una variable y no con un parche.
+// Escuchar un episodio toca TRES servidores, no uno. Se midió con el primero
+// que se publicó de verdad, el 22 de septiembre de 2026:
 //
-//     RSS_MEDIA_HOST="media.rss.com,cdn.rss.com" npm run build
-const audios = (process.env.RSS_MEDIA_HOST || 'media.rss.com')
+//   · `media.rss.com`                — el feed y la portada del programa.
+//   · `content.rss.com`              — la dirección del audio que trae el feed.
+//   · `rsscom.pdn.tritondigital.com` — adonde redirige, y de donde sale el mp3.
+//
+// Solo estaba el primero, y pasó exactamente lo que advertía este comentario:
+// el episodio salía en la página con su título y su fecha, y el reproductor no
+// sonaba. Sin mensaje de error, porque el bloqueo de la CSP solo aparece en la
+// consola del navegador. Después de publicar un episodio hay que darle al play;
+// ver la lista no prueba nada.
+//
+// EL TERCERO NO ES OPCIONAL, y es lo que casi se nos escapa: `content.rss.com`
+// responde con una redirección a un CDN, y para los medios el navegador VUELVE
+// A COMPROBAR la política contra el destino. Permitir solo la dirección que
+// trae el feed deja el audio igual de mudo, con la queja apuntando a un
+// servidor que no aparece por ninguna parte en el feed. Comprobado en el sitio
+// en vivo, no deducido de la norma.
+//
+// Los nombres que no existen: `feeds.rss.com`, `anchor.rss.com`, `cdn.rss.com`.
+// La lista separada por comas se queda: si RSS.com cambia de CDN, esto se
+// arregla con una variable en la compilación y no con un parche.
+//
+//     RSS_MEDIA_HOST="media.rss.com,content.rss.com,otro.cdn" npm run build
+const audios = (
+  process.env.RSS_MEDIA_HOST || 'media.rss.com,content.rss.com,rsscom.pdn.tritondigital.com'
+)
   .split(',')
   .map((h) =>
     h
