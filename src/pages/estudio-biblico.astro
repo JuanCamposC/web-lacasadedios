@@ -23,6 +23,9 @@ import { ESTUDIO } from '../data/estudio';
 import { templos, correoDe } from '../data/templos';
 import { SOCIAL } from '../data/site';
 import { leerFeed } from '../lib/rss';
+import { baseDeDatos } from '../lib/base';
+import { reunionesPublicadas } from '../lib/datos';
+import { DIAS, type Reunion } from '../lib/reuniones';
 
 /**
  * Cuántas grabaciones se enseñan.
@@ -47,6 +50,62 @@ const descripcion = feed?.descripcion?.trim() ?? '';
 
 const sanMiguel = templos.find((t) => t.estudio === 'presencial')!;
 const porZoom = templos.filter((t) => t.estudio === 'zoom');
+
+/*
+ * El día y la hora salen de la base, no de este archivo.
+ *
+ * Son los mismos datos que edita el panel en /admin/horarios, así que un
+ * cambio de horario se ve acá sin que nadie se acuerde de esta página. Antes
+ * el «todos los lunes a las 20:00» estaba escrito a mano en el encabezado y
+ * habría quedado mintiendo el día que cambiara.
+ *
+ * Se buscan por nombre porque la tabla no marca cuál es el estudio. Se usa
+ * `ESTUDIO.corto` («Instituto Bíblico») y no el nombre completo para que
+ * siga calzando si en el panel le agregan o le quitan el «Bet-El».
+ */
+let reuniones: Reunion[] = [];
+try {
+  reuniones = await reunionesPublicadas(await baseDeDatos());
+} catch (e) {
+  // Sin base, las tarjetas se enseñan sin horario en vez de caerse.
+  console.error('[estudio-biblico]', e);
+}
+
+const delEstudio = reuniones.filter((r) => r.nombre.includes(ESTUDIO.corto));
+const horarioDe = (slug: string) => delEstudio.find((r) => r.templo === slug);
+
+/** «Lunes · 20:00», o nada si ese templo no tiene el estudio en la base. */
+function cuandoEn(slug: string): string | null {
+  const r = horarioDe(slug);
+  return r ? `${DIAS[r.dia]} · ${r.hora}` : null;
+}
+
+/**
+ * Un aviso solo si lo hay: reunión suspendida o cambiada esta semana.
+ * Lo escribe quien edita los horarios, y aparece tal cual.
+ */
+const avisoDe = (slug: string) => horarioDe(slug)?.aviso ?? null;
+
+// Los tres templos por Zoom con su horario, para no repetir la hora cuatro
+// veces cuando coinciden ni callarla cuando no.
+const zoomConHorario = porZoom.map((t) => ({ templo: t, cuando: cuandoEn(t.slug) }));
+const horasZoom = [...new Set(zoomConHorario.map((z) => z.cuando).filter(Boolean))];
+const zoomCoincide = horasZoom.length === 1;
+
+/*
+ * Lo demás que pasa en San Miguel durante la semana.
+ *
+ * Va en la tarjeta del templo presencial y no en la de Zoom porque es lo
+ * único que se puede decir de un templo al que se LLEGA: quien viene al
+ * estudio el lunes está a un paso de saber que el jueves hay reunión. A los
+ * otros tres se entra por un enlace, y su semana la cuenta su propia ficha.
+ *
+ * Sale de la misma consulta de arriba, así que no cuesta otra visita a la
+ * base, y se actualiza sola cuando alguien cambie los horarios en el panel.
+ */
+const otrasEnSanMiguel = reuniones.filter(
+  (r) => r.templo === sanMiguel.slug && !r.nombre.includes(ESTUDIO.corto),
+);
 const asuntoZoom = encodeURIComponent('Enlace del estudio bíblico por Zoom');
 
 const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
@@ -197,10 +256,15 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
   ══════════════════════════════════════════════════════════════════════ -->
   <section id="participar" class="section bg-base-200">
     <div class="wrap">
+      {
+        /* El encabezado ya no dice el día ni la hora: eso lo dice cada
+          tarjeta con el dato de su templo, sacado de la base. Repetirlo
+          arriba obligaba a mantener la misma frase en dos sitios. */
+      }
       <SectionHeading
         eyebrow="Cómo participar"
-        title={`${ESTUDIO.cuando}, en los cuatro templos`}
-        subtitle="A las 20:00 horas."
+        title="Dos maneras, según tu templo"
+        subtitle="A San Miguel se llega y ya está. En los otros tres se entra por Zoom con un enlace que se pide."
       />
 
       <div class="mt-12 grid gap-5 md:grid-cols-2">
@@ -211,7 +275,48 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
             </span>
             <h3 class="mt-3 font-display text-xl">{sanMiguel.short}</h3>
             <p class="mt-1 text-sm text-base-content/70">{sanMiguel.address}</p>
+
+            {
+              /* El dato que trae a alguien hasta acá: cuándo. Va primero y
+                grande; lo demás de la tarjeta explica, esto se consulta. */
+            }
+            {
+              cuandoEn(sanMiguel.slug) && (
+                <p class="mt-5 flex items-center gap-2 font-data text-lg font-semibold text-primary">
+                  <Icon name="lucide:calendar-clock" class="h-5 w-5 shrink-0" />
+                  {cuandoEn(sanMiguel.slug)}
+                </p>
+              )
+            }
+            {
+              avisoDe(sanMiguel.slug) && (
+                <p class="mt-2 text-sm font-medium text-warning">{avisoDe(sanMiguel.slug)}</p>
+              )
+            }
+
             <p class="mt-4 text-base-content/85">{ESTUDIO.participar.presencial}</p>
+
+            {
+              otrasEnSanMiguel.length > 0 && (
+                <div class="mt-6 border-t border-base-300 pt-5">
+                  <p class="text-xs font-semibold tracking-wider text-base-content/55 uppercase">
+                    El resto de la semana en este templo
+                  </p>
+                  <ul class="mt-3 space-y-1.5">
+                    {otrasEnSanMiguel.map((r) => (
+                      <li class="flex flex-wrap items-baseline gap-x-2 text-sm">
+                        <span class="font-data w-20 shrink-0 text-base-content/60">
+                          {DIAS[r.dia]}
+                        </span>
+                        <span class="font-data font-semibold tabular-nums">{r.hora}</span>
+                        <span class="text-base-content/80">{r.nombre}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            }
+
             <div class="mt-auto flex flex-wrap gap-2 pt-6">
               <a href={`/templos/${sanMiguel.slug}`} class="btn btn-sm btn-primary gap-1.5">
                 Cómo llegar <Icon name="lucide:arrow-right" class="h-4 w-4" />
@@ -241,6 +346,29 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
                   .replace(/, ([^,]*)$/, ' y $1')
               }
             </h3>
+            {
+              /* Si los tres coinciden, la hora va una vez. Si algún templo
+                cambia la suya, se enseña templo por templo en vez de
+                enseñar una hora que sería falsa para uno de los tres. */
+            }
+            {
+              zoomCoincide ? (
+                <p class="mt-5 flex items-center gap-2 font-data text-lg font-semibold text-secondary">
+                  <Icon name="lucide:calendar-clock" class="h-5 w-5 shrink-0" />
+                  {horasZoom[0]}
+                </p>
+              ) : (
+                <ul class="mt-5 space-y-1">
+                  {zoomConHorario.map(({ templo, cuando }) => (
+                    <li class="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+                      <span class="text-base-content/80">{templo.short}</span>
+                      <span class="font-data font-semibold text-secondary">{cuando ?? '—'}</span>
+                    </li>
+                  ))}
+                </ul>
+              )
+            }
+
             <p class="mt-4 text-base-content/85">{ESTUDIO.participar.zoom}</p>
             <p class="mt-3 text-sm text-base-content/65">{ESTUDIO.participar.porQue}</p>
 

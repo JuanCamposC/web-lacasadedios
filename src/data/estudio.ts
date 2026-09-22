@@ -66,11 +66,6 @@ export const ESTUDIO = {
       texto: 'Durante el estudio hay espacio para hacer preguntas.',
     },
     {
-      icon: 'lucide:clock',
-      titulo: 'Alrededor de una hora',
-      texto: 'Empieza y termina a la hora, porque al día siguiente casi todos trabajan.',
-    },
-    {
       icon: 'lucide:headphones',
       titulo: 'Queda grabado',
       texto: 'Si no pudiste venir, el audio queda publicado para escucharlo después.',
@@ -79,8 +74,19 @@ export const ESTUDIO = {
 
   /** Cómo se participa, resumido. Los detalles de cada templo están en su página. */
   participar: {
-    presencial: 'En San Miguel el estudio es presencial. No hace falta avisar ni inscribirse.',
-    zoom: 'En Santiago Centro, Limache y Coya es por Zoom. El enlace no se publica: se pide al pastor del templo, que lo hace llegar personalmente.',
+    /*
+     * Estos dos textos NO repiten lo que ya dice la tarjeta.
+     *
+     * La etiqueta de arriba dice «Presencial» o «Por Zoom», el título dice de
+     * qué templos hablamos y la línea del horario dice cuándo. Antes cada texto
+     * empezaba repitiendo las tres cosas —«En San Miguel el estudio es
+     * presencial», «En Santiago Centro, Limache y Coya es por Zoom»—, así que
+     * la tarjeta decía lo mismo tres veces antes de llegar a lo único que la
+     * persona no podía adivinar: si hay que avisar, y cómo se consigue el
+     * enlace. Eso es lo que queda.
+     */
+    presencial: 'No hace falta avisar ni inscribirse: se llega y se entra.',
+    zoom: 'El enlace no se publica: se pide al pastor del templo, que lo hace llegar personalmente.',
     /**
      * Por qué el enlace no está publicado.
      *
