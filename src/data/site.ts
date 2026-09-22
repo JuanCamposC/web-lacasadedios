@@ -96,8 +96,8 @@ export interface PostInstagram {
  * ve exactamente como se verá; lo que falta es el contenido real.
  */
 export const INSTAGRAM_POSTS: PostInstagram[] = [
-  { img: 'congregacion', href: INSTAGRAM.href, alt: 'La congregación reunida en el templo' },
-  { img: 'manosAlzadas', href: INSTAGRAM.href, alt: 'Manos alzadas durante la alabanza' },
-  { img: 'estudio', href: INSTAGRAM.href, alt: 'Biblia y cuaderno abiertos durante el estudio' },
-  { img: 'comunidad', href: INSTAGRAM.href, alt: 'Hermanos compartiendo después de la reunión' },
+  { img: 'instagram1', href: INSTAGRAM.href, alt: 'La congregación reunida en el templo' },
+  { img: 'instagram2', href: INSTAGRAM.href, alt: 'Manos alzadas durante la alabanza' },
+  { img: 'instagram3', href: INSTAGRAM.href, alt: 'Biblia y cuaderno abiertos durante el estudio' },
+  { img: 'instagram4', href: INSTAGRAM.href, alt: 'Hermanos compartiendo después de la reunión' },
 ];

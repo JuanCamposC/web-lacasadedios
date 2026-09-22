@@ -1,0 +1,148 @@
+LAS FOTOS DEL SITIO
+===================
+Iglesia La Casa de Dios · actualizado el 22 de septiembre de 2026
+
+
+CÓMO SE CAMBIA UNA FOTO
+-----------------------
+Se deja el archivo en ESTA carpeta con el nombre exacto de la lista de abajo,
+reemplazando al que ya está. Nada más: ni tocar código, ni avisar en ningún
+sitio. El nombre del archivo ES el lugar del sitio donde se ve.
+
+  Ejemplo: quieres cambiar la foto del templo de Coya.
+           Guardas la tuya como  templo-coya.jpg  aquí, encima de la que hay.
+           En la siguiente publicación del sitio aparece la tuya.
+
+El nombre tiene que ser EXACTO, en minúsculas y terminado en .jpg. Si no calza
+—«templo coya.jpg», «Templo-Coya.jpg», «templo-coya.jpeg»— la foto no entra y
+el sitio no avisa: sigue mostrando la vieja.
+
+Si la foto que tienes es .png, se puede: cámbiale la extensión en el nombre y
+avísame, porque esa sí necesita un ajuste de una línea.
+
+
+QUÉ NECESITA CADA FOTO
+----------------------
+  · Horizontal, 1600 px de ancho como mínimo. Las portadas se ven a todo lo
+    ancho de la pantalla: para esas, 2000 px o más.
+  · Las de Instagram son la excepción: cuadradas o casi.
+  · Sin recortar ni comprimir a mano. El sitio genera solo sus versiones
+    livianas (480, 768, 1280 y 1600 px) y las sirve según la pantalla.
+  · Sin texto encima ni marcas de agua: sobre varias va un título en blanco.
+  · Que el motivo no quede pegado al borde: en teléfonos se recorta por los
+    lados.
+  · Con gente reconocible, conviene tener permiso para publicarla.
+
+Se pueden subir tal como salen de la cámara o del teléfono en cuanto al peso:
+un archivo grande no es problema, el sitio lo reduce solo.
+
+
+LA LISTA COMPLETA — 28 FOTOS
+----------------------------
+
+PORTADA (la página de inicio)
+
+  inicio-portada.jpg        La franja a pantalla completa de arriba. Es la
+                            primera imagen que ve cualquiera; encima va el
+                            nombre de la iglesia en blanco, así que conviene
+                            que la mitad izquierda no tenga detalle fino.
+  inicio-mosaico.jpg        El recuadro grande del mosaico, a media página.
+  inicio-estudio.jpg        La banda oscura del Instituto Bíblico Bet-El.
+
+PORTADAS DE CADA PÁGINA  (la franja de arriba, con el título encima)
+
+  nosotros-portada.jpg      /sobre-nosotros
+  templos-portada.jpg       /templos
+  horarios-portada.jpg      /horarios
+  eventos-portada.jpg       /eventos
+  noticias-portada.jpg      /noticias
+  videos-portada.jpg        /videos
+  estudio-portada.jpg       /estudio-biblico
+  contacto-portada.jpg      /contacto
+  envivo-portada.jpg        /en-vivo
+
+BANDAS DE CIERRE  (la banda oscura con un botón, al final de la página)
+
+  nosotros-cierre.jpg       final de /sobre-nosotros
+  templos-cierre.jpg        final de /templos
+  horarios-cierre.jpg       final de /horarios
+  eventos-cierre.jpg        final de /eventos
+  noticias-cierre.jpg       final de cada noticia
+  videos-cierre.jpg         final de /videos
+  estudio-cierre.jpg        final de /estudio-biblico
+
+  Van muy oscurecidas y de fondo: sirve mejor una escena general que un
+  primer plano.
+
+DENTRO DE «NOSOTROS»
+
+  nosotros-historia.jpg     La foto que acompaña a «Nuestra historia».
+
+LOS CUATRO TEMPLOS
+
+  templo-santiago-centro.jpg
+  templo-san-miguel.jpg
+  templo-limache.jpg
+  templo-coya.jpg
+
+  Cada una se ve en tres lugares: la tarjeta del templo en /templos, la ficha
+  del templo, y el bloque «Nuestros otros templos» al pie de las fichas.
+
+EL MOSAICO DE INSTAGRAM DE LA PORTADA
+
+  instagram-1.jpg
+  instagram-2.jpg
+  instagram-3.jpg
+  instagram-4.jpg
+
+  Cuadradas. Conviene que sean las mismas que estén publicadas en la cuenta,
+  porque cada una enlaza a Instagram. Los enlaces de cada una se cambian en
+  src/data/site.ts; hoy las cuatro llevan al perfil y no a una publicación.
+
+
+LAS QUE NO VAN AQUÍ
+-------------------
+Estas se suben desde el panel y viven en el bucket, no en el repositorio:
+
+  · Eventos y noticias: una foto por publicación. Horizontal.
+  · Aviso emergente: la que se enseña en la ventana que salta al entrar.
+
+El panel las reduce solo antes de subirlas.
+
+
+LA MARCA (ya está hecha, no hace falta conseguir nada)
+------------------------------------------------------
+Vive en public/marca/ y no en esta carpeta:
+
+  logo-azul.png       Logo completo en azul. Menú y panel.
+  logo-blanco.png     Logo completo en blanco. Sobre fondo oscuro.
+  logo-blanco.svg     El mismo, vectorial. Pie del sitio y portada.
+  logo-negro.png      Logo en negro. Hoy no lo usa el sitio.
+  isotipo-azul.png    Solo el símbolo, azul. De aquí salen los iconos de
+                      pestaña y la cabecera de /nuestrostemplos.
+  isotipo-blanco.png  Solo el símbolo, blanco. Hoy sin uso.
+  isotipo-negro.png   Solo el símbolo, negro. Hoy sin uso.
+  filigrana.svg       La trama del fondo de la portada.
+  logo-correo.png     Cabecera de los correos.  node scripts/logo-correo.mjs
+  og-image.png        La tarjeta que se ve al compartir un enlace en WhatsApp
+                      o redes (está en public/).  node scripts/og-image.mjs
+  favicon*.png, favicon.ico, apple-touch-icon.png
+                      Iconos de pestaña.  node scripts/favicons.mjs
+
+Si algún día cambia el logo: se reemplazan isotipo-azul.png y logo-blanco.png
+y se vuelven a correr esos tres scripts. Lo demás sale solo.
+
+Falta el logo de los jóvenes. Mientras no exista, /jovenes muestra un círculo
+con las iniciales.
+
+
+LO QUE HAY HOY
+--------------
+Las veintiocho son de banco (ver CREDITS.md, en esta misma carpeta), y diez
+originales cubren los veintiocho huecos: la misma imagen está copiada con
+varios nombres. Por eso la portada de «Nosotros» y el templo de San Miguel se
+ven iguales hoy. Cada foto real que llegue rompe una de esas coincidencias.
+
+IMPORTANTE: cada vez que una foto real reemplace a una de banco, hay que
+borrar su fila de CREDITS.md. Ese archivo existe porque las licencias de banco
+piden atribución; si la foto ya no es de banco, la atribución sobra.

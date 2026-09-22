@@ -31,7 +31,7 @@ export const HISTORIA = {
     'A lo largo de los años el fundamento se ha mantenido igual: la Palabra de Dios como máxima autoridad en la fe y en la práctica. Cada templo sostiene reuniones generales, estudios bíblicos, discipulado y reuniones de jóvenes, sirviendo a su barrio y acompañando a las familias que lo componen.',
   ],
 
-  imagen: 'biblia' as ImgKey,
+  imagen: 'nosotrosHistoria' as ImgKey,
 
   /**
    * Línea de tiempo. Vacía hasta contar con las fechas reales.

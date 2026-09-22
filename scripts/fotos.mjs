@@ -8,8 +8,15 @@
  *
  * Solo rehace lo que cambió: si la variante existe y es más nueva que la foto
  * original, se salta. Así compilar dos veces seguidas no cuesta nada.
+ *
+ * Y borra lo que sobra: las variantes de fotos que ya no existen en
+ * src/assets/img. Esta carpeta no está en el repositorio —la hace este
+ * script—, pero sí se publica entera con el sitio, así que sin esta limpieza
+ * cada foto renombrada o borrada deja para siempre sus cuatro WebP colgando en
+ * producción. Pasó: quedaban ahí `cruz-cielo` y `hero-worship`, borradas del
+ * repositorio semanas antes.
  */
-import { mkdir, readdir, stat } from 'node:fs/promises';
+import { mkdir, readdir, stat, unlink } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 import sharp from 'sharp';
 import { anchosDe, rutaFoto } from '../src/lib/fotos.mjs';
@@ -23,6 +30,8 @@ const archivos = (await readdir(ORIGEN)).filter((f) => /\.(jpe?g|png|webp)$/i.te
 
 let hechas = 0;
 let saltadas = 0;
+/** Las variantes que TIENEN que existir al terminar. Todo lo demás, sobra. */
+const esperadas = new Set();
 
 for (const archivo of archivos) {
   const origen = join(ORIGEN, archivo);
@@ -36,6 +45,7 @@ for (const archivo of archivos) {
 
   for (const ancho of anchosDe(width)) {
     const destino = join(DESTINO, rutaFoto(nombre, ancho));
+    esperadas.add(parse(destino).base);
     try {
       if ((await stat(destino)).mtimeMs >= modificado) {
         saltadas++;
@@ -51,4 +61,14 @@ for (const archivo of archivos) {
   }
 }
 
-console.log(`fotos: ${hechas} generadas, ${saltadas} ya estaban al día`);
+let borradas = 0;
+for (const archivo of await readdir(join(DESTINO, 'fotos'))) {
+  if (esperadas.has(archivo)) continue;
+  await unlink(join(DESTINO, 'fotos', archivo));
+  borradas++;
+}
+
+console.log(
+  `fotos: ${hechas} generadas, ${saltadas} ya estaban al día` +
+    (borradas ? `, ${borradas} sobrantes borradas` : ''),
+);
