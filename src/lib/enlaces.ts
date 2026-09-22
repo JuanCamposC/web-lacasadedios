@@ -93,3 +93,20 @@ export function esEnlaceSeguro(url: string): boolean {
     return false;
   }
 }
+
+/**
+ * ¿Es una dirección del propio sitio, escrita como ruta?
+ *
+ * El aviso emergente ofrece un selector con las páginas del sitio, y esas van
+ * como ruta —«/eventos»— y no como dirección completa. Guardarlas así es lo
+ * correcto: el mismo aviso funciona en producción y en pruebas sin reescribir
+ * nada, y el botón no saca a nadie del sitio para volver a entrar.
+ *
+ * Una barra, y la siguiente NO puede ser otra barra ni una contrabarra:
+ * «//otro.sitio» y «/\otro.sitio» son direcciones externas disfrazadas de
+ * ruta, y el navegador las sigue fuera del sitio. Tampoco se aceptan espacios
+ * ni saltos de línea, que es por donde se cuela lo demás.
+ */
+export function esRutaInterna(url: string): boolean {
+  return /^\/(?![/\\])[^\s]*$/.test(url);
+}

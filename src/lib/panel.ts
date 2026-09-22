@@ -1,5 +1,5 @@
 import type { Base } from './datos';
-import { esEnlaceSeguro } from './enlaces';
+import { esEnlaceSeguro, esRutaInterna } from './enlaces';
 
 /**
  * Lecturas y escrituras del panel.
@@ -50,11 +50,30 @@ export class DatoInvalido extends Error {}
  */
 const COLUMNAS_URL = new Set(['enlace', 'url', 'youtube_url', 'aviso_boton_url', 'vivo_url']);
 
+/**
+ * Columnas que además admiten una página del propio sitio, escrita como ruta.
+ *
+ * Solo el botón del aviso emergente. Su formulario ofrece un selector con las
+ * páginas del sitio —«Eventos», «Nuestros templos»…— y esas valen «/eventos»,
+ * no «https://lacasadedios.cl/eventos»; sin esta excepción el panel rechazaba
+ * justo las opciones que él mismo proponía, con un mensaje pidiendo https://.
+ *
+ * Las demás no la llevan a propósito: `enlaces.url` e `instagram.enlace` son
+ * enlaces a otros sitios, `youtube_url` y `vivo_url` van a YouTube. Una ruta
+ * ahí sería un error de escritura, y conviene que se note al guardar.
+ */
+const COLUMNAS_INTERNAS = new Set(['aviso_boton_url']);
+
 function comprobarUrl(columna: string, valor: unknown): void {
   if (!COLUMNAS_URL.has(columna) || typeof valor !== 'string' || valor === '') return;
-  if (!esEnlaceSeguro(valor)) {
-    throw new DatoInvalido(`«${columna}» tiene que ser un enlace que empiece por https://`);
+  if (esEnlaceSeguro(valor)) return;
+  if (COLUMNAS_INTERNAS.has(columna)) {
+    if (esRutaInterna(valor)) return;
+    throw new DatoInvalido(
+      `«${columna}» tiene que ser un enlace que empiece por https:// o una página del sitio que empiece por /`,
+    );
   }
+  throw new DatoInvalido(`«${columna}» tiene que ser un enlace que empiece por https://`);
 }
 
 /** Las tablas que el panel puede tocar, y qué columnas de cada una. */

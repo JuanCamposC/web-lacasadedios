@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { crear, actualizar, esRecurso, guardarAjustes, reordenar, type Recurso } from './panel';
+import {
+  crear,
+  actualizar,
+  esRecurso,
+  guardarAjustes,
+  reordenar,
+  DatoInvalido,
+  type Recurso,
+} from './panel';
 import type { Base } from './datos';
 
 /**
@@ -368,5 +376,23 @@ describe('direcciones web', () => {
     const { base, llamadas } = espia();
     await guardarAjustes(base, { aviso_boton_url: 'https://lacasadedios.cl/eventos' });
     expect(llamadas.some((l) => l.sql.includes('aviso_boton_url = ?'))).toBe(true);
+  });
+
+  it('el botón del aviso acepta una página del sitio, que es lo que ofrece su selector', async () => {
+    const { base, llamadas } = espia();
+    await guardarAjustes(base, { aviso_boton_url: '/eventos' });
+    expect(llamadas.some((l) => l.sql.includes('aviso_boton_url = ?'))).toBe(true);
+  });
+
+  it('una ruta que en realidad sale del sitio no pasa', async () => {
+    const { base } = espia();
+    await expect(guardarAjustes(base, { aviso_boton_url: '//otro.sitio' })).rejects.toThrow(
+      DatoInvalido,
+    );
+  });
+
+  it('en las demás columnas una ruta sigue sin valer', async () => {
+    const { base } = espia();
+    await expect(guardarAjustes(base, { vivo_url: '/en-vivo' })).rejects.toThrow(DatoInvalido);
   });
 });

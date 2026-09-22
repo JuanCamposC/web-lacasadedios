@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { plataformaDe, esEnlaceSeguro } from './enlaces';
+import { plataformaDe, esEnlaceSeguro, esRutaInterna } from './enlaces';
 
 describe('plataformaDe', () => {
   it('reconoce los enlaces del Linktree de los jóvenes', () => {
@@ -33,5 +33,26 @@ describe('esEnlaceSeguro', () => {
     expect(esEnlaceSeguro('javascript:alert(1)')).toBe(false);
     expect(esEnlaceSeguro('data:text/html,hola')).toBe(false);
     expect(esEnlaceSeguro('')).toBe(false);
+  });
+});
+
+describe('esRutaInterna', () => {
+  it('acepta las páginas del sitio que ofrece el selector del aviso', () => {
+    expect(esRutaInterna('/eventos')).toBe(true);
+    expect(esRutaInterna('/templos/san-miguel')).toBe(true);
+    expect(esRutaInterna('/')).toBe(true);
+  });
+
+  it('rechaza lo externo disfrazado de ruta', () => {
+    expect(esRutaInterna('//otro.sitio/x')).toBe(false);
+    expect(esRutaInterna(String.raw`/\otro.sitio/x`)).toBe(false);
+    expect(esRutaInterna('/con espacio')).toBe(false);
+  });
+
+  it('rechaza lo que no es una ruta', () => {
+    expect(esRutaInterna('eventos')).toBe(false);
+    expect(esRutaInterna('https://lacasadedios.cl/eventos')).toBe(false);
+    expect(esRutaInterna('javascript:alert(1)')).toBe(false);
+    expect(esRutaInterna('')).toBe(false);
   });
 });
