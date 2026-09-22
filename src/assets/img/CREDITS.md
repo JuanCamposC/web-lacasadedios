@@ -17,7 +17,6 @@ cuando lleguen las fotos reales.
 
 | Archivo                      | Dónde se ve                               | Fuente (Unsplash photo id)       |
 | ---------------------------- | ----------------------------------------- | -------------------------------- |
-| `inicio-portada.jpg`         | Franja principal de la portada            | ver la nota de abajo             |
 | `inicio-mosaico.jpg`         | Recuadro grande del mosaico de la portada | photo-1507692049790-de58290a4334 |
 | `inicio-estudio.jpg`         | Banda del Instituto Bíblico en la portada | photo-1510590337019-5ef8d3d32116 |
 | `nosotros-portada.jpg`       | Portada de /sobre-nosotros                | photo-1579975096649-e773152b04cb |
@@ -45,11 +44,3 @@ cuando lleguen las fotos reales.
 | `instagram-2.jpg`            | Mosaico de Instagram de la portada        | photo-1438232992991-995b7058bbb3 |
 | `instagram-3.jpg`            | Mosaico de Instagram de la portada        | photo-1510590337019-5ef8d3d32116 |
 | `instagram-4.jpg`            | Mosaico de Instagram de la portada        | photo-1529070538774-1843cb3265df |
-
-## La foto de la portada
-
-`inicio-portada.jpg` no vino de Unsplash como las demás: llegó dentro del diseño de la
-cabecera hecho en Figma (archivo «Header», nodo 1:2) y entró al repositorio con él. De ahí
-que no tenga identificador de banco. **Antes de darla por buena conviene confirmar de dónde
-salió**, porque es la primera imagen que ve cualquiera que abra el sitio y la única cuya
-procedencia no consta.
