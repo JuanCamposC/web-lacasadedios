@@ -19,9 +19,19 @@ interface Props {
   motivo?: string | null;
 }
 const { valores = {}, resultado = null, motivo = null } = Astro.props;
+/*
+ * Los motivos que ofrece el desplegable.
+ *
+ * «Petición de oración» estaba y salió a propósito: una petición de oración es
+ * algo personal y delicado, y este formulario la convertía en un correo a la
+ * dirección general de la iglesia. Quien quiera pedir oración tiene los correos
+ * de cada pastor en esta misma página, y siempre le queda «Otro».
+ *
+ * Si algún día se ofrece otra vez, que sea con un destinatario propio y no con
+ * el buzón que lee cualquiera del equipo.
+ */
 const asuntos = [
   'Quiero visitar la iglesia',
-  'Petición de oración',
   'Consulta sobre horarios',
   'Enlace del estudio bíblico por Zoom',
   'Otro',
