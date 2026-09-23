@@ -7,12 +7,29 @@ import { SITE } from '../data/site';
  *
  * Vivía dentro del pie. Salió de ahí cuando el pie pasó a seguir el diseño de
  * Figma (nodo 23:50), que no contempla formulario: en vez de perderlo, queda
- * como banda propia justo encima. El azul estandarte lo separa del azul noche
- * del pie sin sacarlo de la paleta.
+ * como banda propia justo encima.
+ *
+ * ── EL COLOR, Y POR QUÉ NO ES `bg-secondary` ────────────────────────────────
+ * Llevaba `bg-secondary`, y ese token CAMBIA con el tema: #14295C en claro pero
+ * #9DB0CF —un azul pálido— en oscuro. Con el texto en blanco encima, en modo
+ * oscuro la banda quedaba como una losa clara gritando en mitad de una página
+ * oscura, y el texto daba 2,2:1 de contraste: por debajo del mínimo legible de
+ * 4,5:1. No era solo feo, no se leía.
+ *
+ * Ahora es #2F4156, el azul principal de la paleta de la iglesia, FIJO en los
+ * dos temas. No es un color elegido al azar: es exactamente el que el diseño de
+ * Figma pinta en el pie. El pie del sitio usa el azul noche (#0A1730) porque la
+ * cabecera y el pie tienen que ser el mismo azul, así que este tono quedaba sin
+ * usar, y su sitio natural es justo esta banda: deja una escalera de dos
+ * peldaños hacia lo oscuro —página, banda, pie— en vez de un salto.
+ *
+ * Medido: blanco sobre #2F4156 da 10,4:1, y la banda se distingue del pie
+ * (1,71:1) lo justo para leerse como una pieza aparte sin pegar el salto que
+ * pegaba antes.
  */
 ---
 
-<section class="on-dark bg-secondary text-white" aria-labelledby="boletin-titulo">
+<section class="on-dark banda-boletin text-white" aria-labelledby="boletin-titulo">
   <div class="mx-auto max-w-3xl px-6 py-8 text-center sm:py-14">
     <div class="tile tile-accent mx-auto mb-4 hidden sm:inline-flex">
       <Icon name="lucide:mail-plus" class="h-6 w-6" />
@@ -108,3 +125,10 @@ import { SITE } from '../data/site';
 
   document.addEventListener('astro:page-load', initBoletin);
 </script>
+
+<style>
+  /* El azul principal de la marca, igual en los dos temas. El porqué, arriba. */
+  .banda-boletin {
+    background-color: #2f4156;
+  }
+</style>
