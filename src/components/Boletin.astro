@@ -16,16 +16,23 @@ import { SITE } from '../data/site';
  * oscura, y el texto daba 2,2:1 de contraste: por debajo del mínimo legible de
  * 4,5:1. No era solo feo, no se leía.
  *
- * Ahora es #2F4156, el azul principal de la paleta de la iglesia, FIJO en los
- * dos temas. No es un color elegido al azar: es exactamente el que el diseño de
- * Figma pinta en el pie. El pie del sitio usa el azul noche (#0A1730) porque la
- * cabecera y el pie tienen que ser el mismo azul, así que este tono quedaba sin
- * usar, y su sitio natural es justo esta banda: deja una escalera de dos
- * peldaños hacia lo oscuro —página, banda, pie— en vez de un salto.
+ * Ahora es #2F4F56, uno de los tonos análogos de la paleta, FIJO en los dos
+ * temas. Se probó primero con el azul principal (#2F4156) y quedaba casi igual
+ * que el pie: la banda perdía su identidad y parecía un pie mal pintado.
  *
- * Medido: blanco sobre #2F4156 da 10,4:1, y la banda se distingue del pie
- * (1,71:1) lo justo para leerse como una pieza aparte sin pegar el salto que
- * pegaba antes.
+ * Este resuelve las dos cosas a la vez. Sigue siendo oscuro, así que no vuelve
+ * a ser la losa que llamaba la atención en modo oscuro; y el giro hacia el
+ * verde-azulado lo separa del azul noche del pie sin salirse de la familia.
+ * Sobre él, el dorado del icono y el azul claro del botón siguen funcionando.
+ *
+ * Medido: blanco encima da 8,85:1 —muy por encima del 4,5:1 exigible— y contra
+ * el pie queda en 2,01:1, que es la distancia justa para leerse como pieza
+ * aparte sin pegar un salto.
+ *
+ * Los otros candidatos de la paleta, por si algún día se revisa: #53697E se
+ * veía demasiado claro en modo oscuro (volvía al problema de origen), #2F5656
+ * se iba demasiado al verde y #2F3656 quedaba aún más pegado al pie que el
+ * principal.
  */
 ---
 
@@ -127,8 +134,8 @@ import { SITE } from '../data/site';
 </script>
 
 <style>
-  /* El azul principal de la marca, igual en los dos temas. El porqué, arriba. */
+  /* Tono análogo de la paleta, igual en los dos temas. El porqué, arriba. */
   .banda-boletin {
-    background-color: #2f4156;
+    background-color: #2f4f56;
   }
 </style>
