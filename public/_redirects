@@ -28,3 +28,25 @@
 # dirección antigua que se comprobó rota.
 /bienvenido / 301
 /bienvenido/ / 301
+
+# ── Los cuatro templos, por su nombre a secas ───────────────────────────────
+# En el sitio nuevo cada templo vive en /templos/<nombre>. Estas cuatro son
+# las direcciones cortas, y están por dos motivos a la vez:
+#
+#   · La iglesia reporta que al buscar los templos en Google siguen
+#     apareciendo direcciones del sitio antiguo que hoy dan error. Esta es la
+#     forma más probable que tenían, y cuesta cuatro líneas cubrirla.
+#   · Son las que alguien teclearía a mano o diría en voz alta
+#     —«lacasadedios.cl/limache»—, así que valen por sí solas aunque el
+#     WordPress nunca las haya usado.
+#
+# Van con y sin barra final porque para Cloudflare son direcciones distintas
+# y una regla no cubre la otra (comprobado con /nosotros).
+/limache /templos/limache 301
+/limache/ /templos/limache 301
+/coya /templos/coya 301
+/coya/ /templos/coya 301
+/san-miguel /templos/san-miguel 301
+/san-miguel/ /templos/san-miguel 301
+/santiago-centro /templos/santiago-centro 301
+/santiago-centro/ /templos/santiago-centro 301
