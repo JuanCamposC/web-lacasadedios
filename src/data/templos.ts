@@ -170,13 +170,13 @@ export const templos: Templo[] = [
     short: 'Coya',
     image: 'temploCoya',
     tagline: 'Una familia de fe en Coya',
-    address: 'Pedro Aguirre Cerda #623, Coya',
+    address: 'Av. Pedro Aguirre Cerda #623, Coya',
     city: 'Comuna de Machalí',
     region: "Región del Libertador Bernardo O'Higgins",
     mapEmbed:
-      "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3299.7453213108574!2d-70.528772!3d-34.203983!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9663517e65647063%3A0xdb02756c3ccb4607!2sC.%20Pedro%20Aguirre%20Cerda%20623%2C%20Coya%2C%20Machal%C3%AD%2C%20O'Higgins!5e0!3m2!1ses!2scl!4v1771264305348!5m2!1ses!2scl",
-    mapLink: 'https://maps.app.goo.gl/ZKd69AjzgSLTLzk59',
-    coords: { lat: -34.203983, lng: -70.528772 },
+      "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3299.7453213108574!2d-70.5289121!3d-34.2037633!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9663517e667e1d15%3A0x8a014999532b3d5c!2sAv.%20Pedro%20Aguirre%20Cerda%20623%2C%20Coya%2C%20Machal%C3%AD%2C%20O'Higgins!5e0!3m2!1ses!2scl!4v1771264305348!5m2!1ses!2scl",
+    mapLink: 'https://maps.app.goo.gl/JUZ38bpu8CWoGrgR8',
+    coords: { lat: -34.2037633, lng: -70.5289121 },
     color: { fondo: '#8a3b3b', claro: '#e3a0a0' },
     estudio: 'zoom',
     leader: {
