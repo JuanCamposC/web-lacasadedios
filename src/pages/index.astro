@@ -63,11 +63,28 @@ import { IMG } from '../assets/images';
   <section
     class="on-dark relative -mt-16 flex min-h-[85vh] items-center overflow-hidden lg:min-h-[clamp(32rem,42vw,52rem)]"
   >
+    {
+      /* La portada se sirve hasta su tamaño original, sin recortar calidad.
+
+        Antes el mayor era 1600 px. En una pantalla de retina —casi cualquier
+        portátil moderno y todos los teléfonos— el navegador necesita el doble de
+        píxeles que el tamaño en pantalla, así que a 1440 px pedía 2880 y solo
+        encontraba 1600: lo estiraba, y la foto se veía blanda justo en lo
+        primero que ve cualquiera.
+
+        Ahora la lista llega a 3024, el ancho real del archivo, con un paso
+        intermedio en 2048 para que una pantalla que no necesita tanto no cargue
+        de más. El navegador elige solo: un teléfono sigue bajando 768 o 1280.
+
+        `quality` sube a 90 (por omisión es 80) solo en esta imagen. Es la única
+        del sitio que se ve a pantalla completa y sin nada que la tape. */
+    }
     <Image
       src={IMG.inicioPortada}
       alt=""
       aria-hidden="true"
-      widths={[768, 1280, 1600]}
+      widths={[768, 1280, 1600, 2048, 3024]}
+      quality={90}
       sizes="100vw"
       loading="eager"
       class="absolute inset-0 h-full w-full object-cover"
