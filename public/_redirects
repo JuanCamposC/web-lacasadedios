@@ -22,3 +22,9 @@
 # Con barra al final es otra dirección para Cloudflare, y hay que escribirla:
 # quien la tenga guardada así, la tiene así.
 /nosotros/ /sobre-nosotros 301
+
+# La portada del WordPress vivía en /bienvenido («Bienvenido a la Página
+# Oficial de La Casa de Dios»). Sigue indexada en Google y es la segunda
+# dirección antigua que se comprobó rota.
+/bienvenido / 301
+/bienvenido/ / 301
