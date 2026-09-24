@@ -50,6 +50,18 @@ export interface Templo {
   short: string;
   /** clave de imagen (ver src/assets/images.ts) */
   image: ImgKey;
+  /**
+   * Otra foto para las tarjetas pequeñas, cuando la de arriba no sirve ahí.
+   *
+   * La cabecera de la ficha es una franja ancha y baja, y pide una foto con
+   * calle y contexto. Las tarjetas —la portada, el listado de templos y el
+   * bloque de «otros templos»— son recuadros pequeños donde esa misma foto se
+   * pierde: el edificio queda diminuto y no se reconoce cuál es.
+   *
+   * Quien no la define usa `image` en los dos sitios, que es lo normal. Se
+   * agrega solo donde la diferencia se nota.
+   */
+  imageMini?: ImgKey;
   tagline: string;
   address: string;
   city: string;
@@ -169,6 +181,7 @@ export const templos: Templo[] = [
     name: 'Templo Coya',
     short: 'Coya',
     image: 'temploCoya',
+    imageMini: 'temploCoyaMini',
     tagline: 'Una familia de fe en Coya',
     address: 'Av. Pedro Aguirre Cerda #623, Coya',
     city: 'Comuna de Machalí',

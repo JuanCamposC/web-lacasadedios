@@ -65,6 +65,7 @@ import temploSantiagoCentro from './img/templo-santiago-centro.jpg';
 import temploSanMiguel from './img/templo-san-miguel.jpg';
 import temploLimache from './img/templo-limache.jpg';
 import temploCoya from './img/templo-coya.jpg';
+import temploCoyaMini from './img/templo-coya-mini.jpg';
 
 import instagram1 from './img/instagram-1.jpg';
 import instagram2 from './img/instagram-2.jpg';
@@ -101,6 +102,9 @@ export const IMG = {
   temploSanMiguel,
   temploLimache,
   temploCoya,
+  // La misma iglesia de frente, para las tarjetas pequeñas. El porqué, en
+  // el comentario de `imageMini` en src/data/templos.ts.
+  temploCoyaMini,
 
   // El mosaico de Instagram de la portada.
   instagram1,
