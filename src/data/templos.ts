@@ -187,8 +187,21 @@ export const templos: Templo[] = [
     city: 'Comuna de Machalí',
     region: "Región del Libertador Bernardo O'Higgins",
     mapEmbed:
-      "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3299.7453213108574!2d-70.5289121!3d-34.2037633!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9663517e667e1d15%3A0x8a014999532b3d5c!2sAv.%20Pedro%20Aguirre%20Cerda%20623%2C%20Coya%2C%20Machal%C3%AD%2C%20O'Higgins!5e0!3m2!1ses!2scl!4v1771264305348!5m2!1ses!2scl",
-    mapLink: 'https://maps.app.goo.gl/JUZ38bpu8CWoGrgR8',
+      'https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3299.7453213108574!2d-70.5289121!3d-34.2037633!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x96635169267b335d%3A0x849d9167d182c486!2sLa%20Casa%20de%20Dios%20Coya!5e0!3m2!1ses!2scl!4v1771264305348!5m2!1ses!2scl',
+    /*
+     * Este enlace apunta a la FICHA de la iglesia, no a la dirección postal.
+     *
+     * Coya es el primer templo con ficha propia en Google («La Casa de Dios
+     * Coya», categoría Iglesia). Vale más que una dirección suelta: enseña el
+     * nombre, los horarios y las fotos, y es lo que aparece cuando alguien
+     * busca la iglesia en vez de la calle.
+     *
+     * El formato `?cid=` es el identificador estable que Google le da a cada
+     * ficha. Los otros tres siguen con enlaces cortos `maps.app.goo.gl` porque
+     * apuntan a direcciones; cuando tengan ficha, conviene cambiarlos a esta
+     * forma.
+     */
+    mapLink: 'https://maps.google.com/?cid=9555953859432727686',
     coords: { lat: -34.2037633, lng: -70.5289121 },
     color: { fondo: '#8a3b3b', claro: '#e3a0a0' },
     estudio: 'zoom',
