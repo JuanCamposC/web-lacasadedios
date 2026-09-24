@@ -90,18 +90,27 @@ import { IMG } from '../assets/images';
       class="absolute inset-0 h-full w-full object-cover"
     />
 
-    {
-      /* PRUEBA (24 de septiembre de 2026) — el velo y la filigrana ya no se
-        pintan acá porque vienen dentro de la propia foto: la iglesia entregó
-        una portada con el tinte azul y el símbolo de la marca ya aplicados.
+    <!-- Velo plano, no degradado: la forma es la del diseño; el color, el de
+         la casa (ver la nota de arriba). -->
+    <div class="absolute inset-0 bg-[#0a1730]/88"></div>
 
-        Pintarlos otra vez encima duplicaría el tinte —la foto quedaría casi
-        negra— y dibujaría un segundo símbolo sobre el que ya trae.
+    <!-- Filigrana de marca, sangrando por arriba y por abajo. Las dos medidas
+         salen de los marcos de Figma: en móvil arranca al 53 % y mide el 116 %
+         del alto; en escritorio, al 49 % y el 169 %. Que el logotipo la pise
+         está en el diseño y no estorba.
 
-        Esto es una prueba y se deshace entera con `git revert` del cambio que
-        la introdujo: ahí vuelven estas dos piezas Y la foto anterior, que
-        sigue guardada en el historial. */
-    }
+         COLOR: el archivo venía en #022542 al 20 %, que sobre el velo gris del
+         diseño se leía. Sobre el azul noche quedó a 1,02:1 —invisible—, así que
+         pasa al azul vivo de la paleta (#23448F). Estuvo al 60 % y se pidió más
+         discreta: al 35 % sigue dibujándose, pero ya no compite con el logotipo
+         ni con el versículo. La opacidad va aquí y no en el SVG para poder
+         graduarla sin abrir el archivo. -->
+    <img
+      src="/marca/filigrana.svg"
+      alt=""
+      aria-hidden="true"
+      class="pointer-events-none absolute left-[53%] top-1/2 h-[116%] w-auto -translate-y-1/2 opacity-35 lg:left-[49%] lg:h-[169%]"
+    />
 
     <div class="rule absolute inset-x-0 bottom-0" aria-hidden="true"></div>
 

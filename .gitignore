@@ -75,3 +75,6 @@ public/fotos/
 # Sigue haciendo falta como respaldo y como plan de vuelta atrás, así que no se
 # borra: solo deja de publicarse.
 dns/
+
+# Capturas de pantalla de las comprobaciones. Son de usar y tirar.
+capturas/
