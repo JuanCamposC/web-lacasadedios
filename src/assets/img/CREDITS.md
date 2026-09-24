@@ -36,7 +36,6 @@ con varios nombres. Eso es a propósito y deja de pasar a medida que llegan las 
 | `contacto-portada.jpg`       | Portada de /contacto                      | photo-1529070538774-1843cb3265df |
 | `envivo-portada.jpg`         | Portada de /en-vivo                       | photo-1507692049790-de58290a4334 |
 | `templo-santiago-centro.jpg` | Templo de Santiago Centro                 | photo-1477281765962-ef34e8bb0967 |
-| `templo-coya.jpg`            | Templo de Coya                            | photo-1529070538774-1843cb3265df |
 | `instagram-1.jpg`            | Mosaico de Instagram de la portada        | photo-1579975096649-e773152b04cb |
 | `instagram-2.jpg`            | Mosaico de Instagram de la portada        | photo-1438232992991-995b7058bbb3 |
 | `instagram-3.jpg`            | Mosaico de Instagram de la portada        | photo-1510590337019-5ef8d3d32116 |
