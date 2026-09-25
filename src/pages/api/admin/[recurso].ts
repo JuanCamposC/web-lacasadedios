@@ -6,9 +6,11 @@ import {
   crear,
   actualizar,
   borrar,
+  archivosDesplazados,
   unaFila,
   DatoInvalido,
 } from '../../../lib/panel';
+import { olvidarArchivos } from '../../../lib/archivos';
 import { urlMedio } from '../../../lib/medios';
 import { templos } from '../../../data/templos';
 import { DIAS } from '../../../lib/reuniones';
@@ -163,9 +165,16 @@ export const PUT: APIRoute = async ({ params, request, url }) => {
   const id = (url.searchParams.get('id') ?? '').trim();
   if (!id) return json({ error: 'falta el id' }, 400);
 
+  const base = await baseDeDatos();
+  const datos = await cuerpo(request);
+
+  // Qué archivo quedaría sin dueño si esto se guarda. Se pregunta antes: al
+  // guardar, la clave vieja ya no está escrita en ninguna parte.
+  const sueltos = await archivosDesplazados(base, recurso, id, datos);
+
   let hecho: boolean;
   try {
-    hecho = await actualizar(await baseDeDatos(), recurso, id, await cuerpo(request));
+    hecho = await actualizar(base, recurso, id, datos);
   } catch (e) {
     const rechazo = rechazoDeLaBase(e);
     if (rechazo) return rechazo;
@@ -175,6 +184,8 @@ export const PUT: APIRoute = async ({ params, request, url }) => {
   // responder que sí: un formulario mal armado se descubriría meses después,
   // cuando alguien note que sus cambios no se guardan.
   if (!hecho) return json({ error: 'no hay nada que guardar' }, 400);
+
+  await olvidarArchivos(base, sueltos);
   return json({ ok: true });
 };
 
@@ -186,6 +197,10 @@ export const DELETE: APIRoute = async ({ params, request, url }) => {
   const id = (url.searchParams.get('id') ?? '').trim();
   if (!id) return json({ error: 'falta el id' }, 400);
 
-  await borrar(await baseDeDatos(), recurso, id);
+  const base = await baseDeDatos();
+  // `borrar` devuelve los archivos que nombraba la fila. Se limpian después de
+  // borrarla, no antes: así la comprobación de «¿la usa alguien más?» ya no
+  // encuentra a esta fila y el archivo se puede soltar.
+  await olvidarArchivos(base, await borrar(base, recurso, id));
   return json({ ok: true });
 };

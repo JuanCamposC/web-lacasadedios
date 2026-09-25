@@ -124,6 +124,33 @@ const COLUMNAS = {
 
 export type Recurso = keyof typeof COLUMNAS;
 
+/**
+ * Columnas que guardan una CLAVE de R2, tabla por tabla.
+ *
+ * Sirve para no dejar archivos sueltos: cuando una fila se borra o cambia de
+ * imagen, hay que saber qué archivo dejó de tener dueño (ver
+ * src/lib/archivos.ts). Las tablas sin archivos van con lista vacía en vez de
+ * quedar fuera, para que agregar una tabla nueva obligue a decidir.
+ */
+const COLUMNAS_ARCHIVO = {
+  eventos: ['imagen_clave'],
+  noticias: ['imagen_clave'],
+  instagram: ['imagen_clave'],
+  estudios: ['archivo_clave'],
+  videos: [],
+  enlaces: [],
+  reuniones: [],
+  estudios_ocultos: [],
+} as const satisfies Record<Recurso, readonly string[]>;
+
+/** Las claves de R2 que nombra una fila. */
+function clavesDe(recurso: Recurso, fila: Record<string, unknown> | null): string[] {
+  if (!fila) return [];
+  return COLUMNAS_ARCHIVO[recurso]
+    .map((columna) => fila[columna])
+    .filter((v): v is string => typeof v === 'string' && v !== '');
+}
+
 /** Cómo se ordena cada tabla en el listado del panel. */
 const ORDEN: Record<Recurso, string> = {
   eventos: 'fecha desc',
@@ -334,8 +361,57 @@ export async function actualizar(
   return true;
 }
 
-export async function borrar(base: Base, recurso: Recurso, id: string): Promise<void> {
+/**
+ * Borra una fila y devuelve las claves de R2 que nombraba.
+ *
+ * Devolverlas y no borrarlas acá es a propósito: este módulo solo habla con la
+ * base. Quien llama decide qué hacer con el bucket, y así las pruebas de la
+ * lista blanca no necesitan un R2 de mentira. El borrado de verdad lo hace
+ * `olvidarArchivos` en src/lib/archivos.ts, que además comprueba que no las
+ * esté usando otra fila.
+ */
+export async function borrar(base: Base, recurso: Recurso, id: string): Promise<string[]> {
+  // Se lee ANTES de borrar: después ya no hay a quién preguntarle.
+  const fila = await unaFila<Record<string, unknown>>(base, recurso, id);
   await base.prepare(`delete from ${recurso} where id = ?`).bind(id).first();
+  return clavesDe(recurso, fila);
+}
+
+/**
+ * Qué archivos dejaría sueltos esta edición, si se guardara.
+ *
+ * Cambiar la foto de una noticia también abandona un archivo, y ese caso pasa
+ * más veces que el borrado entero. Se pregunta ANTES de guardar porque después
+ * la clave vieja ya no está escrita en ninguna parte.
+ *
+ * Va aparte de `actualizar` en vez de que esta devuelva dos cosas: `actualizar`
+ * responde si había algo que guardar, y mezclar ahí una lista de archivos
+ * obligaría a cambiar a todos los que la llaman para algo que solo le importa
+ * a una ruta.
+ */
+export async function archivosDesplazados(
+  base: Base,
+  recurso: Recurso,
+  id: string,
+  datos: Record<string, unknown>,
+): Promise<string[]> {
+  const columnas = COLUMNAS_ARCHIVO[recurso].filter((c) => Object.hasOwn(datos, c));
+  if (columnas.length === 0) return [];
+
+  const antes = await unaFila<Record<string, unknown>>(base, recurso, id);
+  if (!antes) return [];
+
+  const sueltas: string[] = [];
+  for (const columna of columnas) {
+    const vieja = antes[columna];
+    if (typeof vieja !== 'string' || vieja === '') continue;
+    // La misma clave de vuelta significa que la foto no se tocó. Sin esta
+    // línea, guardar un título borraría la imagen que sigue en uso: el
+    // formulario manda todos los campos, también los que nadie cambió.
+    if (datos[columna] === vieja) continue;
+    sueltas.push(vieja);
+  }
+  return sueltas;
 }
 
 /** Las tablas que se ordenan arrastrando: las que tienen columna `orden`. */
@@ -378,6 +454,7 @@ const AJUSTES = [
   'aviso_boton',
   'aviso_boton_url',
   'aviso_imagen_clave',
+  'aviso_imagen_alt',
   'aviso_desde',
   'aviso_hasta',
   'aviso_version',

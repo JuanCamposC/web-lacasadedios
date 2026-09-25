@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   crear,
   actualizar,
+  borrar,
+  archivosDesplazados,
   esRecurso,
   guardarAjustes,
   reordenar,
@@ -424,5 +426,102 @@ describe('estudios_ocultos', () => {
     expect(sql).toContain('titulo');
     expect(sql).not.toContain('publicado');
     expect(sql).not.toContain('creado_en');
+  });
+});
+
+/**
+ * Una base con UNA fila dentro, para lo que necesita leer antes de escribir.
+ *
+ * El espía de arriba responde `null` a todo, que es justo lo que no sirve acá:
+ * saber qué archivo deja suelto un borrado exige poder leer la fila.
+ */
+function baseConFila(fila: Record<string, unknown> | null) {
+  const llamadas: { sql: string; valores: unknown[] }[] = [];
+  const base: Base = {
+    prepare(sql: string) {
+      return {
+        bind(...valores: unknown[]) {
+          llamadas.push({ sql, valores });
+          return {
+            async all<T>() {
+              return { results: [] as T[] };
+            },
+            async first<T>() {
+              return (/^s*select */i.test(sql) ? fila : null) as T | null;
+            },
+          };
+        },
+      };
+    },
+  };
+  return { base, llamadas };
+}
+
+/**
+ * Borrar una fila tiene que decir qué archivos quedaron sin dueño.
+ *
+ * Antes no lo decía, y la foto de cada noticia borrada se quedaba en el bucket
+ * para siempre. Quien la borra de R2 es src/lib/archivos.ts; esto solo
+ * comprueba que la información llegue hasta allá.
+ */
+describe('borrar', () => {
+  it('devuelve la imagen de la fila que borró', async () => {
+    const { base, llamadas } = baseConFila({ id: 'id-1', imagen_clave: 'noticias/2026/09/a.webp' });
+    expect(await borrar(base, 'noticias', 'id-1')).toEqual(['noticias/2026/09/a.webp']);
+    // Y la lee ANTES de borrar: después ya no hay a quién preguntarle.
+    expect(llamadas[0].sql).toMatch(/^select */i);
+    expect(llamadas[1].sql).toMatch(/^delete/i);
+  });
+
+  it('devuelve el audio de un estudio, que no se llama igual', async () => {
+    const { base } = baseConFila({ id: 'id-1', archivo_clave: 'estudios/2026/09/a.mp3' });
+    expect(await borrar(base, 'estudios', 'id-1')).toEqual(['estudios/2026/09/a.mp3']);
+  });
+
+  it('no devuelve nada de una tabla sin archivos', async () => {
+    const { base } = baseConFila({ id: 'id-1', imagen_clave: 'colada.webp' });
+    expect(await borrar(base, 'videos', 'id-1')).toEqual([]);
+  });
+
+  it('no se cae si la fila ya no estaba', async () => {
+    const { base } = baseConFila(null);
+    expect(await borrar(base, 'noticias', 'id-1')).toEqual([]);
+  });
+});
+
+describe('archivosDesplazados', () => {
+  it('apunta la imagen vieja cuando se sube otra', async () => {
+    const { base } = baseConFila({ imagen_clave: 'vieja.webp' });
+    const sueltos = await archivosDesplazados(base, 'noticias', 'id-1', {
+      imagen_clave: 'nueva.webp',
+    });
+    expect(sueltos).toEqual(['vieja.webp']);
+  });
+
+  /**
+   * El caso que importa. El formulario del panel manda TODOS los campos al
+   * guardar, también los que nadie tocó: sin esta comprobación, corregir una
+   * falta de ortografía en el título borraba la foto de la noticia.
+   */
+  it('no toca la imagen cuando el formulario la manda igual', async () => {
+    const { base } = baseConFila({ imagen_clave: 'la-misma.webp' });
+    const sueltos = await archivosDesplazados(base, 'noticias', 'id-1', {
+      titulo: 'Título corregido',
+      imagen_clave: 'la-misma.webp',
+    });
+    expect(sueltos).toEqual([]);
+  });
+
+  it('apunta la vieja cuando se quita la foto sin poner otra', async () => {
+    const { base } = baseConFila({ imagen_clave: 'vieja.webp' });
+    expect(await archivosDesplazados(base, 'noticias', 'id-1', { imagen_clave: '' })).toEqual([
+      'vieja.webp',
+    ]);
+  });
+
+  it('no consulta la base si la edición no menciona archivos', async () => {
+    const { base, llamadas } = baseConFila({ imagen_clave: 'vieja.webp' });
+    expect(await archivosDesplazados(base, 'noticias', 'id-1', { titulo: 'Otro' })).toEqual([]);
+    expect(llamadas).toEqual([]);
   });
 });
