@@ -92,6 +92,7 @@ export interface Ajustes {
   aviso_boton: string | null;
   aviso_boton_url: string | null;
   aviso_imagen_clave: string | null;
+  aviso_imagen_alt: string | null;
   aviso_desde: string | null;
   aviso_hasta: string | null;
   aviso_version: number;
@@ -402,7 +403,7 @@ export function ajustes(base: Base): Promise<Ajustes | null> {
     .prepare(
       `select vivo_activo, vivo_url, vivo_titulo, vivo_url_avisada,
               aviso_activo, aviso_titulo, aviso_cuerpo, aviso_boton, aviso_boton_url,
-              aviso_imagen_clave, aviso_desde, aviso_hasta, aviso_version,
+              aviso_imagen_clave, aviso_imagen_alt, aviso_desde, aviso_hasta, aviso_version,
               aviso_diseno, aviso_boton_pos, compartir_whatsapp
          from ajustes where id = 1`,
     )

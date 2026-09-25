@@ -111,7 +111,7 @@ const links = [
       <div class="space-y-1 px-3 py-4">
         {
           identidad ? (
-            <p class="truncate px-3 pb-2 text-xs text-white/40" title={identidad.correo}>
+            <p class="truncate px-3 pb-2 text-xs text-white/60" title={identidad.correo}>
               {identidad.correo}
             </p>
           ) : (
@@ -151,7 +151,7 @@ const links = [
             <h1 class="truncate text-lg font-bold leading-tight md:text-xl">{title}</h1>
             {
               description && (
-                <p class="hidden truncate text-sm text-base-content/60 sm:block">{description}</p>
+                <p class="hidden truncate text-sm text-base-content/70 sm:block">{description}</p>
               )
             }
           </div>
@@ -192,7 +192,7 @@ const links = [
                 href={l.href}
                 aria-current={active === l.key ? 'page' : undefined}
                 class={`flex flex-col items-center gap-0.5 py-2 text-[0.62rem] font-medium transition-colors ${
-                  active === l.key ? 'text-primary' : 'text-base-content/55'
+                  active === l.key ? 'text-primary' : 'text-base-content/70'
                 }`}
               >
                 <Icon name={l.icon} class="h-5 w-5" />

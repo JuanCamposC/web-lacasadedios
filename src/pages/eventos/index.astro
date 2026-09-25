@@ -139,7 +139,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
           upcoming.length > 0 && (
             <>
               <h2 class="font-display text-3xl">Próximos eventos</h2>
-              <p class="mt-1 text-base-content/60">
+              <p class="mt-1 text-base-content/70">
                 {upcoming.length}{' '}
                 {upcoming.length === 1 ? 'actividad programada' : 'actividades programadas'}
               </p>
@@ -182,7 +182,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
                       </div>
 
                       <div class="flex flex-1 flex-col p-6">
-                        <span class="text-xs text-base-content/55">{fmtDate(e.fecha)}</span>
+                        <span class="text-xs text-base-content/70">{fmtDate(e.fecha)}</span>
                         <h3 class="card-title mt-1 text-2xl leading-snug">{e.titulo}</h3>
                         {e.lugar && (
                           <p class="mt-1 flex items-center gap-1.5 text-sm font-medium text-accent">
@@ -209,7 +209,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
                 {past.map((e) => (
                   <Reveal class="h-full" data-etiqueta={e.templo}>
                     <div class="h-full rounded-xl border border-base-300 bg-base-200/50 p-5">
-                      <div class="text-xs text-base-content/60">{fmtDate(e.fecha)}</div>
+                      <div class="text-xs text-base-content/70">{fmtDate(e.fecha)}</div>
                       <h3 class="mt-1 font-bold leading-snug">{e.titulo}</h3>
                       {e.lugar && (
                         <p class="mt-1 flex items-center gap-1.5 text-sm text-base-content/70">

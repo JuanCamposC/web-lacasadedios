@@ -24,6 +24,7 @@ const s = {
   // trabaja con la clave y solo la convierte a dirección para enseñarla.
   popup_image_key: fila?.aviso_imagen_clave ?? '',
   popup_image_url: urlMedio(fila?.aviso_imagen_clave) ?? '',
+  popup_image_alt: fila?.aviso_imagen_alt ?? '',
   popup_starts_at: fila?.aviso_desde ?? null,
   popup_ends_at: fila?.aviso_hasta ?? null,
   popup_version: fila?.aviso_version ?? 1,
@@ -119,7 +120,7 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
           </span>
           <span>
             <span class="block font-semibold">Aviso encendido</span>
-            <span class="block text-sm text-base-content/60">
+            <span class="block text-sm text-base-content/70">
               Aparece una vez por persona al entrar al sitio.
             </span>
           </span>
@@ -146,7 +147,7 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
             />
             <span>
               <span class="block text-sm font-medium">Título y texto</span>
-              <span class="block text-xs text-base-content/55">
+              <span class="block text-xs text-base-content/70">
                 La imagen arriba, y debajo lo que escribas.
               </span>
             </span>
@@ -161,7 +162,7 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
             />
             <span>
               <span class="block text-sm font-medium">Solo la imagen</span>
-              <span class="block text-xs text-base-content/55">
+              <span class="block text-xs text-base-content/70">
                 El afiche a pantalla completa, con el botón encima.
               </span>
             </span>
@@ -192,7 +193,7 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
           <button type="button" id="aviso-quitar-img" class="btn btn-ghost btn-sm gap-2">
             <Icon name="lucide:x" class="h-4 w-4" /> Quitar
           </button>
-          <span id="aviso-subiendo" class="hidden text-xs text-base-content/55"
+          <span id="aviso-subiendo" class="hidden text-xs text-base-content/70"
             >Preparando y subiendo…</span
           >
         </div>
@@ -200,7 +201,7 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
         {
           disponibles.length > 0 && (
             <>
-              <span class="mt-4 block text-xs text-base-content/55">
+              <span class="mt-4 block text-xs text-base-content/70">
                 O elige una de las que ya subiste:
               </span>
               <div class="mt-2 grid max-h-64 grid-cols-3 gap-2 overflow-y-auto rounded border border-base-300 p-2 sm:grid-cols-4">
@@ -221,11 +222,33 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
         }
         {
           disponibles.length === 0 && (
-            <span class="mt-2 block text-xs text-base-content/55">
+            <span class="mt-2 block text-xs text-base-content/70">
               Todavía no hay imágenes subidas. Sube una con el botón de arriba.
             </span>
           )
         }
+
+        {
+          /* ── Qué se ve en la imagen ────────────────────────────────────
+            Hace falta de verdad en el modo «solo la imagen»: ahí el título
+            queda escondido y la imagen es todo el aviso, así que quien use
+            un lector de pantalla no recibe nada. Y un cartel suele traer la
+            fecha dibujada dentro, que no está escrita en ningún otro campo. */
+        }
+        <label class="mt-4 block">
+          <span class="mb-1.5 block text-sm font-medium">Qué se ve en la imagen</span>
+          <input
+            type="text"
+            name="popup_image_alt"
+            value={s.popup_image_alt ?? ''}
+            placeholder="Vigilia de oración, viernes 30 a las 20:00"
+            class="input input-bordered w-full"
+          />
+          <span class="mt-1 block text-xs text-base-content/70">
+            Para quien no puede verla: un ciego con lector de pantalla, o cualquiera si la imagen no
+            carga. Describe lo que dice el cartel, no «imagen» ni «foto».
+          </span>
+        </label>
       </div>
 
       {/* ── Texto ────────────────────────────────────────────────────── */}
@@ -267,7 +290,7 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
             placeholder="Ver el evento"
             class="input input-bordered w-full"
           />
-          <span class="mt-1 block text-xs text-base-content/55">
+          <span class="mt-1 block text-xs text-base-content/70">
             Déjalo vacío para un aviso sin botón.
           </span>
         </label>
@@ -345,7 +368,7 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
           />
         </label>
       </div>
-      <p class="-mt-2 text-xs text-base-content/55">
+      <p class="-mt-2 text-xs text-base-content/70">
         Opcionales. Con las dos fechas lo dejas preparado hoy y se enciende y apaga solo.
       </p>
 
@@ -355,7 +378,7 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
         <input type="checkbox" name="repetir" class="toggle toggle-primary toggle-sm mt-0.5" />
         <span>
           <span class="block text-sm font-medium">Volver a mostrarlo a quien ya lo cerró</span>
-          <span class="block text-xs text-base-content/55">
+          <span class="block text-xs text-base-content/70">
             Marca esto si cambiaste el contenido. Si no, quien ya lo vio no verá lo nuevo.
           </span>
         </span>
@@ -382,7 +405,7 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
         <h2 class="flex items-center gap-2 text-base font-bold">
           <Icon name="lucide:eye" class="h-4 w-4 text-primary" /> Vista previa
         </h2>
-        <p class="mt-1 text-xs text-base-content/55">
+        <p class="mt-1 text-xs text-base-content/70">
           Se actualiza mientras escribes. Es el aviso real, a menor tamaño.
         </p>
 
@@ -642,6 +665,7 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
         aviso_boton_url: vacio(campo('popup_cta_url').value),
         aviso_boton_pos: campo('popup_cta_pos').value || 'abajo-centro',
         aviso_imagen_clave: imagen,
+        aviso_imagen_alt: vacio(campo('popup_image_alt').value),
         aviso_desde: fecha(campo('popup_starts_at').value),
         aviso_hasta: fecha(campo('popup_ends_at').value),
         aviso_version: nuevaVersion,

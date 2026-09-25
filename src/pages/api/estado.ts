@@ -49,6 +49,7 @@ export const GET: APIRoute = async () => {
             boton: a!.aviso_boton,
             botonUrl: a!.aviso_boton_url,
             imagen: urlMedio(a!.aviso_imagen_clave),
+            imagenAlt: a!.aviso_imagen_alt,
             version: a!.aviso_version,
             diseno: a!.aviso_diseno,
             botonPos: a!.aviso_boton_pos,

@@ -56,7 +56,7 @@ export function initImagenes(ctx: Contexto) {
     const prev = zona.querySelector(`[data-preview="${campo}"]`) as HTMLElement;
 
     const mostrar = async (file: File) => {
-      prev.innerHTML = `<p class="text-xs text-base-content/55">Preparando imagen…</p>`;
+      prev.innerHTML = `<p class="text-xs text-base-content/70">Preparando imagen…</p>`;
       const blob = await prepararImagen(file);
       ctx.imagenesListas.set(campo, blob);
       const ahorro =
@@ -67,7 +67,7 @@ export function initImagenes(ctx: Contexto) {
             <img src="${URL.createObjectURL(blob)}" alt="" class="h-16 w-16 rounded object-cover" />
             <div class="min-w-0 flex-1">
               <p class="truncate text-xs font-medium">${esc(file.name)}</p>
-              <p class="text-xs text-base-content/55">Lista para subir${ahorro}</p>
+              <p class="text-xs text-base-content/70">Lista para subir${ahorro}</p>
             </div>
             <button type="button" data-quitar class="btn btn-ghost btn-xs">Quitar</button>
           </div>`;

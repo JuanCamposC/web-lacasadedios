@@ -1,0 +1,17 @@
+-- ── El aviso emergente puede decir qué se ve en su imagen ───────────────────
+--
+-- El cartel del aviso salía con `alt=""`, o sea declarado como decorativo. En el
+-- modo «título y texto» eso está bien: el mensaje lo dan el título y el texto, y
+-- repetirlo en el `alt` haría que un lector de pantalla lo dijera dos veces.
+--
+-- En el modo «solo la imagen» no: ahí la imagen ES el aviso, el título queda
+-- escondido, y lo que llegaba a quien no puede verla era una ventana vacía con
+-- un botón sin contexto. Un cartel de vigilia suele traer la fecha y la hora
+-- dentro de la propia imagen, y eso no está escrito en ningún otro sitio.
+--
+-- Por eso una columna y no el título: son dos cosas distintas. El título rotula
+-- el aviso; esto describe lo que la imagen enseña.
+--
+-- Se admite nulo a propósito: los avisos que ya existen no tenían dónde
+-- escribirlo, y el código sabe apañarse sin ello (ver src/components/Popup.astro).
+alter table ajustes add column aviso_imagen_alt text;

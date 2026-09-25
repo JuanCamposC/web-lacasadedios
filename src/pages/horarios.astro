@@ -121,7 +121,7 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
           aria-label="Filtrar por templo"
         >
           <span
-            class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/45 sm:inline"
+            class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/70 sm:inline"
           >
             Filtrar
           </span>
@@ -263,12 +263,12 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
 
         <p
           id="sin-resultados"
-          class="mt-6 hidden rounded-lg border border-dashed border-base-300 px-6 py-10 text-center text-base-content/60"
+          class="mt-6 hidden rounded-lg border border-dashed border-base-300 px-6 py-10 text-center text-base-content/70"
         >
           Ese templo no tiene reuniones cargadas.
         </p>
 
-        <p class="mt-8 text-center text-sm text-base-content/60">
+        <p class="mt-8 text-center text-sm text-base-content/70">
           ¿Cambió un horario o falta una reunión?
           <a href="/contacto" class="link link-primary">Avísanos</a>.
         </p>
@@ -414,11 +414,11 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
         const pasada = !enCurso && (r.minutos < ahora.minutos || r.suspendida);
 
         const hora = document.createElement('span');
-        hora.className = `font-data text-lg font-bold ${pasada ? 'text-base-content/35' : 'text-primary'}`;
+        hora.className = `font-data text-lg font-bold ${pasada ? 'text-base-content/70' : 'text-primary'}`;
         hora.textContent = r.hora;
 
         const texto = document.createElement('span');
-        texto.className = pasada ? 'text-base-content/35 line-through' : '';
+        texto.className = pasada ? 'text-base-content/70 line-through' : '';
         texto.textContent = r.nombre;
 
         // La marca de «en curso», con el punto que late. Se arma con elementos y

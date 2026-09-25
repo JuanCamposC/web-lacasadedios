@@ -88,6 +88,7 @@
       boton: string | null;
       botonUrl: string | null;
       imagen: string | null;
+      imagenAlt: string | null;
       version: number;
       diseno: string;
       botonPos: string;
@@ -194,12 +195,31 @@
 
     const cuerpo = document.getElementById('aviso-cuerpo') as HTMLElement;
     cuerpo.classList.toggle('hidden', soloImagen);
+
+    /* La ventana toma su nombre del título (aria-labelledby), y en modo «solo
+       la imagen» ese título está escondido: una ventana modal sin nombre se
+       anuncia como «diálogo» y nada más. Se le pone uno a mano. */
+    if (soloImagen) {
+      dlg.setAttribute('aria-label', (a.imagenAlt || a.titulo || 'Aviso de la iglesia').trim());
+    } else {
+      dlg.removeAttribute('aria-label');
+    }
     (document.getElementById('aviso-titulo') as HTMLElement).textContent = a.titulo ?? '';
     (document.getElementById('aviso-texto') as HTMLElement).textContent = a.cuerpo ?? '';
 
     const img = document.getElementById('aviso-img') as HTMLImageElement;
     if (a.imagen) {
       img.src = a.imagen;
+      /* ── El texto alternativo ──────────────────────────────────────────
+         Con título y texto al lado, la imagen es decoración: el mensaje ya
+         está escrito, y describirla otra vez haría que un lector de pantalla
+         lo dijera dos veces. `alt=""` es lo correcto ahí.
+
+         En modo «solo la imagen» es al revés: la imagen ES el aviso, y la
+         fecha y la hora suelen estar dibujadas dentro. Sin descripción, quien
+         no la ve recibe una ventana vacía con un botón. Se usa lo que se
+         escribió en el panel; si no hay nada, el título, aunque no se enseñe. */
+      img.alt = soloImagen ? (a.imagenAlt || a.titulo || '').trim() : (a.imagenAlt ?? '').trim();
       img.classList.remove('hidden');
       img.classList.toggle('rounded-t-xl', !soloImagen);
       img.classList.toggle('rounded-xl', soloImagen);

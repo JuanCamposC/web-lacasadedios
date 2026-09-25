@@ -320,13 +320,13 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
             {
               otrasEnSanMiguel.length > 0 && (
                 <div class="mt-6 border-t border-base-300 pt-5">
-                  <p class="text-xs font-semibold tracking-wider text-base-content/55 uppercase">
+                  <p class="text-xs font-semibold tracking-wider text-base-content/70 uppercase">
                     El resto de la semana en este templo
                   </p>
                   <ul class="mt-3 space-y-1.5">
                     {otrasEnSanMiguel.map((r) => (
                       <li class="flex flex-wrap items-baseline gap-x-2 text-sm">
-                        <span class="font-data w-20 shrink-0 text-base-content/60">
+                        <span class="font-data w-20 shrink-0 text-base-content/70">
                           {DIAS[r.dia]}
                         </span>
                         <span class="font-data font-semibold tabular-nums">{r.hora}</span>
@@ -391,7 +391,7 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
             }
 
             <p class="mt-4 text-base-content/85">{ESTUDIO.participar.zoom}</p>
-            <p class="mt-3 text-sm text-base-content/65">{ESTUDIO.participar.porQue}</p>
+            <p class="mt-3 text-sm text-base-content/70">{ESTUDIO.participar.porQue}</p>
 
             <div class="mt-auto flex flex-wrap gap-2 pt-6">
               {
@@ -410,7 +410,7 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
               /* Los correos personales solo aparecen cuando existen de verdad:
                  ver `emailListo` en src/data/templos.ts. */
               porZoom.some((t) => correoDe(t.leader)) && (
-                <ul class="mt-4 space-y-1 text-xs text-base-content/60">
+                <ul class="mt-4 space-y-1 text-xs text-base-content/70">
                   {porZoom.map((t) => {
                     const correo = correoDe(t.leader);
                     return (

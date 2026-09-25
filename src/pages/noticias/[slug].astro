@@ -121,7 +121,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
       <h1 class="mt-2 font-display leading-[1.1] text-[clamp(2rem,5.5vw,3.25rem)]">
         {item.titulo}
       </h1>
-      <p class="mt-4 flex items-center gap-2 text-sm text-base-content/60">
+      <p class="mt-4 flex items-center gap-2 text-sm text-base-content/70">
         <Icon name="lucide:calendar" class="h-4 w-4" />
         <time datetime={item.publicado_en}>{fmtDate(item.publicado_en)}</time>
       </p>
@@ -181,7 +181,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
 
       <!-- Compartir -->
       <div class="mt-12 flex flex-wrap items-center gap-3 border-t border-base-300 pt-8">
-        <span class="text-sm font-medium text-base-content/60">Compartir:</span>
+        <span class="text-sm font-medium text-base-content/70">Compartir:</span>
         <a
           href={`https://wa.me/?text=${encodeURIComponent(textoWhatsapp)}`}
           target="_blank"
@@ -239,7 +239,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
                     )}
                   </div>
                   <div class="flex flex-1 flex-col p-5">
-                    <span class="text-xs text-base-content/55">{fmtDate(n.publicado_en)}</span>
+                    <span class="text-xs text-base-content/70">{fmtDate(n.publicado_en)}</span>
                     <h3 class="mt-1 font-bold leading-snug clamp-3">{n.titulo}</h3>
                   </div>
                 </a>

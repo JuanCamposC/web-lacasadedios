@@ -70,7 +70,7 @@ if (Astro.request.method === 'POST') {
                   <Icon name="lucide:mail" class="h-5 w-5" />
                 </span>
                 <div class="min-w-0">
-                  <p class="text-xs uppercase tracking-wider text-base-content/50">Correo</p>
+                  <p class="text-xs uppercase tracking-wider text-base-content/70">Correo</p>
                   <a
                     href={`mailto:${CONTACT.email}`}
                     class="break-all font-medium hover:text-primary"
@@ -87,7 +87,7 @@ if (Astro.request.method === 'POST') {
                       <Icon name="lucide:phone" class="h-5 w-5" />
                     </span>
                     <div>
-                      <p class="text-xs uppercase tracking-wider text-base-content/50">Teléfono</p>
+                      <p class="text-xs uppercase tracking-wider text-base-content/70">Teléfono</p>
                       <a href={`tel:${CONTACT.phoneHref}`} class="font-medium hover:text-primary">
                         {CONTACT.phone}
                       </a>
@@ -101,7 +101,7 @@ if (Astro.request.method === 'POST') {
                   <Icon name="lucide:clock" class="h-5 w-5" />
                 </span>
                 <div>
-                  <p class="text-xs uppercase tracking-wider text-base-content/50">
+                  <p class="text-xs uppercase tracking-wider text-base-content/70">
                     Horarios de reuniones
                   </p>
                   <a href="/horarios" class="font-medium hover:text-primary"
@@ -112,7 +112,7 @@ if (Astro.request.method === 'POST') {
             </ul>
 
             <div class="mt-7 border-t border-base-300 pt-6">
-              <p class="mb-3 text-xs uppercase tracking-wider text-base-content/50">Síguenos</p>
+              <p class="mb-3 text-xs uppercase tracking-wider text-base-content/70">Síguenos</p>
               <div class="flex flex-col gap-2">
                 {
                   SOCIAL.map((s) => (
@@ -154,7 +154,7 @@ if (Astro.request.method === 'POST') {
                   <div>
                     <h3 class="font-display text-xl">{t.short}</h3>
                     <p class="mt-1 text-sm text-base-content/70">{t.address}</p>
-                    <p class="text-sm text-base-content/55">{t.region}</p>
+                    <p class="text-sm text-base-content/70">{t.region}</p>
                     {/* Aparece solo cuando el buzón existe: ver `emailListo`
                         en src/data/templos.ts. */}
                     {correoDe(t.leader) && (
@@ -167,7 +167,7 @@ if (Astro.request.method === 'POST') {
                       </a>
                     )}
                     {correoDe(t.leader) && t.leader.correoNota && (
-                      <p class="mt-1 text-xs text-base-content/55">{t.leader.correoNota}</p>
+                      <p class="mt-1 text-xs text-base-content/70">{t.leader.correoNota}</p>
                     )}
                   </div>
                   {t.matriz && (

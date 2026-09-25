@@ -136,7 +136,7 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
           {enVivo ? 'El sitio está mostrando una transmisión en vivo' : 'No hay transmisión activa'}
         </strong>
       </span>
-      <span class="mt-0.5 block truncate text-sm text-base-content/60">
+      <span class="mt-0.5 block truncate text-sm text-base-content/70">
         {
           enVivo
             ? (aj?.vivo_titulo || 'Sin título') + ' — toca para cambiarla o apagarla'
@@ -144,7 +144,7 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
         }
       </span>
     </span>
-    <Icon name="lucide:chevron-right" class="h-5 w-5 shrink-0 text-base-content/35" />
+    <Icon name="lucide:chevron-right" class="h-5 w-5 shrink-0 text-base-content/55" />
   </a>
 
   <!-- Cifras -->
@@ -158,7 +158,7 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
             </span>
             <Icon
               name="lucide:arrow-up-right"
-              class="h-4 w-4 text-base-content/25 transition group-hover:text-primary"
+              class="h-4 w-4 text-base-content/55 transition group-hover:text-primary"
             />
           </div>
           <p class="mt-4 flex items-baseline gap-2">
@@ -170,7 +170,7 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
             </span>
             <span class="text-sm font-semibold">{c.label}</span>
           </p>
-          <p class="mt-1.5 text-xs text-base-content/55">
+          <p class="mt-1.5 text-xs text-base-content/70">
             {c.publicados === null
               ? 'Personas suscritas al boletín'
               : `${c.publicados} publicado${c.publicados === 1 ? '' : 's'} · ${c.total - c.publicados} borrador${c.total - c.publicados === 1 ? '' : 'es'}`}
@@ -189,7 +189,7 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
 
       {
         actividad.length === 0 ? (
-          <p class="mt-5 rounded border border-dashed border-base-300 px-4 py-8 text-center text-sm text-base-content/55">
+          <p class="mt-5 rounded border border-dashed border-base-300 px-4 py-8 text-center text-sm text-base-content/70">
             Todavía no hay contenido. Empieza creando un evento o una noticia.
           </p>
         ) : (
@@ -205,7 +205,7 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
                   </span>
                   <span class="min-w-0 flex-1">
                     <span class="block truncate text-sm font-medium">{r.titulo}</span>
-                    <span class="font-data text-xs uppercase tracking-wide text-base-content/50">
+                    <span class="font-data text-xs uppercase tracking-wide text-base-content/70">
                       {TIPO[r.tipo].label} · {fecha(r.creado_en)}
                     </span>
                   </span>

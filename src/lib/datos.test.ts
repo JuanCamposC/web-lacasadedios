@@ -188,6 +188,7 @@ describe('avisoVigente', () => {
     aviso_boton: null,
     aviso_boton_url: null,
     aviso_imagen_clave: null,
+    aviso_imagen_alt: null,
     aviso_desde: null,
     aviso_hasta: null,
     aviso_version: 1,

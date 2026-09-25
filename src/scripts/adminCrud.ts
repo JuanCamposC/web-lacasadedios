@@ -146,9 +146,37 @@ export function setupCrud(config: CrudConfig) {
     }
   }
 
+  /** Los botones «Borrar» que hay pintados ahora mismo, en su orden. */
+  function botonesDeBorrar(ctx: Contexto) {
+    return [...ctx.listEl.querySelectorAll<HTMLElement>('[data-del]')];
+  }
+
+  /**
+   * Dónde queda el teclado después de borrar una fila.
+   *
+   * El botón «Borrar» que se pulsó desaparece con su fila, y con él el foco:
+   * volvía al <body>, así que quien navega con teclado tenía que recorrer la
+   * página entera otra vez para borrar la siguiente, y quien usa lector de
+   * pantalla se quedaba sin saber dónde estaba. Se le pasa el foco a la fila
+   * que ocupó su lugar; si era la última, a la nueva última; y si no queda
+   * ninguna, al botón de crear, que es lo único que se puede hacer ahí.
+   */
+  function focoTrasBorrar(ctx: Contexto, indice: number) {
+    const botones = botonesDeBorrar(ctx);
+    const destino =
+      botones[Math.min(indice, botones.length - 1)] ??
+      document.getElementById('crud-nuevo') ??
+      ctx.buscarEl;
+    destino?.focus();
+  }
+
   async function borrar(ctx: Contexto, id: string) {
     const row = ctx.filas.find((r) => r.id === id);
     const nombre = row ? String(row[ctx.config.titleField] ?? '') : 'este registro';
+    // Se mide antes de borrar, y sobre lo que se ve: el listado está filtrado por
+    // la búsqueda y por el estado, así que el lugar en `ctx.filas` no es el lugar
+    // en la pantalla.
+    const lugar = botonesDeBorrar(ctx).findIndex((b) => b.dataset.del === id);
 
     if (!(await preguntar(ctx.dlgBorrar, nombre))) return;
 
@@ -161,6 +189,7 @@ export function setupCrud(config: CrudConfig) {
     ctx.filas = ctx.filas.filter((r) => r.id !== id);
     if (ctx.editing?.id === id) ctx.resetForm();
     ctx.pintar();
+    focoTrasBorrar(ctx, lugar);
     toast('Borrado');
   }
 

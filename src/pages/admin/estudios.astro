@@ -113,7 +113,7 @@ const duracion = (seg: number | null) => {
               <p class="font-medium" data-nombre>
                 {ep.titulo}
               </p>
-              <p class="mt-0.5 text-xs text-base-content/60">
+              <p class="mt-0.5 text-xs text-base-content/70">
                 {[fechaCorta(ep.fecha), duracion(ep.duracionSeg)].filter(Boolean).join(' · ')}
               </p>
             </div>
@@ -138,7 +138,7 @@ const duracion = (seg: number | null) => {
     )
   }
 
-  <p class="mt-4 text-xs text-base-content/55" aria-live="polite" data-estado></p>
+  <p class="mt-4 text-xs text-base-content/70" aria-live="polite" data-estado></p>
 
   <script>
     import { setupOcultos } from '../../scripts/admin/estudiosOcultos';

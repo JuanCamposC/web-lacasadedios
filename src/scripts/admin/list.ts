@@ -21,7 +21,7 @@ function miniatura(ctx: Contexto, row: Fila): string {
       return `<img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="" class="h-full w-full object-cover" loading="lazy" />`;
     }
   }
-  return `<span class="flex h-full w-full items-center justify-center text-base-content/25">
+  return `<span class="flex h-full w-full items-center justify-center text-base-content/55">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/></svg>
     </span>`;
 }
@@ -58,14 +58,14 @@ export function pintar(ctx: Contexto) {
 
   if (ctx.filas.length === 0) {
     listEl.innerHTML = `<div class="panel p-8 text-center">
-        <p class="text-sm text-base-content/60">Todavía no hay ${esc(plural)}.</p>
-        <p class="mt-1 text-sm text-base-content/60">Crea el primero con el formulario.</p>
+        <p class="text-sm text-base-content/70">Todavía no hay ${esc(plural)}.</p>
+        <p class="mt-1 text-sm text-base-content/70">Crea el primero con el formulario.</p>
       </div>`;
     return;
   }
 
   if (datos.length === 0) {
-    listEl.innerHTML = `<div class="panel p-8 text-center text-sm text-base-content/60">
+    listEl.innerHTML = `<div class="panel p-8 text-center text-sm text-base-content/70">
         Ningún resultado con ese filtro.
       </div>`;
     return;
@@ -82,7 +82,7 @@ export function pintar(ctx: Contexto) {
             : fechaCorta(row.creado_en ?? null);
       const asa = config.orderable
         ? `<button type="button" data-asa aria-label="Arrastrar para reordenar"
-               class="flex w-8 shrink-0 cursor-grab items-center justify-center text-base-content/30 transition-colors hover:text-primary active:cursor-grabbing">
+               class="flex w-8 shrink-0 cursor-grab items-center justify-center text-base-content/70 transition-colors hover:text-primary active:cursor-grabbing">
                <svg viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
              </button>`
         : '';
@@ -92,8 +92,8 @@ export function pintar(ctx: Contexto) {
           <div class="flex min-w-0 flex-1 items-center gap-3 p-3">
             <div class="min-w-0 flex-1">
               <h3 class="truncate text-sm font-semibold">${esc(row[config.titleField])}</h3>
-              ${sub ? `<p class="truncate text-xs text-base-content/55">${esc(sub)}</p>` : ''}
-              ${fecha ? `<p class="font-data mt-0.5 text-xs uppercase tracking-wide text-base-content/45">${esc(fecha)}</p>` : ''}
+              ${sub ? `<p class="truncate text-xs text-base-content/70">${esc(sub)}</p>` : ''}
+              ${fecha ? `<p class="font-data mt-0.5 text-xs uppercase tracking-wide text-base-content/70">${esc(fecha)}</p>` : ''}
             </div>
             <div class="flex shrink-0 flex-col items-end gap-1.5">
               <button type="button" data-toggle="${row.id}"

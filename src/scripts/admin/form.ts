@@ -50,7 +50,7 @@ export function startEdit(ctx: Contexto, row: Fila) {
       // como ruta relativa y no carga. Ver `conUrl` en /api/admin/[recurso].
       if (prev)
         prev.innerHTML = row.imagen_url
-          ? `<img src="${esc(row.imagen_url)}" class="h-20 rounded border border-base-300" alt="" /><span class="mt-1 block text-xs text-base-content/55">Sube otra imagen para reemplazarla</span>`
+          ? `<img src="${esc(row.imagen_url)}" class="h-20 rounded border border-base-300" alt="" /><span class="mt-1 block text-xs text-base-content/70">Sube otra imagen para reemplazarla</span>`
           : '';
     } else (el as HTMLInputElement).value = val ?? '';
   });

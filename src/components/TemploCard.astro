@@ -100,7 +100,7 @@ const reuniones = enPie(suyas);
         </ul>
 
         <div class="rounded-xl bg-base-200/60 p-4">
-          <div class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-content/60">
+          <div class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-content/70">
             <Icon name="lucide:clock" class="h-3.5 w-3.5" />
             {reuniones} {reuniones === 1 ? 'reunión' : 'reuniones'} por semana
           </div>
@@ -108,7 +108,7 @@ const reuniones = enPie(suyas);
             {dias.map((d) => (
               <span class="inline-flex items-center gap-1 rounded-lg border border-base-300 bg-base-100 px-2 py-1 text-xs">
                 <span class="font-semibold">{d.day.slice(0, 3)}</span>
-                <span class="tabular-nums text-base-content/60">
+                <span class="tabular-nums text-base-content/70">
                   {d.first}
                   {d.count > 1 && ` +${d.count - 1}`}
                 </span>

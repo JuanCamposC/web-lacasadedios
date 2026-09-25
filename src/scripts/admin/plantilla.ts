@@ -15,7 +15,7 @@ function campoHtml(f: CrudConfig['fields'][number]): string {
   const req = f.required ? 'required' : '';
   const marca = f.required ? ' <span class="text-error">*</span>' : '';
   const help = f.help
-    ? `<span class="mt-1 block text-xs text-base-content/55">${esc(f.help)}</span>`
+    ? `<span class="mt-1 block text-xs text-base-content/70">${esc(f.help)}</span>`
     : '';
   const label = `<span class="mb-1.5 block text-sm font-medium">${esc(f.label)}${marca}</span>`;
 
@@ -65,7 +65,7 @@ function campoHtml(f: CrudConfig['fields'][number]): string {
     return `<label class="flex cursor-pointer items-start gap-3 rounded border border-base-300 bg-base-200/50 p-3">
           <input type="checkbox" name="${f.name}" checked class="toggle toggle-primary toggle-sm mt-0.5" />
           <span><span class="block text-sm font-medium">${esc(f.label)}</span>
-          <span class="block text-xs text-base-content/55">Si lo apagas queda como borrador y no se ve en el sitio.</span></span>
+          <span class="block text-xs text-base-content/70">Si lo apagas queda como borrador y no se ve en el sitio.</span></span>
         </label>`;
 
   // Zona de imagen: se puede arrastrar el archivo encima, se ve antes de
@@ -75,9 +75,9 @@ function campoHtml(f: CrudConfig['fields'][number]): string {
           ${label}
           <label data-drop
             class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded border border-dashed border-base-300 bg-base-200/40 px-4 py-6 text-center transition-colors hover:border-primary hover:bg-base-200">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 text-base-content/40"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 text-base-content/55"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
             <span class="text-sm font-medium">Arrastra una imagen o toca para elegirla</span>
-            <span class="text-xs text-base-content/50">Se reduce sola antes de subirse</span>
+            <span class="text-xs text-base-content/70">Se reduce sola antes de subirse</span>
             <!-- sr-only y no hidden: con display:none el campo sale del orden
                  de foco y subir una imagen era IMPOSIBLE sin ratón: al tabular,
                  el foco saltaba del cuerpo directo al templo. Así sigue sin
@@ -100,7 +100,7 @@ export function plantilla(config: CrudConfig, plural: string, articulo: string):
         <div class="panel mb-4 flex flex-wrap items-center gap-2 p-3">
           <label class="relative min-w-[10rem] flex-1">
             <span class="sr-only">Buscar ${esc(plural)}</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-content/40"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-content/55"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
             <input id="crud-buscar" type="search" placeholder="Buscar…" class="input input-bordered input-sm w-full pl-9" />
           </label>
           <div class="join" role="group" aria-label="Filtrar por estado">
@@ -114,10 +114,10 @@ export function plantilla(config: CrudConfig, plural: string, articulo: string):
           </button>
         </div>
 
-        <p id="crud-conteo" class="mb-2 px-1 text-xs uppercase tracking-wide text-base-content/50"></p>
+        <p id="crud-conteo" class="mb-2 px-1 text-xs uppercase tracking-wide text-base-content/70"></p>
         ${
           config.orderable
-            ? `<p id="crud-orden-aviso" class="mb-2 hidden rounded border border-base-300 bg-base-200/60 px-3 py-2 text-xs text-base-content/60">
+            ? `<p id="crud-orden-aviso" class="mb-2 hidden rounded border border-base-300 bg-base-200/60 px-3 py-2 text-xs text-base-content/70">
                  Arrastra por el asa de la izquierda para cambiar el orden en que se ven en el sitio.
                </p>`
             : ''
@@ -142,12 +142,12 @@ export function plantilla(config: CrudConfig, plural: string, articulo: string):
                 ? `<label class="flex cursor-pointer items-start gap-3 rounded border border-base-300 p-3">
                      <input type="checkbox" name="__notify" checked class="checkbox checkbox-primary checkbox-sm mt-0.5" />
                      <span><span class="block text-sm font-medium">Avisar a los suscriptores</span>
-                     <span class="block text-xs text-base-content/55">Solo al crear, y solo si está publicado.</span></span>
+                     <span class="block text-xs text-base-content/70">Solo al crear, y solo si está publicado.</span></span>
                    </label>`
                 : ''
             }
             <button type="submit" class="btn btn-primary w-full" id="crud-save">Guardar</button>
-            <p class="text-center text-xs text-base-content/45">Atajo: Ctrl + S</p>
+            <p class="text-center text-xs text-base-content/70">Atajo: Ctrl + S</p>
           </form>
         </div>
       </section>
