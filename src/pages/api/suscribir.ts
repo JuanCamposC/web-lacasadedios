@@ -127,7 +127,7 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
     // La cuenta vive en la base y no en memoria: cada isolate de Workers tiene
     // la suya y se recicla sin avisar, así que un contador en una variable se
     // reinicia solo y bastaría con reintentar para saltárselo.
-    const previos = await registrarIntento(base, ipDe(request), VENTANA_MIN);
+    const previos = await registrarIntento(base, ipDe(request), VENTANA_MIN, 'alta', LIMITE);
     if (previos >= LIMITE) return responder(false, 'demasiados_intentos', 429);
 
     alta = await altaSuscriptor(base, email);

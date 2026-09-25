@@ -159,3 +159,54 @@ describe('registrarIntento', () => {
     expect(Math.abs(desde - esperado)).toBeLessThan(5000);
   });
 });
+
+/**
+ * El freno tiene que dejar de ESCRIBIR cuando ya sabe que va a decir que no.
+ *
+ * Apuntar cada intento rechazado costaba dos escrituras por petición, así que un
+ * bucle que no conseguía mandar ni un correo podía gastar la cuota diaria de la
+ * base. La prueba mira las sentencias, no el resultado: el número que devuelve
+ * era correcto también antes.
+ */
+describe('registrarIntento con tope', () => {
+  it('no escribe nada cuando la cuenta ya llegó al tope', async () => {
+    const { base, llamadas } = espiaCon(5);
+    expect(await registrarIntento(base, '1.2.3.4', 60, 'contacto', 5)).toBe(5);
+    expect(llamadas.filter((l) => /^\s*(insert|delete)/i.test(l.sql))).toEqual([]);
+  });
+
+  it('sigue apuntando mientras quede cupo', async () => {
+    const { base, llamadas } = espiaCon(2);
+    expect(await registrarIntento(base, '1.2.3.4', 60, 'contacto', 5)).toBe(2);
+    expect(llamadas.some((l) => /^\s*insert/i.test(l.sql))).toBe(true);
+  });
+
+  it('sin tope apunta siempre, como hacía antes', async () => {
+    const { base, llamadas } = espiaCon(999);
+    await registrarIntento(base, '1.2.3.4', 60);
+    expect(llamadas.some((l) => /^\s*insert/i.test(l.sql))).toBe(true);
+  });
+});
+
+/** Un espía que responde una cuenta concreta al `select count(*)`. */
+function espiaCon(cuenta: number) {
+  const llamadas: { sql: string; valores: unknown[] }[] = [];
+  const base = {
+    prepare(sql: string) {
+      return {
+        bind(...valores: unknown[]) {
+          llamadas.push({ sql, valores });
+          return {
+            async all<T>() {
+              return { results: [] as T[] };
+            },
+            async first<T>() {
+              return (/count\(\*\)/.test(sql) ? { n: cuenta } : null) as T | null;
+            },
+          };
+        },
+      };
+    },
+  } as Parameters<typeof registrarIntento>[0];
+  return { base, llamadas };
+}

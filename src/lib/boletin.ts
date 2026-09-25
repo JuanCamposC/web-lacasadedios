@@ -57,12 +57,25 @@ export interface Suscriptor {
  * Prometer atomicidad aquí sería mentir sobre lo que protege.
  *
  * De paso borra lo viejo, para que la tabla no crezca sin fin.
+ *
+ * ── POR QUÉ RECIBE EL TOPE ──────────────────────────────────────────────────
+ * Para dejar de escribir en cuanto ya sabe que va a decir que no. Antes
+ * apuntaba CADA intento, también los que iban a ser rechazados: un bucle de
+ * `curl` no conseguía mandar ni un correo, pero gastaba dos escrituras en la
+ * base por petición. Unas decenas de miles de peticiones —que es una tarde de
+ * un robo de tiempo cualquiera— se llevaban la cuota diaria de escritura de D1,
+ * y con ella el panel, el boletín y los horarios.
+ *
+ * Con el tope, una misma IP escribe como máximo `limite` veces por ventana y
+ * las demás peticiones solo cuestan una lectura. El freno sigue frenando: la
+ * cuenta ya está por encima y seguirá estándolo hasta que pase la hora.
  */
 export async function registrarIntento(
   base: Base,
   ip: string,
   ventanaMin: number,
   accion = 'alta',
+  limite = Number.POSITIVE_INFINITY,
 ): Promise<number> {
   const desde = new Date(Date.now() - ventanaMin * 60_000).toISOString().slice(0, 19) + 'Z';
 
@@ -73,6 +86,11 @@ export async function registrarIntento(
     .bind(accion, ip, desde)
     .first<{ n: number }>();
 
+  const previos = fila?.n ?? 0;
+  // Ya está por encima: quien llama va a rechazar, así que no hay nada que
+  // apuntar. Ver el comentario del tope, arriba.
+  if (previos >= limite) return previos;
+
   // El borrado de lo viejo no filtra por acción a propósito: la tabla se limpia
   // entera, la pidan desde donde la pidan.
   await base.prepare('delete from intentos_alta where intentado_en < ?').bind(desde).first();
@@ -81,7 +99,7 @@ export async function registrarIntento(
     .bind(ip, ahora(), accion)
     .first();
 
-  return fila?.n ?? 0;
+  return previos;
 }
 
 export type Alta = { estado: 'nuevo'; token: string } | { estado: 'ya_estaba' };

@@ -127,6 +127,7 @@ export async function procesarContacto(
       ipDe(request),
       VENTANA_MIN,
       'contacto',
+      LIMITE,
     );
     if (previos >= LIMITE) {
       return { ok: false, reason: 'demasiados_intentos', status: 429, valores };
