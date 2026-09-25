@@ -88,16 +88,16 @@ LOS CUATRO TEMPLOS
   Cada una se ve en tres lugares: la tarjeta del templo en /templos, la ficha
   del templo, y el bloque «Nuestros otros templos» al pie de las fichas.
 
-EL MOSAICO DE INSTAGRAM DE LA PORTADA
+EL MOSAICO DE INSTAGRAM DE LA PORTADA  (ya no va acá)
 
-  instagram-1.jpg
-  instagram-2.jpg
-  instagram-3.jpg
-  instagram-4.jpg
+  Había cuatro archivos instagram-1..4.jpg con fotos de banco de imágenes.
+  Se quitaron el 25 de septiembre de 2026: enseñaban gente que no es de la
+  congregación en el sitio de la congregación, y enlazaban al perfil en vez
+  de a una publicación. Ahora ese bloque dice «prontamente» hasta que haya
+  fotos de verdad.
 
-  Cuadradas. Conviene que sean las mismas que estén publicadas en la cuenta,
-  porque cada una enlaza a Instagram. Los enlaces de cada una se cambian en
-  src/data/site.ts; hoy las cuatro llevan al perfil y no a una publicación.
+  Las de verdad NO se suben acá: se suben desde el panel, en Instagram, con
+  su enlace a la publicación y su texto alternativo. Ver más abajo.
 
 
 LAS QUE NO VAN AQUÍ

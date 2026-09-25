@@ -25,7 +25,7 @@ import SectionHeading from '../components/SectionHeading.astro';
 import TemploCard from '../components/TemploCard.astro';
 import Redes from '../components/Redes.astro';
 import { templos } from '../data/templos';
-import { SITE, INSTAGRAM, INSTAGRAM_POSTS } from '../data/site';
+import { SITE, INSTAGRAM } from '../data/site';
 import { ESTUDIO } from '../data/estudio';
 import { IMG } from '../assets/images';
 ---
@@ -369,36 +369,32 @@ import { IMG } from '../assets/images';
         subtitle="La vida de la congregación, los avisos de la semana y lo que vamos viviendo juntos."
       />
 
-      <!-- Lo que se pinta de entrada son las fotos del proyecto, optimizadas al
-           compilar. Si el panel tiene fotos subidas, el script del final las
-           reemplaza. Así:
-             · quien no tenga JavaScript ve cuatro fotos, no una rejilla vacía;
-             · la rejilla nunca salta, porque cada hueco ya es un cuadrado;
-             · y la portada sigue siendo un archivo fijo. -->
+      <!-- ¿Por qué un hueco y no cuatro fotos?
+
+           Había cuatro fotos de banco de imágenes haciendo de ejemplo. Enlazaban
+           al perfil, no a publicaciones, y enseñaban gente que no es de la
+           congregación: quien las mirara creería estar viendo la vida de la
+           iglesia. Un hueco que dice «prontamente» es menos bonito y no engaña
+           a nadie.
+
+           La rejilla se queda con sus clases: cuando el panel tenga fotos, el
+           script del final reemplaza este aviso por ellas y el diseño encaja
+           sin tocar nada. Quien navegue sin JavaScript verá el aviso aunque
+           haya fotos subidas; es el precio de que la portada sea un archivo
+           fijo (ver la nota de arriba del archivo) y solo lo paga ese caso. -->
       <div id="ig-grid" class="mt-12 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {
-          INSTAGRAM_POSTS.map((post, i) => (
-            <Reveal delay={(i % 4) * 80}>
-              <a
-                href={post.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="group relative block aspect-square overflow-hidden rounded-xl"
-              >
-                <Image
-                  src={IMG[post.img]}
-                  alt={post.alt}
-                  widths={[320, 600]}
-                  sizes="(min-width: 1024px) 23vw, 45vw"
-                  class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <span class="absolute inset-0 flex items-center justify-center bg-[#0a1730]/0 opacity-0 transition group-hover:bg-[#0a1730]/45 group-hover:opacity-100 motion-reduce:transition-none">
-                  <Icon name="lucide:instagram" class="h-8 w-8 text-white" />
-                </span>
-              </a>
-            </Reveal>
-          ))
-        }
+        <Reveal class="col-span-2 lg:col-span-4">
+          <div
+            class="flex flex-col items-center gap-3 rounded-xl border border-dashed border-base-300 bg-base-200/40 px-6 py-14 text-center"
+          >
+            <Icon name="lucide:instagram" class="h-8 w-8 text-base-content/55" aria-hidden="true" />
+            <p class="font-display text-xl">Prontamente</p>
+            <p class="max-w-md text-sm text-base-content/70">
+              Estamos armando esta sección. Mientras tanto, todo lo que publicamos está en nuestra
+              cuenta.
+            </p>
+          </div>
+        </Reveal>
       </div>
 
       <Reveal class="mt-10 text-center">

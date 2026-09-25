@@ -65,39 +65,3 @@ export const YOUTUBE_CHANNEL = SOCIAL.find((s) => s.key === 'youtube')!.href;
 
 /** Cuenta de Instagram — la portada le da un bloque propio. */
 export const INSTAGRAM = SOCIAL.find((s) => s.key === 'instagram')!;
-
-export interface PostInstagram {
-  /** Clave de `src/assets/images.ts`. */
-  img: ImgKey;
-  /** Dirección de la publicación en Instagram. */
-  href: string;
-  /** Qué se ve en la foto, para quien no puede verla. */
-  alt: string;
-}
-
-/**
- * Las fotos de Instagram que salen en la portada.
- *
- * ── POR QUÉ ESTÁN ESCRITAS A MANO Y NO SE TRAEN DE INSTAGRAM ────────────────
- * Mostrar el muro de verdad obliga a cargar código de Meta en la página, abrir
- * la política de seguridad que hoy bloquea todo lo externo, y hacer que cada
- * visitante —incluido quien solo busca la dirección de un templo— quede
- * fichado por Meta antes de encontrarla. Cuatro fotos elegidas cuestan un rato
- * cada tantas semanas y no le cobran eso a nadie.
- *
- * ── CÓMO SE CAMBIAN ─────────────────────────────────────────────────────────
- * 1. Guardar la foto en `src/assets/img/` y añadirla a `images.ts`.
- * 2. Copiar la dirección de la publicación desde Instagram («Copiar enlace»).
- * 3. Cambiar la línea de abajo.
- *
- * PENDIENTE: las fotos son de banco de imágenes, como el resto del sitio (ver
- * `src/assets/img/CREDITS.md`), y los enlaces apuntan al perfil y no a una
- * publicación concreta, porque todavía no se han elegido las publicaciones. Se
- * ve exactamente como se verá; lo que falta es el contenido real.
- */
-export const INSTAGRAM_POSTS: PostInstagram[] = [
-  { img: 'instagram1', href: INSTAGRAM.href, alt: 'La congregación reunida en el templo' },
-  { img: 'instagram2', href: INSTAGRAM.href, alt: 'Manos alzadas durante la alabanza' },
-  { img: 'instagram3', href: INSTAGRAM.href, alt: 'Biblia y cuaderno abiertos durante el estudio' },
-  { img: 'instagram4', href: INSTAGRAM.href, alt: 'Hermanos compartiendo después de la reunión' },
-];
