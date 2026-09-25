@@ -88,24 +88,26 @@
   // Worker de mantenimiento (mantenimiento/wrangler.jsonc), que quedó sin rutas
   // y desplegado por si hubiera que volver a colgar la página de aviso.
   //
-  // `www` se reclama para poder REDIRIGIRLO: el Worker lo manda al dominio sin
-  // www (ver src/middleware.ts). Si no se reclamara, `www` quedaría sin dueño y
-  // Cloudflare responde 530, que es lo que pasó el 25 de septiembre de 2026 al
-  // quitarlo de aquí sin haber desplegado antes a su sucesor.
+  // `www` YA NO ESTÁ ACÁ, desde el 25 de septiembre de 2026. Lo atiende un Worker
+  // propio: redireccion-www/, que no tiene almacén de assets.
   //
-  // PENDIENTE, y está a medio camino: esta redirección NO cubre las tres páginas
-  // compiladas —la portada, /sobre-nosotros y la de error—, porque Cloudflare las
-  // sirve desde el almacén de archivos sin invocar al Worker. La solución está
-  // escrita y sin desplegar en redireccion-www/: un Worker de una sola función,
-  // sin assets, al que nada se le puede saltar. Para activarla, EN ESTE ORDEN:
+  // El motivo es que desde este Worker NO se podía cubrir el sitio entero. Una
+  // petición que coincide con un archivo compilado se sirve sin invocarlo —es lo
+  // que hace que la portada sea instantánea y gratis—, así que las tres páginas
+  // que se compilan enteras (la portada, /sobre-nosotros y la de error) llegaban
+  // por `www` con un 200 en vez de redirigir. Un Worker sin assets no tiene nada
+  // que se le pueda saltar. El porqué completo, en redireccion-www/worker.js.
   //
-  //   1. borrar la línea de `www` de las rutas de abajo
+  // SI ALGÚN DÍA HAY QUE REPETIR EL TRASPASO, el orden es este y no admite
+  // inversión:
+  //
+  //   1. quitar la línea de `www` de las rutas de abajo
   //   2. npm run publicar          (libera el hostname; www deja de resolver)
-  //   3. cd redireccion-www && npx wrangler deploy
+  //   3. npx wrangler deploy --config redireccion-www/wrangler.jsonc
   //
-  // Entre el 2 y el 3, `www` no resuelve. Son segundos y lo único que se cae es
-  // una redirección, pero el orden inverso no vale: Cloudflare rechaza el
-  // despliegue si el dominio ya tiene dueño.
+  // Entre el 2 y el 3, `www` responde 530 unos segundos: es lo que pasó el 25 de
+  // septiembre al quitarlo de aquí antes de tener listo al sucesor. Al revés no
+  // vale: Cloudflare rechaza el despliegue si el dominio ya tiene dueño.
   //
   // `pruebas.lacasadedios.cl` YA NO EXISTE, y se quitó a propósito. Servía el
   // mismo Worker, la misma base y el mismo bucket que el sitio real, así que no
@@ -117,7 +119,6 @@
   // `custom_domain` hace que Cloudflare cree y mantenga el registro DNS.
   "routes": [
     { "pattern": "lacasadedios.cl", "custom_domain": true },
-    { "pattern": "www.lacasadedios.cl", "custom_domain": true },
   ],
 
   // Identidad de Cloudflare Access. NO son secretos: el dominio del equipo es
