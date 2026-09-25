@@ -1,0 +1,25 @@
+// El Worker que redirige `www` al dominio sin `www`. Todo el porqué está en
+// worker.js; acá solo la configuración.
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "lacasadedios-www",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-25",
+
+  // Sin dirección *.workers.dev: no hay nada que mirar en este Worker que no
+  // sea su cabecera `Location`, y para eso está `wrangler dev`.
+  "workers_dev": false,
+
+  // `custom_domain` hace que Cloudflare cree y mantenga el registro DNS de
+  // `www`. Este hostname LO TENÍA el Worker del sitio; se le quitó de sus
+  // `routes` el 25 de septiembre de 2026 para dárselo a este.
+  //
+  // El orden importa si alguna vez hay que repetirlo: primero se despliega el
+  // sitio SIN `www` —eso libera el hostname y borra su registro DNS— y después
+  // este. Al revés, Cloudflare rechaza el despliegue porque el dominio ya tiene
+  // dueño. Entre los dos pasos, `www` no resuelve; son segundos, y lo único que
+  // deja de funcionar es una redirección.
+  "routes": [{ "pattern": "www.lacasadedios.cl", "custom_domain": true }],
+
+  "observability": { "enabled": true },
+}

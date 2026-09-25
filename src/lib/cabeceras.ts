@@ -80,7 +80,16 @@ export function esProduccion(): boolean {
  * se cubre lo que arma el Worker, porque el middleware no llega a correr cuando
  * se sirve una página prerenderizada.
  */
-/** Nombres que NO son el sitio público, aunque los sirva el mismo Worker. */
+/**
+ * Nombres que NO son el sitio público, aunque los sirva el mismo Worker.
+ *
+ * `pruebas.lacasadedios.cl` se dio de baja el 25 de septiembre de 2026 (ver el
+ * comentario de `routes` en wrangler.jsonc): compartía base y bucket con el
+ * sitio real, así que no servía para probar. El nombre se deja escrito igual, a
+ * propósito: si algún día vuelve a existir un sitio de desarrollo reusará este
+ * nombre, y el día que eso pase conviene que nazca ya sin indexar en vez de
+ * descubrirlo cuando Google lo tenga.
+ */
 const FUERA_DE_PRODUCCION = new Set(['pruebas.lacasadedios.cl']);
 
 /**

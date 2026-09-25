@@ -90,16 +90,34 @@
   //
   // `www` se reclama para poder REDIRIGIRLO: el Worker lo manda al dominio sin
   // www (ver src/middleware.ts). Si no se reclamara, `www` quedaría sin dueño y
-  // daría error en vez de llevar al sitio.
+  // Cloudflare responde 530, que es lo que pasó el 25 de septiembre de 2026 al
+  // quitarlo de aquí sin haber desplegado antes a su sucesor.
   //
-  // `pruebas` se conserva: mismo código, misma base. Sirve para mirar un cambio
-  // antes de anunciarlo, y va con `noindex` (ver src/lib/cabeceras.ts).
+  // PENDIENTE, y está a medio camino: esta redirección NO cubre las tres páginas
+  // compiladas —la portada, /sobre-nosotros y la de error—, porque Cloudflare las
+  // sirve desde el almacén de archivos sin invocar al Worker. La solución está
+  // escrita y sin desplegar en redireccion-www/: un Worker de una sola función,
+  // sin assets, al que nada se le puede saltar. Para activarla, EN ESTE ORDEN:
+  //
+  //   1. borrar la línea de `www` de las rutas de abajo
+  //   2. npm run publicar          (libera el hostname; www deja de resolver)
+  //   3. cd redireccion-www && npx wrangler deploy
+  //
+  // Entre el 2 y el 3, `www` no resuelve. Son segundos y lo único que se cae es
+  // una redirección, pero el orden inverso no vale: Cloudflare rechaza el
+  // despliegue si el dominio ya tiene dueño.
+  //
+  // `pruebas.lacasadedios.cl` YA NO EXISTE, y se quitó a propósito. Servía el
+  // mismo Worker, la misma base y el mismo bucket que el sitio real, así que no
+  // se podía probar nada de verdad en él: un borrado de prueba borraba la fila
+  // buena. Cuando haga falta un sitio para desarrollo, tendrá que nacer con
+  // base y bucket propios; mientras no los tenga, no sirve. El `noindex` que lo
+  // cuidaba sigue en su sitio (src/lib/cabeceras.ts), esperando al que venga.
   //
   // `custom_domain` hace que Cloudflare cree y mantenga el registro DNS.
   "routes": [
     { "pattern": "lacasadedios.cl", "custom_domain": true },
     { "pattern": "www.lacasadedios.cl", "custom_domain": true },
-    { "pattern": "pruebas.lacasadedios.cl", "custom_domain": true },
   ],
 
   // Identidad de Cloudflare Access. NO son secretos: el dominio del equipo es

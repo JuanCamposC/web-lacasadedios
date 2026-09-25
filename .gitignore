@@ -78,3 +78,10 @@ dns/
 
 # Capturas de pantalla de las comprobaciones. Son de usar y tirar.
 capturas/
+
+# Respaldos de la base. El script los guarda FUERA del proyecto a propósito
+# (ver scripts/respaldo.mjs): el repositorio es público y el volcado trae los
+# correos de los suscriptores. Esta línea es el segundo cerrojo, para quien
+# apunte RESPALDOS_DIR aquí dentro sin pensarlo.
+respaldos/
+*.sql.gz

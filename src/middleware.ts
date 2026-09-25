@@ -35,10 +35,14 @@ function esPanel(path: string): boolean {
  * 301 y no 302: el cambio es definitivo y así los buscadores trasladan lo que
  * ya tuvieran indexado.
  *
- * CUBRE TODO EL SITIO MENOS LA PORTADA. Las páginas ya compiladas —hoy la
- * portada y la de error— las sirve Cloudflare desde el almacén de archivos sin
- * pasar por aquí, así que www.lacasadedios.cl/ devuelve la portada con un 200
- * en vez de redirigir. No es un descuido, es que desde el código no se alcanza:
+ * ── HOY ESTO NO SE ALCANZA, Y SE DEJA IGUAL ─────────────────────────────────
+ * Desde el 25 de septiembre de 2026, `www` no llega a este Worker: lo atiende
+ * redireccion-www/, un Worker de una sola función que hace exactamente esto.
+ * Hizo falta porque desde acá NO se podía cubrir el sitio entero: las páginas
+ * compiladas —la portada, /sobre-nosotros y la de error— las sirve Cloudflare
+ * desde el almacén de archivos sin invocar al Worker, así que
+ * www.lacasadedios.cl/ devolvía la portada con un 200. Tres caminos se probaron
+ * antes y ninguno sirve, cada uno por un motivo distinto:
  *
  *   · public/_redirects no sirve: rechaza dominios en el origen (100324).
  *   · `run_worker_first` tampoco: el adaptador comprueba si hay un archivo
@@ -48,11 +52,10 @@ function esPanel(path: string): boolean {
  *     visita en fotos sin optimizar (el porqué, arriba del todo en
  *     src/pages/index.astro).
  *
- * Se deja así. El daño es pequeño: la portada en www lleva su canónica al
- * dominio sin www, que es lo que miran los buscadores, y en cuanto la persona
- * pincha cualquier enlace esta función la trae al dominio bueno. Cerrarlo del
- * todo pide una regla de redirección en el panel de Cloudflare, fuera del
- * repositorio.
+ * Esta función se queda de red: si algún día `www` volviera a apuntar a este
+ * Worker —por un despliegue con la ruta puesta, o porque el otro se borre—, el
+ * sitio seguiría redirigiendo en vez de servir dos direcciones distintas con el
+ * mismo contenido. Son seis líneas y cubren el fallo que más cuesta ver.
  */
 function redirigirWww(url: URL): Response | null {
   if (!url.hostname.startsWith('www.')) return null;
