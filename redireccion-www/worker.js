@@ -25,19 +25,28 @@
  * invocar Worker ninguno. Acá solo caen las visitas que llegan con `www`, y cada
  * una es una respuesta de tres líneas sin leer base ni archivos.
  */
+
+/** Dónde vive el sitio de verdad. Todo lo demás es un alias que lleva acá. */
+const SITIO = 'lacasadedios.cl';
+
 export default {
   fetch(request) {
     const url = new URL(request.url);
 
-    // Se conserva la ruta, la consulta y el fragmento: quien llegue a
-    // www.lacasadedios.cl/templos/coya tiene que acabar en esa misma página, no
-    // en la portada. `replace` y no `slice(4)` para no depender de que el
-    // hostname empiece exactamente por «www.» si mañana hay otro alias.
-    url.hostname = url.hostname.replace(/^www\./, '');
+    // Se cambia SOLO el nombre del servidor: la ruta y la consulta siguen
+    // intactas. Quien llegue a www.lacasadedios.cl/templos/coya tiene que acabar
+    // en esa misma página y no en la portada, y quien tenga guardado
+    // pruebas.lacasadedios.cl/admin tiene que acabar en el panel de verdad.
+    //
+    // Se asigna el sitio entero en vez de recortarle el prefijo al nombre que
+    // vino: así vale para cualquier alias que se agregue a las rutas, sin tener
+    // que acordarse de volver acá.
+    url.hostname = SITIO;
 
     // 301 y no 302: el traslado es definitivo, y así los buscadores mueven a la
-    // dirección buena lo que tuvieran indexado con `www` —que es justo el
-    // problema que se quería cerrar—.
+    // dirección buena lo que tuvieran indexado con un alias. El navegador también
+    // se lo queda, que es lo que hace que un marcador viejo deje de doler a la
+    // segunda vez.
     //
     // Se responde con `Response.redirect` y no con una plantilla para que no
     // haya cuerpo que servir: un 301 no se lee, se sigue.

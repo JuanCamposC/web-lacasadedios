@@ -1,5 +1,9 @@
-// El Worker que redirige `www` al dominio sin `www`. Todo el porqué está en
+// El Worker que manda los alias al dominio de verdad. Todo el porqué está en
 // worker.js; acá solo la configuración.
+//
+// Se sigue llamando `lacasadedios-www` porque nació para `www` y renombrarlo
+// obligaría a borrarlo y recrearlo, con los dominios cambiando de dueño otra
+// vez. El nombre es historia, no descripción: atiende todos los alias.
 {
   "$schema": "../node_modules/wrangler/config-schema.json",
   "name": "lacasadedios-www",
@@ -19,7 +23,20 @@
   // este. Al revés, Cloudflare rechaza el despliegue porque el dominio ya tiene
   // dueño. Entre los dos pasos, `www` no resuelve; son segundos, y lo único que
   // deja de funcionar es una redirección.
-  "routes": [{ "pattern": "www.lacasadedios.cl", "custom_domain": true }],
+  //
+  // `pruebas` se sumó el 26 de septiembre de 2026. Se había dado de baja el día
+  // anterior y el nombre quedó sin resolver, pero seguía guardado en marcadores y
+  // en el historial de quien administra: al ir al panel, el navegador llevaba a
+  // una dirección muerta. Devolverlo como redirección cuesta cero y arregla eso
+  // venga de donde venga, hoy y dentro de un año.
+  //
+  // NO significa que el sitio de pruebas vuelva: acá no hay base, ni bucket, ni
+  // páginas. Solo un 301 al sitio de verdad conservando la ruta, así que
+  // pruebas.lacasadedios.cl/admin termina en el panel bueno.
+  "routes": [
+    { "pattern": "www.lacasadedios.cl", "custom_domain": true },
+    { "pattern": "pruebas.lacasadedios.cl", "custom_domain": true },
+  ],
 
   "observability": { "enabled": true },
 }
