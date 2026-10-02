@@ -157,6 +157,7 @@ const jsonLd = {
                   </span>
                   <span class="placa-cuando" data-proxima-texto>
                     {proxima.cuando} {proxima.reunion.hora} · {proxima.reunion.nombre}
+                    {proxima.reunion.marca && ` · ${proxima.reunion.marca}`}
                   </span>
                 </span>
               ) : (
@@ -275,6 +276,11 @@ const jsonLd = {
                         >
                           <span class="reunion-hora font-data">{r.hora}</span>
                           <span class="reunion-nombre">{r.nombre}</span>
+                          {/* La marca que se repite sola, p. ej. «Santa Cena». Va
+                              junto al nombre y no en la línea del aviso porque no
+                              avisa de un problema: forma parte de lo que pasa ese
+                              día. Ver `marca` en src/lib/reuniones.ts. */}
+                          {r.marca && <span class="reunion-sello">{r.marca}</span>}
                           {r.estado !== 'normal' && (
                             <span class="reunion-aviso">
                               <Icon
@@ -782,6 +788,23 @@ const jsonLd = {
     text-decoration: line-through;
     opacity: 0.65;
   }
+  /* El sello de una marca que se repite. El porqué de que no se parezca a un
+     aviso está en .cartel-sello (src/styles/global.css); acá cambia solo que el
+     fondo es claro u oscuro según el tema, así que el color sale del acento de
+     la paleta en vez de ir escrito a mano. Medido: 5,17:1 en claro y 6,19:1 en
+     oscuro, con la pastilla ya mezclada. */
+  .reunion-sello {
+    display: inline-block;
+    margin-left: 0.45rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+    color: var(--color-accent);
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
   .reunion-aviso {
     display: flex;
     align-items: center;

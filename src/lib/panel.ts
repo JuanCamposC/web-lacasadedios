@@ -1,5 +1,6 @@
 import type { Base } from './datos';
 import { esEnlaceSeguro, esRutaInterna } from './enlaces';
+import { esReglaMarca, REGLAS_MARCA } from './reuniones';
 
 /**
  * Lecturas y escrituras del panel.
@@ -76,6 +77,23 @@ function comprobarUrl(columna: string, valor: unknown): void {
   throw new DatoInvalido(`«${columna}» tiene que ser un enlace que empiece por https://`);
 }
 
+/**
+ * La periodicidad de una marca tiene que ser una de las que el sitio sabe
+ * calcular.
+ *
+ * El panel la ofrece en un desplegable, así que esto solo se alcanza con una
+ * petición hecha a mano. Importa igual: una regla inventada no rompe nada —
+ * `tocaMarca` devuelve `false`— pero la marca no saldría nunca y nadie
+ * entendería por qué. Mejor rechazarla al guardar.
+ */
+function comprobarReglaMarca(columna: string, valor: unknown): void {
+  if (columna !== 'marca_regla' || valor === null || valor === undefined) return;
+  if (esReglaMarca(valor)) return;
+  throw new DatoInvalido(
+    `«${String(valor)}» no es una periodicidad válida. Las que hay son: ${REGLAS_MARCA.join(', ')}.`,
+  );
+}
+
 /** Las tablas que el panel puede tocar, y qué columnas de cada una. */
 const COLUMNAS = {
   eventos: [
@@ -105,7 +123,18 @@ const COLUMNAS = {
   // porque no se edita nada: una fila existe o no existe (ver
   // d1/0008_estudios_ocultos.sql).
   estudios_ocultos: ['guid', 'titulo'],
-  reuniones: ['templo', 'dia', 'hora', 'nombre', 'estado', 'aviso', 'aviso_hasta', 'publicado'],
+  reuniones: [
+    'templo',
+    'dia',
+    'hora',
+    'nombre',
+    'estado',
+    'aviso',
+    'aviso_hasta',
+    'marca',
+    'marca_regla',
+    'publicado',
+  ],
   estudios: [
     'titulo',
     'slug',
@@ -211,6 +240,7 @@ function limpiar(recurso: Recurso, datos: Record<string, unknown>) {
     }
 
     comprobarUrl(columna, valor);
+    comprobarReglaMarca(columna, valor);
     campos.push(columna);
     valores.push(valor);
   }

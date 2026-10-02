@@ -322,7 +322,7 @@ export function seriesDeEstudios(base: Base): Promise<{ serie: string; total: nu
 export async function reunionesPublicadas(base: Base, templo?: string): Promise<Reunion[]> {
   const filas = await listar<FilaReunion>(
     base,
-    `select id, templo, dia, hora, nombre, estado, aviso, aviso_hasta
+    `select id, templo, dia, hora, nombre, estado, aviso, aviso_hasta, marca, marca_regla
        from reuniones
       where publicado = 1${templo ? ' and templo = ?' : ''}
       order by dia asc, hora asc`,

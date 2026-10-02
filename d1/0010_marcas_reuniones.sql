@@ -1,0 +1,30 @@
+-- ── Una reunión puede llevar una marca que se repite sola ───────────────────
+--
+-- La Santa Cena se celebra el primer fin de semana de los meses pares, en los
+-- cuatro templos: el domingo en Santiago Centro y San Miguel, el sábado en
+-- Limache y Coya. Hasta ahora no había forma de decirlo. Lo único parecido era
+-- el `aviso`, que se escribe a mano y caduca con una fecha, así que habría que
+-- acordarse de ponerlo seis veces al año y de quitarlo otras seis.
+--
+-- Y ese camino ya se recorrió: para anunciar la Reunión de Acción de Gracias
+-- hubo que inventar cuatro filas temporales, y al caducar su aviso quedaron
+-- anunciando una reunión semanal que no existía, sin ninguna marca que lo
+-- delatara. Se descubrió seis días después.
+--
+-- Una marca no deja residuo: se escribe una vez y el sitio la enseña cuando le
+-- toca, para siempre.
+--
+-- ── POR QUÉ DOS COLUMNAS Y NO UNA ──────────────────────────────────────────
+-- `marca` es lo que se lee —«Santa Cena»— y `marca_regla` es cuándo. Separadas,
+-- la misma regla sirve para cualquier otra cosa que se repita —«Cena de
+-- hermanos el último viernes»— sin tocar el código, y el panel puede ofrecer
+-- las reglas en un desplegable en vez de pedir que alguien escriba una fórmula.
+--
+-- Nulas las dos por omisión: una reunión sin marca es lo normal.
+--
+-- La comprobación de los valores vive en src/lib/panel.ts y no acá. SQLite
+-- admite un `check` al añadir la columna, pero dejarlo en los dos sitios
+-- obligaría a cambiar la regla en dos sitios el día que haya una nueva, y el
+-- panel además da el error en castellano.
+alter table reuniones add column marca text;
+alter table reuniones add column marca_regla text;

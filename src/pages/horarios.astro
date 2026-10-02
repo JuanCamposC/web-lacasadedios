@@ -54,13 +54,16 @@ interface Grupo {
   nombre: string;
   estado: Reunion['estado'];
   aviso: string | null;
+  marca: string | null;
   sedes: Templo[];
 }
 
 function agrupar(deEseDia: Reunion[]): Grupo[] {
   const grupos = new Map<string, Grupo>();
   for (const r of deEseDia) {
-    const clave = `${r.hora}|${r.nombre}|${r.estado}|${r.aviso ?? ''}`;
+    // La marca entra en la clave como el aviso: dos templos a la misma hora, uno
+    // con Santa Cena y otro sin ella, no son la misma línea.
+    const clave = `${r.hora}|${r.nombre}|${r.estado}|${r.aviso ?? ''}|${r.marca ?? ''}`;
     const grupo = grupos.get(clave);
     if (grupo) grupo.sedes.push(temploDe(r.templo));
     else {
@@ -69,6 +72,7 @@ function agrupar(deEseDia: Reunion[]): Grupo[] {
         nombre: r.nombre,
         estado: r.estado,
         aviso: r.aviso,
+        marca: r.marca,
         sedes: [temploDe(r.templo)],
       });
     }
@@ -223,11 +227,13 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
                           })),
                         )}
                         data-estado={g.estado}
+                        data-marca={g.marca ?? ''}
                       >
                         <span class="cartel-hora">{g.hora}</span>
                         <span class="cartel-nombre">
                           {g.nombre}
                           {g.estado === 'suspendida' && <span class="sr-only"> (suspendida)</span>}
+                          {g.marca && <span class="cartel-sello">{g.marca}</span>}
                         </span>
                         <span class="cartel-lugares">
                           {g.sedes.map((t) => (
@@ -375,6 +381,7 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
           nombre: fila.dataset.nombre ?? '',
           hora: fila.dataset.hora ?? '',
           suspendida: fila.dataset.estado === 'suspendida',
+          marca: fila.dataset.marca || '',
           sedes,
         };
       });
@@ -478,12 +485,17 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
           ahora.minutos >= r.minutos &&
           ahora.minutos < r.minutos + DURACION_MIN,
       );
+      /* «Reunión General · Santiago Centro · Santa Cena». La marca va al final,
+         después de los templos: lo primero que se busca es qué y dónde. */
+      const conMarca = (r: { nombre: string; marca: string; sedes: { short: string }[] }) =>
+        [r.nombre, ...r.sedes.map((s) => s.short), r.marca].filter(Boolean).join(' · ');
+
       const rotulo = document.querySelector<HTMLElement>('[data-ahora-rotulo]');
       if (rotulo) rotulo.textContent = corriendo ? 'Ahora mismo' : 'Próxima reunión';
 
       if (corriendo) {
         const sede = corriendo.sedes.find((s) => s.slug === slug) ?? corriendo.sedes[0];
-        elProx.textContent = `${corriendo.nombre} · ${corriendo.sedes.map((s) => s.short).join(' · ')}`;
+        elProx.textContent = conMarca(corriendo);
         elCuando.textContent = `En curso · empezó a las ${corriendo.hora}`;
         elEnlace.href = sede ? `/templos/${sede.slug}` : '/templos';
         elEnlace.classList.remove('hidden');
@@ -495,7 +507,7 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
         // Con el filtro puesto se enlaza a ESE templo; sin filtro, al primero
         // de los que la tienen, que es el orden en que están en el sitio.
         const sede = proxima.sedes.find((s) => s.slug === slug) ?? proxima.sedes[0];
-        elProx.textContent = `${proxima.nombre} · ${proxima.sedes.map((s) => s.short).join(' · ')}`;
+        elProx.textContent = conMarca(proxima);
         elCuando.textContent = `${DIAS[proxima.diaIndice]} a las ${proxima.hora} — ${faltan(espera)}`;
         elEnlace.href = sede ? `/templos/${sede.slug}` : '/templos';
         elEnlace.classList.remove('hidden');

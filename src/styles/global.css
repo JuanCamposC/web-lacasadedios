@@ -929,6 +929,32 @@
     text-decoration: line-through;
     opacity: 0.55;
   }
+  /* El sello de una marca que se repite —«Santa Cena»—.
+
+     NO es un aviso, y por eso no comparte su estilo. Un aviso dice que algo se
+     torció: va en su propia línea, con icono, en el color de alerta. Un sello
+     dice qué pasa ese día, y forma parte del nombre de la reunión: va pegado a
+     él, en el acento cálido de la paleta. Si se parecieran, «Santa Cena» se
+     leería como un problema.
+
+     El color está medido contra los dos extremos del degradado del cartel:
+     5,85:1 en el más claro, con la pastilla ya mezclada. */
+  .cartel-sello {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(227, 192, 122, 0.16);
+    color: #e3c07a;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    /* Una reunión suspendida se tacha entera; el sello no tiene por qué,
+       aunque en la práctica no coinciden: una suspendida no lleva marca. */
+    text-decoration: none;
+    vertical-align: 0.05em;
+  }
+
   .cartel-aviso {
     grid-column: 2 / -1;
     display: flex;
