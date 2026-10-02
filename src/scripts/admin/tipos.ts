@@ -22,6 +22,29 @@ export type Field = {
     | 'image';
   required?: boolean;
   help?: string;
+  /**
+   * Título del bloque donde va este campo.
+   *
+   * Los formularios del panel eran una lista plana de ocho o diez campos, y en
+   * los horarios eso escondía una relación que importa: «estado», «aviso» y
+   * «el aviso dura hasta» son UNA cosa —un cambio pasajero— y se leían como
+   * tres ajustes sueltos. Con bloques, el formulario se mira de arriba abajo y
+   * cada parte se entiende sola.
+   *
+   * Opcional y hacia atrás compatible: los campos sin grupo salen sueltos,
+   * arriba, como siempre.
+   */
+  grupo?: string;
+  /** Una frase bajo el título del bloque, para explicar de qué va. */
+  grupoAyuda?: string;
+  /**
+   * Cómo se llama la opción vacía de un desplegable que no es obligatorio.
+   *
+   * Por omisión dice «Sin especificar», que sirve para casi todo y no dice nada
+   * cuando el vacío significa algo concreto: en la periodicidad de una marca,
+   * vacío es «nunca», y conviene leerlo así.
+   */
+  vacioLabel?: string;
   /** Opciones del desplegable. Solo tiene sentido con `type: 'select'`. */
   options?: { value: string; label: string }[];
 };

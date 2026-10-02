@@ -23,6 +23,11 @@ export function resetForm(ctx: Contexto) {
     }
   });
 
+  // Rellenar un campo desde JavaScript no dispara `input` ni `change` ni muta
+  // ningún atributo, así que una pantalla que quiera reaccionar a esto no tiene
+  // forma de enterarse. Se le avisa con un evento propio.
+  form.dispatchEvent(new CustomEvent('crud:rellenado', { bubbles: true }));
+
   listEl
     .querySelectorAll('[data-fila]')
     .forEach((el) => el.classList.remove('ring-2', 'ring-primary/40'));
@@ -54,6 +59,11 @@ export function startEdit(ctx: Contexto, row: Fila) {
           : '';
     } else (el as HTMLInputElement).value = val ?? '';
   });
+
+  // Rellenar un campo desde JavaScript no dispara `input` ni `change` ni muta
+  // ningún atributo, así que una pantalla que quiera reaccionar a esto no tiene
+  // forma de enterarse. Se le avisa con un evento propio.
+  form.dispatchEvent(new CustomEvent('crud:rellenado', { bubbles: true }));
 
   listEl
     .querySelectorAll('[data-fila]')

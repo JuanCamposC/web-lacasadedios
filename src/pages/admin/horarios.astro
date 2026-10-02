@@ -5,7 +5,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
 <AdminLayout
   title="Horarios"
-  description="Las reuniones de cada semana. Suspende o cambia una sin borrarla."
+  description="Las reuniones de cada semana. Suspende una sin borrarla, o marca las que tienen algo especial."
   active="horarios"
 >
   <div id="crud-root"></div>
@@ -13,13 +13,31 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
   <script>
     import { setupCrud } from '../../scripts/adminCrud';
     import { templos } from '../../data/templos';
-    import { DIAS } from '../../lib/reuniones';
+    import {
+      DIAS,
+      reglaEnPalabras,
+      proximaVezConMarca,
+      fechaEnPalabras,
+      hoyEnChile,
+    } from '../../lib/reuniones';
 
     // Las opciones salen de los mismos datos que usa la web: el desplegable no
     // puede ofrecer un templo que no existe. (La base, además, lo rechazaría:
     // ver el `check` de la migración 0003.)
     const opcionesTemplo = templos.map((t) => ({ value: t.slug, label: t.short }));
     const opcionesDia = DIAS.map((label, i) => ({ value: String(i), label }));
+
+    /* Las reglas, dichas para quien las elige.
+       `reglaEnPalabras` necesita un día para concordar («el primer domingo»),
+       pero en el desplegable todavía no se sabe cuál: se usa una forma neutra, y
+       la frase con el día de verdad la da la vista previa de más abajo. */
+    const opcionesRegla = [
+      { value: 'siempre', label: 'Todas las semanas' },
+      { value: 'primer', label: 'El primero de cada mes' },
+      { value: 'primer-par', label: 'El primero de los meses pares (feb, abr, jun…)' },
+      { value: 'primer-impar', label: 'El primero de los meses impares (ene, mar, may…)' },
+      { value: 'ultimo', label: 'El último de cada mes' },
+    ];
 
     setupCrud({
       table: 'reuniones',
@@ -37,42 +55,170 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           type: 'select',
           required: true,
           options: opcionesTemplo,
+          grupo: 'Cuándo y dónde',
+          grupoAyuda: 'Esto se repite todas las semanas, siempre igual.',
         },
-        { name: 'dia', label: 'Día', type: 'select', required: true, options: opcionesDia },
-        { name: 'hora', label: 'Hora', type: 'time', required: true },
+        {
+          name: 'dia',
+          label: 'Día',
+          type: 'select',
+          required: true,
+          options: opcionesDia,
+          grupo: 'Cuándo y dónde',
+        },
+        { name: 'hora', label: 'Hora', type: 'time', required: true, grupo: 'Cuándo y dónde' },
         {
           name: 'nombre',
-          label: 'Reunión',
+          label: 'Cómo se llama',
           type: 'text',
           required: true,
           help: 'Ej.: Reunión General, Estudio Bíblico, Reunión de Jóvenes.',
+          grupo: 'Cuándo y dónde',
+        },
+
+        {
+          name: 'marca',
+          label: 'Qué pasa ese día',
+          type: 'text',
+          help: 'Ej.: Santa Cena. Aparece junto al nombre de la reunión, en dorado.',
+          grupo: 'Algo que se repite',
+          grupoAyuda:
+            'Para lo que vuelve cada tanto y siempre es igual. Se pone una vez y el sitio lo enseña cuando toca, sin que nadie se acuerde de quitarlo.',
         },
         {
+          name: 'marca_regla',
+          label: 'Cada cuánto',
+          type: 'select',
+          vacioLabel: 'Nunca — esta reunión no lleva marca',
+          options: opcionesRegla,
+          grupo: 'Algo que se repite',
+        },
+
+        {
           name: 'estado',
-          label: 'Estado',
+          label: 'Qué pasa con la reunión',
           type: 'select',
           required: true,
           options: [
-            { value: 'normal', label: 'Normal' },
-            { value: 'suspendida', label: 'Suspendida' },
-            { value: 'cambiada', label: 'Cambio de horario (temporal)' },
+            { value: 'normal', label: 'Se hace, como siempre' },
+            { value: 'suspendida', label: 'Esta vez NO se hace' },
+            { value: 'cambiada', label: 'Esta vez cambia (hora, lugar…)' },
           ],
-          help: 'Si el cambio de hora es para siempre, deja «Normal» y cambia la hora arriba.',
+          grupo: 'Un cambio pasajero',
+          grupoAyuda:
+            'Solo para esta vez. Si el cambio es para siempre, no uses esto: cambia el día o la hora ahí arriba.',
         },
         {
           name: 'aviso',
-          label: 'Aviso para la gente (opcional)',
+          label: 'Qué decirle a la gente',
           type: 'text',
-          help: 'Lo que se lee junto a la reunión. Ej.: «Este jueves se hace a las 19:00» o «Suspendida por el feriado».',
+          help: 'Ej.: «Suspendida por el feriado» o «Este jueves se hace a las 19:00». Sin esto, el sitio solo dice «Suspendida».',
+          grupo: 'Un cambio pasajero',
         },
         {
           name: 'aviso_hasta',
-          label: 'El aviso dura hasta (opcional)',
+          label: 'Hasta qué día',
           type: 'date',
-          help: 'Al día siguiente la reunión vuelve sola a la normalidad. Si lo dejas vacío, dura hasta que lo quites.',
+          help: 'Al día siguiente la reunión vuelve sola a la normalidad. Si lo dejas vacío, dura hasta que lo quites a mano.',
+          grupo: 'Un cambio pasajero',
         },
-        { name: 'publicado', label: 'Se muestra en la web', type: 'checkbox' },
+
+        {
+          name: 'publicado',
+          label: 'Se muestra en la web',
+          type: 'checkbox',
+          grupo: 'Publicación',
+        },
       ],
     });
+
+    /* ── La vista previa de la marca ──────────────────────────────────────────
+       Una regla como «el primero de los meses pares» es correcta y no dice nada:
+       quien la elige no sabe si acertó hasta que ve una fecha. Esta línea la
+       traduce mientras se escribe —«Santa Cena · el primer domingo de los meses
+       pares · la próxima, el domingo 4 de octubre de 2026»— y es la diferencia
+       entre rellenar el formulario a ciegas y comprobarlo solo.
+
+       Se engancha desde acá y no desde el CRUD genérico porque solo los horarios
+       tienen marcas: meterlo en el formulario de todos obligaría a que cada
+       pantalla supiera de reglas que no usa. */
+    function enchufarVistaPrevia() {
+      const form = document.getElementById('crud-form');
+      if (!form) return false;
+
+      const campo = (n: string) => form.querySelector<HTMLSelectElement>(`[name="${n}"]`);
+      const regla = campo('marca_regla');
+      if (!regla) return false;
+
+      let linea = document.getElementById('marca-previa');
+      if (!linea) {
+        linea = document.createElement('p');
+        linea.id = 'marca-previa';
+        linea.className = 'mt-1 text-xs';
+        // role="status": el texto cambia solo al tocar los desplegables, y quien
+        // use lector de pantalla tiene que enterarse sin ir a buscarlo.
+        linea.setAttribute('role', 'status');
+        regla.closest('label')?.after(linea);
+      }
+
+      /* Escribe solo si cambió. La línea vive DENTRO del formulario, así que
+         escribirla es un cambio del formulario: cualquier cosa que escuche al
+         formulario se estaría escuchando a sí misma. */
+      const poner = (texto: string, clase: string) => {
+        if (linea.textContent !== texto) linea.textContent = texto;
+        const completa = `mt-1 text-xs ${clase}`.trim();
+        if (linea.className !== completa) linea.className = completa;
+      };
+
+      const pintar = () => {
+        const texto = (campo('marca')?.value ?? '').trim();
+        const cual = regla.value;
+        const dia = Number(campo('dia')?.value ?? '0');
+
+        if (!texto && !cual) {
+          poner('', '');
+          return;
+        }
+        if (texto && !cual) {
+          poner('Falta decir cada cuánto: así escrito no se va a ver nunca.', 'text-warning');
+          return;
+        }
+        if (!texto && cual) {
+          poner('Falta escribir qué pasa ese día.', 'text-warning');
+          return;
+        }
+
+        const cuando = reglaEnPalabras(cual, dia);
+        const proxima = proximaVezConMarca(dia, cual, hoyEnChile());
+        poner(
+          proxima
+            ? `«${texto}» se verá ${cuando}. La próxima vez: ${fechaEnPalabras(proxima)}.`
+            : `«${texto}» se verá ${cuando}.`,
+          'text-success',
+        );
+      };
+
+      // `input` para lo que se escribe, `change` para los desplegables. Van en el
+      // formulario entero y no campo por campo: el día también cambia la frase.
+      form.addEventListener('input', pintar);
+      form.addEventListener('change', pintar);
+      // Y cuando el formulario se rellena solo —al abrir una reunión para
+      // editarla, o al volver a vacío—, que no dispara ninguno de los dos.
+      form.addEventListener('crud:rellenado', pintar);
+      pintar();
+      return true;
+    }
+
+    /* El CRUD pinta el formulario al arrancar; si todavía no está, se espera a
+       que aparezca en vez de suponer un orden entre dos módulos. */
+    if (!enchufarVistaPrevia()) {
+      const raiz = document.getElementById('crud-root');
+      if (raiz) {
+        const ojo = new MutationObserver(() => {
+          if (enchufarVistaPrevia()) ojo.disconnect();
+        });
+        ojo.observe(raiz, { childList: true, subtree: true });
+      }
+    }
   </script>
 </AdminLayout>

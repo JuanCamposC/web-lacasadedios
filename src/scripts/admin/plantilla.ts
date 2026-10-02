@@ -54,7 +54,7 @@ function campoHtml(f: CrudConfig['fields'][number]): string {
   if (f.type === 'select') {
     const vacia = f.required
       ? '<option value="" disabled selected>Elige una opción</option>'
-      : '<option value="">Sin especificar</option>';
+      : `<option value="">${esc(f.vacioLabel ?? 'Sin especificar')}</option>`;
     const opciones = (f.options ?? [])
       .map((o) => `<option value="${esc(o.value)}">${esc(o.label)}</option>`)
       .join('');
@@ -90,8 +90,45 @@ function campoHtml(f: CrudConfig['fields'][number]): string {
   return `<label class="block">${label}<input type="${f.type}" name="${f.name}" ${req} class="input input-bordered w-full" />${help}</label>`;
 }
 
+/**
+ * Los campos, repartidos en bloques según su `grupo`.
+ *
+ * Conserva el orden en que vienen: el primer campo de cada grupo decide dónde
+ * va el bloque. Los campos sin grupo salen sueltos, antes de todo, que es como
+ * se comportaban los formularios cuando no existían los bloques.
+ */
+function camposPorGrupo(campos: CrudConfig['fields']): string {
+  const sueltos = campos
+    .filter((f) => !f.grupo)
+    .map(campoHtml)
+    .join('');
+
+  const orden: string[] = [];
+  const porGrupo = new Map<string, typeof campos>();
+  for (const f of campos) {
+    if (!f.grupo) continue;
+    if (!porGrupo.has(f.grupo)) {
+      porGrupo.set(f.grupo, []);
+      orden.push(f.grupo);
+    }
+    porGrupo.get(f.grupo)!.push(f);
+  }
+
+  const bloques = orden.map((titulo) => {
+    const campos = porGrupo.get(titulo)!;
+    const ayuda = campos.find((f) => f.grupoAyuda)?.grupoAyuda;
+    return `<fieldset class="space-y-4 rounded border border-base-300 p-4">
+        <legend class="px-1.5 text-xs font-semibold uppercase tracking-wider text-base-content/70">${esc(titulo)}</legend>
+        ${ayuda ? `<p class="-mt-1 text-xs text-base-content/70">${esc(ayuda)}</p>` : ''}
+        ${campos.map(campoHtml).join('')}
+      </fieldset>`;
+  });
+
+  return sueltos + bloques.join('');
+}
+
 export function plantilla(config: CrudConfig, plural: string, articulo: string): string {
-  const camposHtml = config.fields.map(campoHtml).join('');
+  const camposHtml = camposPorGrupo(config.fields);
 
   return `
     <div class="grid gap-6 lg:grid-cols-12">
