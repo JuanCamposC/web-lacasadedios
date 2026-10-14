@@ -165,13 +165,26 @@ import { IMG } from '../assets/images';
         >
           <Image
             src={IMG.inicioMosaico}
-            alt="Reunión de adoración"
+            alt="El púlpito del templo con una Biblia abierta, y las sillas detrás"
             widths={[600, 1000]}
             sizes="(max-width:768px) 100vw, 66vw"
             class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
+          {
+            /* El velo sube más arriba que antes (era 95/50/15).
+
+              Con la foto de banco que había aquí daba igual: era oscura donde va
+              el texto. La del púlpito trae madera clara justo detrás, y medido
+              sobre el sitio en vivo el titular blanco se quedaba en 2,22:1 en el
+              teléfono —por debajo incluso del 3:1 que pide un texto grande— y el
+              rótulo dorado en 2,39:1 en escritorio.
+
+              Con 97/82/40: el titular pasa a 12,84 en escritorio y 5,20 en
+              teléfono, y el rótulo a 5,31. La foto se sigue viendo entera; lo que
+              se oscurece es la mitad de abajo, que es donde se apoya el texto. */
+          }
           <div
-            class="absolute inset-0 bg-gradient-to-t from-[#0a1730]/95 via-[#0a1730]/50 to-[#0a1730]/15"
+            class="absolute inset-0 bg-gradient-to-t from-[#0a1730]/97 via-[#0a1730]/82 to-[#0a1730]/40"
           >
           </div>
           <div class="relative flex h-full flex-col justify-end p-8 text-white">

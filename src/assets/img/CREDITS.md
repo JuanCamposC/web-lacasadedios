@@ -16,7 +16,6 @@ con varios nombres. Eso es a propósito y deja de pasar a medida que llegan las 
 
 | Archivo                      | Dónde se ve                               | Fuente (Unsplash photo id)       |
 | ---------------------------- | ----------------------------------------- | -------------------------------- |
-| `inicio-mosaico.jpg`         | Recuadro grande del mosaico de la portada | photo-1507692049790-de58290a4334 |
 | `inicio-estudio.jpg`         | Banda del Instituto Bíblico en la portada | photo-1510590337019-5ef8d3d32116 |
 | `nosotros-portada.jpg`       | Portada de /sobre-nosotros                | photo-1579975096649-e773152b04cb |
 | `nosotros-historia.jpg`      | Nuestra historia, en /sobre-nosotros      | photo-1445445290350-18a3b86e0b5a |
