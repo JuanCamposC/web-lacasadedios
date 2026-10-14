@@ -44,11 +44,14 @@ if (Astro.request.method === 'POST') {
 >
   <PageHero
     image={IMG.contactoPortada}
-    alt="Comunidad reunida"
+    alt="El púlpito del templo con una Biblia abierta, y las sillas detrás"
     eyebrow="Hablemos"
     title="Contacto"
     subtitle="Estamos para escucharte. Escríbenos y te respondemos lo antes posible."
     height="min-h-[46vh]"
+    {/* Sube el encuadre para que la Biblia abierta sobre el púlpito quede
+        entera y por encima del título, en vez de partida contra el menú. */}
+    posicion="50% 35%"
   />
 
   <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Contacto' }]} />

@@ -31,11 +31,18 @@ const title = settings?.vivo_titulo || 'Transmisión en vivo';
 >
   <PageHero
     image={IMG.envivoPortada}
-    alt="Adoración"
+    alt="El púlpito del templo con una Biblia abierta, y las sillas detrás"
     eyebrow="Transmisión"
     title="En vivo"
     subtitle="Únete a nuestras reuniones y prédicas desde donde estés."
-    height="min-h-[42vh]"
+    {/* 46vh y no 42: con la foto del púlpito, en una franja más baja la Biblia
+        solo cabía tapada por el menú o justo detrás del rótulo dorado, que ahí
+        se quedaba en 4,38:1. Con esta altura sube a 4,98 y además se ve. Es la
+        misma que usa /contacto, que estrena la misma foto. */}
+    height="min-h-[46vh]"
+    {/* La misma foto y el mismo encuadre que /contacto: esta franja es aún más
+        baja, así que centrar dejaría la Biblia fuera por arriba. */}
+    posicion="50% 35%"
   />
 
   <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'En vivo' }]} />

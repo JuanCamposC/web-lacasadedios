@@ -33,6 +33,4 @@ con varios nombres. Eso es a propósito y deja de pasar a medida que llegan las 
 | `videos-cierre.jpg`          | Banda final de /videos                    | photo-1510590337019-5ef8d3d32116 |
 | `estudio-portada.jpg`        | Portada de /estudio-biblico               | photo-1510590337019-5ef8d3d32116 |
 | `estudio-cierre.jpg`         | Banda final de /estudio-biblico           | photo-1445445290350-18a3b86e0b5a |
-| `contacto-portada.jpg`       | Portada de /contacto                      | photo-1529070538774-1843cb3265df |
-| `envivo-portada.jpg`         | Portada de /en-vivo                       | photo-1507692049790-de58290a4334 |
 | `templo-santiago-centro.jpg` | Templo de Santiago Centro                 | photo-1477281765962-ef34e8bb0967 |

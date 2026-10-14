@@ -9,15 +9,59 @@ interface Props {
   title: string;
   subtitle?: string;
   height?: string;
+  /**
+   * Qué parte de la foto se ve, como `object-position`.
+   *
+   * La cabecera es una franja ancha y baja, y las fotos vienen casi cuadradas:
+   * en pantalla grande se ve una banda estrecha del centro y el resto se
+   * recorta. Centrar sirve para una foto de paisaje y no para una con un
+   * sujeto: en /contacto, el púlpito con la Biblia abierta quedaba partido por
+   * el borde de arriba y medio tapado por el menú.
+   *
+   * Solo cambia nada en pantallas anchas. En el teléfono la franja es casi
+   * cuadrada, así que se usa el alto completo de la foto y se recorta a los
+   * lados: ahí este valor no hace nada.
+   */
+  posicion?: string;
 }
-const { image, alt = '', eyebrow, title, subtitle, height = 'min-h-[58vh]' } = Astro.props;
+const {
+  image,
+  alt = '',
+  eyebrow,
+  title,
+  subtitle,
+  height = 'min-h-[58vh]',
+  posicion,
+} = Astro.props;
 ---
 
 <section class={`on-dark relative -mt-16 flex ${height} items-center overflow-hidden`}>
   <div class="absolute inset-0">
-    <Foto src={image} alt={alt} loading="eager" class="h-full w-full object-cover" />
+    <Foto
+      src={image}
+      alt={alt}
+      loading="eager"
+      class="h-full w-full object-cover"
+      style={posicion ? `object-position: ${posicion}` : undefined}
+    />
+    {
+      /* El velo es más oscuro EN EL MEDIO, que es donde se apoya el texto.
+
+        Antes era al revés —78 % arriba, 62 % en el medio, 88 % abajo— y el punto
+        más claro coincidía justo con el rótulo dorado. Medido sobre el sitio en
+        vivo, ese rótulo no llegaba al mínimo legible en SEIS de las nueve
+        cabeceras: la peor, /eventos, en 2,63:1 contra los 4,5 exigidos. No era
+        culpa de ninguna foto en particular; pasaba desde siempre y se notó al
+        subir las primeras fotos reales, que traen zonas claras donde las de
+        banco traían sombra.
+
+        Con 72/84/90 las seis pasan y la peor queda en 4,63:1. Va justo a
+        propósito: oscurecer más apaga unas fotos que costó conseguir. Si alguna
+        cabecera futura vuelve a caer, lo que toca es mirar ESA foto, no subir el
+        velo de todas. */
+    }
     <div
-      class="absolute inset-0 bg-gradient-to-b from-[#0a1730]/78 via-[#0a1730]/62 to-[#0a1730]/88"
+      class="absolute inset-0 bg-gradient-to-b from-[#0a1730]/72 via-[#0a1730]/84 to-[#0a1730]/90"
     >
     </div>
     <!-- Misma costura de bronce que cierra el hero de la portada: los dos
