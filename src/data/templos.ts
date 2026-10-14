@@ -11,35 +11,19 @@ import type { ImgKey } from '../assets/images';
 // El contacto general vive en `site.ts`. Se reexporta para no romper imports.
 export { CONTACT, hasPhone } from './site';
 
-/** Dónde se supone que está la cara si el retrato no dice otra cosa. */
-export const FOCO_RETRATO = '50% 46%';
-
 export interface Leader {
   name: string;
   role: string;
   phone?: string;
   /**
-   * Su retrato, si lo hay.
+   * Su retrato, para la tarjeta de /sobre-nosotros. En la ficha del templo NO
+   * se usa: ahí van siempre las iniciales (ver el comentario en TemploPage).
    *
    * Opcional a propósito: Coya está a cargo de un hermano del que no hay foto,
-   * y sin ella se siguen enseñando las iniciales. Un hueco vacío diría que
-   * falta algo; las iniciales dicen quién es.
+   * y sin ella esa tarjeta enseña sus iniciales. Un hueco vacío diría que falta
+   * algo; las iniciales dicen quién es.
    */
   foto?: ImgKey;
-  /**
-   * Dónde está la cara en su retrato, como `transform-origin`.
-   *
-   * El retrato se acerca al doble para que la cara se reconozca: sin acercar,
-   * un cuadrado recortado de una foto vertical de tres cuartos de cuerpo deja
-   * la cara diminuta y media tarjeta de pared vacía. Al acercar hay que decir
-   * hacia dónde, y ahí los tres retratos NO son iguales: están tomados con el
-   * mismo encuadre pero cada uno es de otra estatura, y con un valor común al
-   * Pastor Manuel se le cortaba la frente.
-   *
-   * Por omisión 50% 46%, que sirve a dos de los tres. Se mira una vez, al
-   * subir la foto, y no se vuelve a tocar.
-   */
-  fotoFoco?: string;
   /** Correo institucional de quien recibe los mensajes de este templo. */
   email?: string;
   /**
@@ -154,8 +138,6 @@ export const templos: Templo[] = [
       name: 'Pastor Manuel Silva Salas',
       role: 'Pastor',
       foto: 'pastorManuel',
-      // Más arriba que los demás: su cara está más alta en la foto.
-      fotoFoco: '50% 36%',
       email: 'manuelsilva.pastor@lacasadedios.cl',
       emailListo: true,
     },

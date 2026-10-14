@@ -5,14 +5,7 @@ import Reveal from './Reveal.astro';
 import Foto from './Foto.astro';
 import TemploCard from './TemploCard.astro';
 import { Icon } from 'astro-icon/components';
-import {
-  templos,
-  correoDe,
-  cargoDe,
-  estiloDistintivo,
-  FOCO_RETRATO,
-  type Templo,
-} from '../data/templos';
+import { templos, correoDe, cargoDe, estiloDistintivo, type Templo } from '../data/templos';
 import { CONTACT, hasPhone } from '../data/site';
 import { IMG } from '../assets/images';
 import { jsonLd as comoJsonLd } from '../lib/jsonld';
@@ -361,27 +354,16 @@ const jsonLd = {
 
               <div class="dato">
                 {
-                  /* Con retrato si lo hay; si no, las iniciales, que dicen quién
-                    es sin inventar una foto que no tenemos. Hoy la llevan los tres
-                    pastores y no Coya, que está a cargo de un hermano. */
+                  /* Iniciales y no retrato, aunque el pastor tenga foto.
+
+                    Se probaron las dos cosas el 14 de octubre de 2026 y la iglesia
+                    prefirió las iniciales acá: en 44 px una foto de cuerpo entero
+                    hay que acercarla tanto que deja de parecerse al retrato que se
+                    ve en /sobre-nosotros, que es donde se miran de verdad.
+
+                    Las fotos siguen cargadas en `leader.foto` para esa página. */
                 }
-                {
-                  templo.leader.foto ? (
-                    <span class="dato-retrato">
-                      <Foto
-                        src={IMG[templo.leader.foto]}
-                        alt=""
-                        sizes="2.75rem"
-                        class="dato-retrato-foto"
-                        style={`transform-origin: ${templo.leader.fotoFoco ?? FOCO_RETRATO}`}
-                      />
-                    </span>
-                  ) : (
-                    <span class="dato-iniciales" aria-hidden="true">
-                      {iniciales}
-                    </span>
-                  )
-                }
+                <span class="dato-iniciales" aria-hidden="true">{iniciales}</span>
                 <div class="min-w-0">
                   <p class="dato-etiqueta">{cargoDe(templo.leader)}</p>
                   <p class="dato-valor">{templo.leader.name}</p>
@@ -940,24 +922,6 @@ const jsonLd = {
   /* El retrato, con la misma caja que las iniciales. Igual que en la tarjeta
      grande de /sobre-nosotros, el recorte sube al 20 %: centrado, un cuadrado
      de una foto vertical de tres cuartos de cuerpo cae en la chaqueta. */
-  /* El retrato ocupa la misma caja que las iniciales, y se acerca igual que en
-     la tarjeta grande de /sobre-nosotros. Acá importa más todavía: en 44 px una
-     cara sin acercar no se reconoce. Hace falta un contenedor porque lo que se
-     escala es la imagen, y sin él se derramaría fuera de su cuadro. */
-  .dato-retrato {
-    display: block;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 0.8rem;
-    overflow: hidden;
-  }
-  .dato-retrato-foto {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 50% 20%;
-    transform: scale(2);
-  }
   .dato-iniciales {
     font-family: var(--font-data);
     font-size: 0.95rem;

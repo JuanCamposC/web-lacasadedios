@@ -9,7 +9,7 @@ import SectionHeading from '../components/SectionHeading.astro';
 import CtaBand from '../components/CtaBand.astro';
 import { IMG } from '../assets/images';
 import { HISTORIA } from '../data/historia';
-import { templos, FOCO_RETRATO } from '../data/templos';
+import { templos } from '../data/templos';
 import { SITE } from '../data/site';
 
 // Contenido tomado de lacasadedios.cl/nosotros
@@ -79,8 +79,6 @@ const liderazgo = [
 // templo (ver `leader` en src/data/templos.ts), que es donde tienen contexto.
 /** El retrato del pastor de ese templo, si lo hay. Vive en src/data/templos.ts. */
 const retratoDe = (slug: string) => templos.find((t) => t.slug === slug)?.leader.foto;
-const focoDe = (slug: string) =>
-  templos.find((t) => t.slug === slug)?.leader.fotoFoco ?? FOCO_RETRATO;
 
 const pastores = [
   { name: 'Pastor Arturo Salas Olguín', place: 'Iglesia Matriz', slug: 'san-miguel' },
@@ -406,7 +404,6 @@ const initials = (name: string) =>
                         widths={[320, 640]}
                         sizes="(max-width: 640px) 90vw, 20rem"
                         class="pastor-foto"
-                        style={`transform-origin: ${focoDe(p.slug)}`}
                       />
                     ) : (
                       <span class="pastor-iniciales">{initials(p.name)}</span>
@@ -475,28 +472,37 @@ const initials = (name: string) =>
   .pastor-retrato {
     display: grid;
     place-items: center;
-    /* Recorta el retrato acercado: sin esto se derrama sobre el nombre. */
     overflow: hidden;
-    aspect-ratio: 1;
+    /*
+     * 3/4 y no cuadrado, que es como era antes de que hubiera fotos.
+     *
+     * Los retratos vienen en 3:4 exacto, así que con esta proporción se ven
+     * ENTEROS: de cuerpo completo y sin recortar nada, que es como la iglesia
+     * los quiere. En un cuadrado había que elegir entre cortar la figura o
+     * dejar la cara diminuta entre dos franjas de pared vacía.
+     *
+     * Las iniciales, que es lo que sale cuando no hay foto, se ven igual de
+     * bien en un rectángulo que en un cuadrado.
+     */
+    aspect-ratio: 3 / 4;
     width: 100%;
     background:
       radial-gradient(120% 120% at 30% 10%, rgba(255, 255, 255, 0.22), transparent 60%),
       linear-gradient(160deg, var(--color-primary), var(--color-secondary));
   }
-  /* El retrato llena el cuadrado.
-
-     `object-position` al 20 % y no centrado: son tres retratos de estudio de
-     tres cuartos de cuerpo, y al recortar un cuadrado de una foto vertical el
-     centro cae en la chaqueta. Al 20 % la cara queda en el medio del cuadro en
-     los tres, que están tomados con el mismo encuadre. */
+  /*
+   * El retrato, entero.
+   *
+   * Sin acercar y sin desplazar: con el hueco en 3/4 y los retratos en 3:4, no
+   * sobra ni falta nada. `cover` se queda por si algún día llega uno con otra
+   * proporción —preferible recortar un poco a deformar una cara—, y entonces el
+   * recorte favorece la parte de arriba.
+   */
   .pastor-foto {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: 50% 20%;
-    /* El acercamiento. El porqué y el punto de enfoque, en `fotoFoco`
-       (src/data/templos.ts). El recorte lo hace el contenedor. */
-    transform: scale(2);
+    object-position: 50% 30%;
   }
   .pastor-iniciales {
     font-family: var(--font-data);
