@@ -9,6 +9,7 @@ import SectionHeading from '../components/SectionHeading.astro';
 import CtaBand from '../components/CtaBand.astro';
 import { IMG } from '../assets/images';
 import { HISTORIA } from '../data/historia';
+import { templos, FOCO_RETRATO } from '../data/templos';
 import { SITE } from '../data/site';
 
 // Contenido tomado de lacasadedios.cl/nosotros
@@ -76,6 +77,11 @@ const liderazgo = [
 
 // Solo los pastores. Los ancianos y el obrero se muestran en la ficha de su
 // templo (ver `leader` en src/data/templos.ts), que es donde tienen contexto.
+/** El retrato del pastor de ese templo, si lo hay. Vive en src/data/templos.ts. */
+const retratoDe = (slug: string) => templos.find((t) => t.slug === slug)?.leader.foto;
+const focoDe = (slug: string) =>
+  templos.find((t) => t.slug === slug)?.leader.fotoFoco ?? FOCO_RETRATO;
+
 const pastores = [
   { name: 'Pastor Arturo Salas Olguín', place: 'Iglesia Matriz', slug: 'san-miguel' },
   { name: 'Pastor Alberto Gutiérrez Plaza', place: 'Iglesia de Limache', slug: 'limache' },
@@ -379,10 +385,13 @@ const initials = (name: string) =>
           subtitle="Quienes pastorean cada templo de la congregación."
         />
         {
-          /* Tarjetas verticales y con el retrato arriba: el día que haya fotos de
-          cada pastor entran en el hueco cuadrado sin mover nada más. Mientras
-          tanto ese hueco lo ocupan las iniciales, que ya tienen el tamaño y la
-          forma definitivos. */
+          /* Tarjetas verticales y con el retrato arriba. El hueco cuadrado estaba
+          esperando desde el principio: lo ocupaban las iniciales, con el tamaño y
+          la forma definitivos, y el 14 de octubre de 2026 llegaron las fotos y
+          entraron sin mover nada más.
+
+          Siguen las iniciales de respaldo, y no es decorado: quien no tenga foto
+          —hoy nadie de los tres, mañana quien entre— sale igual de bien. */
         }
         <div class="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {
@@ -390,7 +399,18 @@ const initials = (name: string) =>
               <Reveal delay={(i % 3) * 80} class="h-full">
                 <a href={`/templos/${p.slug}`} class="pastor panel panel-lift">
                   <span class="pastor-retrato">
-                    <span class="pastor-iniciales">{initials(p.name)}</span>
+                    {retratoDe(p.slug) ? (
+                      <Image
+                        src={IMG[retratoDe(p.slug)!]}
+                        alt={`Retrato de ${p.name}`}
+                        widths={[320, 640]}
+                        sizes="(max-width: 640px) 90vw, 20rem"
+                        class="pastor-foto"
+                        style={`transform-origin: ${focoDe(p.slug)}`}
+                      />
+                    ) : (
+                      <span class="pastor-iniciales">{initials(p.name)}</span>
+                    )}
                   </span>
                   <span class="pastor-datos">
                     <span class="pastor-nombre">{p.name}</span>
@@ -455,11 +475,28 @@ const initials = (name: string) =>
   .pastor-retrato {
     display: grid;
     place-items: center;
+    /* Recorta el retrato acercado: sin esto se derrama sobre el nombre. */
+    overflow: hidden;
     aspect-ratio: 1;
     width: 100%;
     background:
       radial-gradient(120% 120% at 30% 10%, rgba(255, 255, 255, 0.22), transparent 60%),
       linear-gradient(160deg, var(--color-primary), var(--color-secondary));
+  }
+  /* El retrato llena el cuadrado.
+
+     `object-position` al 20 % y no centrado: son tres retratos de estudio de
+     tres cuartos de cuerpo, y al recortar un cuadrado de una foto vertical el
+     centro cae en la chaqueta. Al 20 % la cara queda en el medio del cuadro en
+     los tres, que están tomados con el mismo encuadre. */
+  .pastor-foto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 20%;
+    /* El acercamiento. El porqué y el punto de enfoque, en `fotoFoco`
+       (src/data/templos.ts). El recorte lo hace el contenedor. */
+    transform: scale(2);
   }
   .pastor-iniciales {
     font-family: var(--font-data);

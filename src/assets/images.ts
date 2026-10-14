@@ -67,6 +67,10 @@ import temploLimache from './img/templo-limache.jpg';
 import temploCoya from './img/templo-coya.jpg';
 import temploCoyaMini from './img/templo-coya-mini.jpg';
 
+import pastorArturo from './img/pastor-arturo.jpg';
+import pastorManuel from './img/pastor-manuel.jpg';
+import pastorAlberto from './img/pastor-alberto.jpg';
+
 export const IMG = {
   // Página de inicio.
   inicioPortada,
@@ -100,6 +104,14 @@ export const IMG = {
   // La misma iglesia de frente, para las tarjetas pequeñas. El porqué, en
   // el comentario de `imageMini` en src/data/templos.ts.
   temploCoyaMini,
+
+  // Los retratos de los pastores. Van en dos sitios: la tarjeta cuadrada de
+  // /sobre-nosotros y el recuadro pequeño de la ficha de su templo. Coya no
+  // tiene porque su encargado es un hermano, no un pastor, y no hay foto suya:
+  // esa ficha sigue con las iniciales.
+  pastorArturo,
+  pastorManuel,
+  pastorAlberto,
 
   // El mosaico de Instagram de la portada.
 } as const;
