@@ -50,3 +50,17 @@
 /san-miguel/ /templos/san-miguel 301
 /santiago-centro /templos/santiago-centro 301
 /santiago-centro/ /templos/santiago-centro 301
+
+# ── La página de preguntas frecuentes del WordPress ─────────────────────────
+#
+# Confirmada, no supuesta: el informe de cobertura de Search Console del 20 de
+# octubre de 2026 la trae por su nombre, con último rastreo el 10 de octubre.
+# Es la ÚNICA dirección del sitio viejo que Google sigue visitando de verdad;
+# las otras tres que salían en el informe son comodines —`/wp-*.php` y los
+# archivos del tema `incubator`— y esas tienen que seguir dando 404.
+#
+# Va a /contacto y no a /sobre-nosotros: el sitio nuevo no tiene preguntas
+# frecuentes, y quien buscaba una traía una duda concreta. Antes de inventarle
+# una respuesta parecida, se le ofrece a quién preguntarle.
+/frequently-asked-questions /contacto 301
+/frequently-asked-questions/ /contacto 301
