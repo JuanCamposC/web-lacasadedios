@@ -184,8 +184,20 @@ export default defineConfig({
       //   · /baja y /confirmar — las dos se alcanzan solo con el enlace
       //     personal que lleva cada correo del boletín, y fuera de ese enlace
       //     no hacen nada. /confirmar estaba saliendo.
+      //   · /boletin — es la página que dice cómo terminó una suscripción
+      //     («Demasiados intentos», «No pudimos completar…»). Solo se llega
+      //     después de enviar el formulario y no tiene contenido propio, así
+      //     que nació con `noindex`… y salía en el sitemap igual.
+      //
+      //     Eso es decirle a Google «indexa esto» y «no indexes esto» a la vez:
+      //     gasta una visita de rastreo en descubrir que no debía mirarla, y
+      //     queda contada como página sin indexar en el informe de cobertura.
+      //     Lo descubrió el informe del 20 de octubre de 2026.
       filter: (page) =>
-        !page.includes('/admin') && !page.includes('/baja') && !page.includes('/confirmar'),
+        !page.includes('/admin') &&
+        !page.includes('/baja') &&
+        !page.includes('/confirmar') &&
+        !page.includes('/boletin'),
 
       // Sin barra final, igual que las canónicas de Layout.astro. Astro las
       // genera con barra porque compila en carpetas; Cloudflare sirve sin ella
