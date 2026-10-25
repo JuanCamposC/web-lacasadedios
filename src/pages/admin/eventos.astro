@@ -23,6 +23,12 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       fields: [
         { name: 'titulo', label: 'Título', type: 'text', required: true },
         { name: 'fecha', label: 'Fecha y hora', type: 'datetime-local', required: true },
+        {
+          name: 'duracion_min',
+          label: 'Cuánto dura (minutos)',
+          type: 'number',
+          help: 'Solo si dura algo distinto de dos horas. Un congreso de 9:00 a 18:00 son 540. Vacío = dos horas.',
+        },
         { name: 'lugar', label: 'Lugar', type: 'text' },
         { name: 'descripcion', label: 'Descripción', type: 'textarea' },
         { name: 'imagen_clave', label: 'Imagen (opcional)', type: 'image' },

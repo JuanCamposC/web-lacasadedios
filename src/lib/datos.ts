@@ -43,6 +43,8 @@ export interface Evento {
   descripcion: string | null;
   imagen_clave: string | null;
   templo: string;
+  /** Minutos que dura, o `null` para las dos horas de siempre (migración 0012). */
+  duracion_min: number | null;
 }
 
 export interface Noticia {
@@ -157,7 +159,7 @@ export function eventosProximos(base: Base, filtro: Filtro = {}): Promise<Evento
   const { donde, valores, limite, desplazamiento } = publicados(filtro);
   return listar<Evento>(
     base,
-    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo
+    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo, duracion_min
        from eventos
       where ${donde} and fecha >= ?
       order by fecha asc
@@ -178,7 +180,7 @@ export function eventosPasados(base: Base, filtro: Filtro = {}): Promise<Evento[
   const { donde, valores, limite, desplazamiento } = publicados(filtro);
   return listar<Evento>(
     base,
-    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo
+    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo, duracion_min
        from eventos
       where ${donde} and fecha < ?
       order by fecha desc
@@ -197,7 +199,7 @@ export function eventosPasados(base: Base, filtro: Filtro = {}): Promise<Evento[
 export function eventoPorId(base: Base, id: string): Promise<Evento | null> {
   return base
     .prepare(
-      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo
+      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo, duracion_min
          from eventos where publicado = 1 and id = ?`,
     )
     .bind(id)

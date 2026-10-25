@@ -16,9 +16,12 @@
  * separadores son CRLF, y las comas, los puntos y coma y las barras invertidas
  * van escapados.
  *
- * ── LOS EVENTOS NO GUARDAN HORA DE TÉRMINO ──────────────────────────────────
- * La tabla solo tiene `fecha`. Un evento sin duración deja un hueco raro en el
- * calendario, así que se asumen dos horas, que es lo que dura una reunión larga.
+ * ── LA HORA DE TÉRMINO ──────────────────────────────────────────────────────
+ * Lo que se guarda siempre es el inicio; la duración es opcional (ver la
+ * migración 0012). Sin ella se asumen dos horas, que es lo que dura una reunión
+ * larga y sirve para casi todo lo que se agenda. Con ella, manda la de verdad:
+ * un congreso de nueve horas agendado como «dos horas» le cierra el recordatorio
+ * a la gente a media mañana.
  *
  * ── LA HORA ─────────────────────────────────────────────────────────────────
  * Lo que se guarda es un instante en UTC (ver src/lib/hora.ts), y a Google se le
@@ -34,10 +37,29 @@ export interface EventoAgendable {
   titulo: string;
   /** Instante de inicio en ISO-8601 UTC, tal como se guarda en D1. */
   inicio: string;
+  /** Minutos que dura, o `null` para los dos horas de siempre. */
+  duracion?: number | null;
   descripcion?: string | null;
   lugar?: string | null;
   /** Dirección pública del evento, para que el recordatorio lleve de vuelta. */
   url: string;
+}
+
+/**
+ * Cuánto dura este evento, en minutos.
+ *
+ * Una sola función para los dos caminos —el enlace de Google y el archivo
+ * .ics—, porque si cada uno decidiera por su cuenta, el día que cambie la
+ * regla uno de los dos se quedaría atrás y nadie lo notaría: son dos botones
+ * que casi nadie prueba juntos.
+ *
+ * Se descarta lo que no sea un número positivo. La base ya lo comprueba, pero
+ * esto también lo llaman las pruebas y el panel con datos a medio escribir, y
+ * una duración de cero dejaría un evento que empieza y termina en el mismo
+ * instante: hay calendarios que directamente no lo muestran.
+ */
+export function duracionDe(e: EventoAgendable): number {
+  return typeof e.duracion === 'number' && e.duracion > 0 ? e.duracion : DURACION_MIN;
 }
 
 /**
@@ -61,7 +83,7 @@ export function enlaceGoogleCalendar(e: EventoAgendable): string {
   const p = new URLSearchParams({
     action: 'TEMPLATE',
     text: e.titulo,
-    dates: `${fechaUtc(e.inicio)}/${fechaUtc(e.inicio, DURACION_MIN)}`,
+    dates: `${fechaUtc(e.inicio)}/${fechaUtc(e.inicio, duracionDe(e))}`,
     details: [e.descripcion, e.url].filter(Boolean).join('\n\n'),
     location: e.lugar ?? '',
   });
@@ -134,7 +156,7 @@ export function construirIcs(e: EventoAgendable, sello = new Date()): string {
     `UID:${e.id}@lacasadedios.cl`,
     `DTSTAMP:${fechaUtc(sello.toISOString())}`,
     `DTSTART:${fechaUtc(e.inicio)}`,
-    `DTEND:${fechaUtc(e.inicio, DURACION_MIN)}`,
+    `DTEND:${fechaUtc(e.inicio, duracionDe(e))}`,
     `SUMMARY:${escapar(e.titulo)}`,
     `URL:${escapar(e.url)}`,
   ];

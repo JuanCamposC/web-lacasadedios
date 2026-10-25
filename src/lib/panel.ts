@@ -118,6 +118,7 @@ const COLUMNAS = {
     'titulo',
     'slug',
     'fecha',
+    'duracion_min',
     'lugar',
     'descripcion',
     'imagen_clave',
@@ -246,11 +247,19 @@ function limpiar(recurso: Recurso, datos: Record<string, unknown>) {
     } else if (
       columna === 'orden' ||
       columna === 'duracion_seg' ||
+      columna === 'duracion_min' ||
       columna === 'bytes' ||
       columna === 'dia'
     ) {
       const n = Number(bruto);
       valor = Number.isFinite(n) ? Math.trunc(n) : null;
+      // «Sin especificar» y «cero» son lo mismo en un campo numérico vacío del
+      // navegador: el formulario manda 0 (ver src/scripts/admin/form.ts). Para
+      // `orden` eso es correcto —el primero de la lista—, pero una duración de
+      // cero minutos no existe: significa «la de siempre», y eso se guarda como
+      // nulo. Si no, la base rechazaría el guardado por su propio `check` y el
+      // mensaje no diría nada útil.
+      if (columna === 'duracion_min' && valor === 0) valor = null;
     } else if (typeof bruto === 'string') {
       const recortado = bruto.trim();
       valor = recortado === '' ? null : recortado;

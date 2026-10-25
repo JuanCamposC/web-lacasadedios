@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { enlaceGoogleCalendar, fechaUtc, DURACION_MIN, construirIcs } from './ics';
+import { enlaceGoogleCalendar, fechaUtc, DURACION_MIN, duracionDe, construirIcs } from './ics';
 
 /**
  * Un enlace de calendario mal armado no avisa: abre Google Calendar con el
@@ -109,5 +109,45 @@ describe('construirIcs', () => {
     const ics = construirIcs({ ...evento, descripcion: null, lugar: null }, sello);
     expect(ics).not.toContain('LOCATION:');
     expect(ics).not.toContain('DESCRIPTION:');
+  });
+});
+
+describe('duracionDe', () => {
+  it('sin duración, las dos horas de siempre', () => {
+    expect(duracionDe(evento)).toBe(DURACION_MIN);
+    expect(duracionDe({ ...evento, duracion: null })).toBe(DURACION_MIN);
+  });
+
+  it('con duración, manda la de verdad', () => {
+    expect(duracionDe({ ...evento, duracion: 540 })).toBe(540);
+  });
+
+  it('un cero o un negativo no dejan un evento de duración nula', () => {
+    // El campo numérico del panel manda 0 cuando se deja vacío. Un evento que
+    // empieza y termina en el mismo instante hay calendarios que ni lo pintan.
+    expect(duracionDe({ ...evento, duracion: 0 })).toBe(DURACION_MIN);
+    expect(duracionDe({ ...evento, duracion: -30 })).toBe(DURACION_MIN);
+  });
+});
+
+describe('la hora de término llega a los dos calendarios', () => {
+  // El caso que esto evita: el Congreso de Damas es de 09:00 a 18:00 y se
+  // agendaba de 09:00 a 11:00, porque los dos caminos suponían dos horas.
+  const largo = { ...evento, duracion: 540 };
+
+  it('en el enlace de Google', () => {
+    const url = new URL(enlaceGoogleCalendar(largo));
+    expect(url.searchParams.get('dates')).toBe('20260921T230000Z/20260922T080000Z');
+  });
+
+  it('y en el archivo .ics', () => {
+    expect(construirIcs(largo)).toContain('DTEND:20260922T080000Z');
+  });
+
+  it('y sin duración los dos siguen dando las dos horas', () => {
+    expect(construirIcs(evento)).toContain('DTEND:20260922T010000Z');
+    expect(new URL(enlaceGoogleCalendar(evento)).searchParams.get('dates')).toContain(
+      '/20260922T010000Z',
+    );
   });
 });

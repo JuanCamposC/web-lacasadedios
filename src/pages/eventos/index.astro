@@ -49,6 +49,19 @@ const fmtTime = horaCorta;
 const fmtDay = (d: string) => enChile(d, { day: '2-digit' });
 const fmtMonth = (d: string) => enChile(d, { month: 'short' }).replace('.', '');
 
+/**
+ * El instante en que termina, o `null` si nadie dijo cuánto dura.
+ *
+ * Se devuelve `null` en vez de «inicio + dos horas» a propósito: las dos horas
+ * son una suposición para que el calendario no deje un hueco raro, no un dato.
+ * Anunciarla en la tarjeta —«19:00 a 21:00»— sería inventarle a la gente una
+ * hora de término que nadie prometió.
+ */
+const terminaEn = (e: { fecha: string; duracion_min: number | null }) =>
+  e.duracion_min && e.duracion_min > 0
+    ? new Date(new Date(e.fecha).getTime() + e.duracion_min * 60_000).toISOString()
+    : null;
+
 // Datos estructurados de evento: Google los usa para mostrar la agenda en los
 // resultados de búsqueda. El lugar se resuelve contra los templos reales.
 const sitio = Astro.site?.toString().replace(/\/$/, '') ?? '';
@@ -78,6 +91,7 @@ const eventosJsonLd =
           '@type': 'Event',
           name: e.titulo,
           startDate: e.fecha,
+          ...(terminaEn(e) ? { endDate: terminaEn(e) } : {}),
           eventStatus: 'https://schema.org/EventScheduled',
           eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
           location: lugarDe(e.lugar),
@@ -152,13 +166,31 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
                       class="panel panel-sm panel-lift group flex h-full scroll-mt-24 flex-col overflow-hidden"
                     >
                       <div class="relative h-48 overflow-hidden">
+                        {/* El afiche entero, sobre una copia suya desenfocada.
+                            Casi todo lo que se sube acá son afiches, y un afiche
+                            es vertical: recortándolo a la forma del recuadro se
+                            le va el título por arriba y la dirección por abajo,
+                            que es justo lo que el afiche venía a decir. Con
+                            `contain` se ve completo, y el fondo borroso evita
+                            las dos franjas vacías a los lados. La foto se
+                            descarga una sola vez: las dos etiquetas apuntan al
+                            mismo archivo. */}
                         {e.imagen ? (
-                          <img
-                            src={e.imagen}
-                            alt={e.titulo}
-                            class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                            loading="lazy"
-                          />
+                          <>
+                            <img
+                              src={e.imagen}
+                              alt=""
+                              aria-hidden="true"
+                              class="absolute inset-0 h-full w-full scale-125 object-cover blur-xl"
+                              loading="lazy"
+                            />
+                            <img
+                              src={e.imagen}
+                              alt={e.titulo}
+                              class="relative h-full w-full object-contain transition-transform duration-700 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                          </>
                         ) : (
                           <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 text-primary/40">
                             <Icon name="lucide:calendar-days" class="h-14 w-14" />
@@ -177,7 +209,10 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
                         </div>
 
                         <span class="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur">
-                          <Icon name="lucide:clock" class="h-3.5 w-3.5" /> {fmtTime(e.fecha)}
+                          <Icon name="lucide:clock" class="h-3.5 w-3.5" />{' '}
+                          {terminaEn(e)
+                            ? `${fmtTime(e.fecha)} a ${fmtTime(terminaEn(e)!)}`
+                            : fmtTime(e.fecha)}
                         </span>
                       </div>
 

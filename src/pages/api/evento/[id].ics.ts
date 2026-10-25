@@ -37,6 +37,7 @@ export const GET: APIRoute = async ({ params, url }) => {
     id: evento.id,
     titulo: evento.titulo,
     inicio: evento.fecha,
+    duracion: evento.duracion_min,
     descripcion: evento.descripcion,
     lugar: evento.lugar,
     url: `${sitio}/eventos#e-${evento.id}`,
