@@ -53,6 +53,12 @@ export interface FilaReunion {
   estado: EstadoReunion;
   aviso: string | null;
   aviso_hasta: string | null;
+  /**
+   * La hora que rige mientras dure el aviso, o `null` si el cambio pasajero no
+   * es de hora. `hora` no se toca nunca: al caducar el aviso la reunión vuelve
+   * sola a la suya. Ver la migración 0011.
+   */
+  hora_aviso: string | null;
   /** La frase que se repite, p. ej. «Santa Cena». Sin regla no se enseña. */
   marca: string | null;
   marca_regla: string | null;
@@ -68,6 +74,11 @@ export interface Reunion {
   estado: EstadoReunion;
   /** La frase para la gente, o `null` si la reunión va normal. */
   aviso: string | null;
+  /**
+   * La hora de siempre, cuando `hora` trae una pasajera distinta. `null` si no
+   * hay cambio, para que quien enseñe esto no tenga que compararlas.
+   */
+  horaHabitual: string | null;
   /** La marca, SOLO si le toca en su próxima fecha. Si no, `null`. */
   marca: string | null;
 }
@@ -139,7 +150,11 @@ export function tocaMarca(regla: string | null, fecha: string): boolean {
  * reglas que existen tocan al menos una vez cada dos meses, así que si el bucle
  * llegara al final sería porque alguien agregó una regla y olvidó esto.
  */
-export function proximaVezConMarca(dia: number, regla: string | null, desde: string): string | null {
+export function proximaVezConMarca(
+  dia: number,
+  regla: string | null,
+  desde: string,
+): string | null {
   if (!esReglaMarca(regla)) return null;
   let fecha = proximaFecha(dia, desde);
   for (let i = 0; i < 105; i++) {
@@ -192,20 +207,29 @@ export function reglaEnPalabras(regla: string | null, dia: number): string {
  *
  * «Pasado» significa DESPUÉS de ese día: un aviso hasta el jueves se sigue
  * enseñando todo el jueves.
+ *
+ * La hora pasajera se resuelve acá y en ningún otro sitio. Así el resto del
+ * sitio —el horario, el contador, el orden del día— lee `hora` sin saber que
+ * existe tal cosa como un cambio de esta semana, y es imposible que una parte
+ * anuncie una hora y otra parte otra.
  */
 export function vigente(fila: FilaReunion, hoy: string): Reunion {
   const caducado = fila.aviso_hasta !== null && fila.aviso_hasta < hoy;
   const estado = caducado ? 'normal' : fila.estado;
+  // Solo un cambio de horario mueve la hora: una suspendida no se hace, y una
+  // normal es que no hay nada pasajero que aplicar.
+  const pasajera = estado === 'cambiada' ? fila.hora_aviso?.trim() || null : null;
   return {
     id: fila.id,
     templo: fila.templo,
     dia: fila.dia,
-    hora: fila.hora,
+    hora: pasajera ?? fila.hora,
     nombre: fila.nombre,
     estado,
     // Una reunión normal no arrastra una frase vieja de «se suspende por
     // feriado». Y una suspendida sin frase no se inventa una.
     aviso: estado === 'normal' ? null : fila.aviso?.trim() || null,
+    horaHabitual: pasajera ? fila.hora : null,
     // La marca se calcula sobre la PRÓXIMA vez que esta reunión se hace, no
     // sobre hoy: el jueves ya se puede anunciar la Santa Cena del domingo.
     //

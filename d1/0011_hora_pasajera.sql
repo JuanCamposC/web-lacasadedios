@@ -1,0 +1,28 @@
+-- ── La hora de una reunión puede cambiar SOLO POR ESTA VEZ ──────────────────
+--
+-- `estado = 'cambiada'` existía desde el principio, pero no cambiaba la hora:
+-- guardaba una frase —«Este jueves se hace a las 19:00»— y nada más. La web
+-- seguía anunciando la hora de siempre en grande, y el contador de «próxima
+-- reunión» apuntaba a esa misma hora vieja. Quien no leyera el aviso llegaba a
+-- la hora equivocada, que es justo a quien el aviso tenía que servirle.
+--
+-- La salida de emergencia era editar la hora a mano y devolverla después. Eso
+-- ya se hizo una vez, con la Reunión de Acción de Gracias, y nadie la devolvió:
+-- seis días anunciando reuniones que no existían. Un cambio pasajero que hay
+-- que deshacer a mano no es pasajero, es una deuda con fecha de vencimiento.
+--
+-- `hora_aviso` es la hora que rige MIENTRAS DURE EL AVISO. Caducado
+-- `aviso_hasta`, la reunión vuelve sola a su `hora` de siempre, igual que
+-- vuelve sola de una suspensión. La hora de verdad nunca se toca, así que no
+-- hay nada que recordar ni nada que deshacer.
+--
+-- Vacía es lo normal: un cambio pasajero puede ser de lugar, de motivo o de
+-- cualquier otra cosa, y entonces la hora no se mueve.
+--
+-- El mismo `glob` que `hora` en la migración 0003, y por lo mismo: las horas se
+-- comparan como texto para ordenar la semana y para calcular la próxima
+-- reunión, así que «8pm» o «9:00» sin el cero delante romperían las dos cosas.
+-- Quién puede escribir acá se comprueba además en src/lib/panel.ts, que da el
+-- error en castellano; esto es la red de abajo.
+alter table reuniones add column hora_aviso text
+  check (hora_aviso is null or hora_aviso glob '[0-2][0-9]:[0-5][0-9]');

@@ -23,6 +23,7 @@ const base: FilaReunion = {
   estado: 'normal',
   aviso: null,
   aviso_hasta: null,
+  hora_aviso: null,
   marca: null,
   marca_regla: null,
 };
@@ -66,6 +67,68 @@ describe('vigente', () => {
   it('un aviso en blanco no se enseña como aviso', () => {
     const fila = { ...base, estado: 'suspendida' as const, aviso: '   ' };
     expect(vigente(fila, '2026-09-10').aviso).toBeNull();
+  });
+});
+
+describe('la hora de esta vez', () => {
+  const cambiada = {
+    ...base,
+    estado: 'cambiada' as const,
+    aviso: 'Solo este jueves',
+    aviso_hasta: '2026-10-24',
+    hora_aviso: '18:00',
+  };
+
+  it('rige mientras dure el aviso, y dice cuál era la de siempre', () => {
+    const r = vigente(cambiada, '2026-10-24');
+    expect(r.hora).toBe('18:00');
+    expect(r.horaHabitual).toBe('20:00');
+  });
+
+  it('al día siguiente la hora vuelve SOLA, sin que nadie la devuelva', () => {
+    // Lo que esto evita es exactamente lo que pasó con la Reunión de Acción de
+    // Gracias: un cambio «de esta vez» que había que deshacer a mano y que
+    // nadie deshizo. La hora de verdad nunca se tocó, así que no hay deuda.
+    const r = vigente(cambiada, '2026-10-25');
+    expect(r.estado).toBe('normal');
+    expect(r.hora).toBe('20:00');
+    expect(r.horaHabitual).toBeNull();
+  });
+
+  it('una reunión suspendida no mueve su hora', () => {
+    // Anunciar una hora nueva para algo que no se hace sería llevar a alguien a
+    // una puerta cerrada, y con más precisión que antes.
+    const r = vigente({ ...cambiada, estado: 'suspendida' }, '2026-10-24');
+    expect(r.hora).toBe('20:00');
+    expect(r.horaHabitual).toBeNull();
+  });
+
+  it('una reunión normal ignora una hora que quedó escrita', () => {
+    const r = vigente({ ...cambiada, estado: 'normal' }, '2026-10-24');
+    expect(r.hora).toBe('20:00');
+  });
+
+  it('un cambio sin hora nueva deja la de siempre', () => {
+    const r = vigente({ ...cambiada, hora_aviso: '  ' }, '2026-10-24');
+    expect(r.hora).toBe('20:00');
+    expect(r.horaHabitual).toBeNull();
+  });
+
+  it('la hora de esta vez manda en el orden del día y en la próxima reunión', () => {
+    // No basta con enseñarla: si el contador siguiera apuntando a la hora vieja,
+    // habría dos horas distintas en la misma página.
+    // La movida es de las 20:00, pero esta vez es a las 18:00: en el horario
+    // tiene que aparecer ANTES que la de las 19:00, no después.
+    const antes = vigente({ ...base, id: 'antes', dia: 4, hora: '19:00' }, '2026-10-24');
+    const movida = vigente({ ...cambiada, id: 'movida' }, '2026-10-24');
+    const [dia] = porDia([antes, movida]);
+    expect(dia.reuniones.map((r) => r.id)).toEqual(['movida', 'antes']);
+
+    // Jueves a las 18:30: la de las 19:00 todavía no empieza, y la movida ya
+    // empezó a las 18:00.
+    const ahora = { dia: 4, minutos: 18 * 60 + 30 };
+    expect(proximaReunion([antes, movida], ahora).reunion?.id).toBe('antes');
+    expect(proximaReunion([antes, movida], ahora).enCurso?.id).toBe('movida');
   });
 });
 
@@ -298,7 +361,10 @@ describe('tocaMarca', () => {
           d.setUTCDate(d.getUTCDate() + 1);
         }
         expect(veces.size, `${regla}, día ${dia}: meses con marca`).toBe(meses);
-        expect([...veces.values()].every((n) => n === 1), `${regla}, día ${dia}`).toBe(true);
+        expect(
+          [...veces.values()].every((n) => n === 1),
+          `${regla}, día ${dia}`,
+        ).toBe(true);
       }
     }
   });
@@ -314,6 +380,7 @@ describe('vigente con marca', () => {
     estado: 'normal' as const,
     aviso: null,
     aviso_hasta: null,
+    hora_aviso: null,
     marca: 'Santa Cena',
     marca_regla: 'primer-par',
   };

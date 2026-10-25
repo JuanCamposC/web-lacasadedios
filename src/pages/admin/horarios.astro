@@ -16,6 +16,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
     import {
       DIAS,
       reglaEnPalabras,
+      proximaFecha,
       proximaVezConMarca,
       fechaEnPalabras,
       hoyEnChile,
@@ -109,6 +110,13 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
             'Solo para esta vez. Si el cambio es para siempre, no uses esto: cambia el día o la hora ahí arriba.',
         },
         {
+          name: 'hora_aviso',
+          label: 'A qué hora, solo esta vez',
+          type: 'time',
+          help: 'Déjalo vacío si el cambio no es de hora. La hora de siempre no se toca: cuando el aviso caduque, la reunión vuelve sola a la suya.',
+          grupo: 'Un cambio pasajero',
+        },
+        {
           name: 'aviso',
           label: 'Qué decirle a la gente',
           type: 'text',
@@ -132,15 +140,23 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       ],
     });
 
-    /* ── La vista previa de la marca ──────────────────────────────────────────
-       Una regla como «el primero de los meses pares» es correcta y no dice nada:
-       quien la elige no sabe si acertó hasta que ve una fecha. Esta línea la
-       traduce mientras se escribe —«Santa Cena · el primer domingo de los meses
-       pares · la próxima, el domingo 4 de octubre de 2026»— y es la diferencia
-       entre rellenar el formulario a ciegas y comprobarlo solo.
+    /** El día siguiente a una fecha de Chile, «AAAA-MM-DD». */
+    function elDiaDespues(fecha: string): string {
+      const d = new Date(`${fecha}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + 1);
+      return d.toISOString().slice(0, 10);
+    }
+
+    /* ── Las dos vistas previas ───────────────────────────────────────────────
+       Los dos grupos de abajo del formulario dicen cosas correctas que no se
+       entienden hasta que se convierten en una fecha: «el primero de los meses
+       pares» y «esta vez cambia». Cada uno lleva una línea que lo traduce
+       mientras se escribe —«la próxima vez: el domingo 4 de octubre de 2026»— y
+       que avisa de las dos o tres formas de rellenarlos mal, que son silenciosas:
+       un cambio que no se verá nunca, o uno que no se irá nunca solo.
 
        Se engancha desde acá y no desde el CRUD genérico porque solo los horarios
-       tienen marcas: meterlo en el formulario de todos obligaría a que cada
+       tienen esto: meterlo en el formulario de todos obligaría a que cada
        pantalla supiera de reglas que no usa. */
     function enchufarVistaPrevia() {
       const form = document.getElementById('crud-form');
@@ -148,54 +164,120 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
       const campo = (n: string) => form.querySelector<HTMLSelectElement>(`[name="${n}"]`);
       const regla = campo('marca_regla');
-      if (!regla) return false;
+      const hasta = campo('aviso_hasta');
+      if (!regla || !hasta) return false;
 
-      let linea = document.getElementById('marca-previa');
-      if (!linea) {
-        linea = document.createElement('p');
-        linea.id = 'marca-previa';
-        linea.className = 'mt-1 text-xs';
-        // role="status": el texto cambia solo al tocar los desplegables, y quien
-        // use lector de pantalla tiene que enterarse sin ir a buscarlo.
-        linea.setAttribute('role', 'status');
-        regla.closest('label')?.after(linea);
-      }
-
-      /* Escribe solo si cambió. La línea vive DENTRO del formulario, así que
-         escribirla es un cambio del formulario: cualquier cosa que escuche al
-         formulario se estaría escuchando a sí misma. */
-      const poner = (texto: string, clase: string) => {
-        if (linea.textContent !== texto) linea.textContent = texto;
-        const completa = `mt-1 text-xs ${clase}`.trim();
-        if (linea.className !== completa) linea.className = completa;
+      /* Una línea bajo un campo. `role="status"`: el texto cambia solo al tocar
+         los desplegables, y quien use lector de pantalla tiene que enterarse sin
+         ir a buscarlo. */
+      const lineaBajo = (id: string, tras: Element | null | undefined) => {
+        let linea = document.getElementById(id);
+        if (!linea) {
+          linea = document.createElement('p');
+          linea.id = id;
+          linea.className = 'mt-1 text-xs';
+          linea.setAttribute('role', 'status');
+          tras?.after(linea);
+        }
+        /* Escribe solo si cambió. La línea vive DENTRO del formulario, así que
+           escribirla es un cambio del formulario: cualquier cosa que escuche al
+           formulario se estaría escuchando a sí misma. */
+        return (texto: string, clase: string) => {
+          if (linea!.textContent !== texto) linea!.textContent = texto;
+          const completa = `mt-1 text-xs ${clase}`.trim();
+          if (linea!.className !== completa) linea!.className = completa;
+        };
       };
 
-      const pintar = () => {
+      const ponerMarca = lineaBajo('marca-previa', regla.closest('label'));
+      const ponerCambio = lineaBajo('cambio-previo', hasta.closest('label'));
+
+      const pintarMarca = () => {
         const texto = (campo('marca')?.value ?? '').trim();
         const cual = regla.value;
         const dia = Number(campo('dia')?.value ?? '0');
 
         if (!texto && !cual) {
-          poner('', '');
+          ponerMarca('', '');
           return;
         }
         if (texto && !cual) {
-          poner('Falta decir cada cuánto: así escrito no se va a ver nunca.', 'text-warning');
+          ponerMarca('Falta decir cada cuánto: así escrito no se va a ver nunca.', 'text-warning');
           return;
         }
         if (!texto && cual) {
-          poner('Falta escribir qué pasa ese día.', 'text-warning');
+          ponerMarca('Falta escribir qué pasa ese día.', 'text-warning');
           return;
         }
 
         const cuando = reglaEnPalabras(cual, dia);
         const proxima = proximaVezConMarca(dia, cual, hoyEnChile());
-        poner(
+        ponerMarca(
           proxima
             ? `«${texto}» se verá ${cuando}. La próxima vez: ${fechaEnPalabras(proxima)}.`
             : `«${texto}» se verá ${cuando}.`,
           'text-success',
         );
+      };
+
+      const pintarCambio = () => {
+        const estado = campo('estado')?.value ?? 'normal';
+        const nueva = (campo('hora_aviso')?.value ?? '').trim();
+        const siempre = (campo('hora')?.value ?? '').trim();
+        const limite = hasta.value.trim();
+        const dia = Number(campo('dia')?.value ?? '0');
+
+        if (estado === 'normal') {
+          // Lo que quedó escrito de la vez pasada no se enseña, pero sigue ahí:
+          // decirlo evita creer que el cambio está puesto cuando no lo está.
+          const sobra = nueva || limite || (campo('aviso')?.value ?? '').trim();
+          ponerCambio(
+            sobra ? 'La reunión va normal: nada de este grupo se enseña.' : '',
+            sobra ? 'text-base-content/60' : '',
+          );
+          return;
+        }
+
+        if (estado === 'suspendida' && nueva) {
+          ponerCambio(
+            'Una reunión suspendida no se hace, así que la hora de esta vez no se usará.',
+            'text-warning',
+          );
+          return;
+        }
+
+        // Sin fecha de término no caduca nada: es el error que dejó seis días de
+        // reuniones fantasma, y el único que no se nota hasta mucho después.
+        if (!limite) {
+          ponerCambio(
+            'Sin fecha de término, esto se queda puesto hasta que alguien lo quite a mano.',
+            'text-warning',
+          );
+          return;
+        }
+
+        // Un aviso que caduca antes de la próxima reunión no lo lee nadie.
+        const proxima = proximaFecha(dia, hoyEnChile());
+        if (limite < proxima) {
+          ponerCambio(
+            `Termina antes de la próxima reunión (${fechaEnPalabras(proxima)}): así no se verá nunca.`,
+            'text-warning',
+          );
+          return;
+        }
+
+        const vuelve = `Vuelve sola a la normalidad el ${fechaEnPalabras(elDiaDespues(limite))}.`;
+        ponerCambio(
+          estado === 'cambiada' && nueva
+            ? `El ${fechaEnPalabras(proxima)} a las ${nueva}, y no a las ${siempre}. ${vuelve}`
+            : vuelve,
+          'text-success',
+        );
+      };
+
+      const pintar = () => {
+        pintarMarca();
+        pintarCambio();
       };
 
       // `input` para lo que se escribe, `change` para los desplegables. Van en el

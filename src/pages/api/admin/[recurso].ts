@@ -102,8 +102,17 @@ function detalleDeReunion(fila: Record<string, unknown>): { detalle?: string } {
   if (typeof fila.dia !== 'number' || typeof fila.hora !== 'string') return {};
   const templo = templos.find((t) => t.slug === fila.templo)?.short ?? String(fila.templo);
   const estado = ESTADOS[String(fila.estado)];
+  // Con una hora pasajera puesta, el listado enseña las dos: «Sábado 17:30 →
+  // 18:00». Si solo mostrara la de siempre, la línea diría una hora y el sitio
+  // otra, que es justo lo que esta columna existe para evitar.
+  const pasajera =
+    fila.estado === 'cambiada' && typeof fila.hora_aviso === 'string' && fila.hora_aviso
+      ? ` → ${fila.hora_aviso}`
+      : '';
   return {
-    detalle: [templo, `${DIAS[fila.dia] ?? '?'} ${fila.hora}`, estado].filter(Boolean).join(' · '),
+    detalle: [templo, `${DIAS[fila.dia] ?? '?'} ${fila.hora}${pasajera}`, estado]
+      .filter(Boolean)
+      .join(' · '),
   };
 }
 

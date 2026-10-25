@@ -235,7 +235,11 @@ const jsonLd = {
                       <li>
                         {r.nombre} del {DIAS[r.dia].toLowerCase()} ({r.hora}):{' '}
                         {r.aviso ??
-                          (r.estado === 'suspendida' ? 'suspendida' : 'cambio de horario')}
+                          (r.estado === 'suspendida'
+                            ? 'suspendida'
+                            : r.horaHabitual
+                              ? `solo esta vez, su hora de siempre es ${r.horaHabitual}`
+                              : 'cambio de horario')}
                       </li>
                     ))}
                   </ul>
@@ -290,7 +294,11 @@ const jsonLd = {
                                 class="h-3.5 w-3.5 shrink-0"
                               />
                               {r.aviso ??
-                                (r.estado === 'suspendida' ? 'Suspendida' : 'Cambio de horario')}
+                                (r.estado === 'suspendida'
+                                  ? 'Suspendida'
+                                  : r.horaHabitual
+                                    ? `Solo esta vez · su hora de siempre es ${r.horaHabitual}`
+                                    : 'Cambio de horario')}
                             </span>
                           )}
                           <span class="reunion-marca" data-marca hidden>

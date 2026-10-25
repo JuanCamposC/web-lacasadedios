@@ -51,6 +51,8 @@ const temploDe = (slug: string) => templos.find((t) => t.slug === slug)!;
  */
 interface Grupo {
   hora: string;
+  /** La de siempre, cuando «hora» es la de esta vez nada más. */
+  horaHabitual: string | null;
   nombre: string;
   estado: Reunion['estado'];
   aviso: string | null;
@@ -63,12 +65,13 @@ function agrupar(deEseDia: Reunion[]): Grupo[] {
   for (const r of deEseDia) {
     // La marca entra en la clave como el aviso: dos templos a la misma hora, uno
     // con Santa Cena y otro sin ella, no son la misma línea.
-    const clave = `${r.hora}|${r.nombre}|${r.estado}|${r.aviso ?? ''}|${r.marca ?? ''}`;
+    const clave = `${r.hora}|${r.horaHabitual ?? ''}|${r.nombre}|${r.estado}|${r.aviso ?? ''}|${r.marca ?? ''}`;
     const grupo = grupos.get(clave);
     if (grupo) grupo.sedes.push(temploDe(r.templo));
     else {
       grupos.set(clave, {
         hora: r.hora,
+        horaHabitual: r.horaHabitual,
         nombre: r.nombre,
         estado: r.estado,
         aviso: r.aviso,
@@ -250,8 +253,16 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
                               name={g.estado === 'suspendida' ? 'lucide:ban' : 'lucide:clock-alert'}
                               class="h-4 w-4 shrink-0"
                             />
+                            {/* Sin frase escrita, la línea dice lo que sabe. Si la
+                                hora de esta vez es otra, eso es lo que hay que
+                                decir: el número grande ya cambió, y sin esto
+                                parecería el horario de siempre. */}
                             {g.aviso ??
-                              (g.estado === 'suspendida' ? 'Suspendida' : 'Cambio de horario')}
+                              (g.estado === 'suspendida'
+                                ? 'Suspendida'
+                                : g.horaHabitual
+                                  ? `Solo esta vez · su hora de siempre es ${g.horaHabitual}`
+                                  : 'Cambio de horario')}
                           </span>
                         )}
                       </li>

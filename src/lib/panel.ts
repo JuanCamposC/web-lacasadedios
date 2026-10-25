@@ -94,6 +94,24 @@ function comprobarReglaMarca(columna: string, valor: unknown): void {
   );
 }
 
+/**
+ * Una hora tiene que ser «HH:MM» de verdad.
+ *
+ * El formulario usa un selector de hora, así que esto solo se alcanza a mano.
+ * Importa igual: las horas se comparan como TEXTO para ordenar la semana y para
+ * calcular la próxima reunión, así que «9:00» sin el cero delante se iría
+ * después de las diez y «8pm» no se ordenaría con nada. La base lo rechaza
+ * también (migraciones 0003 y 0011); esto es para decirlo en castellano antes.
+ */
+const HORA = /^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/;
+
+function comprobarHora(columna: string, valor: unknown): void {
+  if (columna !== 'hora' && columna !== 'hora_aviso') return;
+  if (valor === null || valor === undefined) return;
+  if (typeof valor === 'string' && HORA.test(valor)) return;
+  throw new DatoInvalido(`«${String(valor)}» no es una hora. Tiene que ser como 18:00 o 09:30.`);
+}
+
 /** Las tablas que el panel puede tocar, y qué columnas de cada una. */
 const COLUMNAS = {
   eventos: [
@@ -131,6 +149,7 @@ const COLUMNAS = {
     'estado',
     'aviso',
     'aviso_hasta',
+    'hora_aviso',
     'marca',
     'marca_regla',
     'publicado',
@@ -240,6 +259,7 @@ function limpiar(recurso: Recurso, datos: Record<string, unknown>) {
     }
 
     comprobarUrl(columna, valor);
+    comprobarHora(columna, valor);
     comprobarReglaMarca(columna, valor);
     campos.push(columna);
     valores.push(valor);
