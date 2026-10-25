@@ -124,6 +124,7 @@ export const templos: Templo[] = [
     name: 'Templo Santiago Centro',
     short: 'Santiago Centro',
     image: 'temploSantiagoCentro',
+    imageMini: 'temploSantiagoCentroMini',
     tagline: 'En el corazón de Santiago',
     address: 'Aldunate #1002, Santiago',
     city: 'Comuna de Santiago',

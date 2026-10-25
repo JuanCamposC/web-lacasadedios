@@ -17,10 +17,8 @@ con varios nombres. Eso es a propósito y deja de pasar a medida que llegan las 
 | Archivo                      | Dónde se ve                               | Fuente (Unsplash photo id)       |
 | ---------------------------- | ----------------------------------------- | -------------------------------- |
 | `inicio-estudio.jpg`         | Banda del Instituto Bíblico en la portada | photo-1510590337019-5ef8d3d32116 |
-| `nosotros-portada.jpg`       | Portada de /sobre-nosotros                | photo-1579975096649-e773152b04cb |
 | `nosotros-historia.jpg`      | Nuestra historia, en /sobre-nosotros      | photo-1445445290350-18a3b86e0b5a |
 | `nosotros-cierre.jpg`        | Banda final de /sobre-nosotros            | photo-1438232992991-995b7058bbb3 |
-| `templos-portada.jpg`        | Portada de /templos                       | photo-1477281765962-ef34e8bb0967 |
 | `templos-cierre.jpg`         | Banda final de /templos                   | photo-1438232992991-995b7058bbb3 |
 | `horarios-portada.jpg`       | Portada de /horarios                      | photo-1445445290350-18a3b86e0b5a |
 | `horarios-cierre.jpg`        | Banda final de /horarios                  | photo-1579975096649-e773152b04cb |

@@ -65,6 +65,7 @@ import temploSantiagoCentro from './img/templo-santiago-centro.jpg';
 import temploSanMiguel from './img/templo-san-miguel.jpg';
 import temploLimache from './img/templo-limache.jpg';
 import temploCoya from './img/templo-coya.jpg';
+import temploSantiagoCentroMini from './img/templo-santiago-centro-mini.jpg';
 import temploCoyaMini from './img/templo-coya-mini.jpg';
 
 import pastorArturo from './img/pastor-arturo.jpg';
@@ -101,8 +102,9 @@ export const IMG = {
   temploSanMiguel,
   temploLimache,
   temploCoya,
-  // La misma iglesia de frente, para las tarjetas pequeñas. El porqué, en
+  // Las mismas iglesias de cerca, para las tarjetas pequeñas. El porqué, en
   // el comentario de `imageMini` en src/data/templos.ts.
+  temploSantiagoCentroMini,
   temploCoyaMini,
 
   // Los retratos de los pastores. Van en dos sitios: la tarjeta cuadrada de
