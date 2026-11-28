@@ -21,6 +21,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       subtitleField: 'enlace',
       orderBy: { column: 'orden', ascending: true },
       orderable: { column: 'orden' },
+      // Las fotos salen en la portada, no en una página propia.
+      enlacePublico: () => '/#instagram',
       fields: [
         {
           name: 'imagen_clave',

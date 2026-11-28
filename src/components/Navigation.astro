@@ -29,7 +29,7 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
     </a>
 
     <!-- Menú (escritorio) -->
-    <ul class="hidden items-center gap-0.5 xl:flex">
+    <ul class="hidden items-center gap-0.5 lg:flex">
       {
         MAIN_NAV.map((entry) => {
           const activo = isActive(entry, pathname);
@@ -45,7 +45,10 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
                 </summary>
                 <ul class="dropdown-content z-[100] mt-3 w-72 rounded-lg border border-base-300 bg-base-100 p-2 shadow-xl">
                   {entry.items.map((item) => (
-                    <li>
+                    <li
+                      data-solo-en-vivo={item.soloEnVivo ? '' : undefined}
+                      hidden={item.soloEnVivo}
+                    >
                       <a
                         href={item.href}
                         class={`flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-base-200 ${pathname === item.href ? 'bg-primary/10' : ''}`}
@@ -90,10 +93,21 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
 
     <!-- Acciones -->
     <div class="flex items-center gap-1">
-      <label class="swap swap-rotate btn btn-ghost btn-circle btn-sm" title="Cambiar tema">
-        <input type="checkbox" id="theme-toggle" aria-label="Cambiar entre tema claro y oscuro" />
+      {/* Tres estados y no dos. El icono que se ve lo decide `data-tema`, desde
+          el CSS de más abajo: así el botón no tiene que montar ni desmontar
+          nada, y sin JavaScript enseña el del tema claro, que es el que la
+          página trae puesto. El porqué del tercer estado está en lib/tema.ts. */}
+      <button
+        type="button"
+        id="theme-toggle"
+        data-tema="church"
+        class="btn btn-ghost btn-circle btn-sm"
+        title="Cambiar tema"
+        aria-label="Tema claro. Toca para cambiarlo"
+      >
         <svg
-          class="swap-off h-5 w-5 fill-current"
+          data-icono="church"
+          class="h-5 w-5 fill-current"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           aria-hidden="true"
@@ -103,7 +117,8 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
           ></path>
         </svg>
         <svg
-          class="swap-on h-5 w-5 fill-current"
+          data-icono="churchdark"
+          class="h-5 w-5 fill-current"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           aria-hidden="true"
@@ -112,7 +127,23 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
             d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z"
           ></path>
         </svg>
-      </label>
+        {/* Una pantalla: «lo que diga tu aparato». */}
+        <svg
+          data-icono="auto"
+          class="h-5 w-5"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+          <path d="M8 21h8M12 17v4"></path>
+        </svg>
+      </button>
 
       <a href="/contacto" class="btn btn-primary btn-sm hidden gap-1.5 sm:inline-flex">
         <Icon name="lucide:mail" class="h-4 w-4" /> Contacto
@@ -121,7 +152,7 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
       <button
         id="nav-toggle"
         type="button"
-        class="btn btn-ghost btn-sm btn-square xl:hidden"
+        class="btn btn-ghost btn-sm btn-square lg:hidden"
         aria-label="Abrir menú"
         aria-expanded="false"
         aria-controls="mobile-menu"
@@ -135,7 +166,7 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
   <!-- Panel móvil -->
   <div
     id="mobile-menu"
-    class="hidden max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-base-300 bg-base-100 xl:hidden"
+    class="hidden max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-base-300 bg-base-100 lg:hidden"
   >
     <ul class="flex flex-col gap-0.5 px-4 py-3">
       {
@@ -153,7 +184,10 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
                 </summary>
                 <ul class="mb-1 ml-3 space-y-0.5 border-l border-base-300 pl-3">
                   {entry.items.map((item) => (
-                    <li>
+                    <li
+                      data-solo-en-vivo={item.soloEnVivo ? '' : undefined}
+                      hidden={item.soloEnVivo}
+                    >
                       <a
                         href={item.href}
                         class={`block rounded-lg px-3 py-2.5 text-sm ${pathname === item.href ? 'bg-primary/10 font-semibold text-primary' : 'text-base-content/80 hover:bg-base-200'}`}
@@ -196,8 +230,9 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
     aplicarTema,
     guardarTema,
     temaGuardado,
-    TEMA_OSCURO,
-    TEMA_POR_DEFECTO,
+    siguienteTema,
+    NOMBRE_TEMA,
+    type Tema,
   } from '../lib/tema';
 
   /*
@@ -251,7 +286,10 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
     window.addEventListener('scroll', pintarScroll, { passive: true });
 
     window.addEventListener('resize', () => {
-      if (window.innerWidth >= 1280) abrirMenuMovil(false);
+      // 1024 y no 1280: es el ancho al que reaparece el menú de escritorio
+      // (lg:flex). Si no coincidieran, al ensanchar la ventana quedarían los
+      // dos menús a la vez o ninguno.
+      if (window.innerWidth >= 1024) abrirMenuMovil(false);
     });
 
     document.addEventListener('click', (e) => {
@@ -268,21 +306,36 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
   function initNav() {
     engancharGlobales();
 
-    const themeToggle = document.getElementById('theme-toggle') as HTMLInputElement | null;
+    const botonTema = document.getElementById('theme-toggle') as HTMLButtonElement | null;
+
+    /** Pone en el botón el icono y el nombre del tema que está puesto. */
+    function pintarBotonTema(tema: Tema) {
+      if (!botonTema) return;
+      botonTema.dataset.tema = tema;
+      // El rótulo dice el estado ACTUAL y no el siguiente: quien lo oye tiene
+      // que saber en qué está, no adivinar adónde va.
+      botonTema.setAttribute('aria-label', `Tema ${NOMBRE_TEMA[tema]}. Toca para cambiarlo`);
+      botonTema.title = `Tema ${NOMBRE_TEMA[tema]}`;
+    }
 
     // La normalización y el guardado viven en src/lib/tema.ts, junto con el
     // script inline del layout: antes estaban escritos dos veces.
     const tema = temaGuardado();
     aplicarTema(tema);
-    if (themeToggle) themeToggle.checked = tema === TEMA_OSCURO;
+    pintarBotonTema(tema);
 
     // Este escuchador sí va en el elemento: se lo lleva la navegación con él.
     // Con la misma marca, para que dos arranques no lo dupliquen.
-    if (themeToggle && !themeToggle.dataset.listo) {
-      themeToggle.dataset.listo = '1';
-      themeToggle.addEventListener('change', () =>
-        guardarTema(themeToggle.checked ? TEMA_OSCURO : TEMA_POR_DEFECTO),
-      );
+    if (botonTema && !botonTema.dataset.listo) {
+      botonTema.dataset.listo = '1';
+      botonTema.addEventListener('click', () => {
+        // Se lee lo guardado en vez de fiarse de una variable: con las
+        // transiciones de vista esta función sobrevive a la navegación y la
+        // variable de arriba sería la del arranque, no la de ahora.
+        const nuevo = siguienteTema(temaGuardado());
+        guardarTema(nuevo);
+        pintarBotonTema(nuevo);
+      });
     }
 
     const nav = laBarra();
@@ -399,6 +452,16 @@ const pillIdle = 'text-base-content/70 hover:bg-base-200 hover:text-base-content
     background-color: rgb(255 255 255 / 0.12);
     color: #ffffff;
   }
+  /* Del botón de tema se ve un icono y solo uno: el del estado puesto. */
+  #theme-toggle [data-icono] {
+    display: none;
+  }
+  #theme-toggle[data-tema='church'] [data-icono='church'],
+  #theme-toggle[data-tema='churchdark'] [data-icono='churchdark'],
+  #theme-toggle[data-tema='auto'] [data-icono='auto'] {
+    display: block;
+  }
+
   details > summary::-webkit-details-marker {
     display: none;
   }

@@ -10,9 +10,10 @@ Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate
 
 import Layout from '../../layouts/Layout.astro';
 import PageHero from '../../components/PageHero.astro';
-import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import RutaJsonLd from '../../components/RutaJsonLd.astro';
 import FiltroTemplos from '../../components/FiltroTemplos.astro';
 import Reveal from '../../components/Reveal.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
 import EmptyState from '../../components/EmptyState.astro';
 import AccionesEvento from '../../components/AccionesEvento.astro';
 import CtaBand from '../../components/CtaBand.astro';
@@ -21,7 +22,7 @@ import { IMG } from '../../assets/images';
 import { templos } from '../../data/templos';
 import { SITE } from '../../data/site';
 import { baseDeDatos } from '../../lib/base';
-import { eventosProximos, eventosPasados } from '../../lib/datos';
+import { eventosProximos, eventosPasados, eventoPorClave } from '../../lib/datos';
 import { urlMedio } from '../../lib/medios';
 import { enChile, fechaLarga, horaCorta } from '../../lib/hora';
 
@@ -36,6 +37,23 @@ const conImagen = <T extends { imagen_clave: string | null }>(e: T) => ({
   ...e,
   imagen: urlMedio(e.imagen_clave),
 });
+/*
+ * El evento que se compartió, si la dirección trae uno.
+ *
+ * Al compartir, lo que se manda es `/eventos?e=<slug>`. WhatsApp pide esa
+ * misma dirección para armar la vista previa, así que acá se busca el evento y
+ * la página se presenta como él: su título, su descripción y, sobre todo, su
+ * afiche. Sin el parámetro, /eventos es la agenda de siempre.
+ *
+ * Lo que va después de `#` no sirve para esto: el fragmento nunca sale del
+ * navegador, así que `/eventos#e-<id>` —la forma anterior— le llegaba a
+ * WhatsApp como `/eventos` a secas y todos los eventos compartían la misma
+ * tarjeta.
+ */
+const clave = Astro.url.searchParams.get('e');
+const filaCompartida = clave ? await eventoPorClave(base, clave) : null;
+const compartido = filaCompartida ? conImagen(filaCompartida) : null;
+
 const [upcoming, past] = await Promise.all([
   eventosProximos(base).then((f) => f.map(conImagen)),
   eventosPasados(base, { limite: 6 }).then((f) => f.map(conImagen)),
@@ -105,8 +123,16 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
 ---
 
 <Layout
-  title="Eventos · La Casa de Dios"
-  description="Próximos eventos y actividades de La Casa de Dios: reuniones especiales, encuentros y celebraciones."
+  title={compartido ? `${compartido.titulo} · La Casa de Dios` : 'Eventos · La Casa de Dios'}
+  description={
+    compartido
+      ? (compartido.descripcion ?? `${fmtDate(compartido.fecha)} · ${compartido.lugar ?? SITE.name}`)
+      : 'Próximos eventos y actividades de La Casa de Dios: reuniones especiales, encuentros y celebraciones.'
+  }
+  {/* La tarjeta de 1200×630 si existe; si no, la imagen normal, que al menos
+      da una vista previa aunque sea pequeña. Ver la migración 0013. */}
+  image={urlMedio(compartido?.imagen_social_clave ?? null) ?? compartido?.imagen ?? undefined}
+  ogUrl={compartido ? `${sitio}/eventos?e=${encodeURIComponent(clave!)}` : undefined}
 >
   <PageHero
     image={IMG.eventosPortada}
@@ -123,7 +149,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
     )
   }
 
-  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Eventos' }]} />
+  <RutaJsonLd items={[{ label: 'Inicio', href: '/' }, { label: 'Eventos' }]} />
 
   {
     /* La barra de filtro y lo que filtra viven en el mismo bloque a propósito:
@@ -152,18 +178,24 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
         {
           upcoming.length > 0 && (
             <>
-              <h2 class="font-display text-3xl">Próximos eventos</h2>
-              <p class="mt-1 text-base-content/70">
-                {upcoming.length}{' '}
-                {upcoming.length === 1 ? 'actividad programada' : 'actividades programadas'}
-              </p>
+              {/* Con el componente, igual que las otras cinco páginas: mismo
+                  tamaño de titular, mismo antetítulo y el mismo revelado al
+                  entrar. Escrito a mano, esta página —y la de noticias— eran
+                  las dos únicas que no seguían el ritmo del resto, y son
+                  justo las dos que más cambian. */}
+              <SectionHeading
+                eyebrow="Lo que viene"
+                title="Próximos eventos"
+                subtitle={`${upcoming.length} ${upcoming.length === 1 ? 'evento programado' : 'eventos programados'}`}
+                align="left"
+              />
 
               <div class="mt-8 grid gap-6 md:grid-cols-2">
                 {upcoming.map((e, i) => (
                   <Reveal delay={(i % 2) * 80} class="h-full" data-etiqueta={e.templo}>
                     <article
                       id={`e-${e.id}`}
-                      class="panel panel-sm panel-lift group flex h-full scroll-mt-24 flex-col overflow-hidden"
+                      class="panel panel-lift group flex h-full scroll-mt-24 flex-col overflow-hidden"
                     >
                       <div class="relative h-48 overflow-hidden">
                         {/* El afiche entero, sobre una copia suya desenfocada.
@@ -186,7 +218,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
                             />
                             <img
                               src={e.imagen}
-                              alt={e.titulo}
+                              alt={e.imagen_alt ?? e.titulo}
                               class="relative h-full w-full object-contain transition-transform duration-700 group-hover:scale-105"
                               loading="lazy"
                             />
@@ -239,7 +271,8 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
         {
           past.length > 0 && (
             <div class={upcoming.length > 0 ? 'mt-16' : ''}>
-              <h2 class="font-display text-2xl opacity-70">Eventos anteriores</h2>
+              {/* Secundario: es el archivo, no a lo que se viene. */}
+              <SectionHeading eyebrow="Archivo" title="Eventos anteriores" align="left" secundario />
               <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {past.map((e) => (
                   <Reveal class="h-full" data-etiqueta={e.templo}>
@@ -276,4 +309,37 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
       <Icon name="lucide:church" class="h-5 w-5" /> Nuestros templos
     </a>
   </CtaBand>
+
+  {compartido && <span hidden data-evento-compartido={compartido.id} />}
+
+  <script>
+    /*
+     * Quien llega desde un enlace compartido entra por la agenda entera, así
+     * que hay que dejarlo frente al evento que le mandaron.
+     *
+     * El evento viaja en el parámetro `e` y no en el `#` porque el `#` no sale
+     * del navegador, y sin él el servidor no sabría de cuál es la vista previa.
+     * El precio de esa decisión es este desplazamiento a mano.
+     *
+     * El id llega en un atributo y no incrustado en el script para que no haga
+     * falta un script en línea: la política de seguridad del sitio solo deja
+     * correr los que Astro empaqueta y firma.
+     *
+     * Si la tarjeta no está —un evento viejo que ya no se lista— no se hace
+     * nada: la página se queda arriba, que es mejor que saltar a ninguna parte.
+     */
+    const marca = document.querySelector<HTMLElement>('[data-evento-compartido]');
+    const tarjeta = marca && document.getElementById(`e-${marca.dataset.eventoCompartido}`);
+    if (tarjeta) {
+      tarjeta.scrollIntoView({ block: 'center' });
+      // Un resalte breve para que se note cuál de todos es. Se quita solo, y
+      // respeta a quien pidió menos movimiento en su sistema.
+      const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      tarjeta.style.transition = quieto ? 'none' : 'box-shadow .5s ease';
+      tarjeta.style.boxShadow = '0 0 0 3px var(--color-accent, #d4a72c)';
+      setTimeout(() => {
+        tarjeta.style.boxShadow = '';
+      }, 2400);
+    }
+  </script>
 </Layout>

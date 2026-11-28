@@ -1,0 +1,124 @@
+---
+import { Icon } from 'astro-icon/components';
+
+/**
+ * Un botón para compartir, el mismo en todo el sitio.
+ *
+ * ── POR QUÉ EXISTE ──────────────────────────────────────────────────────────
+ * Había dos formas distintas de compartir, y el propio código discutía consigo
+ * mismo. En los eventos, un botón que abre la hoja del sistema, con este
+ * argumento escrito en `AccionesEvento.astro`:
+ *
+ *   «Un solo botón en vez de tres iconos de redes: cabe mejor en la ficha y no
+ *    obliga a adivinar por dónde comparte cada uno.»
+ *
+ * Y al pie de cada noticia, exactamente esos tres iconos —WhatsApp, Facebook y
+ * copiar— escritos a mano. Las dos decisiones son defendibles; tenerlas las dos
+ * no. Y la de las noticias era la que perdía: sin la hoja del sistema, en el
+ * teléfono no ofrecía Instagram, ni Telegram, ni nada que la persona tuviera
+ * instalado. Solo las dos redes que alguien eligió por ella.
+ *
+ * ── CÓMO SE COMPORTA ────────────────────────────────────────────────────────
+ * · En el teléfono abre la hoja del sistema, con todo lo que haya instalado.
+ * · En el escritorio, donde casi ningún navegador la trae, copia el enlace.
+ * · SIN JavaScript sigue siendo un enlace a WhatsApp, que es lo que más se usa
+ *   acá y funciona sin nada. Es el mismo patrón que el botón de calendario de
+ *   los eventos: el `href` es el camino que nunca depende de nada, y el script
+ *   solo lo mejora.
+ */
+interface Props {
+  /** Dirección absoluta de lo que se comparte. */
+  url: string;
+  titulo: string;
+  /**
+   * El mensaje con el que se comparte, cuando no basta el título.
+   *
+   * Las noticias traen uno editable desde el panel («Hola, acabo de leer esta
+   * noticia que me bendijo. {titulo} — {enlace}»), que es lo que se escribe en
+   * WhatsApp. Sin esto, el mensaje es el título y el enlace.
+   */
+  texto?: string;
+  /** Clases extra para encajarlo donde va. */
+  class?: string;
+}
+
+const { url, titulo, texto, class: clase = '' } = Astro.props;
+
+const mensaje = texto ?? `${titulo} — ${url}`;
+const whatsapp = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+---
+
+<a
+  href={whatsapp}
+  target="_blank"
+  rel="noopener noreferrer"
+  data-compartir
+  data-url={url}
+  data-titulo={titulo}
+  data-texto={mensaje}
+  class={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content ${clase}`}
+>
+  <Icon name="lucide:share-2" class="h-4 w-4" />
+  <span data-rotulo>Compartir</span>
+</a>
+
+<script>
+  /*
+   * La guardia es una variable del módulo y no una marca en el <body>.
+   *
+   * Con las transiciones de vista, Astro REEMPLAZA el <body> entero en cada
+   * navegación: la marca se iba con el body viejo, la función volvía a colgar
+   * su escuchador, y al cabo de tres páginas «Compartir» se ejecutaba tres
+   * veces. El módulo, en cambio, se evalúa una sola vez por sesión.
+   *
+   * Va por delegación en el documento: en /eventos hay un botón por evento y
+   * no tiene sentido colgar un escuchador de cada uno.
+   */
+  let listo = false;
+
+  function initCompartir() {
+    if (listo) return;
+    listo = true;
+
+    document.addEventListener('click', async (ev) => {
+      const btn = (ev.target as HTMLElement)?.closest?.(
+        '[data-compartir]',
+      ) as HTMLAnchorElement | null;
+      if (!btn) return;
+
+      const url = btn.dataset.url ?? location.href;
+      const titulo = btn.dataset.titulo ?? '';
+      const texto = btn.dataset.texto ?? titulo;
+      const rotulo = btn.querySelector('[data-rotulo]');
+
+      const avisar = (frase: string) => {
+        if (!rotulo) return;
+        const antes = rotulo.textContent;
+        rotulo.textContent = frase;
+        setTimeout(() => (rotulo.textContent = antes), 1800);
+      };
+
+      // A partir de acá el enlace a WhatsApp deja de usarse: hay algo mejor.
+      ev.preventDefault();
+
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: titulo, text: texto, url });
+        } catch {
+          // Cancelar la hoja del sistema también llega aquí: no se hace nada
+          // más, porque copiar el enlace sin que lo pidan sería una sorpresa.
+        }
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(url);
+        avisar('¡Copiado!');
+      } catch {
+        avisar('No se pudo copiar');
+      }
+    });
+  }
+
+  document.addEventListener('astro:page-load', initCompartir);
+</script>

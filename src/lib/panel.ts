@@ -119,9 +119,11 @@ const COLUMNAS = {
     'slug',
     'fecha',
     'duracion_min',
+    'imagen_social_clave',
     'lugar',
     'descripcion',
     'imagen_clave',
+    'imagen_alt',
     'templo',
     'publicado',
   ],
@@ -131,6 +133,8 @@ const COLUMNAS = {
     'bajada',
     'cuerpo',
     'imagen_clave',
+    'imagen_social_clave',
+    'imagen_alt',
     'templo',
     'publicado',
     'publicado_en',
@@ -182,8 +186,10 @@ export type Recurso = keyof typeof COLUMNAS;
  * quedar fuera, para que agregar una tabla nueva obligue a decidir.
  */
 const COLUMNAS_ARCHIVO = {
-  eventos: ['imagen_clave'],
-  noticias: ['imagen_clave'],
+  // Dos archivos por fila: la imagen del sitio y su tarjeta para compartir.
+  // Las dos tienen que borrarse al borrar la fila, o quedan huérfanas en R2.
+  eventos: ['imagen_clave', 'imagen_social_clave'],
+  noticias: ['imagen_clave', 'imagen_social_clave'],
   instagram: ['imagen_clave'],
   estudios: ['archivo_clave'],
   videos: [],
@@ -218,6 +224,40 @@ const ORDEN: Record<Recurso, string> = {
 export function esRecurso(valor: unknown): valor is Recurso {
   return typeof valor === 'string' && Object.hasOwn(COLUMNAS, valor);
 }
+
+// ── La papelera ─────────────────────────────────────────────────────────────
+
+/**
+ * Tablas donde borrar escribe una fecha en vez de quitar la fila.
+ *
+ * Ver d1/0014_papelera.sql. Falta `estudios_ocultos` a propósito: ahí una fila
+ * no es contenido sino una decisión («este episodio no se enseña»), y quitarla
+ * ES el deshacer.
+ */
+const CON_PAPELERA = new Set<Recurso>([
+  'eventos',
+  'noticias',
+  'videos',
+  'estudios',
+  'instagram',
+  'enlaces',
+  'reuniones',
+]);
+
+/** ¿Esta tabla tiene papelera, o su borrado es definitivo? */
+export const tienePapelera = (recurso: Recurso) => CON_PAPELERA.has(recurso);
+
+/**
+ * Cuántos días se guarda lo borrado antes de poder vaciarse.
+ *
+ * Treinta porque el error que esto arregla se descubre tarde: alguien borra la
+ * noticia equivocada y lo nota cuando va a compartirla, que puede ser la semana
+ * siguiente. Menos de un mes convertiría la papelera en un adorno.
+ */
+export const DIAS_EN_PAPELERA = 30;
+
+/** El `where` que esconde lo borrado, para pegar en una consulta. */
+const vivas = (recurso: Recurso) => (CON_PAPELERA.has(recurso) ? 'borrado_en is null' : '1 = 1');
 
 /** Momento actual en el formato de la base. */
 function ahora(): string {
@@ -267,6 +307,21 @@ function limpiar(recurso: Recurso, datos: Record<string, unknown>) {
       valor = bruto ?? null;
     }
 
+    /*
+     * «Publicar el día» vacío significa «no decidas nada», no «ponlo en nulo».
+     *
+     * La columna es `not null` con valor por omisión (el instante actual), así
+     * que mandar nulo revienta el guardado con «NOT NULL constraint failed» —un
+     * mensaje que no le dice nada a quien solo dejó un campo en blanco. Sin la
+     * columna, al crear manda la base su valor por omisión y al editar se queda
+     * la fecha que ya tenía, que es justo lo que se espera de un campo vacío.
+     *
+     * Es la misma clase de regla que la de `duracion_min` de más arriba: el
+     * formulario del navegador no distingue «vacío» de «cero» ni de «nulo», y
+     * alguien tiene que traducir. Ese alguien es este archivo.
+     */
+    if (columna === 'publicado_en' && valor === null) continue;
+
     comprobarUrl(columna, valor);
     comprobarHora(columna, valor);
     comprobarReglaMarca(columna, valor);
@@ -277,10 +332,16 @@ function limpiar(recurso: Recurso, datos: Record<string, unknown>) {
   return { campos, valores };
 }
 
-/** Todo lo que hay en una tabla, borradores incluidos. Solo para el panel. */
+/**
+ * Todo lo que hay en una tabla, borradores incluidos. Solo para el panel.
+ *
+ * Lo que está en la papelera NO sale. Es la misma regla que en el sitio
+ * público: una fila borrada no se ve en ninguna de las dos partes, y la única
+ * pantalla que la enseña es /admin/papelera.
+ */
 export async function listarTodo<T>(base: Base, recurso: Recurso): Promise<T[]> {
   const { results } = await base
-    .prepare(`select * from ${recurso} order by ${ORDEN[recurso]}`)
+    .prepare(`select * from ${recurso} where ${vivas(recurso)} order by ${ORDEN[recurso]}`)
     .bind()
     .all<T>();
   return results ?? [];
@@ -421,19 +482,145 @@ export async function actualizar(
 }
 
 /**
- * Borra una fila y devuelve las claves de R2 que nombraba.
+ * Manda una fila a la papelera, o la borra de verdad si su tabla no tiene.
  *
- * Devolverlas y no borrarlas acá es a propósito: este módulo solo habla con la
- * base. Quien llama decide qué hacer con el bucket, y así las pruebas de la
- * lista blanca no necesitan un R2 de mentira. El borrado de verdad lo hace
- * `olvidarArchivos` en src/lib/archivos.ts, que además comprueba que no las
- * esté usando otra fila.
+ * Devuelve las claves de R2 que hay que liberar — que con papelera son NINGUNA,
+ * y eso es la mitad de la gracia. Si al mandar una noticia a la papelera se
+ * liberara su imagen, restaurarla devolvería la noticia con un hueco donde
+ * estaba la foto, y el motivo sería imposible de adivinar. Mientras la fila
+ * existe sigue nombrando su archivo, así que `sigueEnUso` lo encuentra y el
+ * archivo se queda. Se libera al vaciar la papelera (ver `purgar`).
+ *
+ * Para las tablas sin papelera el comportamiento es el de antes: se borra la
+ * fila y se devuelven sus claves. Quien llama decide qué hacer con el bucket;
+ * el borrado del archivo lo hace `olvidarArchivos` en src/lib/archivos.ts.
  */
 export async function borrar(base: Base, recurso: Recurso, id: string): Promise<string[]> {
+  if (CON_PAPELERA.has(recurso)) {
+    await base
+      .prepare(`update ${recurso} set borrado_en = ? where id = ? and borrado_en is null`)
+      .bind(ahora(), id)
+      .first();
+    return [];
+  }
+
   // Se lee ANTES de borrar: después ya no hay a quién preguntarle.
   const fila = await unaFila<Record<string, unknown>>(base, recurso, id);
   await base.prepare(`delete from ${recurso} where id = ?`).bind(id).first();
   return clavesDe(recurso, fila);
+}
+
+/**
+ * Saca una fila de la papelera.
+ *
+ * Devuelve `false` si no había nada que restaurar, y eso importa: es lo que
+ * distingue «ya estaba restaurada» —dos clics en «Deshacer»— de un id que no
+ * existe. El panel enseña lo primero sin alarmar.
+ *
+ * NO se toca `publicado`: una noticia publicada que se borró por error vuelve
+ * publicada, que es lo que esperaba quien pulsó «Deshacer». Volver en borrador
+ * sería un segundo susto después del primero.
+ */
+export async function restaurar(base: Base, recurso: Recurso, id: string): Promise<boolean> {
+  if (!CON_PAPELERA.has(recurso)) return false;
+  const antes = await base
+    .prepare(`select id from ${recurso} where id = ? and borrado_en is not null`)
+    .bind(id)
+    .first<{ id: string }>();
+  if (!antes) return false;
+  await base
+    .prepare(`update ${recurso} set borrado_en = null, actualizado_en = ? where id = ?`)
+    .bind(ahora(), id)
+    .first();
+  return true;
+}
+
+/**
+ * Borra de verdad una fila que ya está en la papelera, y devuelve sus archivos.
+ *
+ * La condición `borrado_en is not null` no es decorativa: sin ella, esta
+ * función sería un borrado definitivo disfrazado al alcance de cualquier id, y
+ * el camino normal del panel dejaría de pasar por la papelera. Para borrar algo
+ * de verdad hay que mandarlo ahí primero.
+ */
+export async function purgar(base: Base, recurso: Recurso, id: string): Promise<string[]> {
+  if (!CON_PAPELERA.has(recurso)) return borrar(base, recurso, id);
+  const fila = await base
+    .prepare(`select * from ${recurso} where id = ? and borrado_en is not null`)
+    .bind(id)
+    .first<Record<string, unknown>>();
+  if (!fila) return [];
+  await base
+    .prepare(`delete from ${recurso} where id = ? and borrado_en is not null`)
+    .bind(id)
+    .first();
+  return clavesDe(recurso, fila);
+}
+
+/** Una fila de la papelera, con de qué tabla salió. */
+export interface EnPapelera {
+  recurso: Recurso;
+  id: string;
+  titulo: string;
+  borrado_en: string;
+  /** Días que le quedan antes de poder vaciarse. Negativo = ya caducó. */
+  dias: number;
+}
+
+/**
+ * Qué columna hace de título en cada tabla, para poder enseñar la papelera.
+ *
+ * Instagram no tiene título: su fila es una foto, y lo que la identifica es la
+ * descripción que se escribió para quien no la ve. Reuniones tampoco: ahí el
+ * nombre se repite («Culto General» cuatro veces), así que se arma uno con el
+ * día y la hora, que es lo que la distingue.
+ */
+const TITULO_EN_PAPELERA: Record<string, string> = {
+  eventos: 'titulo',
+  noticias: 'titulo',
+  videos: 'titulo',
+  estudios: 'titulo',
+  instagram: 'alt',
+  enlaces: 'titulo',
+  reuniones: 'nombre',
+};
+
+/**
+ * Todo lo que hay en la papelera, de todas las tablas, lo más reciente primero.
+ *
+ * Son siete consultas pequeñas y no un `union` gigante a propósito: con el
+ * `union` había que escribir las columnas a mano y cada tabla nombra las suyas
+ * distinto, lo que convierte un cambio de esquema en un error de SQL en vez de
+ * un error de tipos.
+ */
+export async function listarPapelera(base: Base, hoy = new Date()): Promise<EnPapelera[]> {
+  // En paralelo: son siete viajes a una base que está en Norteamérica, y
+  // hacerlos en fila multiplicaría por siete la espera de la pantalla. Son
+  // LECTURAS, así que no se pisan entre ellas.
+  const porTabla = await Promise.all(
+    [...CON_PAPELERA].map(async (recurso) => {
+      const columna = TITULO_EN_PAPELERA[recurso] ?? 'id';
+      const { results } = await base
+        .prepare(
+          `select id, ${columna} as titulo, borrado_en from ${recurso}
+            where borrado_en is not null order by borrado_en desc limit 50`,
+        )
+        .bind()
+        .all<{ id: string; titulo: string | null; borrado_en: string }>();
+
+      return (results ?? []).map((fila) => ({
+        recurso,
+        id: fila.id,
+        titulo: fila.titulo?.trim() || 'Sin título',
+        borrado_en: fila.borrado_en,
+        dias:
+          DIAS_EN_PAPELERA -
+          Math.floor((hoy.getTime() - new Date(fila.borrado_en).getTime()) / 86_400_000),
+      }));
+    }),
+  );
+
+  return porTabla.flat().sort((a, b) => b.borrado_en.localeCompare(a.borrado_en));
 }
 
 /**

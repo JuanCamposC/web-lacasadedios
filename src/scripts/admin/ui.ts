@@ -37,18 +37,68 @@ export function fechaCorta(iso: string | null): string {
   });
 }
 
-export function toast(message: string, type: 'success' | 'error' = 'success') {
+/**
+ * Un botón dentro del aviso. Hoy solo «Deshacer».
+ *
+ * Existe porque el deshacer tiene que estar DONDE pasó la cosa. Un «Deshacer»
+ * en otra pantalla —la papelera— sirve para arrepentirse al rato; este sirve
+ * para el clic equivocado, que es el caso que de verdad asusta.
+ */
+export interface AccionDeAviso {
+  texto: string;
+  /** Se llama al pulsarlo. El aviso se cierra solo antes de llamarla. */
+  hacer: () => void | Promise<void>;
+}
+
+export function toast(
+  message: string,
+  type: 'success' | 'error' = 'success',
+  accion?: AccionDeAviso,
+) {
   const c = document.getElementById('toast');
   if (!c) return;
   const el = document.createElement('div');
   const error = type === 'error';
-  el.className = `alert ${error ? 'alert-error' : 'alert-success'} max-w-sm cursor-pointer shadow-lg`;
-  el.textContent = message;
-  // Los errores explican qué hacer: 3,5 s no alcanzan para leerlos. Se quedan
-  // 15 s y se cierran al tocarlos.
-  el.addEventListener('click', () => el.remove());
+  // Con acción el aviso NO se cierra al tocarlo en cualquier parte: el gesto
+  // de cerrarlo y el de deshacer estarían a un píxel de distancia, y errar
+  // significaría perder la única oportunidad de recuperar lo borrado.
+  el.className = `alert ${error ? 'alert-error' : 'alert-success'} max-w-sm shadow-lg ${
+    accion ? 'items-center' : 'cursor-pointer'
+  }`;
+
+  const texto = document.createElement('span');
+  texto.className = 'flex-1';
+  texto.textContent = message;
+  el.append(texto);
+
+  if (accion) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-ghost btn-xs shrink-0 underline';
+    btn.textContent = accion.texto;
+    btn.addEventListener('click', () => {
+      el.remove();
+      void accion.hacer();
+    });
+    el.append(btn);
+
+    const cerrar = document.createElement('button');
+    cerrar.type = 'button';
+    cerrar.className = 'btn btn-ghost btn-xs btn-circle shrink-0';
+    cerrar.setAttribute('aria-label', 'Cerrar el aviso');
+    cerrar.textContent = '×';
+    cerrar.addEventListener('click', () => el.remove());
+    el.append(cerrar);
+  } else {
+    // Los errores explican qué hacer: 3,5 s no alcanzan para leerlos. Se quedan
+    // 15 s y se cierran al tocarlos.
+    el.addEventListener('click', () => el.remove());
+  }
+
   c.appendChild(el);
-  setTimeout(() => el.remove(), error ? 15000 : 3500);
+  // Con acción, diez segundos: es el tiempo que se tarda en darse cuenta de que
+  // se borró lo que no era. Menos convierte el deshacer en una carrera.
+  setTimeout(() => el.remove(), accion ? 10000 : error ? 15000 : 3500);
 }
 
 /**

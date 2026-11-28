@@ -14,7 +14,8 @@ Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate
 
 import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
-import Breadcrumbs from '../components/Breadcrumbs.astro';
+import RutaJsonLd from '../components/RutaJsonLd.astro';
+import BarraFiltro from '../components/BarraFiltro.astro';
 import Reveal from '../components/Reveal.astro';
 import CtaBand from '../components/CtaBand.astro';
 import { Icon } from 'astro-icon/components';
@@ -105,7 +106,7 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
     height="min-h-[46vh]"
   />
 
-  <Breadcrumbs
+  <RutaJsonLd
     items={[
       { label: 'Inicio', href: '/' },
       { label: 'Templos', href: '/templos' },
@@ -119,42 +120,10 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
       el cierre de la página. */
   }
   <div class="ambito-filtro">
-    <!-- Filtro por templo -->
-    <section class="sticky top-16 z-30 border-b border-base-300 bg-base-100 px-4 py-3">
-      <div class="wrap">
-        <div
-          class="flex items-center gap-2 overflow-x-auto pb-1"
-          role="group"
-          aria-label="Filtrar por templo"
-        >
-          <span
-            class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/70 sm:inline"
-          >
-            Filtrar
-          </span>
-          <button
-            type="button"
-            data-filter="all"
-            aria-pressed="true"
-            class="filtro-chip shrink-0 rounded-full border border-primary bg-primary px-4 py-1.5 text-sm font-medium text-primary-content transition"
-          >
-            Todos
-          </button>
-          {
-            templos.map((t) => (
-              <button
-                type="button"
-                data-filter={t.slug}
-                aria-pressed="false"
-                class="filtro-chip shrink-0 rounded-full border border-base-300 bg-base-100 px-4 py-1.5 text-sm font-medium transition hover:border-primary hover:text-primary"
-              >
-                {t.short}
-              </button>
-            ))
-          }
-        </div>
-      </div>
-    </section>
+    {/* La misma barra que noticias, eventos y videos. Lo que cambia es qué
+        esconde: acá son líneas del cartel y el conteo de cada día, no
+        tarjetas, y de eso se encarga el script del final. Ver BarraFiltro. */}
+    <BarraFiltro />
 
     <!-- El cartel: la semana completa -->
     {
@@ -534,8 +503,6 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
     const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('.filtro-chip'));
     const vacio = document.getElementById('sin-resultados');
     const etiqueta = cartel.querySelector<HTMLElement>('[data-hoy]');
-    const activo = 'border-primary bg-primary text-primary-content';
-    const inactivo = 'border-base-300 bg-base-100 hover:border-primary hover:text-primary';
 
     const aplicar = (slug: string) => {
       let visibles = 0;
@@ -567,11 +534,8 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
       vacio?.classList.toggle('hidden', visibles > 0);
       if (etiqueta) etiqueta.textContent = `Hoy · ${DIAS[ahora.dia]}`;
 
-      chips.forEach((c) => {
-        const on = c.dataset.filter === slug;
-        c.setAttribute('aria-pressed', String(on));
-        c.className = `filtro-chip shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition ${on ? activo : inactivo}`;
-      });
+      // Solo el atributo: el aspecto lo pone `.filtro-chip` en global.css.
+      chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.filter === slug)));
 
       pintarAhora(slug);
     };

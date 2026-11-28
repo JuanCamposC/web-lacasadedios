@@ -12,9 +12,10 @@ import autoAnimate from '@formkit/auto-animate';
 import { api } from './admin/api';
 import { esRecurso } from '../lib/panel';
 import { plantilla } from './admin/plantilla';
-import { construirPayload, resetForm, startEdit } from './admin/form';
+import { construirPayload, resetForm, startEdit, duplicar } from './admin/form';
 import { cargar, pintar } from './admin/list';
 import { initImagenes } from './admin/upload';
+import { initVistaPrevia } from './admin/vistaPrevia';
 import { initMarkdown } from './admin/markdown-editor';
 import { initArrastre } from './admin/sortable';
 import { avisarSuscriptores } from './admin/notificar';
@@ -83,6 +84,7 @@ export function setupCrud(config: CrudConfig) {
     load: async () => {},
     resetForm: () => {},
     startEdit: () => {},
+    duplicar: () => {},
     remove: async () => {},
     togglePublicado: async () => {},
   };
@@ -91,6 +93,10 @@ export function setupCrud(config: CrudConfig) {
   ctx.load = () => cargar(ctx);
   ctx.resetForm = () => resetForm(ctx);
   ctx.startEdit = (row) => startEdit(ctx, row);
+  ctx.duplicar = (id) => {
+    const row = ctx.filas.find((r) => r.id === id);
+    if (row) duplicar(ctx, row);
+  };
   ctx.remove = (id) => borrar(ctx, id);
   ctx.togglePublicado = (id) => togglePublicado(ctx, id);
 
@@ -99,6 +105,9 @@ export function setupCrud(config: CrudConfig) {
   autoAnimate(ctx.listEl);
   initMarkdown(root);
   initImagenes(ctx);
+  // Después de `initImagenes`: la vista previa observa la zona de imagen, que
+  // esa función es la que deja lista.
+  initVistaPrevia(ctx);
 
   /* ── Acciones ────────────────────────────────────────────────────────── */
   /**
@@ -190,7 +199,34 @@ export function setupCrud(config: CrudConfig) {
     if (ctx.editing?.id === id) ctx.resetForm();
     ctx.pintar();
     focoTrasBorrar(ctx, lugar);
-    toast('Borrado');
+
+    /*
+     * El deshacer va ACÁ, donde pasó la cosa.
+     *
+     * Borrar ya no quita la fila: le escribe una fecha y la manda a la papelera
+     * (ver `borrar` en src/lib/panel.ts), así que durante treinta días se puede
+     * recuperar desde /admin/papelera. Pero la papelera sirve para arrepentirse
+     * al rato; esto sirve para el clic equivocado, que es el caso que de verdad
+     * asusta y el que hasta ahora no tenía remedio.
+     *
+     * Si la restauración falla no se toca la lista: la fila sigue en la
+     * papelera y el aviso dice dónde está, en vez de dejar creer que volvió.
+     */
+    toast('Se fue a la papelera', 'success', {
+      texto: 'Deshacer',
+      hacer: async () => {
+        try {
+          await ctx.api.restaurar(ctx.recurso, id);
+        } catch (e) {
+          return toast(
+            'No se pudo deshacer: ' + (e as Error).message + ' Está en la papelera del panel.',
+            'error',
+          );
+        }
+        await ctx.load();
+        toast(`«${nombre}» volvió a su sitio`);
+      },
+    });
   }
 
   /* ── Guardar ─────────────────────────────────────────────────────────── */

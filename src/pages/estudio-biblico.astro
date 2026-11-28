@@ -12,7 +12,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate
 import { Icon } from 'astro-icon/components';
 import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
-import Breadcrumbs from '../components/Breadcrumbs.astro';
+import RutaJsonLd from '../components/RutaJsonLd.astro';
 import Reveal from '../components/Reveal.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import EmptyState from '../components/EmptyState.astro';
@@ -145,7 +145,7 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
     height="min-h-[52vh]"
   />
 
-  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: ESTUDIO.corto }]} />
+  <RutaJsonLd items={[{ label: 'Inicio', href: '/' }, { label: ESTUDIO.corto }]} />
 
   <!-- ══ Qué es y qué esperar ════════════════════════════════════════════ -->
   <section class="section bg-base-100">

@@ -3,6 +3,8 @@ import {
   crear,
   actualizar,
   borrar,
+  restaurar,
+  purgar,
   archivosDesplazados,
   esRecurso,
   guardarAjustes,
@@ -458,34 +460,106 @@ function baseConFila(fila: Record<string, unknown> | null) {
 }
 
 /**
- * Borrar una fila tiene que decir qué archivos quedaron sin dueño.
+ * Borrar manda a la papelera, y eso cambia qué archivos se liberan: NINGUNO.
  *
- * Antes no lo decía, y la foto de cada noticia borrada se quedaba en el bucket
- * para siempre. Quien la borra de R2 es src/lib/archivos.ts; esto solo
- * comprueba que la información llegue hasta allá.
+ * ── LO QUE ESTAS PRUEBAS CUIDAN AHORA ───────────────────────────────────────
+ * Antes `borrar` quitaba la fila y devolvía sus claves de R2 para que
+ * src/lib/archivos.ts las borrara del bucket. Con la papelera (d1/0014) la fila
+ * sigue existiendo, así que liberar su imagen sería lo PEOR de los dos mundos:
+ * restaurarla devolvería la noticia con un hueco donde estaba la foto, y el
+ * motivo sería imposible de adivinar desde el panel.
+ *
+ * Por eso la lista vacía de abajo no es un descuido: es la garantía. Las claves
+ * se liberan al vaciar la papelera, y eso lo prueba `purgar`.
  */
 describe('borrar', () => {
-  it('devuelve la imagen de la fila que borró', async () => {
+  it('no libera la imagen: la fila sigue en la papelera y la sigue nombrando', async () => {
     const { base, llamadas } = baseConFila({ id: 'id-1', imagen_clave: 'noticias/2026/09/a.webp' });
-    expect(await borrar(base, 'noticias', 'id-1')).toEqual(['noticias/2026/09/a.webp']);
-    // Y la lee ANTES de borrar: después ya no hay a quién preguntarle.
-    expect(llamadas[0].sql).toMatch(/^select */i);
-    expect(llamadas[1].sql).toMatch(/^delete/i);
+    expect(await borrar(base, 'noticias', 'id-1')).toEqual([]);
+    // Y no borra nada: escribe la fecha de borrado.
+    expect(llamadas[0].sql).toMatch(/^update\s+noticias/i);
+    expect(llamadas[0].sql).toContain('borrado_en');
+    expect(llamadas.some((l) => /^delete/i.test(l.sql))).toBe(false);
   });
 
-  it('devuelve el audio de un estudio, que no se llama igual', async () => {
+  it('tampoco libera el audio de un estudio', async () => {
     const { base } = baseConFila({ id: 'id-1', archivo_clave: 'estudios/2026/09/a.mp3' });
-    expect(await borrar(base, 'estudios', 'id-1')).toEqual(['estudios/2026/09/a.mp3']);
+    expect(await borrar(base, 'estudios', 'id-1')).toEqual([]);
   });
 
-  it('no devuelve nada de una tabla sin archivos', async () => {
-    const { base } = baseConFila({ id: 'id-1', imagen_clave: 'colada.webp' });
-    expect(await borrar(base, 'videos', 'id-1')).toEqual([]);
+  /**
+   * `estudios_ocultos` es la excepción, y a propósito.
+   *
+   * Ahí una fila no es contenido sino una decisión —«este episodio no se
+   * enseña»— y quitarla ES el deshacer. Una papelera encima de eso sería una
+   * papelera de papelera.
+   */
+  it('sigue borrando de verdad donde no hay papelera', async () => {
+    const { base, llamadas } = baseConFila({ id: 'id-1', guid: 'abc' });
+    await borrar(base, 'estudios_ocultos', 'id-1');
+    // La lee ANTES de borrar: después ya no hay a quién preguntarle.
+    expect(llamadas[0].sql).toMatch(/^select\s*/i);
+    expect(llamadas[1].sql).toMatch(/^delete/i);
   });
 
   it('no se cae si la fila ya no estaba', async () => {
     const { base } = baseConFila(null);
     expect(await borrar(base, 'noticias', 'id-1')).toEqual([]);
+  });
+});
+
+describe('restaurar', () => {
+  it('saca la fila de la papelera y dice que sí', async () => {
+    const { base, llamadas } = baseConFila({ id: 'id-1' });
+    expect(await restaurar(base, 'noticias', 'id-1')).toBe(true);
+    // Primero comprueba que de verdad estaba borrada.
+    expect(llamadas[0].sql).toContain('borrado_en is not null');
+    expect(llamadas[1].sql).toMatch(/^update\s+noticias/i);
+    expect(llamadas[1].sql).toContain('borrado_en = null');
+  });
+
+  /**
+   * Pulsar «Deshacer» dos veces no es un error, y por eso devuelve `false` en
+   * vez de lanzar: lo que el panel tiene que decir ahí es que ya está.
+   */
+  it('dice que no cuando no había nada que restaurar', async () => {
+    const { base } = baseConFila(null);
+    expect(await restaurar(base, 'noticias', 'id-1')).toBe(false);
+  });
+
+  it('no restaura en una tabla sin papelera', async () => {
+    const { base } = baseConFila({ id: 'id-1' });
+    expect(await restaurar(base, 'estudios_ocultos', 'id-1')).toBe(false);
+  });
+});
+
+describe('purgar', () => {
+  /**
+   * Acá SÍ se devuelven las claves: es el único momento en que el archivo deja
+   * de tener dueño de verdad.
+   */
+  it('borra del todo y devuelve la imagen para liberarla', async () => {
+    const { base, llamadas } = baseConFila({ id: 'id-1', imagen_clave: 'noticias/a.webp' });
+    expect(await purgar(base, 'noticias', 'id-1')).toEqual(['noticias/a.webp']);
+    expect(llamadas.some((l) => /^delete/i.test(l.sql))).toBe(true);
+  });
+
+  /**
+   * Sin esta condición, `purgar` sería un borrado definitivo al alcance de
+   * cualquier id y el camino normal del panel dejaría de pasar por la papelera.
+   * Para borrar algo de verdad hay que mandarlo ahí primero.
+   */
+  it('solo toca lo que ya estaba en la papelera', async () => {
+    const { base, llamadas } = baseConFila({ id: 'id-1', imagen_clave: 'noticias/a.webp' });
+    await purgar(base, 'noticias', 'id-1');
+    expect(llamadas[0].sql).toContain('borrado_en is not null');
+    expect(llamadas[1].sql).toContain('borrado_en is not null');
+  });
+
+  it('no hace nada si la fila no estaba borrada', async () => {
+    const { base, llamadas } = baseConFila(null);
+    expect(await purgar(base, 'noticias', 'id-1')).toEqual([]);
+    expect(llamadas.some((l) => /^delete/i.test(l.sql))).toBe(false);
   });
 });
 

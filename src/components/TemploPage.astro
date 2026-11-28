@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Breadcrumbs from './Breadcrumbs.astro';
+import RutaJsonLd from './RutaJsonLd.astro';
 import Reveal from './Reveal.astro';
 import Foto from './Foto.astro';
 import TemploCard from './TemploCard.astro';
@@ -190,7 +190,7 @@ const jsonLd = {
       </div>
     </section>
 
-    <Breadcrumbs
+    <RutaJsonLd
       items={[
         { label: 'Inicio', href: '/' },
         { label: 'Templos', href: '/templos' },
@@ -512,6 +512,13 @@ const jsonLd = {
   }
   :global([data-theme='churchdark']) .ficha {
     --d-tinte: var(--d-claro);
+  }
+  /* Y en tema automático, donde no hay atributo que mirar. Ver la nota del
+     logotipo en global.css. */
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme])) .ficha {
+      --d-tinte: var(--d-claro);
+    }
   }
 
   /* ── La puerta ───────────────────────────────────────────────────────── */

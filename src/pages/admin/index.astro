@@ -7,6 +7,8 @@ import { Icon } from 'astro-icon/components';
 import { baseDeDatos } from '../../lib/base';
 import { ajustes as leerAjustes } from '../../lib/datos';
 import { enChile } from '../../lib/hora';
+import { DIAS, fechaEnPalabras, hoyEnChile } from '../../lib/reuniones';
+import { templos } from '../../data/templos';
 
 const db = await baseDeDatos();
 
@@ -17,36 +19,218 @@ const db = await baseDeDatos();
  * publicados—, ocho en total. `sum(publicado)` los junta: SQLite cuenta las dos
  * cosas en la misma pasada. Con D1 en Norteamérica cada viaje se nota, y esta
  * es la primera pantalla que se ve al entrar al panel.
+ *
+ * `borrado_en is null` en todas: lo que está en la papelera no se cuenta ni como
+ * publicado ni como borrador. Si se contara, el número de la tarjeta no
+ * coincidiría con las filas del listado y parecería que se perdió algo.
  */
 const cuenta = (tabla: string) =>
   db
-    .prepare(`select count(*) as total, sum(publicado) as publicados from ${tabla}`)
+    .prepare(
+      `select count(*) as total, sum(publicado) as publicados
+         from ${tabla} where borrado_en is null`,
+    )
     .bind()
     .first<{ total: number; publicados: number | null }>();
 
 const recientesDe = (tabla: string) =>
   db
     .prepare(
-      `select id, titulo, creado_en, publicado from ${tabla} order by creado_en desc limit 4`,
+      `select id, titulo, creado_en, publicado from ${tabla}
+        where borrado_en is null order by creado_en desc limit 4`,
     )
     .bind()
     .all<{ id: string; titulo: string; creado_en: string; publicado: number }>();
 
-const [ev, nw, vd, subs, aj, evR, nwR, vdR] = await Promise.all([
-  cuenta('eventos'),
-  cuenta('noticias'),
-  cuenta('videos'),
-  db
-    .prepare('select count(*) as total from suscriptores where pendiente = 0')
-    .bind()
-    .first<{ total: number }>(),
-  leerAjustes(db),
-  recientesDe('eventos'),
-  recientesDe('noticias'),
-  recientesDe('videos'),
-]);
+const ahoraIso = new Date().toISOString().slice(0, 19) + 'Z';
+const hoy = hoyEnChile();
+
+/*
+ * ── LO QUE DE VERDAD SE PODRE ───────────────────────────────────────────────
+ * Esta pantalla enseñaba cuatro números —eventos, noticias, videos,
+ * suscriptores— y un número no pide nada: saber que hay once eventos no le dice
+ * a nadie qué tiene que hacer hoy.
+ *
+ * Lo que se estropea con el tiempo es otra cosa, y la base ya la sabe:
+ *
+ *   · Una reunión con un cambio puesto y SIN fecha de término. Es el error que
+ *     dejó seis días de reuniones fantasma en el sitio, y el único que no se
+ *     nota hasta mucho después. La vista previa de /admin/horarios lo detecta,
+ *     pero solo mientras se escribe; acá se ve después.
+ *   · Cambios y avisos que caducan esta semana, para que la vuelta a la
+ *     normalidad no sea una sorpresa.
+ *   · Eventos en borrador cuya fecha ya pasó: se quedaron a medio publicar y ya
+ *     no sirven.
+ *   · Noticias esperando su fecha de publicación, que son correctas y conviene
+ *     recordar que están ahí.
+ */
+const [ev, nw, vd, subs, aj, evR, nwR, vdR, cambiosSinFin, caducanPronto, borradoresViejos, programadas, enPapelera] =
+  await Promise.all([
+    cuenta('eventos'),
+    cuenta('noticias'),
+    cuenta('videos'),
+    db
+      .prepare('select count(*) as total from suscriptores where pendiente = 0')
+      .bind()
+      .first<{ total: number }>(),
+    leerAjustes(db),
+    recientesDe('eventos'),
+    recientesDe('noticias'),
+    recientesDe('videos'),
+    db
+      .prepare(
+        `select id, nombre, templo, dia, hora, estado from reuniones
+          where borrado_en is null and publicado = 1
+            and estado <> 'normal' and aviso_hasta is null
+          order by dia asc, hora asc`,
+      )
+      .bind()
+      .all<{ id: string; nombre: string; templo: string; dia: number; hora: string; estado: string }>(),
+    db
+      .prepare(
+        `select id, nombre, templo, dia, estado, aviso_hasta from reuniones
+          where borrado_en is null and publicado = 1
+            and estado <> 'normal' and aviso_hasta is not null
+            and aviso_hasta >= ? and aviso_hasta <= date(?, '+7 days')
+          order by aviso_hasta asc`,
+      )
+      .bind(hoy, hoy)
+      .all<{
+        id: string;
+        nombre: string;
+        templo: string;
+        dia: number;
+        estado: string;
+        aviso_hasta: string;
+      }>(),
+    db
+      .prepare(
+        `select count(*) as total from eventos
+          where borrado_en is null and publicado = 0 and fecha < ?`,
+      )
+      .bind(ahoraIso)
+      .first<{ total: number }>(),
+    db
+      .prepare(
+        `select count(*) as total from noticias
+          where borrado_en is null and publicado = 1 and publicado_en > ?`,
+      )
+      .bind(ahoraIso)
+      .first<{ total: number }>(),
+    /*
+     * Cuántas cosas hay en la papelera, sumando las siete tablas.
+     *
+     * Con subconsultas sumadas y NO con `union all`: D1 responde «too many
+     * terms in compound SELECT» a partir de pocos términos, así que la versión
+     * obvia —unir las siete y contar— ni se ejecuta. Comprobado contra la base
+     * local, que es la misma SQLite.
+     *
+     * Y así es además UN viaje en vez de siete, que en esta pantalla importa:
+     * es la primera que se ve al entrar y la base está en Norteamérica.
+     */
+    db
+      .prepare(
+        `select
+            (select count(*) from eventos   where borrado_en is not null)
+          + (select count(*) from noticias  where borrado_en is not null)
+          + (select count(*) from videos    where borrado_en is not null)
+          + (select count(*) from estudios  where borrado_en is not null)
+          + (select count(*) from instagram where borrado_en is not null)
+          + (select count(*) from enlaces   where borrado_en is not null)
+          + (select count(*) from reuniones where borrado_en is not null) as total`,
+      )
+      .bind()
+      .first<{ total: number }>(),
+  ]);
 
 const enVivo = aj?.vivo_activo === 1;
+const nombreTemplo = (slug: string) => templos.find((t) => t.slug === slug)?.short ?? slug;
+
+/** Un asunto pendiente: qué pasa, dónde se arregla y cuánto urge. */
+interface Pendiente {
+  tono: 'warning' | 'info';
+  icono: string;
+  texto: string;
+  detalle?: string;
+  href: string;
+}
+
+const pendientes: Pendiente[] = [];
+
+for (const r of cambiosSinFin.results ?? []) {
+  pendientes.push({
+    tono: 'warning',
+    icono: 'lucide:calendar-x',
+    texto: `«${r.nombre}» de ${nombreTemplo(r.templo)} está ${
+      r.estado === 'suspendida' ? 'suspendida' : 'con la hora cambiada'
+    } sin fecha de término`,
+    detalle: `${DIAS[r.dia]} ${r.hora} · va a seguir así hasta que alguien lo quite a mano`,
+    href: '/admin/horarios',
+  });
+}
+
+for (const r of caducanPronto.results ?? []) {
+  pendientes.push({
+    tono: 'info',
+    icono: 'lucide:calendar-clock',
+    texto: `«${r.nombre}» de ${nombreTemplo(r.templo)} vuelve a la normalidad`,
+    detalle: `El cambio dura hasta el ${fechaEnPalabras(r.aviso_hasta)}`,
+    href: '/admin/horarios',
+  });
+}
+
+if ((borradoresViejos?.total ?? 0) > 0) {
+  const n = borradoresViejos!.total;
+  pendientes.push({
+    tono: 'warning',
+    icono: 'lucide:calendar-days',
+    texto:
+      n === 1
+        ? 'Hay un evento en borrador cuya fecha ya pasó'
+        : `Hay ${n} eventos en borrador cuya fecha ya pasó`,
+    detalle: 'Se quedaron a medio publicar. Conviene borrarlos o darles fecha nueva.',
+    href: '/admin/eventos',
+  });
+}
+
+if ((programadas?.total ?? 0) > 0) {
+  const n = programadas!.total;
+  pendientes.push({
+    tono: 'info',
+    icono: 'lucide:clock',
+    texto:
+      n === 1
+        ? 'Una noticia está esperando su fecha para publicarse sola'
+        : `${n} noticias están esperando su fecha para publicarse solas`,
+    detalle: 'Están correctas: todavía no se ven en el sitio.',
+    href: '/admin/noticias',
+  });
+}
+
+if (aj?.aviso_activo === 1) {
+  pendientes.push({
+    tono: 'info',
+    icono: 'lucide:megaphone',
+    texto: `El aviso emergente está encendido: «${aj.aviso_titulo || 'sin título'}»`,
+    detalle: aj.aviso_hasta
+      ? `Se apaga solo el ${fechaEnPalabras(aj.aviso_hasta.slice(0, 10))}`
+      : 'Sin fecha de término: se queda hasta que lo apagues.',
+    href: '/admin/aviso',
+  });
+}
+
+if ((enPapelera?.total ?? 0) > 0) {
+  const n = enPapelera!.total;
+  pendientes.push({
+    tono: 'info',
+    icono: 'lucide:trash-2',
+    texto: n === 1 ? 'Hay un elemento en la papelera' : `Hay ${n} elementos en la papelera`,
+    detalle: 'Se pueden recuperar durante 30 días.',
+    href: '/admin/papelera',
+  });
+}
+
+const urgentes = pendientes.filter((p) => p.tono === 'warning').length;
 
 const tarjetas = [
   {
@@ -146,6 +330,48 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
     </span>
     <Icon name="lucide:chevron-right" class="h-5 w-5 shrink-0 text-base-content/55" />
   </a>
+
+  <!-- ══ Lo que pide atención ════════════════════════════════════════════════
+       Solo aparece si hay algo. Un bloque vacío que dijera «nada pendiente»
+       todos los días enseñaría a no mirarlo, y el día que tuviera algo ya
+       nadie lo leería.
+  ══════════════════════════════════════════════════════════════════════════ -->
+  {
+    pendientes.length > 0 && (
+      <section
+        data-reveal
+        class={`panel mb-6 p-5 ${urgentes > 0 ? 'border-warning/50 bg-warning/5' : ''}`}
+      >
+        <h2 class="flex items-center gap-2 text-base font-bold">
+          <Icon
+            name={urgentes > 0 ? 'lucide:alert-triangle' : 'lucide:info'}
+            class={`h-4 w-4 ${urgentes > 0 ? 'text-warning' : 'text-primary'}`}
+          />
+          {urgentes > 0 ? 'Conviene mirar esto' : 'Cosas en marcha'}
+        </h2>
+
+        <ul class="mt-4 divide-y divide-base-300/70">
+          {pendientes.map((p) => (
+            <li>
+              <a href={p.href} class="flex items-start gap-3 py-3 transition-colors hover:bg-base-200/50">
+                <Icon
+                  name={p.icono}
+                  class={`mt-0.5 h-4 w-4 shrink-0 ${p.tono === 'warning' ? 'text-warning' : 'text-primary'}`}
+                />
+                <span class="min-w-0 flex-1">
+                  <span class="block text-sm font-medium">{p.texto}</span>
+                  {p.detalle && (
+                    <span class="block text-xs text-base-content/70">{p.detalle}</span>
+                  )}
+                </span>
+                <Icon name="lucide:chevron-right" class="mt-0.5 h-4 w-4 shrink-0 text-base-content/55" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
 
   <!-- Cifras -->
   <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -247,6 +473,13 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
           <li class="flex items-start gap-2">
             <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
             Lo que está en <strong>borrador</strong> no se ve en el sitio. Publícalo cuando esté listo.
+          </li>
+          <li class="flex items-start gap-2">
+            <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            Al borrar, nada se pierde: queda 30 días en la <a
+              href="/admin/papelera"
+              class="link link-primary">papelera</a
+            >.
           </li>
           <li class="flex items-start gap-2">
             <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />

@@ -16,6 +16,8 @@ const atajos = [
 <Layout
   title="Página no encontrada · La Casa de Dios"
   description="La página que buscas no existe o cambió de dirección."
+  {/* A quien se perdió hay que devolverlo al sitio, no pedirle el correo. */}
+  sinBoletin
 >
   <section class="section flex min-h-[70vh] items-center bg-base-100">
     <div class="wrap-narrow text-center">
@@ -33,7 +35,7 @@ const atajos = [
           atajos.map((a) => (
             <a
               href={a.href}
-              class="panel panel-sm panel-lift flex items-center gap-3 p-4 text-left"
+              class="panel panel-lift flex items-center gap-3 p-4 text-left"
             >
               <span class="tile">
                 <Icon name={a.icon} class="h-5 w-5" />

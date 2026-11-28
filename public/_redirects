@@ -64,3 +64,15 @@
 # una respuesta parecida, se le ofrece a quién preguntarle.
 /frequently-asked-questions /contacto 301
 /frequently-asked-questions/ /contacto 301
+
+# ── El congreso de damas cambió de nombre, no de contenido ──────────────────
+#
+# Se anunció como «Primer Encuentro de Damas» y el afiche decía «Congreso». La
+# iglesia confirmó que el nombre bueno es Congreso, así que el título, el texto
+# y la dirección se corrigieron.
+#
+# Esto es para el enlace viejo. Sin esta línea, quien lo abriera caería en el
+# listado de noticias, sin saber cuál era la que le mandaron: la página busca
+# por slug y, al no encontrarlo, redirige a /noticias.
+/noticias/primer-encuentro-de-damas-edificando-con-sabiduria /noticias/primer-congreso-de-damas-edificando-con-sabiduria 301
+/noticias/primer-encuentro-de-damas-edificando-con-sabiduria/ /noticias/primer-congreso-de-damas-edificando-con-sabiduria 301

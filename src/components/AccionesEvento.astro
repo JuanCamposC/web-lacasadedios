@@ -1,5 +1,6 @@
 ---
 import { Icon } from 'astro-icon/components';
+import Compartir from './Compartir.astro';
 import { enlaceGoogleCalendar } from '../lib/ics';
 import type { Evento } from '../lib/datos';
 
@@ -28,7 +29,17 @@ interface Props {
 }
 const { evento, sitio } = Astro.props;
 
-const enlace = `${sitio}/eventos#e-${evento.id}`;
+/*
+ * La dirección que se comparte lleva el evento en el parámetro `e`, no en el
+ * `#`. Lo que va después del `#` no sale del navegador: WhatsApp pedía
+ * `/eventos` a secas y todos los eventos salían con la misma vista previa.
+ * Con el parámetro, el servidor sabe cuál es y responde con su afiche.
+ *
+ * Se prefiere el slug, que es legible; el id queda para los eventos que aún no
+ * tienen uno. Las direcciones antiguas con `#e-<id>` siguen funcionando: esos
+ * identificadores no cambiaron.
+ */
+const enlace = `${sitio}/eventos?e=${encodeURIComponent(evento.slug ?? evento.id)}`;
 const archivoIcs = `/api/evento/${evento.id}.ics`;
 const google = enlaceGoogleCalendar({
   id: evento.id,
@@ -43,16 +54,7 @@ const google = enlaceGoogleCalendar({
 
 <div class="mt-auto pt-5">
   <div class="flex flex-wrap items-center gap-1 border-t border-base-300 pt-4">
-    <button
-      type="button"
-      class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
-      data-compartir
-      data-url={enlace}
-      data-titulo={evento.titulo}
-    >
-      <Icon name="lucide:share-2" class="h-4 w-4" />
-      <span data-rotulo>Compartir</span>
-    </button>
+    <Compartir url={enlace} titulo={evento.titulo} />
 
     <a
       href={archivoIcs}
@@ -68,23 +70,18 @@ const google = enlaceGoogleCalendar({
 
 <script>
   /**
-   * Compartir.
+   * «Agregar al calendario» lleva a sitios distintos según el aparato.
    *
-   * En el teléfono abre la hoja del sistema, con WhatsApp, Instagram y lo que
-   * la persona tenga instalado; en el escritorio, donde casi ningún navegador
-   * la trae, copia el enlace. Un solo botón en vez de tres iconos de redes:
-   * cabe mejor en la ficha y no obliga a adivinar por dónde comparte cada uno.
+   * En iPhone y iPad, al archivo .ics, que iOS abre en el calendario del propio
+   * teléfono sin pedir cuenta de nada. En todo lo demás, a Google Calendar, que
+   * abre el evento ya relleno. El porqué está arriba, en el comentario del
+   * componente.
    *
-   * Va por delegación en el documento: hay un botón por evento y no tiene
-   * sentido colgar un escuchador de cada uno.
-   */
-  /*
-   * La guardia es una variable del módulo y no una marca en el <body>.
+   * El `href` del HTML sigue siendo el archivo .ics, que es lo que se usa sin
+   * JavaScript y lo que ve quien copia el enlace.
    *
-   * Con las transiciones de vista, Astro REEMPLAZA el <body> entero en cada
-   * navegación: la marca se iba con el body viejo, la función volvía a colgar
-   * su escuchador, y al cabo de tres páginas «Compartir» se ejecutaba tres
-   * veces. El módulo, en cambio, se evalúa una sola vez por sesión.
+   * (Compartir vivía también acá; se fue a Compartir.astro, que lo comparte con
+   * el pie de cada noticia.)
    */
   let listo = false;
 
@@ -104,13 +101,10 @@ const google = enlaceGoogleCalendar({
     return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
   }
 
-  function initCompartirEventos() {
+  function initAgendar() {
     if (listo) return;
     listo = true;
 
-    // En todo lo que no sea iPhone o iPad, el botón pasa a Google Calendar.
-    // El `href` del HTML sigue siendo el archivo .ics, que es lo que se usa
-    // sin JavaScript y lo que ve quien copia el enlace.
     document.addEventListener('click', (ev) => {
       const btn = (ev.target as HTMLElement)?.closest?.(
         '[data-agendar]',
@@ -121,41 +115,7 @@ const google = enlaceGoogleCalendar({
       ev.preventDefault();
       window.open(google, '_blank', 'noopener');
     });
-
-    document.addEventListener('click', async (ev) => {
-      const btn = (ev.target as HTMLElement)?.closest?.('[data-compartir]') as HTMLElement | null;
-      if (!btn) return;
-
-      const url = btn.dataset.url ?? location.href;
-      const title = btn.dataset.titulo ?? '';
-      const rotulo = btn.querySelector('[data-rotulo]');
-
-      const avisar = (texto: string) => {
-        if (!rotulo) return;
-        const antes = rotulo.textContent;
-        rotulo.textContent = texto;
-        setTimeout(() => (rotulo.textContent = antes), 1800);
-      };
-
-      if (navigator.share) {
-        try {
-          await navigator.share({ title, text: title, url });
-          return;
-        } catch {
-          // Cancelar la hoja del sistema también llega aquí: no se hace nada
-          // más, porque copiar el enlace sin que lo pidan sería una sorpresa.
-          return;
-        }
-      }
-
-      try {
-        await navigator.clipboard.writeText(url);
-        avisar('¡Copiado!');
-      } catch {
-        avisar('No se pudo copiar');
-      }
-    });
   }
 
-  document.addEventListener('astro:page-load', initCompartirEventos);
+  document.addEventListener('astro:page-load', initAgendar);
 </script>

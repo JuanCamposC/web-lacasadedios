@@ -5,7 +5,7 @@ export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
-import Breadcrumbs from '../components/Breadcrumbs.astro';
+import RutaJsonLd from '../components/RutaJsonLd.astro';
 import Reveal from '../components/Reveal.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import ContactForm from '../components/ContactForm.astro';
@@ -54,7 +54,7 @@ if (Astro.request.method === 'POST') {
     posicion="50% 35%"
   />
 
-  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Contacto' }]} />
+  <RutaJsonLd items={[{ label: 'Inicio', href: '/' }, { label: 'Contacto' }]} />
 
   <!-- Formulario + datos -->
   <section id="contacto" class="section bg-base-100">
@@ -174,9 +174,7 @@ if (Astro.request.method === 'POST') {
                     )}
                   </div>
                   {t.matriz && (
-                    <span class="shrink-0 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-content">
-                      Matriz
-                    </span>
+                    <span class="sello shrink-0">Matriz</span>
                   )}
                 </div>
                 <div class="mt-5 flex flex-wrap gap-2 pt-1">

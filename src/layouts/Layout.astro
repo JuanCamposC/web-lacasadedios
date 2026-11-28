@@ -21,15 +21,57 @@ interface Props {
   title?: string;
   description?: string;
   image?: string;
+  /**
+   * La dirección con la que la página se identifica ante las redes, cuando no
+   * es la canónica.
+   *
+   * Existe por `/eventos?e=…`: para Google esa página es la misma agenda de
+   * siempre y su canónica tiene que seguir siendo `/eventos`, pero para
+   * WhatsApp o Facebook cada evento es una tarjeta distinta. Si las dos cosas
+   * compartieran dirección, al compartir dos eventos seguidos el segundo
+   * podría salir con el afiche del primero, porque hay redes que guardan la
+   * vista previa por el `og:url` que la propia página declara.
+   */
+  ogUrl?: string;
+  /**
+   * La dirección canónica, cuando no es la ruta a secas.
+   *
+   * Por omisión se arma con el camino y nada más, que es lo correcto casi
+   * siempre: los parámetros del sitio —`?templo=` del filtro, `?e=` de un
+   * evento compartido— enseñan el mismo contenido y deben apuntar a la misma
+   * página.
+   *
+   * La paginación de noticias es la excepción: `/noticias?p=2` trae noticias
+   * DISTINTAS de `/noticias`, así que declarar la primera como canónica de la
+   * segunda le estaría diciendo a Google que la segunda no existe, y sus
+   * noticias no se indexarían nunca.
+   */
+  canonical?: string;
   /** Páginas a las que solo se llega con un enlace personal (baja del boletín). */
   noindex?: boolean;
+  /**
+   * Quita la banda de alta en el boletín.
+   *
+   * Existe por un absurdo que estuvo meses a la vista: el layout montaba la
+   * banda en TODAS las páginas sin excepción, así que quien acababa de darse de
+   * baja veía dos bloques más abajo un formulario pidiéndole el correo para
+   * recibir novedades. Lo mismo en la página que confirma el alta —ya está
+   * suscrito— y en la que explica por qué el alta falló.
+   *
+   * Se apaga en las cuatro páginas donde pedir el correo contradice lo que la
+   * propia página acaba de decir: /baja, /confirmar, /boletin y el 404.
+   */
+  sinBoletin?: boolean;
 }
 
 const {
   title = 'La Casa de Dios · Iglesia Cristiana',
   description = 'La Casa de Dios es una comunidad de fe cristiana con templos en Santiago, San Miguel, Limache y Coya. Conoce nuestros horarios, ubicaciones y declaración de fe.',
   image,
+  ogUrl,
+  canonical: canonicalPedida,
   noindex = false,
+  sinBoletin = false,
 } = Astro.props;
 
 // La canónica va SIN barra final, y eso hay que forzarlo.
@@ -44,7 +86,12 @@ const {
 // La raíz se queda como está: `https://lacasadedios.cl` sin barra es la misma
 // dirección, pero la forma con barra es la que todo el mundo escribe.
 const ruta = Astro.url.pathname.replace(/(.)\/+$/, '$1');
-const canonical = Astro.site ? new URL(ruta, Astro.site).href : Astro.url.href;
+const canonicalPorOmision = Astro.site ? new URL(ruta, Astro.site).href : Astro.url.href;
+// La que pida la página manda; si no, la ruta a secas. Ver la nota de la
+// propiedad `canonical` más arriba.
+const canonical = canonicalPedida
+  ? new URL(canonicalPedida, Astro.site ?? Astro.url).href
+  : canonicalPorOmision;
 // Imagen social: la propia de la página si la hay, y si no la tarjeta de marca
 // (public/og-image.png, generada con `node scripts/og-image.mjs`).
 const ogImage = new URL(image ?? '/og-image.png', Astro.site ?? Astro.url).href;
@@ -119,7 +166,7 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
     <meta property="og:locale" content="es_CL" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
+    <meta property="og:url" content={ogUrl ?? canonical} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -146,7 +193,7 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
     <main id="contenido" class="pt-16">
       <slot />
     </main>
-    <Boletin />
+    {!sinBoletin && <Boletin />}
     <Footer />
 
     {

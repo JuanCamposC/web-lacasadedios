@@ -42,7 +42,11 @@ export interface Evento {
   lugar: string | null;
   descripcion: string | null;
   imagen_clave: string | null;
+  /** Qué se ve en la imagen, para quien no puede verla (migración 0015). */
+  imagen_alt: string | null;
   templo: string;
+  /** La versión 1200×630 en JPEG con la que se ve al compartirlo (migración 0013). */
+  imagen_social_clave: string | null;
   /** Minutos que dura, o `null` para las dos horas de siempre (migración 0012). */
   duracion_min: number | null;
 }
@@ -54,6 +58,10 @@ export interface Noticia {
   bajada: string | null;
   cuerpo: string | null;
   imagen_clave: string | null;
+  /** La versión 1200×630 en JPEG con la que se ve al compartirla (migración 0013). */
+  imagen_social_clave: string | null;
+  /** Qué se ve en la imagen, para quien no puede verla (migración 0015). */
+  imagen_alt: string | null;
   templo: string;
   publicado_en: string;
 }
@@ -124,7 +132,11 @@ export interface Filtro {
  * tabla entera.
  */
 function publicados(filtro: Filtro = {}) {
-  const condiciones = ['publicado = 1'];
+  // `borrado_en is null` va junto a `publicado = 1` y por la misma razón: son
+  // las dos formas de que una fila exista en la base y no deba verse. Si solo
+  // una de las dos viviera acá, la otra habría que recordarla en cada consulta.
+  // Ver d1/0014_papelera.sql.
+  const condiciones = ['publicado = 1', 'borrado_en is null'];
   const valores: unknown[] = [];
 
   if (filtro.templo) {
@@ -159,7 +171,7 @@ export function eventosProximos(base: Base, filtro: Filtro = {}): Promise<Evento
   const { donde, valores, limite, desplazamiento } = publicados(filtro);
   return listar<Evento>(
     base,
-    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo, duracion_min
+    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min
        from eventos
       where ${donde} and fecha >= ?
       order by fecha asc
@@ -180,7 +192,7 @@ export function eventosPasados(base: Base, filtro: Filtro = {}): Promise<Evento[
   const { donde, valores, limite, desplazamiento } = publicados(filtro);
   return listar<Evento>(
     base,
-    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo, duracion_min
+    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min
        from eventos
       where ${donde} and fecha < ?
       order by fecha desc
@@ -199,10 +211,33 @@ export function eventosPasados(base: Base, filtro: Filtro = {}): Promise<Evento[
 export function eventoPorId(base: Base, id: string): Promise<Evento | null> {
   return base
     .prepare(
-      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, templo, duracion_min
-         from eventos where publicado = 1 and id = ?`,
+      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min
+         from eventos where publicado = 1 and borrado_en is null and id = ?`,
     )
     .bind(id)
+    .first<Evento>();
+}
+
+/**
+ * Un evento por lo que venga en la dirección: su slug o su identificador.
+ *
+ * Lo usa `/eventos?e=…`, el enlace que se comparte. Acepta las dos formas
+ * porque el slug es opcional en la base —un evento recién creado puede no
+ * tenerlo— y porque las direcciones que ya se compartieron llevan el id.
+ *
+ * Busca en TODA la tabla, no entre los eventos que la página está enseñando:
+ * /eventos lista los próximos y seis pasados, y un enlace compartido hace
+ * meses tiene que seguir dando la vista previa correcta aunque su evento ya no
+ * salga en la lista.
+ */
+export function eventoPorClave(base: Base, clave: string): Promise<Evento | null> {
+  const esUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clave);
+  return base
+    .prepare(
+      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min
+         from eventos where publicado = 1 and borrado_en is null and ${esUuid ? 'id' : 'slug'} = ?`,
+    )
+    .bind(clave)
     .first<Evento>();
 }
 
@@ -219,7 +254,7 @@ export function noticiasPublicadas(base: Base, filtro: Filtro = {}): Promise<Not
   const { donde, valores, limite, desplazamiento } = publicados(filtro);
   return listar<Noticia>(
     base,
-    `select id, titulo, slug, bajada, cuerpo, imagen_clave, templo, publicado_en
+    `select id, titulo, slug, bajada, cuerpo, imagen_clave, imagen_social_clave, imagen_alt, templo, publicado_en
        from noticias
       where ${donde} and publicado_en <= ?
       order by publicado_en desc
@@ -231,9 +266,9 @@ export function noticiasPublicadas(base: Base, filtro: Filtro = {}): Promise<Not
 export function noticiaPorSlug(base: Base, slug: string): Promise<Noticia | null> {
   return base
     .prepare(
-      `select id, titulo, slug, bajada, cuerpo, imagen_clave, templo, publicado_en
+      `select id, titulo, slug, bajada, cuerpo, imagen_clave, imagen_social_clave, imagen_alt, templo, publicado_en
          from noticias
-        where publicado = 1 and publicado_en <= ? and slug = ?`,
+        where publicado = 1 and borrado_en is null and publicado_en <= ? and slug = ?`,
     )
     .bind(ahora(), slug)
     .first<Noticia>();
@@ -243,9 +278,9 @@ export function noticiaPorSlug(base: Base, slug: string): Promise<Noticia | null
 export function noticiaPorId(base: Base, id: string): Promise<Noticia | null> {
   return base
     .prepare(
-      `select id, titulo, slug, bajada, cuerpo, imagen_clave, templo, publicado_en
+      `select id, titulo, slug, bajada, cuerpo, imagen_clave, imagen_social_clave, imagen_alt, templo, publicado_en
          from noticias
-        where publicado = 1 and publicado_en <= ? and id = ?`,
+        where publicado = 1 and borrado_en is null and publicado_en <= ? and id = ?`,
     )
     .bind(ahora(), id)
     .first<Noticia>();
@@ -305,7 +340,7 @@ export function seriesDeEstudios(base: Base): Promise<{ serie: string; total: nu
     base,
     `select serie, count(*) as total
        from estudios
-      where publicado = 1 and fecha <= ? and serie is not null and serie <> ''
+      where publicado = 1 and borrado_en is null and fecha <= ? and serie is not null and serie <> ''
       group by serie
       order by max(fecha) desc`,
     [ahora()],
@@ -326,7 +361,7 @@ export async function reunionesPublicadas(base: Base, templo?: string): Promise<
     base,
     `select id, templo, dia, hora, nombre, estado, aviso, aviso_hasta, hora_aviso, marca, marca_regla
        from reuniones
-      where publicado = 1${templo ? ' and templo = ?' : ''}
+      where publicado = 1 and borrado_en is null${templo ? ' and templo = ?' : ''}
       order by dia asc, hora asc`,
     templo ? [templo] : [],
   );
@@ -370,7 +405,7 @@ export function instagramPublicado(base: Base, limite = 4): Promise<PostIg[]> {
     base,
     `select id, imagen_clave, alt, enlace
        from instagram
-      where publicado = 1
+      where publicado = 1 and borrado_en is null
       order by orden asc, creado_en desc
       limit ?`,
     [limite],
@@ -391,7 +426,7 @@ export function enlacesPublicados(base: Base): Promise<Enlace[]> {
     base,
     `select id, titulo, url
        from enlaces
-      where publicado = 1
+      where publicado = 1 and borrado_en is null
       order by orden asc, creado_en asc
       limit ?`,
     [TOPE_MAXIMO],

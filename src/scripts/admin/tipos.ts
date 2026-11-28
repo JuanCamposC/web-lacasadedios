@@ -13,6 +13,21 @@ export type Field = {
     | 'datetime-local'
     /** «HH:MM». El navegador pone su propio selector de hora. */
     | 'time'
+    /**
+     * Cuánto dura algo, preguntado como «¿a qué hora termina?».
+     *
+     * La columna sigue guardando MINUTOS —`duracion_min`, migración 0012—, pero
+     * el campo es un selector de hora. El motivo: la ayuda del campo numérico
+     * decía «Un congreso de 9:00 a 18:00 son 540», o sea le pedía una
+     * multiplicación a quien está cargando un evento desde el teléfono, de pie,
+     * un domingo. La cuenta la sabe hacer la máquina.
+     *
+     * Necesita que el formulario tenga un campo de fecha y hora de inicio: la
+     * resta se hace contra él. Si la hora de término es menor o igual que la de
+     * inicio se entiende que termina al día siguiente, que es lo que pasa en
+     * una vigilia de 22:00 a 01:00.
+     */
+    | 'duracion'
     /** «AAAA-MM-DD», sin hora. */
     | 'date'
     | 'number'
@@ -22,6 +37,15 @@ export type Field = {
     | 'image';
   required?: boolean;
   help?: string;
+  /**
+   * Columna donde guardar la tarjeta social, para un campo de imagen.
+   *
+   * Cuando está, al subir la foto el navegador genera además una versión de
+   * 1200×630 en JPEG —la medida y el formato que entienden todas las redes— y
+   * la guarda en esta otra columna. Es la que se usa al compartir el enlace.
+   * Ver `tarjetaSocial` en upload.ts.
+   */
+  social?: string;
   /**
    * Título del bloque donde va este campo.
    *
@@ -79,6 +103,35 @@ export type CrudConfig = {
    * de al listado (solo noticias tiene ficha propia).
    */
   notify?: { type: string; urlBase: string; porItem?: boolean };
+  /**
+   * La dirección pública de una fila, para el botón «Ver en el sitio».
+   *
+   * Hasta ahora no había forma de ir del panel a lo que se acababa de publicar:
+   * tocaba abrir el sitio en otra pestaña y buscarlo. Devuelve `null` cuando esa
+   * fila no tiene dirección propia, y entonces no se enseña el botón.
+   *
+   * Se pasa como función y no como plantilla de texto porque cada tabla arma la
+   * suya distinto: las noticias por slug, los eventos por parámetro, los
+   * enlaces de jóvenes no tienen y van todos a la misma página.
+   */
+  enlacePublico?: (fila: Fila) => string | null;
+  /**
+   * Ofrecer «Duplicar» en cada fila.
+   *
+   * Para lo que se repite con variaciones: el congreso del año que viene, la
+   * reunión especial que vuelve cada tanto. Abre el formulario con todo relleno,
+   * en borrador y sin la fecha, que es lo único que seguro cambia.
+   */
+  duplicable?: boolean;
+  /**
+   * Enseñar, al lado del formulario, la tarjeta tal como va a quedar en el sitio.
+   *
+   * La pantalla del aviso emergente ya tiene vista previa y es lo que mejor
+   * funciona del panel. Eventos y noticias no la tenían: había que guardar,
+   * abrir el sitio y mirar. Importa especialmente con los afiches, que son
+   * verticales y se ven en un recuadro ancho.
+   */
+  vistaPrevia?: 'evento' | 'noticia';
 };
 
 export type Estado = 'todos' | 'publicados' | 'borradores';
@@ -138,6 +191,8 @@ export interface Contexto {
   load: () => Promise<void>;
   resetForm: () => void;
   startEdit: (row: Fila) => void;
+  /** Abre el formulario con una copia de esa fila, sin id y en borrador. */
+  duplicar: (id: string) => void;
   remove: (id: string) => Promise<void>;
   togglePublicado: (id: string) => Promise<void>;
 }

@@ -1,0 +1,66 @@
+---
+import { templos } from '../data/templos';
+
+/**
+ * La barra de chips para filtrar por templo. Solo la marca, sin comportamiento.
+ *
+ * ── POR QUÉ ESTÁ SEPARADA DE `FiltroTemplos` ────────────────────────────────
+ * Esta misma barra estaba escrita DOS veces —una en `FiltroTemplos.astro` y
+ * otra a mano dentro de `/horarios`— y las clases del chip encendido, una
+ * tercera y una cuarta vez, dentro de dos scripts distintos. Cuatro sitios que
+ * tenían que decir lo mismo y ninguna forma de notar que habían dejado de
+ * decirlo: el día que cambiara el color del chip, uno se quedaría atrás.
+ *
+ * No se unificó del todo porque lo que filtran NO es lo mismo. Noticias,
+ * eventos y videos esconden tarjetas con `data-etiqueta`; /horarios esconde
+ * líneas del cartel, recalcula el número de reuniones de cada día y además
+ * repinta el panel de «hoy». Son dos comportamientos de verdad distintos, y
+ * forzarlos a uno habría pedido un componente con interruptores.
+ *
+ * Así que lo que se comparte es lo que de verdad es igual: la barra, los chips
+ * y sus dos estados. El estado encendido vive en CSS (`.filtro-chip` en
+ * global.css, por `aria-pressed`), así que ningún script tiene que volver a
+ * escribir una lista de clases.
+ */
+interface Props {
+  /** Qué se está filtrando. Lo lee el script del filtro general. */
+  plural?: string;
+}
+const { plural } = Astro.props;
+---
+
+<section class="sticky top-16 z-30 border-b border-base-300 bg-base-100">
+  {
+    /* El desplazamiento vive acá y no en el `.wrap`: así los chips llegan hasta
+      el borde de la pantalla en vez de cortarse contra un ancho centrado, que
+      era lo que hacía parecer roto el último. */
+  }
+  <div class="indice wrap overflow-x-auto px-4 py-3">
+    <div
+      class="flex w-max items-center gap-2 pe-8 md:w-full md:flex-wrap md:pe-0"
+      role="group"
+      aria-label="Filtrar por templo"
+      data-filtro-templos
+      data-plural={plural}
+    >
+      <span
+        class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/70 sm:inline"
+      >
+        Filtrar
+      </span>
+      {
+        /* `aria-pressed` no es solo accesibilidad: es TAMBIÉN de dónde sale el
+          aspecto del chip. Ver `.filtro-chip` en global.css. Un solo atributo
+          dice el estado a quien mira, a quien escucha y al CSS. */
+      }
+      <button type="button" data-filter="all" aria-pressed="true" class="filtro-chip">Todos</button>
+      {
+        templos.map((t) => (
+          <button type="button" data-filter={t.slug} aria-pressed="false" class="filtro-chip">
+            {t.short}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+</section>

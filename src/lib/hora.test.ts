@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { deChileAIso, deIsoAChile, desfaseChile, fechaLarga, horaCorta } from './hora';
+import {
+  deChileAIso,
+  deIsoAChile,
+  desfaseChile,
+  fechaLarga,
+  horaCorta,
+  horaDeTermino,
+  minutosEntre,
+} from './hora';
 
 /**
  * Lo que se vigila acá es el error que ya ocurrió: se escribieron las 19:00 y
@@ -85,5 +93,81 @@ describe('formatos', () => {
     const instante = '2026-09-27T02:00:00.000Z';
     expect(fechaLarga(instante)).toContain('26 de septiembre');
     expect(horaCorta(instante)).toBe('23:00');
+  });
+});
+
+/**
+ * La duración de un evento, preguntada como «¿a qué hora termina?».
+ *
+ * La columna guarda MINUTOS y el panel preguntaba por minutos: la ayuda decía
+ * literalmente «Un congreso de 9:00 a 18:00 son 540», o sea le pedía una
+ * multiplicación a quien carga un evento desde el teléfono. Ahora el formulario
+ * pregunta la hora y la cuenta la hace esto.
+ *
+ * Se prueba porque es la única cuenta nueva del panel cuyo resultado no se ve
+ * en pantalla hasta que el evento ya está publicado: si se equivocara, el sitio
+ * anunciaría una hora de término inventada y nadie lo notaría al guardar.
+ */
+describe('minutosEntre', () => {
+  it('el congreso de 09:00 a 18:00 son nueve horas', () => {
+    expect(minutosEntre('2026-11-07T09:00', '18:00')).toBe(540);
+  });
+
+  it('cuenta los minutos sueltos', () => {
+    expect(minutosEntre('2026-11-07T19:30', '21:45')).toBe(135);
+  });
+
+  /**
+   * Una vigilia de 22:00 a 01:00 dura TRES horas, no menos veintiuna.
+   *
+   * Sin esta vuelta, la resta daría -1260 y la base lo rechazaría por su
+   * `check`; y pedirle a quien la carga que escriba la fecha del día siguiente
+   * sería devolverle la cuenta que este campo venía a quitarle.
+   */
+  it('entiende que pasada la medianoche es el día siguiente', () => {
+    expect(minutosEntre('2026-12-31T22:00', '01:00')).toBe(180);
+  });
+
+  /**
+   * Nulo y no cero: en esta columna nulo significa «la duración de siempre», y
+   * cero no existe —lo rechaza el `check` de la migración 0012 con un mensaje
+   * que no le dice nada a nadie—.
+   */
+  it('la misma hora de inicio y de término es «la de siempre»', () => {
+    expect(minutosEntre('2026-11-07T09:00', '09:00')).toBeNull();
+  });
+
+  it('sin hora de término no hay duración', () => {
+    expect(minutosEntre('2026-11-07T09:00', '')).toBeNull();
+  });
+
+  it('sin fecha de inicio tampoco', () => {
+    expect(minutosEntre('', '18:00')).toBeNull();
+  });
+
+  it('rechaza una hora imposible en vez de inventar un número', () => {
+    expect(minutosEntre('2026-11-07T09:00', '25:00')).toBeNull();
+    expect(minutosEntre('2026-11-07T09:00', '18:70')).toBeNull();
+    expect(minutosEntre('2026-11-07T09:00', '8pm')).toBeNull();
+  });
+});
+
+/** La cuenta inversa: lo que el formulario enseña al abrir un evento guardado. */
+describe('horaDeTermino', () => {
+  it('devuelve la hora a la que termina, en hora de Chile', () => {
+    // El evento guardado está en UTC; 12:00Z son las 09:00 en Santiago.
+    expect(horaDeTermino('2026-11-07T12:00:00Z', 540)).toBe('18:00');
+  });
+
+  it('da la vuelta exacta de minutosEntre', () => {
+    const inicio = '2026-11-07T12:00:00Z';
+    const minutos = minutosEntre(deIsoAChile(inicio), '18:00');
+    expect(horaDeTermino(inicio, minutos)).toBe('18:00');
+  });
+
+  it('sin duración no enseña nada, en vez de enseñar la hora de inicio', () => {
+    expect(horaDeTermino('2026-11-07T12:00:00Z', null)).toBe('');
+    expect(horaDeTermino('2026-11-07T12:00:00Z', 0)).toBe('');
+    expect(horaDeTermino(null, 540)).toBe('');
   });
 });

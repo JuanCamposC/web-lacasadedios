@@ -21,6 +21,9 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       orderBy: { column: 'orden', ascending: true },
       orderable: { column: 'orden' },
       notify: { type: 'video', urlBase: '/videos' },
+      // Los videos no tienen ficha propia: el enlace lleva al listado, que es
+      // donde se ven. Mejor eso que ningún botón.
+      enlacePublico: () => '/videos',
       fields: [
         { name: 'titulo', label: 'Título', type: 'text', required: true },
         {

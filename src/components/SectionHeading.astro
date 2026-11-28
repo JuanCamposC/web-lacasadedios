@@ -6,6 +6,16 @@ interface Props {
   align?: 'center' | 'left';
   tone?: 'primary' | 'accent' | 'secondary';
   invert?: boolean; // texto claro sobre fondo oscuro
+  /**
+   * Un encabezado que depende de otro: más chico y más apagado.
+   *
+   * Para «Eventos anteriores» debajo de «Próximos eventos». Los dos son
+   * secciones de la misma página, pero uno es a lo que se viene y el otro es el
+   * archivo; con el mismo tamaño los dos, la página deja de decir cuál importa.
+   * Antes ese matiz estaba escrito a mano en la página (`text-2xl opacity-70`),
+   * y al traer el componente se habría perdido.
+   */
+  secundario?: boolean;
 }
 const {
   eyebrow,
@@ -14,6 +24,7 @@ const {
   align = 'center',
   tone = 'primary',
   invert = false,
+  secundario = false,
 } = Astro.props;
 
 // Clases literales: Tailwind rastrea el código fuente, así que `text-${tone}`
@@ -31,7 +42,11 @@ const toneCls = invert ? 'text-accent' : (TONE[tone] ?? TONE.accent);
 <div data-reveal class={`max-w-2xl ${alignCls}`}>
   {eyebrow && <span class={`eyebrow mb-3 ${toneCls}`}>{eyebrow}</span>}
   <h2
-    class={`font-display leading-[1.05] text-[clamp(1.85rem,5vw,3.25rem)] ${invert ? 'text-white' : 'text-base-content'}`}
+    class={`font-display ${
+      secundario
+        ? 'leading-tight text-[clamp(1.4rem,3vw,1.9rem)]'
+        : 'leading-[1.05] text-[clamp(1.85rem,5vw,3.25rem)]'
+    } ${invert ? 'text-white' : secundario ? 'text-base-content/75' : 'text-base-content'}`}
   >
     {title}
   </h2>

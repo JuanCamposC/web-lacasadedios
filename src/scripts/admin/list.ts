@@ -26,6 +26,23 @@ function miniatura(ctx: Contexto, row: Fila): string {
     </span>`;
 }
 
+/**
+ * El botón «Ver» de una fila: abre en el sitio lo que se acaba de publicar.
+ *
+ * Solo aparece si la fila está PUBLICADA. Un borrador no se ve en el sitio —las
+ * consultas públicas lo filtran, ver src/lib/datos.ts—, así que el enlace
+ * llevaría a una página que no habla de él y parecería que el sitio está roto.
+ * Para mirar un borrador está la vista previa del formulario, que además no
+ * obliga a guardar.
+ */
+function enlaceDe(ctx: Contexto, row: Fila): string {
+  if (!row.publicado) return '';
+  const url = ctx.config.enlacePublico?.(row);
+  if (!url) return '';
+  return `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer"
+      class="btn btn-ghost btn-xs" title="Abrir en el sitio, en otra pestaña">Ver</a>`;
+}
+
 /** Las filas que pasan el filtro de estado y la búsqueda. */
 export function visibles(ctx: Contexto): Fila[] {
   const q = ctx.buscarEl.value.trim().toLowerCase();
@@ -101,8 +118,15 @@ export function pintar(ctx: Contexto) {
                 title="${row.publicado ? 'Pasar a borrador' : 'Publicar ahora'}">
                 ${row.publicado ? 'Publicado' : 'Borrador'}
               </button>
-              <div class="flex gap-0.5">
+              <div class="flex flex-wrap justify-end gap-0.5">
+                ${enlaceDe(ctx, row)}
                 <button type="button" class="btn btn-ghost btn-xs" data-edit="${row.id}">Editar</button>
+                ${
+                  config.duplicable
+                    ? `<button type="button" class="btn btn-ghost btn-xs" data-dup="${row.id}"
+                         title="Crear una copia en borrador, sin fecha">Duplicar</button>`
+                    : ''
+                }
                 <button type="button" class="btn btn-ghost btn-xs text-error" data-del="${row.id}">Borrar</button>
               </div>
             </div>
@@ -115,6 +139,12 @@ export function pintar(ctx: Contexto) {
     b.addEventListener('click', () => {
       const row = ctx.filas.find((r) => r.id === b.dataset.edit);
       if (row) ctx.startEdit(row);
+    }),
+  );
+  listEl.querySelectorAll<HTMLElement>('[data-dup]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const row = ctx.filas.find((r) => r.id === b.dataset.dup);
+      if (row) ctx.duplicar(row.id);
     }),
   );
   listEl

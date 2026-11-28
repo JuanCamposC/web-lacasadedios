@@ -1,15 +1,16 @@
 ---
-import { templos } from '../data/templos';
+import BarraFiltro from './BarraFiltro.astro';
 
 /**
- * Barra de filtro por templo, compartida por noticias, eventos y videos.
+ * Filtro por templo de noticias, eventos y videos: la barra y su comportamiento.
+ *
+ * La barra en sí vive en `BarraFiltro.astro`, que comparte con /horarios; acá
+ * se le añade lo que solo necesita este caso: el aviso de «no hay nada de ese
+ * templo» y el script que esconde las tarjetas.
  *
  * Los chips son los templos, sin «General»: al elegir una sede lo general
  * aparece igual (ver `coincide` en src/data/etiquetas.ts), así que un chip
  * propio para ello solo confundiría.
- *
- * Solo pinta la barra. El comportamiento vive en src/scripts/filtroTemplos.ts,
- * que cada página importa, para que este archivo siga siendo marca sin estado.
  */
 interface Props {
   /** Qué se está filtrando, para el texto vacío: «noticias», «eventos»… */
@@ -18,43 +19,7 @@ interface Props {
 const { plural } = Astro.props;
 ---
 
-<section class="sticky top-16 z-30 border-b border-base-300 bg-base-100">
-  <div class="indice wrap overflow-x-auto px-4 py-3">
-    <div
-      class="flex w-max items-center gap-2 pe-8 md:w-full md:flex-wrap md:pe-0"
-      role="group"
-      aria-label="Filtrar por templo"
-      data-filtro-templos
-      data-plural={plural}
-    >
-      <span
-        class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/70 sm:inline"
-      >
-        Filtrar
-      </span>
-      <button
-        type="button"
-        data-filter="all"
-        aria-pressed="true"
-        class="filtro-chip shrink-0 rounded-full border border-primary bg-primary px-4 py-1.5 text-sm font-medium text-primary-content transition"
-      >
-        Todos
-      </button>
-      {
-        templos.map((t) => (
-          <button
-            type="button"
-            data-filter={t.slug}
-            aria-pressed="false"
-            class="filtro-chip shrink-0 rounded-full border border-base-300 bg-base-100 px-4 py-1.5 text-sm font-medium transition hover:border-primary hover:text-primary"
-          >
-            {t.short}
-          </button>
-        ))
-      }
-    </div>
-  </div>
-</section>
+<BarraFiltro plural={plural} />
 
 <p
   data-filtro-vacio

@@ -47,8 +47,18 @@ export const SOCIAL: SocialLink[] = [
   {
     key: 'instagram',
     label: 'Instagram',
-    handle: '@joveneslacasadedios',
-    href: 'https://instagram.com/joveneslacasadedios',
+    // La cuenta OFICIAL de la iglesia, la misma marca que en YouTube.
+    //
+    // Hasta el 29 de octubre de 2026 esto apuntaba a @joveneslacasadedios, que
+    // es la cuenta de los JÓVENES, no la de la iglesia. Esa otra sigue en uso y
+    // es la que enlaza /jovenes. Los nombres se parecen tanto que conviene
+    // tenerlo escrito:
+    //
+    //   @lacasadedioscl        la iglesia      → acá, el pie y /contacto
+    //   @joveneslacasadedios   los jóvenes     → el enlace de /jovenes
+    //   @jovenescasadedios._   nombre viejo de la de jóvenes, ya sin uso
+    handle: '@lacasadedioscl',
+    href: 'https://instagram.com/lacasadedioscl',
     icon: 'lucide:instagram',
   },
   {

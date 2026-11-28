@@ -6,7 +6,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate
 
 import Layout from '../../layouts/Layout.astro';
 import PageHero from '../../components/PageHero.astro';
-import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import RutaJsonLd from '../../components/RutaJsonLd.astro';
 import Reveal from '../../components/Reveal.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import TemploCard from '../../components/TemploCard.astro';
@@ -47,7 +47,7 @@ const cifras = [
     height="min-h-[52vh]"
   />
 
-  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Templos' }]} />
+  <RutaJsonLd items={[{ label: 'Inicio', href: '/' }, { label: 'Templos' }]} />
 
   <!-- Cifras -->
   <section class="border-b border-base-300 bg-base-100 px-4 py-8">

@@ -1,0 +1,206 @@
+---
+export const prerender = false;
+
+/**
+ * Lo que se borró, por si hacía falta.
+ *
+ * ── QUÉ CAMBIÓ ──────────────────────────────────────────────────────────────
+ * Hasta ahora el diálogo de borrar decía «No se puede deshacer» y era verdad:
+ * `delete from eventos where id = ?` se llevaba la fila y, detrás, su imagen de
+ * R2. Era el momento más tenso de administrar el sitio.
+ *
+ * Ahora borrar escribe una fecha (ver d1/0014_papelera.sql). La fila deja de
+ * verse en el sitio y en el panel —que es todo lo que se pedía— y durante
+ * treinta días se puede traer de vuelta desde acá.
+ *
+ * ── POR QUÉ NO SE VACÍA SOLA ────────────────────────────────────────────────
+ * Porque no hay nada que corra solo: el sitio es un Worker que se despierta
+ * cuando alguien pide una página, y no hay tarea programada que barra la base
+ * de madrugada. Montar una para esto sería más pieza móvil que la que arregla.
+ *
+ * Así que la papelera se vacía a mano, y lo que ya cumplió los treinta días se
+ * enseña marcado para que se note. Mientras algo sigue ahí, su imagen sigue en
+ * R2: es lo que permite que restaurar devuelva la noticia con su foto y no con
+ * un hueco.
+ */
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { Icon } from 'astro-icon/components';
+import { baseDeDatos } from '../../lib/base';
+import { listarPapelera, DIAS_EN_PAPELERA } from '../../lib/panel';
+import { fechaYHora } from '../../lib/hora';
+
+const filas = await listarPapelera(await baseDeDatos());
+
+/** Cómo se llama cada tabla para quien administra, y con qué icono. */
+const TIPO: Record<string, { label: string; icon: string }> = {
+  eventos: { label: 'Evento', icon: 'lucide:calendar-days' },
+  noticias: { label: 'Noticia', icon: 'lucide:newspaper' },
+  videos: { label: 'Video', icon: 'lucide:youtube' },
+  estudios: { label: 'Estudio', icon: 'lucide:headphones' },
+  instagram: { label: 'Foto de Instagram', icon: 'lucide:instagram' },
+  enlaces: { label: 'Enlace de jóvenes', icon: 'lucide:music' },
+  reuniones: { label: 'Reunión', icon: 'lucide:clock' },
+};
+
+const caducadas = filas.filter((f) => f.dias <= 0).length;
+---
+
+<AdminLayout
+  title="Papelera"
+  description={`Lo borrado se guarda ${DIAS_EN_PAPELERA} días y se puede recuperar.`}
+  active="papelera"
+>
+  <div class="max-w-3xl">
+    {
+      filas.length === 0 ? (
+        <div class="panel p-10 text-center">
+          <span class="tile tile-lg tile-muted mx-auto mb-4">
+            <Icon name="lucide:trash-2" class="h-6 w-6" />
+          </span>
+          <p class="text-sm text-base-content/70">
+            La papelera está vacía. Lo que borres desde el panel aparecerá acá durante{' '}
+            {DIAS_EN_PAPELERA} días.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div class="panel mb-4 flex items-start gap-4 p-5">
+            <span class="tile tile-lg tile-muted">
+              <Icon name="lucide:trash-2" class="h-6 w-6" />
+            </span>
+            <div class="min-w-0">
+              <p class="font-data text-3xl font-bold leading-none text-primary">{filas.length}</p>
+              <p class="mt-1 text-sm text-base-content/70">
+                {filas.length === 1 ? 'elemento borrado' : 'elementos borrados'} · nada de esto se ve
+                en el sitio
+                {caducadas > 0 && (
+                  <span class="mt-1 block text-warning">
+                    {caducadas === 1
+                      ? 'Uno ya pasó los 30 días y conviene vaciarlo.'
+                      : `${caducadas} ya pasaron los 30 días y conviene vaciarlos.`}
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <ul class="space-y-2.5">
+            {filas.map((f) => (
+              <li
+                class="panel flex flex-wrap items-center gap-3 p-3"
+                data-fila
+                data-recurso={f.recurso}
+                data-id={f.id}
+              >
+                <span class="tile h-9 w-9 shrink-0">
+                  <Icon name={TIPO[f.recurso]?.icon ?? 'lucide:file'} class="h-4 w-4" />
+                </span>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-semibold">{f.titulo}</p>
+                  <p class="font-data text-xs uppercase tracking-wide text-base-content/70">
+                    {TIPO[f.recurso]?.label ?? f.recurso} · borrado el {fechaYHora(f.borrado_en)}
+                  </p>
+                </div>
+                <span
+                  class={`badge badge-sm shrink-0 ${f.dias <= 0 ? 'badge-warning' : 'badge-ghost'}`}
+                >
+                  {f.dias <= 0
+                    ? 'Pasados los 30 días'
+                    : f.dias === 1
+                      ? 'Queda 1 día'
+                      : `Quedan ${f.dias} días`}
+                </span>
+                <div class="flex shrink-0 gap-1">
+                  <button type="button" data-restaurar class="btn btn-outline btn-xs gap-1.5">
+                    <Icon name="lucide:undo-2" class="h-3.5 w-3.5" /> Restaurar
+                  </button>
+                  <button type="button" data-purgar class="btn btn-ghost btn-xs text-error">
+                    Borrar del todo
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <p class="mt-6 text-xs text-base-content/70">
+            Restaurar devuelve el elemento como estaba, publicado o en borrador. «Borrar del todo»
+            sí es definitivo: se va la fila y también su imagen, si no la está usando otra cosa.
+          </p>
+        </>
+      )
+    }
+  </div>
+
+  <dialog id="dlg-purgar" class="modal">
+    <div class="modal-box max-w-sm">
+      <h3 class="text-lg font-bold">¿Borrar del todo?</h3>
+      <p class="mt-2 text-sm text-base-content/70">
+        <strong data-nombre class="break-words"></strong> desaparece para siempre, junto con su
+        imagen. Esto sí no se puede deshacer.
+      </p>
+      <div class="modal-action">
+        <form method="dialog" class="flex w-full gap-2">
+          <button value="no" class="btn btn-ghost flex-1">Cancelar</button>
+          <button value="si" class="btn btn-error flex-1">Sí, borrar</button>
+        </form>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>cerrar</button></form>
+  </dialog>
+
+  <script>
+    import { api } from '../../scripts/admin/api';
+    import { toast, preguntar } from '../../scripts/admin/ui';
+    import { esRecurso } from '../../lib/panel';
+
+    /*
+     * La pantalla se pinta en el servidor y los botones solo quitan su fila.
+     *
+     * No se vuelve a pedir la lista entera tras cada acción: la papelera no la
+     * toca nadie más al mismo tiempo, y recargarla haría parpadear una pantalla
+     * donde lo único que cambió es la fila que se acaba de tocar.
+     */
+    function initPapelera() {
+      const dlg = document.getElementById('dlg-purgar') as HTMLDialogElement | null;
+
+      document.querySelectorAll<HTMLElement>('[data-fila]').forEach((fila) => {
+        const recurso = fila.dataset.recurso;
+        const id = fila.dataset.id;
+        const nombre = fila.querySelector('p')?.textContent?.trim() ?? 'esto';
+        // El nombre de la tabla va a la API y de ahí al SQL: se comprueba acá
+        // también, aunque el servidor lo repita, para que un error se vea al
+        // abrir la pantalla y no al pulsar.
+        if (!id || !esRecurso(recurso)) return;
+
+        fila.querySelector('[data-restaurar]')?.addEventListener('click', async () => {
+          try {
+            await api.restaurar(recurso, id);
+          } catch (e) {
+            return toast('No se pudo restaurar: ' + (e as Error).message, 'error');
+          }
+          fila.remove();
+          toast(`«${nombre}» volvió a su sitio`);
+        });
+
+        fila.querySelector('[data-purgar]')?.addEventListener('click', async () => {
+          if (dlg && !(await preguntar(dlg, nombre))) return;
+          try {
+            await api.purgar(recurso, id);
+          } catch (e) {
+            return toast('No se pudo borrar: ' + (e as Error).message, 'error');
+          }
+          fila.remove();
+          toast('Borrado definitivamente');
+        });
+      });
+    }
+
+    // El panel no monta el ClientRouter, así que `astro:page-load` no llega
+    // nunca: hace falta el respaldo. Ver la nota en Navigation.astro.
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPapelera);
+    } else {
+      initPapelera();
+    }
+  </script>
+</AdminLayout>

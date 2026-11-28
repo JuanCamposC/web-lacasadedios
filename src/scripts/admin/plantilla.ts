@@ -48,6 +48,18 @@ function campoHtml(f: CrudConfig['fields'][number]): string {
           ${help}
         </div>`;
 
+  // «¿A qué hora termina?» en vez de «¿cuántos minutos dura?». La columna sigue
+  // siendo de minutos; la resta la hace el formulario (ver `construirPayload`).
+  // La línea de abajo dice en palabras lo que se va a guardar, porque una resta
+  // que no se ve es una resta en la que no se confía.
+  if (f.type === 'duracion')
+    return `<label class="block" data-duracion="${f.name}">
+          ${label}
+          <input type="time" name="${f.name}" ${req} class="input input-bordered w-full" />
+          ${help}
+          <span data-duracion-previa class="mt-1 block text-xs" role="status"></span>
+        </label>`;
+
   // Desplegable de opciones fijas. Cuando es obligatorio arranca en una
   // opción vacía y deshabilitada: obliga a elegir a conciencia en vez de
   // dejar pasar la primera de la lista sin mirarla.
@@ -71,7 +83,7 @@ function campoHtml(f: CrudConfig['fields'][number]): string {
   // Zona de imagen: se puede arrastrar el archivo encima, se ve antes de
   // guardar y se reduce en el navegador.
   if (f.type === 'image')
-    return `<div class="block" data-zona="${f.name}">
+    return `<div class="block" data-zona="${f.name}"${f.social ? ` data-social="${f.social}"` : ''}>
           ${label}
           <label data-drop
             class="flex cursor-pointer flex-col items-center justify-center gap-1 rounded border border-dashed border-base-300 bg-base-200/40 px-4 py-6 text-center transition-colors hover:border-primary hover:bg-base-200">
@@ -165,8 +177,12 @@ export function plantilla(config: CrudConfig, plural: string, articulo: string):
       </section>
 
       <!-- Formulario -->
+      <!-- El bloque pegado envuelve al formulario Y a la vista previa. Si cada
+           uno fuera pegado por su cuenta, el segundo se metería por debajo del
+           primero al bajar la página. -->
       <section class="lg:col-span-5 xl:col-span-4">
-        <div id="crud-form-card" class="panel p-5 lg:sticky lg:top-24">
+        <div class="lg:sticky lg:top-24">
+        <div id="crud-form-card" class="panel p-5">
           <div class="mb-4 flex items-center justify-between gap-2">
             <h2 class="text-base font-bold" id="form-title">${articulo} ${esc(config.singular)}</h2>
             <button type="button" class="btn btn-ghost btn-xs hidden" id="crud-cancel">Cancelar</button>
@@ -187,16 +203,38 @@ export function plantilla(config: CrudConfig, plural: string, articulo: string):
             <p class="text-center text-xs text-base-content/70">Atajo: Ctrl + S</p>
           </form>
         </div>
+
+        ${
+          /* La tarjeta tal como va a quedar en el sitio. Va DEBAJO del
+             formulario y dentro del mismo bloque pegado, para que al escribir
+             el título se vea cambiar sin desplazar la página. */
+          config.vistaPrevia
+            ? `<div class="panel mt-4 p-4" data-vista-previa="${config.vistaPrevia}">
+                 <p class="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-base-content/70">
+                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                   Así se verá en el sitio
+                 </p>
+                 <div data-vp-tarjeta></div>
+               </div>`
+            : ''
+        }
+        </div>
       </section>
     </div>
 
     <!-- Confirmación de borrado. Sustituye a confirm(), que en el teléfono
-         aparece como un aviso del navegador sin contexto ni nombre. -->
+         aparece como un aviso del navegador sin contexto ni nombre.
+
+         Ya NO dice «no se puede deshacer», porque dejó de ser verdad: borrar
+         manda a la papelera y de ahí se puede recuperar (ver d1/0014_papelera).
+         Decirlo es la mitad del arreglo — el miedo a borrar no lo quita la
+         función, lo quita saber que existe. -->
     <dialog id="crud-borrar" class="modal">
       <div class="modal-box max-w-sm">
         <h3 class="text-lg font-bold">¿Borrar este ${esc(config.singular)}?</h3>
         <p class="mt-2 text-sm text-base-content/70">
-          Se eliminará <strong data-nombre class="break-words"></strong> del sitio. No se puede deshacer.
+          <strong data-nombre class="break-words"></strong> deja de verse en el sitio ahora mismo.
+          Queda 30 días en la papelera del panel, así que se puede recuperar.
         </p>
         <div class="modal-action">
           <form method="dialog" class="flex w-full gap-2">

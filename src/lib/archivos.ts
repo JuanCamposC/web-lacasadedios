@@ -38,7 +38,9 @@ import { almacen } from './base';
  */
 const DONDE_SE_NOMBRAN: readonly { tabla: string; columna: string }[] = [
   { tabla: 'eventos', columna: 'imagen_clave' },
+  { tabla: 'eventos', columna: 'imagen_social_clave' },
   { tabla: 'noticias', columna: 'imagen_clave' },
+  { tabla: 'noticias', columna: 'imagen_social_clave' },
   { tabla: 'instagram', columna: 'imagen_clave' },
   { tabla: 'estudios', columna: 'archivo_clave' },
   { tabla: 'ajustes', columna: 'aviso_imagen_clave' },

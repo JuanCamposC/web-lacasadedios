@@ -3,7 +3,7 @@ import { Image } from 'astro:assets';
 import { Icon } from 'astro-icon/components';
 import Layout from '../layouts/Layout.astro';
 import PageHero from '../components/PageHero.astro';
-import Breadcrumbs from '../components/Breadcrumbs.astro';
+import RutaJsonLd from '../components/RutaJsonLd.astro';
 import Reveal from '../components/Reveal.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import CtaBand from '../components/CtaBand.astro';
@@ -150,7 +150,7 @@ const initials = (name: string) =>
     posicion="center 10%"
   />
 
-  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Nosotros' }]} />
+  <RutaJsonLd items={[{ label: 'Inicio', href: '/' }, { label: 'Nosotros' }]} />
 
   <!-- Índice de la página -->
   {
@@ -199,7 +199,7 @@ const initials = (name: string) =>
           {
             credo.map((c, i) => (
               <Reveal delay={(i % 3) * 90} class="h-full">
-                <div class="panel panel-sm h-full p-7">
+                <div class="panel h-full p-7">
                   <div class="mb-3 tile">
                     <Icon name={c.icon} class="h-6 w-6" />
                   </div>
@@ -226,7 +226,7 @@ const initials = (name: string) =>
           {
             liderazgo.map((l, i) => (
               <Reveal delay={(i % 4) * 80} class="h-full">
-                <div class="panel panel-sm h-full p-7 text-center">
+                <div class="panel h-full p-7 text-center">
                   <div class="mx-auto mb-3 tile tile-lg">
                     <Icon name={l.icon} class="h-7 w-7" />
                   </div>
@@ -248,7 +248,7 @@ const initials = (name: string) =>
           {
             sacramentos.map((s, i) => (
               <Reveal delay={(i % 2) * 90} class="h-full">
-                <div class="panel panel-sm flex h-full items-start gap-5 p-7">
+                <div class="panel flex h-full items-start gap-5 p-7">
                   <div class="tile">
                     <Icon name={s.icon} class="h-6 w-6" />
                   </div>
@@ -364,7 +364,7 @@ const initials = (name: string) =>
           {
             valores.map((v, i) => (
               <Reveal delay={(i % 5) * 70} class="h-full">
-                <div class="panel panel-sm panel-lift group h-full p-6 text-center">
+                <div class="panel panel-lift group h-full p-6 text-center">
                   <div class="mx-auto mb-4 tile tile-lg transition-colors group-hover:bg-primary group-hover:text-primary-content">
                     <Icon name={v.icon} class="h-7 w-7" />
                   </div>
@@ -433,7 +433,7 @@ const initials = (name: string) =>
   <CtaBand
     eyebrow="Da el primer paso"
     title="¿Quieres conocernos mejor?"
-    text="Te invitamos a visitarnos y ser parte de nuestra familia de fe."
+    text="Si quieres venir, cualquier reunión sirve. Si prefieres que alguien te reciba, escríbenos."
     image={IMG.nosotrosCierre}
     compact
   >

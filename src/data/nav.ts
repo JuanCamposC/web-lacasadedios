@@ -96,10 +96,50 @@ export const MAIN_NAV: NavEntry[] = [
   // quiere que se vea, no una novedad que pasa. Escondido bajo «Nosotros» o
   // junto a Videos tendría el peso de un enlace de archivo.
   { href: '/estudio-biblico', label: 'Instituto Bíblico' },
-  { href: '/eventos', label: 'Eventos' },
-  { href: '/noticias', label: 'Noticias' },
-  { href: '/videos', label: 'Videos' },
-  { href: '/en-vivo', label: 'En vivo', soloEnVivo: true },
+  /*
+   * ── POR QUÉ ESTOS CUATRO SE AGRUPARON ───────────────────────────────────
+   * Eventos, Noticias, Videos y En vivo estaban sueltos en la barra. Con ellos
+   * eran ocho entradas más dos desplegables, y eso obligaba a enseñar el menú
+   * solo desde 1280 px: por debajo no cabía. El resultado era que en un
+   * portátil de 13 pulgadas, en una ventana sin maximizar o en un iPad en
+   * horizontal, TODA la navegación quedaba escondida en la hamburguesa.
+   *
+   * Juntos caben desde 1024. Y no es un grupo de conveniencia: los cuatro son
+   * lo que la congregación publica —lo que pasó, lo que viene y lo que se
+   * grabó—, frente a lo que la iglesia ES (Nosotros), DÓNDE está (Templos) y lo
+   * que ENSEÑA cada semana (el Instituto).
+   */
+  {
+    label: 'Comunidad',
+    match: ['/eventos', '/noticias', '/videos', '/en-vivo'],
+    items: [
+      {
+        href: '/eventos',
+        label: 'Eventos',
+        desc: 'Lo que viene, con fecha',
+        icon: 'lucide:calendar-days',
+      },
+      {
+        href: '/noticias',
+        label: 'Noticias',
+        desc: 'Avisos y novedades',
+        icon: 'lucide:newspaper',
+      },
+      {
+        href: '/videos',
+        label: 'Videos',
+        desc: 'Prédicas y transmisiones anteriores',
+        icon: 'lucide:youtube',
+      },
+      {
+        href: '/en-vivo',
+        label: 'En vivo',
+        desc: 'La reunión, ahora mismo',
+        icon: 'lucide:radio',
+        soloEnVivo: true,
+      },
+    ],
+  },
 ];
 
 /**

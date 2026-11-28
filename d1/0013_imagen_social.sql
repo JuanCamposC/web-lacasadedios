@@ -1,0 +1,23 @@
+-- ── La imagen con la que se ve un enlace al compartirlo ─────────────────────
+--
+-- Al compartir un evento o una noticia por WhatsApp, la vista previa salía
+-- pequeña: una miniatura al costado en vez de la imagen grande arriba.
+--
+-- La causa son dos cosas que se juntan. La foto que se sube se guarda en WebP,
+-- que es lo correcto para el sitio porque pesa la mitad, pero el lector de
+-- vistas previas de WhatsApp no lo digiere y cae en la tarjeta chica. Y
+-- Facebook, que sí lee WebP, decide el tamaño comparando la imagen con las
+-- medidas que la página declara: la página decía 1200×630 y la imagen medía
+-- 1600×900.
+--
+-- `imagen_social_clave` guarda una segunda versión de la misma foto, en JPEG y
+-- de 1200×630 exactos, que es lo que entienden todas las redes. La genera el
+-- navegador al subir la foto, sin recortarla: el afiche entero sobre una copia
+-- suya desenfocada, igual que en la tarjeta de /eventos. Recortar a esa medida
+-- se llevaría justo el título de arriba y la dirección de abajo, que es lo que
+-- el afiche venía a decir.
+--
+-- Vacía significa «no hay», y entonces se comparte con la imagen de siempre:
+-- peor vista previa, nunca un error.
+alter table eventos add column imagen_social_clave text;
+alter table noticias add column imagen_social_clave text;

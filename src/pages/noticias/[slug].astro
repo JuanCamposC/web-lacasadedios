@@ -9,7 +9,8 @@ export const prerender = false;
 Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
 
 import Layout from '../../layouts/Layout.astro';
-import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import RutaJsonLd from '../../components/RutaJsonLd.astro';
+import Compartir from '../../components/Compartir.astro';
 import Reveal from '../../components/Reveal.astro';
 import CtaBand from '../../components/CtaBand.astro';
 import { Icon } from 'astro-icon/components';
@@ -87,7 +88,8 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
 <Layout
   title={`${item.titulo} · La Casa de Dios`}
   description={item.bajada ?? markdownAResumen(item.cuerpo)}
-  image={item.imagen ?? undefined}
+  {/* La tarjeta de 1200×630 si existe; si no, la imagen normal. Migración 0013. */}
+  image={urlMedio(item.imagen_social_clave) ?? item.imagen ?? undefined}
 >
   <script type="application/ld+json" set:html={comoJsonLd(jsonLd)} is:inline />
 
@@ -128,7 +130,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
     </div>
   </header>
 
-  <Breadcrumbs
+  <RutaJsonLd
     items={[
       { label: 'Inicio', href: '/' },
       { label: 'Noticias', href: '/noticias' },
@@ -150,7 +152,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
           <Reveal class="mb-10 block aspect-[16/9] overflow-hidden rounded-xl bg-base-200">
             <img
               src={item.imagen}
-              alt={item.titulo}
+              alt={item.imagen_alt ?? item.titulo}
               class="h-full w-full object-cover"
               loading="eager"
             />
@@ -179,34 +181,13 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
         )
       }
 
-      <!-- Compartir -->
+      {/* Un solo botón, el mismo que en los eventos: abre la hoja del sistema
+          en el teléfono y copia el enlace en el escritorio. Antes eran tres
+          iconos escritos a mano —WhatsApp, Facebook y copiar— que no ofrecían
+          nada de lo que la persona tuviera instalado. Ver Compartir.astro. */}
       <div class="mt-12 flex flex-wrap items-center gap-3 border-t border-base-300 pt-8">
         <span class="text-sm font-medium text-base-content/70">Compartir:</span>
-        <a
-          href={`https://wa.me/?text=${encodeURIComponent(textoWhatsapp)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn btn-sm btn-ghost gap-1.5"
-        >
-          <Icon name="lucide:message-circle" class="h-4 w-4" /> WhatsApp
-        </a>
-        <a
-          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(canonical)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn btn-sm btn-ghost gap-1.5"
-        >
-          <Icon name="lucide:share-2" class="h-4 w-4" /> Facebook
-        </a>
-        <button
-          type="button"
-          id="copiar-enlace"
-          data-url={canonical}
-          class="btn btn-sm btn-ghost gap-1.5"
-        >
-          <Icon name="lucide:link" class="h-4 w-4" />
-          <span data-label>Copiar enlace</span>
-        </button>
+        <Compartir url={canonical} titulo={item.titulo} texto={textoWhatsapp} />
       </div>
     </div>
   </article>
@@ -222,7 +203,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
               <Reveal delay={(i % 3) * 80} class="h-full">
                 <a
                   href={`/noticias/${n.slug ?? n.id}`}
-                  class="panel panel-sm panel-lift group flex h-full flex-col overflow-hidden"
+                  class="panel panel-lift group flex h-full flex-col overflow-hidden"
                 >
                   <div class="h-36 overflow-hidden bg-base-300">
                     {n.imagen ? (
@@ -263,24 +244,3 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
   </CtaBand>
 </Layout>
 
-<script>
-  function initCompartir() {
-    const btn = document.getElementById('copiar-enlace') as HTMLElement | null;
-    if (!btn || btn.dataset.listo) return;
-    btn.dataset.listo = '1';
-
-    const label = btn.querySelector('[data-label]')!;
-    btn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(btn.dataset.url ?? location.href);
-        const antes = label.textContent;
-        label.textContent = '¡Copiado!';
-        setTimeout(() => (label.textContent = antes), 1800);
-      } catch {
-        /* el navegador bloqueó el portapapeles: se ignora */
-      }
-    });
-  }
-
-  document.addEventListener('astro:page-load', initCompartir);
-</script>

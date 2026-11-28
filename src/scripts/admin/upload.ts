@@ -44,6 +44,65 @@ export async function prepararImagen(file: File): Promise<Blob> {
   }
 }
 
+/** La medida que esperan las redes para la imagen de una tarjeta compartida. */
+const SOCIAL = { ancho: 1200, alto: 630 };
+
+/**
+ * La imagen con la que se ve el enlace al compartirlo, en 1200×630 y en JPEG.
+ *
+ * ── POR QUÉ HACE FALTA UNA SEGUNDA IMAGEN ───────────────────────────────────
+ * La foto que se sube se guarda en WebP, que es lo correcto para el sitio:
+ * pesa la mitad. Pero el lector de vistas previas de WhatsApp no lo digiere, y
+ * cuando no puede con la imagen muestra la tarjeta pequeña, con una miniatura
+ * al costado en vez de la imagen grande arriba. Facebook sí lee WebP, pero
+ * decide el tamaño comparando la imagen con las medidas que la página declara.
+ *
+ * Así que esta segunda versión resuelve las dos cosas a la vez: JPEG, que
+ * entiende todo el mundo, y exactamente 1200×630, que es lo que la página
+ * declara y lo que las dos redes esperan.
+ *
+ * ── POR QUÉ NO SE RECORTA ───────────────────────────────────────────────────
+ * Casi todo lo que se sube acá son afiches, y un afiche trae el título arriba
+ * y la dirección abajo: recortarlo a 1200×630 se lleva justo eso. Va entero y
+ * centrado, sobre una copia suya ampliada y desenfocada que rellena los lados.
+ * Es lo mismo que hace la tarjeta de /eventos, para que la vista previa y la
+ * página se parezcan.
+ */
+export async function tarjetaSocial(file: Blob): Promise<Blob | null> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const lienzo = document.createElement('canvas');
+    lienzo.width = SOCIAL.ancho;
+    lienzo.height = SOCIAL.alto;
+    const pincel = lienzo.getContext('2d');
+    if (!pincel) return null;
+
+    // El fondo: la misma imagen cubriendo el lienzo, un 20 % más grande y
+    // desenfocada. Ese margen de más existe porque el desenfoque chupa lo que
+    // hay fuera del borde; sin él quedarían cuatro franjas lavadas.
+    const cubrir = Math.max(SOCIAL.ancho / bitmap.width, SOCIAL.alto / bitmap.height) * 1.2;
+    const fAncho = bitmap.width * cubrir;
+    const fAlto = bitmap.height * cubrir;
+    pincel.filter = 'blur(36px)';
+    pincel.drawImage(bitmap, (SOCIAL.ancho - fAncho) / 2, (SOCIAL.alto - fAlto) / 2, fAncho, fAlto);
+    pincel.filter = 'none';
+
+    // Un velo encima, para que el fondo no compita con el afiche.
+    pincel.fillStyle = 'rgba(23, 32, 46, .38)';
+    pincel.fillRect(0, 0, SOCIAL.ancho, SOCIAL.alto);
+
+    // Y la imagen entera, centrada y sin recortar.
+    const caber = Math.min(SOCIAL.ancho / bitmap.width, SOCIAL.alto / bitmap.height);
+    const ancho = bitmap.width * caber;
+    const alto = bitmap.height * caber;
+    pincel.drawImage(bitmap, (SOCIAL.ancho - ancho) / 2, (SOCIAL.alto - alto) / 2, ancho, alto);
+
+    return await new Promise<Blob | null>((r) => lienzo.toBlob(r, 'image/jpeg', 0.86));
+  } catch {
+    return null; // si el navegador no puede, se comparte con la imagen normal
+  }
+}
+
 /**
  * Zona de imagen: arrastrar el archivo encima, verlo antes de guardar y
  * reducirlo en el navegador.
@@ -59,6 +118,15 @@ export function initImagenes(ctx: Contexto) {
       prev.innerHTML = `<p class="text-xs text-base-content/70">Preparando imagen…</p>`;
       const blob = await prepararImagen(file);
       ctx.imagenesListas.set(campo, blob);
+
+      // La tarjeta para compartir, cuando el campo la pide. Se genera del
+      // original y no del WebP ya reducido: una conversión menos encima.
+      const social = zona.dataset.social;
+      if (social) {
+        const tarjeta = await tarjetaSocial(file);
+        if (tarjeta) ctx.imagenesListas.set(social, tarjeta);
+        else ctx.imagenesListas.delete(social);
+      }
       const ahorro =
         blob.size < file.size
           ? ` · reducida de ${pesoLegible(file.size)} a ${pesoLegible(blob.size)}`

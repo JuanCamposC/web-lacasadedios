@@ -1,306 +1,245 @@
 ---
 export const prerender = false;
+
+/**
+ * Los horarios, como tablero de la semana.
+ *
+ * El porqué de dejar el CRUD genérico está en src/scripts/admin/horarios.ts, que
+ * es donde vive el comportamiento. Esta página solo pone la marca: el tablero
+ * vacío, el formulario y el diálogo de borrado.
+ *
+ * El formulario describe lo que la reunión ES —en qué templos, qué día, a qué
+ * hora, cómo se llama y qué se celebra—. Lo de «solo esta vez» no está acá: es
+ * una acción del menú de cada línea, porque es algo que se le hace a una
+ * reunión que ya existe, no una propiedad suya.
+ */
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import { Icon } from 'astro-icon/components';
+import { templos } from '../../data/templos';
+import { DIAS } from '../../lib/reuniones';
+
+/* Las reglas, dichas para quien las elige.
+   `reglaEnPalabras` necesita un día para concordar («el primer domingo»), pero
+   en el desplegable todavía no se sabe cuál: se usa una forma neutra, y la
+   frase con el día de verdad la da la línea de vista previa. */
+const REGLAS = [
+  { value: 'siempre', label: 'Todas las semanas' },
+  { value: 'primer', label: 'El primero de cada mes' },
+  { value: 'primer-par', label: 'El primero de los meses pares (feb, abr, jun…)' },
+  { value: 'primer-impar', label: 'El primero de los meses impares (ene, mar, may…)' },
+  { value: 'ultimo', label: 'El último de cada mes' },
+];
 ---
 
 <AdminLayout
   title="Horarios"
-  description="Las reuniones de cada semana. Suspende una sin borrarla, o marca las que tienen algo especial."
+  description="La semana completa. Suspende o mueve una reunión desde el menú de su línea."
   active="horarios"
 >
-  <div id="crud-root"></div>
+  <button slot="acciones" id="form-nueva" class="btn btn-primary btn-sm gap-1.5">
+    <Icon name="lucide:plus" class="h-4 w-4" />
+    <span class="hidden sm:inline">Nueva reunión</span>
+  </button>
+
+  <div class="grid gap-6 lg:grid-cols-12">
+    <!-- ══ El tablero ════════════════════════════════════════════════════ -->
+    <section class="lg:col-span-7 xl:col-span-8">
+      <div class="panel mb-4 flex items-start gap-3 p-3">
+        <Icon name="lucide:info" class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <p class="text-xs text-base-content/75">
+          Una línea puede ser la misma reunión en varios templos: se editan las dos a la vez. Para
+          suspenderla o moverla <strong>solo una vez</strong>, usa el menú <span
+            class="font-bold">⋯</span
+          > de su línea — la fecha de término la pone el panel y la reunión vuelve sola.
+        </p>
+      </div>
+
+      <div id="tablero">
+        <div class="panel p-6 text-center">
+          <span class="loading loading-spinner loading-sm"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ El formulario ═════════════════════════════════════════════════ -->
+    <section class="lg:col-span-5 xl:col-span-4">
+      <form id="form-reunion" class="panel space-y-4 p-5 lg:sticky lg:top-24">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-base font-bold" id="form-titulo">Nueva reunión</h2>
+          <button type="button" class="btn btn-ghost btn-xs hidden" id="form-cancelar">
+            Cancelar
+          </button>
+        </div>
+
+        <fieldset class="space-y-2 rounded border border-base-300 p-3">
+          <legend class="px-1.5 text-xs font-semibold uppercase tracking-wider text-base-content/70">
+            En qué templos
+          </legend>
+          {
+            /* Casillas y no un desplegable, y eso es la mitad del arreglo: el
+              estudio bíblico de los lunes se hace en los cuatro templos, y con
+              un desplegable había que rellenar este formulario cuatro veces y
+              después acordarse de editar las cuatro filas. */
+          }
+          <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            {
+              templos.map((t) => (
+                <label class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-base-200">
+                  <input
+                    type="checkbox"
+                    name="templos"
+                    value={t.slug}
+                    class="checkbox checkbox-primary checkbox-sm"
+                  />
+                  {t.short}
+                </label>
+              ))
+            }
+          </div>
+          <p class="px-1.5 text-xs text-base-content/70">
+            Se guarda una vez en cada templo marcado. Si desmarcas uno, su reunión se va a la
+            papelera y se puede recuperar.
+          </p>
+        </fieldset>
+
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium">
+            Día <span class="text-error">*</span>
+          </span>
+          <select name="dia" required class="select select-bordered w-full">
+            {DIAS.map((d, i) => <option value={i}>{d}</option>)}
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium">
+            Hora <span class="text-error">*</span>
+          </span>
+          <input type="time" name="hora" required class="input input-bordered w-full" />
+          <span class="mt-1 block text-xs text-base-content/70">
+            La hora de siempre. Para cambiarla una sola vez, usa el menú de la línea.
+          </span>
+        </label>
+
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium">
+            Cómo se llama <span class="text-error">*</span>
+          </span>
+          <input
+            type="text"
+            name="nombre"
+            required
+            placeholder="Reunión General"
+            class="input input-bordered w-full"
+          />
+          <span class="mt-1 block text-xs text-base-content/70">
+            Ej.: Reunión General, Estudio Bíblico, Reunión de Jóvenes.
+          </span>
+        </label>
+
+        <fieldset class="space-y-3 rounded border border-base-300 p-3">
+          <legend class="px-1.5 text-xs font-semibold uppercase tracking-wider text-base-content/70">
+            Algo que se repite
+          </legend>
+          <p class="-mt-1 px-1.5 text-xs text-base-content/70">
+            Para lo que vuelve cada tanto y siempre es igual. Se pone una vez y el sitio lo enseña
+            cuando toca, sin que nadie se acuerde de quitarlo.
+          </p>
+
+          <label class="block">
+            <span class="mb-1.5 block text-sm font-medium">Qué pasa ese día</span>
+            <input
+              type="text"
+              name="marca"
+              placeholder="Santa Cena"
+              class="input input-bordered w-full"
+            />
+            <span class="mt-1 block text-xs text-base-content/70">
+              Aparece junto al nombre de la reunión, en dorado.
+            </span>
+          </label>
+
+          <label class="block">
+            <span class="mb-1.5 block text-sm font-medium">Cada cuánto</span>
+            <select name="marca_regla" class="select select-bordered w-full">
+              <option value="">Nunca — esta reunión no lleva marca</option>
+              {REGLAS.map((r) => <option value={r.value}>{r.label}</option>)}
+            </select>
+            <p id="previa-marca" class="mt-1 text-xs" role="status"></p>
+          </label>
+        </fieldset>
+
+        <label
+          class="flex cursor-pointer items-start gap-3 rounded border border-base-300 bg-base-200/50 p-3"
+        >
+          <input
+            type="checkbox"
+            name="publicado"
+            checked
+            class="toggle toggle-primary toggle-sm mt-0.5"
+          />
+          <span>
+            <span class="block text-sm font-medium">Se muestra en la web</span>
+            <span class="block text-xs text-base-content/70">
+              Si lo apagas, la reunión sigue acá pero desaparece de los horarios del sitio.
+            </span>
+          </span>
+        </label>
+
+        <button type="submit" class="btn btn-primary w-full" id="form-guardar">Guardar</button>
+      </form>
+    </section>
+  </div>
+
+  <dialog id="dlg-borrar" class="modal">
+    <div class="modal-box max-w-sm">
+      <h3 class="text-lg font-bold">¿Borrar esta reunión?</h3>
+      <p class="mt-2 text-sm text-base-content/70">
+        <strong data-nombre class="break-words"></strong> deja de verse en los horarios del sitio.
+        Queda 30 días en la papelera del panel, así que se puede recuperar.
+      </p>
+      <p class="mt-2 text-sm text-base-content/70">
+        Si solo se suspende por esta vez, cancela y usa «Suspender» en el menú de la línea: así
+        vuelve sola.
+      </p>
+      <div class="modal-action">
+        <form method="dialog" class="flex w-full gap-2">
+          <button value="no" class="btn btn-ghost flex-1">Cancelar</button>
+          <button value="si" class="btn btn-error flex-1">Sí, borrar</button>
+        </form>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>cerrar</button></form>
+  </dialog>
+
+  <style>
+    /* Los botones del menú de cada línea. Van en CSS y no repetidos en cada
+       plantilla porque son seis por reunión. */
+    .acc {
+      display: block;
+      width: 100%;
+      border-radius: 0.25rem;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+      font-size: 0.8125rem;
+    }
+    .acc:hover {
+      background-color: var(--color-base-200);
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+  </style>
 
   <script>
-    import { setupCrud } from '../../scripts/adminCrud';
-    import { templos } from '../../data/templos';
-    import {
-      DIAS,
-      reglaEnPalabras,
-      proximaFecha,
-      proximaVezConMarca,
-      fechaEnPalabras,
-      hoyEnChile,
-    } from '../../lib/reuniones';
+    import { initHorarios } from '../../scripts/admin/horarios';
 
-    // Las opciones salen de los mismos datos que usa la web: el desplegable no
-    // puede ofrecer un templo que no existe. (La base, además, lo rechazaría:
-    // ver el `check` de la migración 0003.)
-    const opcionesTemplo = templos.map((t) => ({ value: t.slug, label: t.short }));
-    const opcionesDia = DIAS.map((label, i) => ({ value: String(i), label }));
-
-    /* Las reglas, dichas para quien las elige.
-       `reglaEnPalabras` necesita un día para concordar («el primer domingo»),
-       pero en el desplegable todavía no se sabe cuál: se usa una forma neutra, y
-       la frase con el día de verdad la da la vista previa de más abajo. */
-    const opcionesRegla = [
-      { value: 'siempre', label: 'Todas las semanas' },
-      { value: 'primer', label: 'El primero de cada mes' },
-      { value: 'primer-par', label: 'El primero de los meses pares (feb, abr, jun…)' },
-      { value: 'primer-impar', label: 'El primero de los meses impares (ene, mar, may…)' },
-      { value: 'ultimo', label: 'El último de cada mes' },
-    ];
-
-    setupCrud({
-      table: 'reuniones',
-      singular: 'reunión',
-      femenino: true,
-      plural: 'reuniones',
-      titleField: 'nombre',
-      subtitleField: 'detalle',
-      mostrarFecha: false,
-      orderBy: { column: 'dia', ascending: true },
-      fields: [
-        {
-          name: 'templo',
-          label: 'Templo',
-          type: 'select',
-          required: true,
-          options: opcionesTemplo,
-          grupo: 'Cuándo y dónde',
-          grupoAyuda: 'Esto se repite todas las semanas, siempre igual.',
-        },
-        {
-          name: 'dia',
-          label: 'Día',
-          type: 'select',
-          required: true,
-          options: opcionesDia,
-          grupo: 'Cuándo y dónde',
-        },
-        { name: 'hora', label: 'Hora', type: 'time', required: true, grupo: 'Cuándo y dónde' },
-        {
-          name: 'nombre',
-          label: 'Cómo se llama',
-          type: 'text',
-          required: true,
-          help: 'Ej.: Reunión General, Estudio Bíblico, Reunión de Jóvenes.',
-          grupo: 'Cuándo y dónde',
-        },
-
-        {
-          name: 'marca',
-          label: 'Qué pasa ese día',
-          type: 'text',
-          help: 'Ej.: Santa Cena. Aparece junto al nombre de la reunión, en dorado.',
-          grupo: 'Algo que se repite',
-          grupoAyuda:
-            'Para lo que vuelve cada tanto y siempre es igual. Se pone una vez y el sitio lo enseña cuando toca, sin que nadie se acuerde de quitarlo.',
-        },
-        {
-          name: 'marca_regla',
-          label: 'Cada cuánto',
-          type: 'select',
-          vacioLabel: 'Nunca — esta reunión no lleva marca',
-          options: opcionesRegla,
-          grupo: 'Algo que se repite',
-        },
-
-        {
-          name: 'estado',
-          label: 'Qué pasa con la reunión',
-          type: 'select',
-          required: true,
-          options: [
-            { value: 'normal', label: 'Se hace, como siempre' },
-            { value: 'suspendida', label: 'Esta vez NO se hace' },
-            { value: 'cambiada', label: 'Esta vez cambia (hora, lugar…)' },
-          ],
-          grupo: 'Un cambio pasajero',
-          grupoAyuda:
-            'Solo para esta vez. Si el cambio es para siempre, no uses esto: cambia el día o la hora ahí arriba.',
-        },
-        {
-          name: 'hora_aviso',
-          label: 'A qué hora, solo esta vez',
-          type: 'time',
-          help: 'Déjalo vacío si el cambio no es de hora. La hora de siempre no se toca: cuando el aviso caduque, la reunión vuelve sola a la suya.',
-          grupo: 'Un cambio pasajero',
-        },
-        {
-          name: 'aviso',
-          label: 'Qué decirle a la gente',
-          type: 'text',
-          help: 'Ej.: «Suspendida por el feriado» o «Este jueves se hace a las 19:00». Sin esto, el sitio solo dice «Suspendida».',
-          grupo: 'Un cambio pasajero',
-        },
-        {
-          name: 'aviso_hasta',
-          label: 'Hasta qué día',
-          type: 'date',
-          help: 'Al día siguiente la reunión vuelve sola a la normalidad. Si lo dejas vacío, dura hasta que lo quites a mano.',
-          grupo: 'Un cambio pasajero',
-        },
-
-        {
-          name: 'publicado',
-          label: 'Se muestra en la web',
-          type: 'checkbox',
-          grupo: 'Publicación',
-        },
-      ],
-    });
-
-    /** El día siguiente a una fecha de Chile, «AAAA-MM-DD». */
-    function elDiaDespues(fecha: string): string {
-      const d = new Date(`${fecha}T00:00:00Z`);
-      d.setUTCDate(d.getUTCDate() + 1);
-      return d.toISOString().slice(0, 10);
-    }
-
-    /* ── Las dos vistas previas ───────────────────────────────────────────────
-       Los dos grupos de abajo del formulario dicen cosas correctas que no se
-       entienden hasta que se convierten en una fecha: «el primero de los meses
-       pares» y «esta vez cambia». Cada uno lleva una línea que lo traduce
-       mientras se escribe —«la próxima vez: el domingo 4 de octubre de 2026»— y
-       que avisa de las dos o tres formas de rellenarlos mal, que son silenciosas:
-       un cambio que no se verá nunca, o uno que no se irá nunca solo.
-
-       Se engancha desde acá y no desde el CRUD genérico porque solo los horarios
-       tienen esto: meterlo en el formulario de todos obligaría a que cada
-       pantalla supiera de reglas que no usa. */
-    function enchufarVistaPrevia() {
-      const form = document.getElementById('crud-form');
-      if (!form) return false;
-
-      const campo = (n: string) => form.querySelector<HTMLSelectElement>(`[name="${n}"]`);
-      const regla = campo('marca_regla');
-      const hasta = campo('aviso_hasta');
-      if (!regla || !hasta) return false;
-
-      /* Una línea bajo un campo. `role="status"`: el texto cambia solo al tocar
-         los desplegables, y quien use lector de pantalla tiene que enterarse sin
-         ir a buscarlo. */
-      const lineaBajo = (id: string, tras: Element | null | undefined) => {
-        let linea = document.getElementById(id);
-        if (!linea) {
-          linea = document.createElement('p');
-          linea.id = id;
-          linea.className = 'mt-1 text-xs';
-          linea.setAttribute('role', 'status');
-          tras?.after(linea);
-        }
-        /* Escribe solo si cambió. La línea vive DENTRO del formulario, así que
-           escribirla es un cambio del formulario: cualquier cosa que escuche al
-           formulario se estaría escuchando a sí misma. */
-        return (texto: string, clase: string) => {
-          if (linea!.textContent !== texto) linea!.textContent = texto;
-          const completa = `mt-1 text-xs ${clase}`.trim();
-          if (linea!.className !== completa) linea!.className = completa;
-        };
-      };
-
-      const ponerMarca = lineaBajo('marca-previa', regla.closest('label'));
-      const ponerCambio = lineaBajo('cambio-previo', hasta.closest('label'));
-
-      const pintarMarca = () => {
-        const texto = (campo('marca')?.value ?? '').trim();
-        const cual = regla.value;
-        const dia = Number(campo('dia')?.value ?? '0');
-
-        if (!texto && !cual) {
-          ponerMarca('', '');
-          return;
-        }
-        if (texto && !cual) {
-          ponerMarca('Falta decir cada cuánto: así escrito no se va a ver nunca.', 'text-warning');
-          return;
-        }
-        if (!texto && cual) {
-          ponerMarca('Falta escribir qué pasa ese día.', 'text-warning');
-          return;
-        }
-
-        const cuando = reglaEnPalabras(cual, dia);
-        const proxima = proximaVezConMarca(dia, cual, hoyEnChile());
-        ponerMarca(
-          proxima
-            ? `«${texto}» se verá ${cuando}. La próxima vez: ${fechaEnPalabras(proxima)}.`
-            : `«${texto}» se verá ${cuando}.`,
-          'text-success',
-        );
-      };
-
-      const pintarCambio = () => {
-        const estado = campo('estado')?.value ?? 'normal';
-        const nueva = (campo('hora_aviso')?.value ?? '').trim();
-        const siempre = (campo('hora')?.value ?? '').trim();
-        const limite = hasta.value.trim();
-        const dia = Number(campo('dia')?.value ?? '0');
-
-        if (estado === 'normal') {
-          // Lo que quedó escrito de la vez pasada no se enseña, pero sigue ahí:
-          // decirlo evita creer que el cambio está puesto cuando no lo está.
-          const sobra = nueva || limite || (campo('aviso')?.value ?? '').trim();
-          ponerCambio(
-            sobra ? 'La reunión va normal: nada de este grupo se enseña.' : '',
-            sobra ? 'text-base-content/60' : '',
-          );
-          return;
-        }
-
-        if (estado === 'suspendida' && nueva) {
-          ponerCambio(
-            'Una reunión suspendida no se hace, así que la hora de esta vez no se usará.',
-            'text-warning',
-          );
-          return;
-        }
-
-        // Sin fecha de término no caduca nada: es el error que dejó seis días de
-        // reuniones fantasma, y el único que no se nota hasta mucho después.
-        if (!limite) {
-          ponerCambio(
-            'Sin fecha de término, esto se queda puesto hasta que alguien lo quite a mano.',
-            'text-warning',
-          );
-          return;
-        }
-
-        // Un aviso que caduca antes de la próxima reunión no lo lee nadie.
-        const proxima = proximaFecha(dia, hoyEnChile());
-        if (limite < proxima) {
-          ponerCambio(
-            `Termina antes de la próxima reunión (${fechaEnPalabras(proxima)}): así no se verá nunca.`,
-            'text-warning',
-          );
-          return;
-        }
-
-        const vuelve = `Vuelve sola a la normalidad el ${fechaEnPalabras(elDiaDespues(limite))}.`;
-        ponerCambio(
-          estado === 'cambiada' && nueva
-            ? `El ${fechaEnPalabras(proxima)} a las ${nueva}, y no a las ${siempre}. ${vuelve}`
-            : vuelve,
-          'text-success',
-        );
-      };
-
-      const pintar = () => {
-        pintarMarca();
-        pintarCambio();
-      };
-
-      // `input` para lo que se escribe, `change` para los desplegables. Van en el
-      // formulario entero y no campo por campo: el día también cambia la frase.
-      form.addEventListener('input', pintar);
-      form.addEventListener('change', pintar);
-      // Y cuando el formulario se rellena solo —al abrir una reunión para
-      // editarla, o al volver a vacío—, que no dispara ninguno de los dos.
-      form.addEventListener('crud:rellenado', pintar);
-      pintar();
-      return true;
-    }
-
-    /* El CRUD pinta el formulario al arrancar; si todavía no está, se espera a
-       que aparezca en vez de suponer un orden entre dos módulos. */
-    if (!enchufarVistaPrevia()) {
-      const raiz = document.getElementById('crud-root');
-      if (raiz) {
-        const ojo = new MutationObserver(() => {
-          if (enchufarVistaPrevia()) ojo.disconnect();
-        });
-        ojo.observe(raiz, { childList: true, subtree: true });
-      }
+    // El panel no monta el ClientRouter, así que `astro:page-load` no llega
+    // nunca: hace falta el respaldo. Ver la nota en Navigation.astro.
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initHorarios);
+    } else {
+      initHorarios();
     }
   </script>
 </AdminLayout>

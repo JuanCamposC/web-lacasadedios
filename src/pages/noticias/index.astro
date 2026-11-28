@@ -10,7 +10,7 @@ Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate
 
 import Layout from '../../layouts/Layout.astro';
 import PageHero from '../../components/PageHero.astro';
-import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import RutaJsonLd from '../../components/RutaJsonLd.astro';
 import FiltroTemplos from '../../components/FiltroTemplos.astro';
 import Reveal from '../../components/Reveal.astro';
 import EmptyState from '../../components/EmptyState.astro';
@@ -18,13 +18,46 @@ import { Icon } from 'astro-icon/components';
 import { IMG } from '../../assets/images';
 import { markdownAResumen } from '../../lib/markdown';
 import { baseDeDatos } from '../../lib/base';
-import { noticiasPublicadas } from '../../lib/datos';
+import { noticiasPublicadas, contarNoticias } from '../../lib/datos';
 import { urlMedio } from '../../lib/medios';
 import { fechaLarga } from '../../lib/hora';
 
-// El filtro de publicado y el tope viven en `noticiasPublicadas`, no acá: ver
-// la explicación en src/lib/datos.ts. Esta página solo pide y muestra.
-const filas = await noticiasPublicadas(await baseDeDatos());
+/*
+ * ── LA PAGINACIÓN ───────────────────────────────────────────────────────────
+ * Sin ella, esta página traía las primeras 24 noticias y ahí se acababa el
+ * sitio: la número 25 seguiría viva en su propia dirección, pero no habría
+ * forma de llegar a ella navegando. Al ritmo de publicación de la iglesia eso
+ * es un problema de dentro de unos años, y por eso no se notaba — es justo la
+ * clase de deuda que se descubre cuando ya hay que recuperar algo.
+ *
+ * `contarNoticias` existía desde el principio, escrita y probada, sin que
+ * nadie la llamara: se escribió para esto.
+ *
+ * Doce por página y no veinticuatro: la rejilla es de tres columnas, así que
+ * doce son cuatro filas llenas en escritorio y ninguna a medias.
+ */
+const POR_PAGINA = 12;
+
+const base = await baseDeDatos();
+const total = await contarNoticias(base);
+const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+
+/*
+ * La página pedida, recortada a lo que existe.
+ *
+ * Se recorta en vez de dar 404: a `?p=99` se llega por un enlace viejo o por
+ * curiosidad, y enseñar las últimas noticias es más útil que una página de
+ * error. `?p=hola` cae en la 1 por el mismo camino.
+ */
+const pedida = Math.trunc(Number(Astro.url.searchParams.get('p') ?? '1'));
+const pagina = Math.min(Math.max(Number.isFinite(pedida) ? pedida : 1, 1), paginas);
+
+// El filtro de publicado vive en `noticiasPublicadas`, no acá: ver la
+// explicación en src/lib/datos.ts. Esta página solo pide y muestra.
+const filas = await noticiasPublicadas(base, {
+  limite: POR_PAGINA,
+  desplazamiento: (pagina - 1) * POR_PAGINA,
+});
 
 // La imagen se resuelve una vez y no en cada punto de la plantilla: en la base
 // hay una CLAVE de R2, no una dirección. Si todavía no hay dominio de medios
@@ -32,25 +65,55 @@ const filas = await noticiasPublicadas(await baseDeDatos());
 const news = filas.map((n) => ({ ...n, imagen: urlMedio(n.imagen_clave) }));
 type Fila = (typeof news)[number];
 
-const [destacada, ...resto] = news;
+/*
+ * La destacada solo en la primera página.
+ *
+ * En la segunda no significaría nada: «Lo más reciente» encabezando la noticia
+ * número trece sería una etiqueta falsa.
+ */
+const destacada = pagina === 1 ? news[0] : null;
+const resto = pagina === 1 ? news.slice(1) : news;
+
 const fmtDate = fechaLarga;
 const url = (n: Fila) => `/noticias/${n.slug ?? n.id}`;
+
+/*
+ * Las direcciones de «más recientes» y «más antiguas».
+ *
+ * Conservan el `?templo=` que haya puesto el filtro: si alguien está mirando
+ * solo lo de Limache, pasar de página no debería devolverlo a todo. (El filtro
+ * esconde tarjetas en el navegador, así que filtra dentro de la página que se
+ * esté viendo; eso ya era así y la paginación no lo cambia.)
+ */
+const templo = Astro.url.searchParams.get('templo');
+function enlacePagina(n: number): string {
+  const parametros = new URLSearchParams();
+  if (templo) parametros.set('templo', templo);
+  if (n > 1) parametros.set('p', String(n));
+  const cola = parametros.toString();
+  return cola ? `/noticias?${cola}` : '/noticias';
+}
+
+// La canónica de cada página es ella misma: /noticias?p=2 trae noticias
+// distintas, y apuntarla a /noticias diría que no existe. Ver Layout.astro.
+const canonical = pagina > 1 ? `/noticias?p=${pagina}` : '/noticias';
 ---
 
 <Layout
-  title="Noticias · La Casa de Dios"
+  title={pagina > 1 ? `Noticias · Página ${pagina} · La Casa de Dios` : 'Noticias · La Casa de Dios'}
   description="Últimas noticias y novedades de La Casa de Dios."
+  canonical={canonical}
 >
   <PageHero
     image={IMG.noticiasPortada}
     alt="Nuestra comunidad"
     eyebrow="Novedades"
     title="Noticias"
-    subtitle="Mantente al día con lo que Dios está haciendo en nuestra comunidad."
+    subtitle="Lo que pasa en la congregación: avisos, actividades y lo que se va decidiendo."
     height="min-h-[50vh]"
   />
 
-  <Breadcrumbs items={[{ label: 'Inicio', href: '/' }, { label: 'Noticias' }]} />
+  <RutaJsonLd items={[{ label: 'Inicio', href: '/' }, { label: 'Noticias' }]} />
 
   {
     /* La barra de filtro y lo que filtra viven en el mismo bloque a propósito:
@@ -75,7 +138,8 @@ const url = (n: Fila) => `/noticias/${n.slug ?? n.id}`;
             </EmptyState>
           ) : (
             <>
-              {/* Destacada */}
+              {/* Destacada — solo en la primera página */}
+              {destacada && (
               <Reveal data-etiqueta={destacada.templo}>
                 <a
                   href={url(destacada)}
@@ -85,7 +149,7 @@ const url = (n: Fila) => `/noticias/${n.slug ?? n.id}`;
                     {destacada.imagen ? (
                       <img
                         src={destacada.imagen}
-                        alt={destacada.titulo}
+                        alt={destacada.imagen_alt ?? destacada.titulo}
                         class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                         loading="eager"
                       />
@@ -94,9 +158,7 @@ const url = (n: Fila) => `/noticias/${n.slug ?? n.id}`;
                         <Icon name="lucide:newspaper" class="h-16 w-16" />
                       </div>
                     )}
-                    <span class="absolute left-4 top-4 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-content">
-                      Lo más reciente
-                    </span>
+                    <span class="sello absolute left-4 top-4">Lo más reciente</span>
                   </div>
                   <div class="flex flex-col justify-center p-7 sm:p-10">
                     <span class="flex items-center gap-1.5 text-xs text-base-content/70">
@@ -121,21 +183,22 @@ const url = (n: Fila) => `/noticias/${n.slug ?? n.id}`;
                   </div>
                 </a>
               </Reveal>
+              )}
 
               {/* Resto */}
               {resto.length > 0 && (
-                <div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div class={`grid gap-6 md:grid-cols-2 lg:grid-cols-3 ${destacada ? 'mt-8' : ''}`}>
                   {resto.map((n, i) => (
                     <Reveal delay={(i % 3) * 80} class="h-full" data-etiqueta={n.templo}>
                       <a
                         href={url(n)}
-                        class="panel panel-sm panel-lift group flex h-full flex-col overflow-hidden"
+                        class="panel panel-lift group flex h-full flex-col overflow-hidden"
                       >
                         <div class="relative h-44 overflow-hidden">
                           {n.imagen ? (
                             <img
                               src={n.imagen}
-                              alt={n.titulo}
+                              alt={n.imagen_alt ?? n.titulo}
                               class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                               loading="lazy"
                             />
@@ -168,6 +231,38 @@ const url = (n: Fila) => `/noticias/${n.slug ?? n.id}`;
                     </Reveal>
                   ))}
                 </div>
+              )}
+
+              {/* ── Pasar de página ───────────────────────────────────────
+                  Solo aparece si hay más de una. Son dos enlaces de verdad y
+                  no botones: funcionan sin JavaScript, se pueden abrir en otra
+                  pestaña y Google los sigue, que es lo único que hace que las
+                  noticias viejas se indexen. */}
+              {paginas > 1 && (
+                <nav
+                  class="mt-12 flex items-center justify-between gap-4 border-t border-base-300 pt-6"
+                  aria-label="Páginas de noticias"
+                >
+                  {pagina > 1 ? (
+                    <a href={enlacePagina(pagina - 1)} rel="prev" class="btn btn-ghost gap-2">
+                      <Icon name="lucide:arrow-left" class="h-4 w-4" /> Más recientes
+                    </a>
+                  ) : (
+                    <span />
+                  )}
+
+                  <span class="font-data text-sm text-base-content/70" aria-current="page">
+                    Página {pagina} de {paginas}
+                  </span>
+
+                  {pagina < paginas ? (
+                    <a href={enlacePagina(pagina + 1)} rel="next" class="btn btn-ghost gap-2">
+                      Más antiguas <Icon name="lucide:arrow-right" class="h-4 w-4" />
+                    </a>
+                  ) : (
+                    <span />
+                  )}
+                </nav>
               )}
             </>
           )

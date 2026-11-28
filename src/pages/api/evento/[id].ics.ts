@@ -40,7 +40,9 @@ export const GET: APIRoute = async ({ params, url }) => {
     duracion: evento.duracion_min,
     descripcion: evento.descripcion,
     lugar: evento.lugar,
-    url: `${sitio}/eventos#e-${evento.id}`,
+    // La misma dirección que comparte el botón: con el evento en el
+    // parámetro, para que el recordatorio lleve de vuelta a su vista previa.
+    url: `${sitio}/eventos?e=${encodeURIComponent(evento.slug ?? evento.id)}`,
   });
 
   // El nombre del archivo sale del slug para que, al guardarlo, se entienda qué

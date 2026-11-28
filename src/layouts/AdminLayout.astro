@@ -21,7 +21,8 @@ interface Props {
     | 'horarios'
     | 'suscriptores'
     | 'en-vivo'
-    | 'aviso';
+    | 'aviso'
+    | 'papelera';
 }
 const { title = 'Panel', description, active } = Astro.props;
 // Quién entró sale del token de Cloudflare Access, verificado en el middleware.
@@ -31,25 +32,99 @@ const { title = 'Panel', description, active } = Astro.props;
 const identidad = Astro.locals.identidad;
 const motivo = Astro.locals.motivoAcceso;
 
-const links = [
-  { href: '/admin', label: 'Inicio', key: 'inicio', icon: 'lucide:layout-dashboard' },
-  { href: '/admin/horarios', label: 'Horarios', key: 'horarios', icon: 'lucide:clock' },
-  { href: '/admin/eventos', label: 'Eventos', key: 'eventos', icon: 'lucide:calendar-days' },
-  { href: '/admin/noticias', label: 'Noticias', key: 'noticias', icon: 'lucide:newspaper' },
-  { href: '/admin/videos', label: 'Videos', key: 'videos', icon: 'lucide:youtube' },
-  // Los audios del Instituto no se editan acá: se publican en RSS.com y esta
-  // pantalla solo decide cuáles se enseñan en el sitio.
-  { href: '/admin/estudios', label: 'Instituto', key: 'estudios', icon: 'lucide:headphones' },
-  { href: '/admin/instagram', label: 'Instagram', key: 'instagram', icon: 'lucide:instagram' },
-  { href: '/admin/jovenes', label: 'Jóvenes', key: 'jovenes', icon: 'lucide:music' },
-  { href: '/admin/en-vivo', label: 'En vivo', key: 'en-vivo', icon: 'lucide:radio' },
-  { href: '/admin/aviso', label: 'Aviso', key: 'aviso', icon: 'lucide:megaphone' },
-  { href: '/admin/suscriptores', label: 'Correos', key: 'suscriptores', icon: 'lucide:mail' },
-  // «Seguridad» ya no está: era la contraseña y el segundo factor del login
-  // propio, y de eso se encarga ahora Google a través de Cloudflare Access.
-  // Dejar la pantalla habría sido ofrecer cambiar una contraseña que ya no
-  // abre nada.
+interface Seccion {
+  href: string;
+  label: string;
+  key: NonNullable<Props['active']>;
+  icon: string;
+}
+
+/**
+ * Las secciones del panel, por grupos.
+ *
+ * ── POR QUÉ AGRUPADAS ───────────────────────────────────────────────────────
+ * Eran once enlaces en una sola lista, y en el teléfono eso era una barra que
+ * se desliza de lado: para llegar a «Correos» había que arrastrar sin saber
+ * cuánto quedaba. Once cosas en una lista plana tampoco se recuerdan — hay que
+ * leerlas todas cada vez.
+ *
+ * Los cuatro grupos responden a cuándo se usa cada cosa: el CONTENIDO se carga
+ * cuando hay algo que publicar, LA SEMANA se toca cuando cambia un horario, los
+ * AVISOS son de un domingo a mediodía, y GENTE se mira de vez en cuando.
+ *
+ * `Inicio` va fuera de todo grupo, arriba, porque no es una sección sino la
+ * vuelta al principio. `Papelera` va abajo con «Ver el sitio» y «Cerrar
+ * sesión»: es de las que se buscan cuando ya pasó algo, no de las del día.
+ */
+const GRUPOS: { titulo: string; items: Seccion[] }[] = [
+  {
+    titulo: 'Contenido',
+    items: [
+      { href: '/admin/eventos', label: 'Eventos', key: 'eventos', icon: 'lucide:calendar-days' },
+      { href: '/admin/noticias', label: 'Noticias', key: 'noticias', icon: 'lucide:newspaper' },
+      { href: '/admin/videos', label: 'Videos', key: 'videos', icon: 'lucide:youtube' },
+      // Los audios del Instituto no se editan acá: se publican en RSS.com y esta
+      // pantalla solo decide cuáles se enseñan en el sitio.
+      { href: '/admin/estudios', label: 'Instituto', key: 'estudios', icon: 'lucide:headphones' },
+      { href: '/admin/instagram', label: 'Instagram', key: 'instagram', icon: 'lucide:instagram' },
+      { href: '/admin/jovenes', label: 'Jóvenes', key: 'jovenes', icon: 'lucide:music' },
+    ],
+  },
+  {
+    titulo: 'La semana',
+    items: [{ href: '/admin/horarios', label: 'Horarios', key: 'horarios', icon: 'lucide:clock' }],
+  },
+  {
+    titulo: 'Avisos',
+    items: [
+      { href: '/admin/en-vivo', label: 'En vivo', key: 'en-vivo', icon: 'lucide:radio' },
+      { href: '/admin/aviso', label: 'Aviso', key: 'aviso', icon: 'lucide:megaphone' },
+    ],
+  },
+  {
+    titulo: 'Gente',
+    items: [
+      { href: '/admin/suscriptores', label: 'Correos', key: 'suscriptores', icon: 'lucide:mail' },
+    ],
+  },
 ];
+
+const INICIO: Seccion = {
+  href: '/admin',
+  label: 'Inicio',
+  key: 'inicio',
+  icon: 'lucide:layout-dashboard',
+};
+const PAPELERA: Seccion = {
+  href: '/admin/papelera',
+  label: 'Papelera',
+  key: 'papelera',
+  icon: 'lucide:trash-2',
+};
+
+// «Seguridad» ya no está: era la contraseña y el segundo factor del login
+// propio, y de eso se encarga ahora Google a través de Cloudflare Access.
+// Dejar la pantalla habría sido ofrecer cambiar una contraseña que ya no
+// abre nada.
+
+/**
+ * Lo que va en la barra de abajo del teléfono. Cuatro, y «Más».
+ *
+ * Son las cuatro que se tocan a diario. El resto está a un toque más, dentro de
+ * «Más», en vez de a un arrastre de longitud desconocida.
+ */
+const EN_EL_TELEFONO: Seccion[] = [
+  INICIO,
+  GRUPOS[1].items[0], // Horarios
+  GRUPOS[0].items[0], // Eventos
+  GRUPOS[0].items[1], // Noticias
+];
+const CLAVES_ABAJO = new Set(EN_EL_TELEFONO.map((s) => s.key));
+
+const claseLateral = (activa: boolean) =>
+  `relative flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium transition-colors ${
+    activa ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'
+  }`;
 ---
 
 <!doctype html>
@@ -81,27 +156,47 @@ const links = [
 
       <div class="rule mx-6" aria-hidden="true"></div>
 
-      <nav class="flex-1 space-y-1 px-3 py-5" aria-label="Secciones del panel">
+      <nav class="flex-1 overflow-y-auto px-3 py-5" aria-label="Secciones del panel">
+        <a href={INICIO.href} aria-current={active === 'inicio' ? 'page' : undefined} class={claseLateral(active === 'inicio')}>
+          {
+            active === 'inicio' && (
+              <span
+                class="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-accent"
+                aria-hidden="true"
+              />
+            )
+          }
+          <Icon name={INICIO.icon} class="h-[18px] w-[18px] shrink-0" />
+          {INICIO.label}
+        </a>
+
         {
-          links.map((l) => (
-            <a
-              href={l.href}
-              aria-current={active === l.key ? 'page' : undefined}
-              class={`relative flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium transition-colors ${
-                active === l.key
-                  ? 'bg-white/10 text-white'
-                  : 'text-white/60 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              {active === l.key && (
-                <span
-                  class="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-accent"
-                  aria-hidden="true"
-                />
-              )}
-              <Icon name={l.icon} class="h-[18px] w-[18px] shrink-0" />
-              {l.label}
-            </a>
+          GRUPOS.map((grupo) => (
+            <div class="mt-5">
+              <p
+                class="font-data px-3 pb-1.5 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-white/35"
+              >
+                {grupo.titulo}
+              </p>
+              <div class="space-y-1">
+                {grupo.items.map((l) => (
+                  <a
+                    href={l.href}
+                    aria-current={active === l.key ? 'page' : undefined}
+                    class={claseLateral(active === l.key)}
+                  >
+                    {active === l.key && (
+                      <span
+                        class="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-accent"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <Icon name={l.icon} class="h-[18px] w-[18px] shrink-0" />
+                    {l.label}
+                  </a>
+                ))}
+              </div>
+            </div>
           ))
         }
       </nav>
@@ -120,6 +215,14 @@ const links = [
             </p>
           )
         }
+        <a
+          href={PAPELERA.href}
+          aria-current={active === 'papelera' ? 'page' : undefined}
+          class={claseLateral(active === 'papelera')}
+        >
+          <Icon name={PAPELERA.icon} class="h-[18px] w-[18px] shrink-0" />
+          {PAPELERA.label}
+        </a>
         <a
           href="/"
           class="flex items-center gap-3 rounded px-3 py-2 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white"
@@ -174,20 +277,21 @@ const links = [
       </main>
     </div>
 
-    <!-- ══ Barra inferior (móvil) ══════════════════════════════════════════ -->
+    <!-- ══ Barra inferior (móvil) ══════════════════════════════════════════
+         Cuatro secciones y «Más». Antes eran las once repartidas en el ancho
+         del teléfono —a 40 px cada una, con el texto cortado—, y después una
+         barra que se deslizaba de lado: para llegar a la última había que
+         arrastrar sin saber cuánto quedaba. Las cuatro de diario caben, se
+         tocan con el pulgar, y el resto está a un toque.
+      ══════════════════════════════════════════════════════════════════════ -->
     <nav
       class="fixed inset-x-0 bottom-0 z-40 border-t border-base-300 bg-base-100/95 backdrop-blur lg:hidden"
       aria-label="Secciones del panel"
     >
-      {
-        /* Con nueve secciones ya no caben repartidas en el ancho de un teléfono
-          (quedaban a 40 px cada una, con el texto cortado): la barra se desliza
-          de lado y cada botón conserva un ancho que se puede tocar. */
-      }
-      <ul class="flex overflow-x-auto">
+      <ul class="flex">
         {
-          links.map((l) => (
-            <li class="min-w-[4.5rem] flex-1">
+          EN_EL_TELEFONO.map((l) => (
+            <li class="flex-1">
               <a
                 href={l.href}
                 aria-current={active === l.key ? 'page' : undefined}
@@ -201,8 +305,75 @@ const links = [
             </li>
           ))
         }
+        <li class="flex-1">
+          <button
+            type="button"
+            id="abrir-mas"
+            aria-haspopup="dialog"
+            class={`flex w-full flex-col items-center gap-0.5 py-2 text-[0.62rem] font-medium transition-colors ${
+              active && !CLAVES_ABAJO.has(active) ? 'text-primary' : 'text-base-content/70'
+            }`}
+          >
+            <Icon name="lucide:more-horizontal" class="h-5 w-5" />
+            Más
+          </button>
+        </li>
       </ul>
     </nav>
+
+    <!-- La hoja de «Más». Un <dialog> y no un menú propio: el navegador le da
+         el foco atrapado, el cierre con Escape y el fondo que no se desplaza. -->
+    <dialog id="hoja-mas" class="modal modal-bottom lg:hidden">
+      <div class="modal-box max-h-[80dvh]">
+        <h2 class="text-base font-bold">Todas las secciones</h2>
+        {
+          GRUPOS.map((grupo) => (
+            <div class="mt-4">
+              <p class="font-data text-[0.65rem] font-bold uppercase tracking-[0.15em] text-base-content/55">
+                {grupo.titulo}
+              </p>
+              <ul class="mt-1.5 space-y-0.5">
+                {grupo.items.map((l) => (
+                  <li>
+                    <a
+                      href={l.href}
+                      aria-current={active === l.key ? 'page' : undefined}
+                      class={`flex items-center gap-3 rounded px-3 py-2.5 text-sm ${
+                        active === l.key
+                          ? 'bg-primary/10 font-semibold text-primary'
+                          : 'hover:bg-base-200'
+                      }`}
+                    >
+                      <Icon name={l.icon} class="h-[18px] w-[18px] shrink-0 text-accent" />
+                      {l.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+        <div class="mt-4 border-t border-base-300 pt-3">
+          <a
+            href={PAPELERA.href}
+            class="flex items-center gap-3 rounded px-3 py-2.5 text-sm hover:bg-base-200"
+          >
+            <Icon name={PAPELERA.icon} class="h-[18px] w-[18px] shrink-0 text-accent" />
+            {PAPELERA.label}
+          </a>
+          <a href="/" class="flex items-center gap-3 rounded px-3 py-2.5 text-sm hover:bg-base-200">
+            <Icon name="lucide:external-link" class="h-[18px] w-[18px] shrink-0 text-accent" />
+            Ver el sitio
+          </a>
+        </div>
+        <div class="modal-action">
+          <form method="dialog" class="w-full">
+            <button class="btn w-full">Cerrar</button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>cerrar</button></form>
+    </dialog>
 
     {
       /* role="status" + aria-live: por acá pasan «Borrado», «No se pudo
@@ -229,6 +400,12 @@ const links = [
           window.location.href = '/cdn-cgi/access/logout';
         }),
       );
+
+      // La hoja de «Más» de la barra del teléfono.
+      const hoja = document.getElementById('hoja-mas') as HTMLDialogElement | null;
+      document
+        .getElementById('abrir-mas')
+        ?.addEventListener('click', () => hoja?.showModal());
     </script>
   </body>
 </html>

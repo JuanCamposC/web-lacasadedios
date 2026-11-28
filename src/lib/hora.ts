@@ -132,3 +132,65 @@ export const horaCorta = (iso: string) =>
 /** «26 sep 2026, 19:00», para los listados del panel. */
 export const fechaYHora = (iso: string) =>
   enChile(iso, { dateStyle: 'medium', timeStyle: 'short', hourCycle: 'h23' });
+
+/* ── Duraciones ──────────────────────────────────────────────────────────────
+   La base guarda MINUTOS (`eventos.duracion_min`, migración 0012) y el panel
+   pregunta «¿a qué hora termina?» (migración… ninguna: es solo el formulario).
+   Las dos cuentas que traducen de una cosa a la otra viven acá y no en el
+   formulario por dos razones:
+
+     · Son aritmética de horas, y en este proyecto eso vive en este archivo.
+     · Son la única cuenta nueva del panel cuyo resultado no se ve en pantalla
+       hasta que el evento ya está publicado. Eso pide pruebas, y las pruebas
+       solo miran `src/lib` (ver vitest.config.ts).
+   ────────────────────────────────────────────────────────────────────────── */
+
+/** «19:30» → 1170. `null` si no es una hora válida. */
+export function minutosDeHora(hhmm: string): number | null {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
+  if (!m) return null;
+  const horas = Number(m[1]);
+  const minutos = Number(m[2]);
+  if (horas > 23 || minutos > 59) return null;
+  return horas * 60 + minutos;
+}
+
+/**
+ * Cuántos minutos van del inicio a la hora de término.
+ *
+ * `inicio` es lo que tiene escrito un campo `datetime-local`
+ * («2026-11-07T09:00») y `fin` lo que tiene un campo `time` («18:00»).
+ *
+ * ── LAS DOS DECISIONES QUE LLEVA DENTRO ─────────────────────────────────────
+ * 1. Si la hora de término es MENOR O IGUAL que la de inicio, se entiende que
+ *    termina al día siguiente. Una vigilia de 22:00 a 01:00 dura tres horas, no
+ *    menos veintiuna, y pedirle a quien la carga que escriba la fecha del día
+ *    siguiente sería volver a pedirle una cuenta.
+ * 2. Cero devuelve `null`, no cero. En esta columna, nulo significa «la
+ *    duración de siempre» y cero no existe: lo rechazaría el `check` de la base
+ *    con un mensaje que no le dice nada a nadie. Ver la nota de `duracion_min`
+ *    en src/lib/panel.ts.
+ */
+export function minutosEntre(inicio: string, fin: string): number | null {
+  const desde = minutosDeHora(inicio.slice(11, 16));
+  const hasta = minutosDeHora(fin);
+  if (desde === null || hasta === null) return null;
+  const diferencia = (hasta - desde + 1440) % 1440;
+  return diferencia === 0 ? null : diferencia;
+}
+
+/**
+ * La hora de término de algo que empieza en `inicio` y dura `minutos`.
+ *
+ * La cuenta inversa de `minutosEntre`: la usa el formulario para enseñar, en un
+ * selector de hora, lo que en la base son minutos. Devuelve «HH:MM» en hora de
+ * Chile, o '' si falta cualquiera de los dos.
+ */
+export function horaDeTermino(inicio: unknown, minutos: unknown): string {
+  if (typeof inicio !== 'string' || !inicio) return '';
+  const min = Number(minutos);
+  if (!Number.isFinite(min) || min <= 0) return '';
+  const fin = new Date(new Date(inicio).getTime() + min * 60_000);
+  if (Number.isNaN(fin.getTime())) return '';
+  return deIsoAChile(fin.toISOString()).slice(11, 16);
+}

@@ -70,6 +70,23 @@ export const api = {
       body: JSON.stringify({ recurso, ids }),
     }),
 
+  // ── La papelera ──────────────────────────────────────────────────────────
+  // `borrar` manda a la papelera (ver `borrar` en src/lib/panel.ts); estas dos
+  // son lo que se puede hacer desde ahí.
+  papelera: <T>() => pedir<{ filas: T[] }>('/api/admin/papelera').then((r) => r.filas),
+
+  restaurar: (recurso: Recurso, id: string) =>
+    pedir<{ ok: true; restaurado: boolean }>('/api/admin/papelera', {
+      method: 'POST',
+      body: JSON.stringify({ recurso, id }),
+    }),
+
+  purgar: (recurso: Recurso, id: string) =>
+    pedir<{ ok: true }>(
+      `/api/admin/papelera?recurso=${encodeURIComponent(recurso)}&id=${encodeURIComponent(id)}`,
+      { method: 'DELETE' },
+    ),
+
   ajustes: <T>() => pedir<{ ajustes: T }>('/api/admin/ajustes').then((r) => r.ajustes),
 
   guardarAjustes: (datos: Record<string, unknown>) =>

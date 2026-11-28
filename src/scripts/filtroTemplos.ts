@@ -30,9 +30,6 @@ function initFiltro() {
   const vacio = document.querySelector<HTMLElement>('[data-filtro-vacio]');
   if (!chips.length || !fichas.length) return;
 
-  const activo = 'border-primary bg-primary text-primary-content';
-  const inactivo = 'border-base-300 bg-base-100 hover:border-primary hover:text-primary';
-
   const aplicar = (slug: string) => {
     let visibles = 0;
     fichas.forEach((f) => {
@@ -43,11 +40,10 @@ function initFiltro() {
 
     vacio?.classList.toggle('hidden', visibles > 0);
 
-    chips.forEach((c) => {
-      const on = c.dataset.filter === slug;
-      c.setAttribute('aria-pressed', String(on));
-      c.className = `filtro-chip shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition ${on ? activo : inactivo}`;
-    });
+    // Solo el atributo: el aspecto del chip encendido lo pone `.filtro-chip`
+    // en global.css, por `aria-pressed`. Antes esta línea reescribía la lista
+    // de clases entera, que era la cuarta copia del mismo diseño.
+    chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.filter === slug)));
 
     // La elección queda en la URL sin recargar: así se puede compartir o
     // recargar la página filtrada, y el botón atrás sigue haciendo lo suyo.

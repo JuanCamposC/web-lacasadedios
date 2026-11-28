@@ -91,8 +91,9 @@ import { IMG } from '../assets/images';
     />
 
     <!-- Velo plano, no degradado: la forma es la del diseño; el color, el de
-         la casa (ver la nota de arriba). -->
-    <div class="absolute inset-0 bg-[#0a1730]/88"></div>
+         la casa (ver la nota de arriba). El 88 % es a propósito —el diseño
+         pedía 90— para que la fotografía no desaparezca del todo. -->
+    <div class="velo-plano absolute inset-0" style="--velo:.88"></div>
 
     <!-- Filigrana de marca, sangrando por arriba y por abajo. Las dos medidas
          salen de los marcos de Figma: en móvil arranca al 53 % y mide el 116 %
@@ -171,29 +172,20 @@ import { IMG } from '../assets/images';
             class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           {
-            /* El velo sube más arriba que antes (era 95/50/15).
-
-              Con la foto de banco que había aquí daba igual: era oscura donde va
-              el texto. La del púlpito trae madera clara justo detrás, y medido
-              sobre el sitio en vivo el titular blanco se quedaba en 2,22:1 en el
-              teléfono —por debajo incluso del 3:1 que pide un texto grande— y el
-              rótulo dorado en 2,39:1 en escritorio.
-
-              Con 97/82/40: el titular pasa a 12,84 en escritorio y 5,20 en
-              teléfono, y el rótulo a 5,31. La foto se sigue viendo entera; lo que
-              se oscurece es la mitad de abajo, que es donde se apoya el texto. */
+            /* El texto se apoya ABAJO, así que el velo va al revés: oscuro en el
+              pie y transparente arriba. Los valores y la medición que los
+              sostiene están en `.velo-pie`, en global.css, con los otros tres
+              velos del sitio. */
           }
-          <div
-            class="absolute inset-0 bg-gradient-to-t from-[#0a1730]/97 via-[#0a1730]/82 to-[#0a1730]/40"
-          >
-          </div>
+          <div class="velo-pie absolute inset-0"></div>
           <div class="relative flex h-full flex-col justify-end p-8 text-white">
             <span class="eyebrow mb-3 text-accent">Sobre nosotros</span>
             <h2 class="text-3xl md:text-4xl">
               La Palabra de Dios es el fundamento de todo lo que hacemos
             </h2>
             <p class="mt-4 max-w-lg text-white/75">
-              Buscamos vivir y compartir Su verdad, crecer en la fe y servir con amor.
+              No es una frase de adorno: cada semana se abre la Biblia, y en el Instituto se
+              estudia un libro completo por semestre.
             </p>
             <div class="mt-6 flex flex-wrap gap-x-6 gap-y-2">
               <a
@@ -265,7 +257,7 @@ import { IMG } from '../assets/images';
       loading="lazy"
       class="absolute inset-0 h-full w-full object-cover"
     />
-    <div class="absolute inset-0 bg-[#0a1730]/90"></div>
+    <div class="velo-plano absolute inset-0"></div>
 
     <!-- `text-white` hace falta de verdad: `.on-dark` redefine los tokens de la
          paleta —el dorado, el azul claro— pero NO pone el color del texto, así
@@ -343,7 +335,7 @@ import { IMG } from '../assets/images';
       <SectionHeading
         eyebrow="Nuestros templos"
         title="Encuentra el más cercano"
-        subtitle="Únete a nuestra familia de fe en cualquiera de nuestras cuatro comunidades."
+        subtitle="Cuatro templos en tres regiones. Mira el que te queda cerca y a qué hora se reúne."
       />
 
       <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

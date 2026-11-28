@@ -3,11 +3,7 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 ---
 
-<AdminLayout
-  title="Noticias"
-  description="Novedades y avisos de la congregación."
-  active="noticias"
->
+<AdminLayout title="Noticias" description="Novedades y avisos de la congregación." active="noticias">
   <div id="crud-root"></div>
 
   <script>
@@ -21,6 +17,9 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       subtitleField: 'bajada',
       orderBy: { column: 'publicado_en', ascending: false },
       notify: { type: 'noticia', urlBase: '/noticias', porItem: true },
+      duplicable: true,
+      enlacePublico: (fila) => `/noticias/${encodeURIComponent(String(fila.slug ?? fila.id ?? ''))}`,
+      vistaPrevia: 'noticia',
       fields: [
         { name: 'titulo', label: 'Título', type: 'text', required: true },
         {
@@ -35,7 +34,19 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           type: 'markdown',
           help: 'Usa los botones para dar formato. Se ve tal cual en el sitio.',
         },
-        { name: 'imagen_clave', label: 'Imagen (opcional)', type: 'image' },
+        {
+          name: 'imagen_clave',
+          label: 'Imagen (opcional)',
+          type: 'image',
+          social: 'imagen_social_clave',
+          help: 'Al subirla se guarda también una versión de 1200×630 para que el enlace se vea grande al compartirla.',
+        },
+        {
+          name: 'imagen_alt',
+          label: 'Qué se ve en la imagen',
+          type: 'text',
+          help: 'Para quien no puede verla. Ej.: «La congregación de San Miguel reunida el día del aniversario». Vacío usa el título, que no describe nada.',
+        },
         {
           name: 'templo',
           label: 'Templo',
@@ -44,8 +55,114 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
           options: etiquetas,
           help: 'A qué templo pertenece. «General» si vale para todos.',
         },
+        /*
+         * ── LA PUBLICACIÓN PROGRAMADA ────────────────────────────────────────
+         * Esto estaba CONSTRUIDO y no se podía usar. La consulta pública filtra
+         * `publicado_en <= ahora()` desde el principio, con este comentario en
+         * src/lib/datos.ts:
+         *
+         *   «permite dejar una noticia lista con fecha futura: se publica sola
+         *    cuando llega el momento, sin que nadie tenga que entrar al panel un
+         *    domingo por la mañana»
+         *
+         * La columna estaba también en la lista blanca de src/lib/panel.ts. Lo
+         * único que faltaba era el campo, así que la función existía y no había
+         * forma de alcanzarla.
+         *
+         * Va DESPUÉS del templo y no arriba a propósito: lo normal es dejarlo
+         * vacío —la base pone sola la fecha de ahora— y un campo de fecha al
+         * principio del formulario invita a tocarlo sin necesidad.
+         */
+        {
+          name: 'publicado_en',
+          label: 'Publicar el día',
+          type: 'datetime-local',
+          help: 'Déjalo vacío para que salga en cuanto la publiques. Con una fecha futura, la noticia aparece sola ese día a esa hora: sirve para dejar lista el sábado la del domingo.',
+        },
         { name: 'publicado', label: 'Publicado', type: 'checkbox' },
       ],
     });
+
+    /*
+     * La línea que traduce «Publicar el día» a una frase.
+     *
+     * Una fecha futura sin explicación es la forma más fácil de creer que algo
+     * se publicó cuando no: la casilla dice «Publicado», la lista dice
+     * «Publicado», y en el sitio no está. Esta línea lo dice antes de guardar.
+     *
+     * Se engancha desde acá y no desde el CRUD genérico porque solo las
+     * noticias tienen fecha de publicación; los eventos tienen fecha DEL evento,
+     * que es otra cosa. Es el mismo patrón que la vista previa de /admin/horarios.
+     */
+    function enchufarAviso() {
+      const form = document.getElementById('crud-form');
+      const campo = form?.querySelector<HTMLInputElement>('[name="publicado_en"]');
+      const publicado = form?.querySelector<HTMLInputElement>('[name="publicado"]');
+      if (!form || !campo || !publicado) return false;
+
+      let linea = document.getElementById('aviso-programada');
+      if (!linea) {
+        linea = document.createElement('p');
+        linea.id = 'aviso-programada';
+        linea.className = 'mt-1 text-xs';
+        linea.setAttribute('role', 'status');
+        campo.closest('label')?.append(linea);
+      }
+
+      const enPalabras = (valor: string) =>
+        new Intl.DateTimeFormat('es-CL', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23',
+        }).format(new Date(valor));
+
+      const pintar = () => {
+        const valor = campo.value.trim();
+        // Se compara contra el reloj del navegador y no contra el de Chile: la
+        // diferencia solo importaría administrando desde otro huso, y en ese
+        // caso lo que se escribe YA se interpreta como hora de Chile al guardar
+        // (ver `construirPayload`). Decir «en el futuro» con un margen de tres
+        // horas no cambia ninguna decisión.
+        const futura = valor !== '' && new Date(valor).getTime() > Date.now();
+        let texto = '';
+        let clase = 'mt-1 text-xs text-base-content/70';
+
+        if (!valor) {
+          texto = '';
+        } else if (futura && publicado.checked) {
+          texto = `Se publicará sola el ${enPalabras(valor)}. Hasta entonces no se ve en el sitio.`;
+          clase = 'mt-1 text-xs text-success';
+        } else if (futura) {
+          texto = `Fecha futura, pero está en borrador: no saldrá el ${enPalabras(valor)} ni ningún otro día hasta que la publiques.`;
+          clase = 'mt-1 text-xs text-warning';
+        } else {
+          texto = `Se verá con la fecha del ${enPalabras(valor)}.`;
+        }
+
+        if (linea!.textContent !== texto) linea!.textContent = texto;
+        if (linea!.className !== clase) linea!.className = clase;
+      };
+
+      form.addEventListener('input', pintar);
+      form.addEventListener('change', pintar);
+      form.addEventListener('crud:rellenado', pintar);
+      pintar();
+      return true;
+    }
+
+    // El CRUD pinta el formulario al arrancar; si todavía no está, se espera a
+    // que aparezca en vez de suponer un orden entre dos módulos.
+    if (!enchufarAviso()) {
+      const raiz = document.getElementById('crud-root');
+      if (raiz) {
+        const ojo = new MutationObserver(() => {
+          if (enchufarAviso()) ojo.disconnect();
+        });
+        ojo.observe(raiz, { childList: true, subtree: true });
+      }
+    }
   </script>
 </AdminLayout>

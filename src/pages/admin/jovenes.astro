@@ -20,6 +20,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       mostrarFecha: false,
       orderBy: { column: 'orden', ascending: true },
       orderable: { column: 'orden' },
+      enlacePublico: () => '/jovenes',
       fields: [
         {
           name: 'titulo',

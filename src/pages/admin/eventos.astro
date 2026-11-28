@@ -20,18 +20,38 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       subtitleField: 'lugar',
       orderBy: { column: 'fecha', ascending: false },
       notify: { type: 'evento', urlBase: '/eventos' },
+      // El congreso vuelve cada año y la reunión especial cada tanto: duplicar
+      // ahorra rellenar el formulario entero para cambiar una fecha.
+      duplicable: true,
+      // La dirección que se comparte lleva el evento en el parámetro `e` (ver
+      // AccionesEvento.astro). Se prefiere el slug, que es legible.
+      enlacePublico: (fila) =>
+        `/eventos?e=${encodeURIComponent(String(fila.slug ?? fila.id ?? ''))}`,
+      vistaPrevia: 'evento',
       fields: [
         { name: 'titulo', label: 'Título', type: 'text', required: true },
         { name: 'fecha', label: 'Fecha y hora', type: 'datetime-local', required: true },
         {
           name: 'duracion_min',
-          label: 'Cuánto dura (minutos)',
-          type: 'number',
-          help: 'Solo si dura algo distinto de dos horas. Un congreso de 9:00 a 18:00 son 540. Vacío = dos horas.',
+          label: 'Termina a las',
+          type: 'duracion',
+          help: 'Déjalo vacío si dura lo normal (dos horas) o si no quieres anunciar hasta cuándo.',
         },
         { name: 'lugar', label: 'Lugar', type: 'text' },
         { name: 'descripcion', label: 'Descripción', type: 'textarea' },
-        { name: 'imagen_clave', label: 'Imagen (opcional)', type: 'image' },
+        {
+          name: 'imagen_clave',
+          label: 'Imagen (opcional)',
+          type: 'image',
+          social: 'imagen_social_clave',
+          help: 'Al subirla se guarda también una versión de 1200×630 para que el enlace se vea grande al compartirlo.',
+        },
+        {
+          name: 'imagen_alt',
+          label: 'Qué se ve en la imagen',
+          type: 'text',
+          help: 'Para quien no puede verla. Si es un afiche, lo que dice: «Afiche del Congreso de Damas, sábado 7 de noviembre, 09:00, Templo San Miguel». Vacío usa el título, que no describe nada.',
+        },
         {
           name: 'templo',
           label: 'Templo',
