@@ -262,10 +262,7 @@ export const DIAS_PARA_CONFIRMAR = 7;
  *
  * Devuelve cuántas borró, para poder decirlo.
  */
-export async function barrerSinConfirmar(
-  base: Base,
-  dias = DIAS_PARA_CONFIRMAR,
-): Promise<number> {
+export async function barrerSinConfirmar(base: Base, dias = DIAS_PARA_CONFIRMAR): Promise<number> {
   const limite = new Date(Date.now() - dias * 86_400_000).toISOString().slice(0, 19) + 'Z';
   const { results } = await base
     .prepare(

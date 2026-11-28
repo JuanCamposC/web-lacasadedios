@@ -163,11 +163,9 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
 
 <Layout
   title={compartido ? `${compartido.titulo} · La Casa de Dios` : 'Eventos · La Casa de Dios'}
-  description={
-    compartido
-      ? (compartido.descripcion ?? `${fmtDate(compartido.fecha)} · ${compartido.lugar ?? SITE.name}`)
-      : 'Próximos eventos y actividades de La Casa de Dios: reuniones especiales, encuentros y celebraciones.'
-  }
+  description={compartido
+    ? (compartido.descripcion ?? `${fmtDate(compartido.fecha)} · ${compartido.lugar ?? SITE.name}`)
+    : 'Próximos eventos y actividades de La Casa de Dios: reuniones especiales, encuentros y celebraciones.'}
   {/* La tarjeta de 1200×630 si existe; si no, la imagen normal, que al menos
       da una vista previa aunque sea pequeña. Ver la migración 0013. */}
   image={urlMedio(compartido?.imagen_social_clave ?? null) ?? compartido?.imagen ?? undefined}
@@ -354,7 +352,12 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
           !esCalendario && past.length > 0 && (
             <div class={upcoming.length > 0 ? 'mt-16' : ''}>
               {/* Secundario: es el archivo, no a lo que se viene. */}
-              <SectionHeading eyebrow="Archivo" title="Eventos anteriores" align="left" secundario />
+              <SectionHeading
+                eyebrow="Archivo"
+                title="Eventos anteriores"
+                align="left"
+                secundario
+              />
               <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {past.map((e) => (
                   <Reveal class="h-full" data-etiqueta={e.templo}>

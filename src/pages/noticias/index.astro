@@ -100,7 +100,9 @@ const canonical = pagina > 1 ? `/noticias?p=${pagina}` : '/noticias';
 ---
 
 <Layout
-  title={pagina > 1 ? `Noticias · Página ${pagina} · La Casa de Dios` : 'Noticias · La Casa de Dios'}
+  title={pagina > 1
+    ? `Noticias · Página ${pagina} · La Casa de Dios`
+    : 'Noticias · La Casa de Dios'}
   description="Últimas noticias y novedades de La Casa de Dios."
   canonical={canonical}
 >
@@ -140,49 +142,49 @@ const canonical = pagina > 1 ? `/noticias?p=${pagina}` : '/noticias';
             <>
               {/* Destacada — solo en la primera página */}
               {destacada && (
-              <Reveal data-etiqueta={destacada.templo}>
-                <a
-                  href={url(destacada)}
-                  class="panel panel-lift group grid overflow-hidden md:grid-cols-2"
-                >
-                  <div class="relative h-56 overflow-hidden md:h-full md:min-h-[20rem]">
-                    {destacada.imagen ? (
-                      <img
-                        src={destacada.imagen}
-                        alt={destacada.imagen_alt ?? destacada.titulo}
-                        class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        loading="eager"
-                      />
-                    ) : (
-                      <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 text-accent/40">
-                        <Icon name="lucide:newspaper" class="h-16 w-16" />
-                      </div>
-                    )}
-                    <span class="sello absolute left-4 top-4">Lo más reciente</span>
-                  </div>
-                  <div class="flex flex-col justify-center p-7 sm:p-10">
-                    <span class="flex items-center gap-1.5 text-xs text-base-content/70">
-                      <Icon name="lucide:calendar" class="h-3.5 w-3.5" />{' '}
-                      {fmtDate(destacada.publicado_en)}
-                    </span>
-                    <h2 class="mt-2 font-display text-2xl leading-tight md:text-3xl">
-                      {destacada.titulo}
-                    </h2>
-                    {(destacada.bajada || destacada.cuerpo) && (
-                      <p class="mt-3 clamp-3 text-base-content/75">
-                        {destacada.bajada ?? markdownAResumen(destacada.cuerpo, 190)}
-                      </p>
-                    )}
-                    <span class="mt-5 inline-flex items-center gap-2 font-medium text-primary group-hover:text-accent">
-                      Leer la noticia{' '}
-                      <Icon
-                        name="lucide:arrow-right"
-                        class="h-4 w-4 transition-transform group-hover:translate-x-1"
-                      />
-                    </span>
-                  </div>
-                </a>
-              </Reveal>
+                <Reveal data-etiqueta={destacada.templo}>
+                  <a
+                    href={url(destacada)}
+                    class="panel panel-lift group grid overflow-hidden md:grid-cols-2"
+                  >
+                    <div class="relative h-56 overflow-hidden md:h-full md:min-h-[20rem]">
+                      {destacada.imagen ? (
+                        <img
+                          src={destacada.imagen}
+                          alt={destacada.imagen_alt ?? destacada.titulo}
+                          class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          loading="eager"
+                        />
+                      ) : (
+                        <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 text-accent/40">
+                          <Icon name="lucide:newspaper" class="h-16 w-16" />
+                        </div>
+                      )}
+                      <span class="sello absolute left-4 top-4">Lo más reciente</span>
+                    </div>
+                    <div class="flex flex-col justify-center p-7 sm:p-10">
+                      <span class="flex items-center gap-1.5 text-xs text-base-content/70">
+                        <Icon name="lucide:calendar" class="h-3.5 w-3.5" />{' '}
+                        {fmtDate(destacada.publicado_en)}
+                      </span>
+                      <h2 class="mt-2 font-display text-2xl leading-tight md:text-3xl">
+                        {destacada.titulo}
+                      </h2>
+                      {(destacada.bajada || destacada.cuerpo) && (
+                        <p class="mt-3 clamp-3 text-base-content/75">
+                          {destacada.bajada ?? markdownAResumen(destacada.cuerpo, 190)}
+                        </p>
+                      )}
+                      <span class="mt-5 inline-flex items-center gap-2 font-medium text-primary group-hover:text-accent">
+                        Leer la noticia{' '}
+                        <Icon
+                          name="lucide:arrow-right"
+                          class="h-4 w-4 transition-transform group-hover:translate-x-1"
+                        />
+                      </span>
+                    </div>
+                  </a>
+                </Reveal>
               )}
 
               {/* Resto */}

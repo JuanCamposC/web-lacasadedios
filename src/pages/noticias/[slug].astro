@@ -181,10 +181,12 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
         )
       }
 
-      {/* Un solo botón, el mismo que en los eventos: abre la hoja del sistema
+      {
+        /* Un solo botón, el mismo que en los eventos: abre la hoja del sistema
           en el teléfono y copia el enlace en el escritorio. Antes eran tres
           iconos escritos a mano —WhatsApp, Facebook y copiar— que no ofrecían
-          nada de lo que la persona tuviera instalado. Ver Compartir.astro. */}
+          nada de lo que la persona tuviera instalado. Ver Compartir.astro. */
+      }
       <div class="mt-12 flex flex-wrap items-center gap-3 border-t border-base-300 pt-8">
         <span class="text-sm font-medium text-base-content/70">Compartir:</span>
         <Compartir url={canonical} titulo={item.titulo} texto={textoWhatsapp} />
@@ -243,4 +245,3 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
     </a>
   </CtaBand>
 </Layout>
-

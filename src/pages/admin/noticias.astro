@@ -3,7 +3,11 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 ---
 
-<AdminLayout title="Noticias" description="Novedades y avisos de la congregación." active="noticias">
+<AdminLayout
+  title="Noticias"
+  description="Novedades y avisos de la congregación."
+  active="noticias"
+>
   <div id="crud-root"></div>
 
   <script>
@@ -18,7 +22,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
       orderBy: { column: 'publicado_en', ascending: false },
       notify: { type: 'noticia', urlBase: '/noticias', porItem: true },
       duplicable: true,
-      enlacePublico: (fila) => `/noticias/${encodeURIComponent(String(fila.slug ?? fila.id ?? ''))}`,
+      enlacePublico: (fila) =>
+        `/noticias/${encodeURIComponent(String(fila.slug ?? fila.id ?? ''))}`,
       vistaPrevia: 'noticia',
       fields: [
         { name: 'titulo', label: 'Título', type: 'text', required: true },

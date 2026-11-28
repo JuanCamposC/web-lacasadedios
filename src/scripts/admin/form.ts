@@ -82,7 +82,8 @@ function marcarEnLista(ctx: Contexto, id: string | null) {
   ctx.listEl
     .querySelectorAll('[data-fila]')
     .forEach((el) => el.classList.remove('ring-2', 'ring-primary/40'));
-  if (id) ctx.listEl.querySelector(`[data-fila="${id}"]`)?.classList.add('ring-2', 'ring-primary/40');
+  if (id)
+    ctx.listEl.querySelector(`[data-fila="${id}"]`)?.classList.add('ring-2', 'ring-primary/40');
 }
 
 export function startEdit(ctx: Contexto, row: Fila) {

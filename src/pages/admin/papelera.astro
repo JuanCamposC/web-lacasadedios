@@ -43,6 +43,19 @@ const TIPO: Record<string, { label: string; icon: string }> = {
 };
 
 const caducadas = filas.filter((f) => f.dias <= 0).length;
+
+/**
+ * Cuánto le queda a una fila antes de poder vaciarse.
+ *
+ * Vive acá y no escrito dentro de la plantilla, y no es por gusto: un ternario
+ * anidado con una plantilla de texto dentro de un `.map()` lo compila Astro
+ * sin problema, pero el analizador de Prettier no lo entiende y `format:check`
+ * fallaba en este archivo. Como la CI corre ese paso PRIMERO, el error tumbaba
+ * los tipos, las pruebas y la compilación detrás de él, sin llegar a
+ * ejecutarlos. Cuatro pushes seguidos en rojo por esta línea.
+ */
+const plazo = (dias: number) =>
+  dias <= 0 ? 'Pasados los 30 días' : dias === 1 ? 'Queda 1 día' : `Quedan ${dias} días`;
 ---
 
 <AdminLayout
@@ -71,8 +84,8 @@ const caducadas = filas.filter((f) => f.dias <= 0).length;
             <div class="min-w-0">
               <p class="font-data text-3xl font-bold leading-none text-primary">{filas.length}</p>
               <p class="mt-1 text-sm text-base-content/70">
-                {filas.length === 1 ? 'elemento borrado' : 'elementos borrados'} · nada de esto se ve
-                en el sitio
+                {filas.length === 1 ? 'elemento borrado' : 'elementos borrados'} · nada de esto se
+                ve en el sitio
                 {caducadas > 0 && (
                   <span class="mt-1 block text-warning">
                     {caducadas === 1
@@ -104,11 +117,7 @@ const caducadas = filas.filter((f) => f.dias <= 0).length;
                 <span
                   class={`badge badge-sm shrink-0 ${f.dias <= 0 ? 'badge-warning' : 'badge-ghost'}`}
                 >
-                  {f.dias <= 0
-                    ? 'Pasados los 30 días'
-                    : f.dias === 1
-                      ? 'Queda 1 día'
-                      : `Quedan ${f.dias} días`}
+                  {plazo(f.dias)}
                 </span>
                 <div class="flex shrink-0 gap-1">
                   <button type="button" data-restaurar class="btn btn-outline btn-xs gap-1.5">
@@ -135,8 +144,8 @@ const caducadas = filas.filter((f) => f.dias <= 0).length;
     <div class="modal-box max-w-sm">
       <h3 class="text-lg font-bold">¿Borrar del todo?</h3>
       <p class="mt-2 text-sm text-base-content/70">
-        <strong data-nombre class="break-words"></strong> desaparece para siempre, junto con su
-        imagen. Esto sí no se puede deshacer.
+        <strong data-nombre class="break-words"></strong> desaparece para siempre, junto con su imagen.
+        Esto sí no se puede deshacer.
       </p>
       <div class="modal-action">
         <form method="dialog" class="flex w-full gap-2">

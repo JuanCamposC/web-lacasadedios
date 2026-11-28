@@ -31,9 +31,7 @@ import { deChileAIso, enChile, minutosEntre } from '../../lib/hora';
 function valor(ctx: Contexto, nombre: string | undefined): string {
   if (!nombre) return '';
   const el = ctx.form.querySelector(`[name="${nombre}"]`) as
-    | HTMLInputElement
-    | HTMLTextAreaElement
-    | null;
+    HTMLInputElement | HTMLTextAreaElement | null;
   return el?.value?.trim() ?? '';
 }
 
@@ -95,7 +93,11 @@ function tacoDeFecha(iso: string): HTMLElement {
       'w-full bg-primary py-0.5 text-center text-[0.6rem] font-bold uppercase text-primary-content',
       enChile(iso, { month: 'short' }).replace('.', ''),
     ),
-    elemento('span', 'font-data py-0.5 text-lg font-bold leading-none', enChile(iso, { day: '2-digit' })),
+    elemento(
+      'span',
+      'font-data py-0.5 text-lg font-bold leading-none',
+      enChile(iso, { day: '2-digit' }),
+    ),
   );
   return taco;
 }
@@ -164,7 +166,11 @@ function tarjetaNoticia(ctx: Contexto): HTMLElement {
       elemento('p', 'text-xs text-base-content/70', enChile(iso, { dateStyle: 'long' })),
     );
   cuerpo.append(
-    elemento('h3', 'mt-0.5 text-lg font-bold leading-snug', valor(ctx, 'titulo') || 'Sin título todavía'),
+    elemento(
+      'h3',
+      'mt-0.5 text-lg font-bold leading-snug',
+      valor(ctx, 'titulo') || 'Sin título todavía',
+    ),
   );
   const bajada = valor(ctx, 'bajada');
   if (bajada) cuerpo.append(elemento('p', 'clamp-3 mt-2 text-sm text-base-content/75', bajada));
@@ -218,7 +224,8 @@ function pintarDuracion(ctx: Contexto) {
     .join(' y ');
   // Cruza la medianoche cuando la hora escrita es menor o igual que la de
   // inicio: una vigilia de 22:00 a 01:00. Decirlo evita que parezca un error.
-  const otroDia = minutos + Number(inicio.slice(11, 13)) * 60 + Number(inicio.slice(14, 16)) >= 1440;
+  const otroDia =
+    minutos + Number(inicio.slice(11, 13)) * 60 + Number(inicio.slice(14, 16)) >= 1440;
   linea.textContent = `Dura ${cuanto}${otroDia ? `, hasta las ${fin} del día siguiente` : ''}.`;
   linea.className = 'mt-1 block text-xs text-success';
 }

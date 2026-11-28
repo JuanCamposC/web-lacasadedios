@@ -120,9 +120,11 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
       el cierre de la página. */
   }
   <div class="ambito-filtro">
-    {/* La misma barra que noticias, eventos y videos. Lo que cambia es qué
+    {
+      /* La misma barra que noticias, eventos y videos. Lo que cambia es qué
         esconde: acá son líneas del cartel y el conteo de cada día, no
-        tarjetas, y de eso se encarga el script del final. Ver BarraFiltro. */}
+        tarjetas, y de eso se encarga el script del final. Ver BarraFiltro. */
+    }
     <BarraFiltro />
 
     <!-- El cartel: la semana completa -->

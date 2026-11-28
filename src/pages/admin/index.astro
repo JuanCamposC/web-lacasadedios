@@ -64,73 +64,93 @@ const hoy = hoyEnChile();
  *   · Noticias esperando su fecha de publicación, que son correctas y conviene
  *     recordar que están ahí.
  */
-const [ev, nw, vd, subs, aj, evR, nwR, vdR, cambiosSinFin, caducanPronto, borradoresViejos, programadas, enPapelera] =
-  await Promise.all([
-    cuenta('eventos'),
-    cuenta('noticias'),
-    cuenta('videos'),
-    db
-      .prepare('select count(*) as total from suscriptores where pendiente = 0')
-      .bind()
-      .first<{ total: number }>(),
-    leerAjustes(db),
-    recientesDe('eventos'),
-    recientesDe('noticias'),
-    recientesDe('videos'),
-    db
-      .prepare(
-        `select id, nombre, templo, dia, hora, estado from reuniones
+const [
+  ev,
+  nw,
+  vd,
+  subs,
+  aj,
+  evR,
+  nwR,
+  vdR,
+  cambiosSinFin,
+  caducanPronto,
+  borradoresViejos,
+  programadas,
+  enPapelera,
+] = await Promise.all([
+  cuenta('eventos'),
+  cuenta('noticias'),
+  cuenta('videos'),
+  db
+    .prepare('select count(*) as total from suscriptores where pendiente = 0')
+    .bind()
+    .first<{ total: number }>(),
+  leerAjustes(db),
+  recientesDe('eventos'),
+  recientesDe('noticias'),
+  recientesDe('videos'),
+  db
+    .prepare(
+      `select id, nombre, templo, dia, hora, estado from reuniones
           where borrado_en is null and publicado = 1
             and estado <> 'normal' and aviso_hasta is null
           order by dia asc, hora asc`,
-      )
-      .bind()
-      .all<{ id: string; nombre: string; templo: string; dia: number; hora: string; estado: string }>(),
-    db
-      .prepare(
-        `select id, nombre, templo, dia, estado, aviso_hasta from reuniones
+    )
+    .bind()
+    .all<{
+      id: string;
+      nombre: string;
+      templo: string;
+      dia: number;
+      hora: string;
+      estado: string;
+    }>(),
+  db
+    .prepare(
+      `select id, nombre, templo, dia, estado, aviso_hasta from reuniones
           where borrado_en is null and publicado = 1
             and estado <> 'normal' and aviso_hasta is not null
             and aviso_hasta >= ? and aviso_hasta <= date(?, '+7 days')
           order by aviso_hasta asc`,
-      )
-      .bind(hoy, hoy)
-      .all<{
-        id: string;
-        nombre: string;
-        templo: string;
-        dia: number;
-        estado: string;
-        aviso_hasta: string;
-      }>(),
-    db
-      .prepare(
-        `select count(*) as total from eventos
+    )
+    .bind(hoy, hoy)
+    .all<{
+      id: string;
+      nombre: string;
+      templo: string;
+      dia: number;
+      estado: string;
+      aviso_hasta: string;
+    }>(),
+  db
+    .prepare(
+      `select count(*) as total from eventos
           where borrado_en is null and publicado = 0 and fecha < ?`,
-      )
-      .bind(ahoraIso)
-      .first<{ total: number }>(),
-    db
-      .prepare(
-        `select count(*) as total from noticias
+    )
+    .bind(ahoraIso)
+    .first<{ total: number }>(),
+  db
+    .prepare(
+      `select count(*) as total from noticias
           where borrado_en is null and publicado = 1 and publicado_en > ?`,
-      )
-      .bind(ahoraIso)
-      .first<{ total: number }>(),
-    /*
-     * Cuántas cosas hay en la papelera, sumando las siete tablas.
-     *
-     * Con subconsultas sumadas y NO con `union all`: D1 responde «too many
-     * terms in compound SELECT» a partir de pocos términos, así que la versión
-     * obvia —unir las siete y contar— ni se ejecuta. Comprobado contra la base
-     * local, que es la misma SQLite.
-     *
-     * Y así es además UN viaje en vez de siete, que en esta pantalla importa:
-     * es la primera que se ve al entrar y la base está en Norteamérica.
-     */
-    db
-      .prepare(
-        `select
+    )
+    .bind(ahoraIso)
+    .first<{ total: number }>(),
+  /*
+   * Cuántas cosas hay en la papelera, sumando las siete tablas.
+   *
+   * Con subconsultas sumadas y NO con `union all`: D1 responde «too many
+   * terms in compound SELECT» a partir de pocos términos, así que la versión
+   * obvia —unir las siete y contar— ni se ejecuta. Comprobado contra la base
+   * local, que es la misma SQLite.
+   *
+   * Y así es además UN viaje en vez de siete, que en esta pantalla importa:
+   * es la primera que se ve al entrar y la base está en Norteamérica.
+   */
+  db
+    .prepare(
+      `select
             (select count(*) from eventos   where borrado_en is not null)
           + (select count(*) from noticias  where borrado_en is not null)
           + (select count(*) from videos    where borrado_en is not null)
@@ -138,10 +158,10 @@ const [ev, nw, vd, subs, aj, evR, nwR, vdR, cambiosSinFin, caducanPronto, borrad
           + (select count(*) from instagram where borrado_en is not null)
           + (select count(*) from enlaces   where borrado_en is not null)
           + (select count(*) from reuniones where borrado_en is not null) as total`,
-      )
-      .bind()
-      .first<{ total: number }>(),
-  ]);
+    )
+    .bind()
+    .first<{ total: number }>(),
+]);
 
 const enVivo = aj?.vivo_activo === 1;
 const nombreTemplo = (slug: string) => templos.find((t) => t.slug === slug)?.short ?? slug;
@@ -353,18 +373,22 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
         <ul class="mt-4 divide-y divide-base-300/70">
           {pendientes.map((p) => (
             <li>
-              <a href={p.href} class="flex items-start gap-3 py-3 transition-colors hover:bg-base-200/50">
+              <a
+                href={p.href}
+                class="flex items-start gap-3 py-3 transition-colors hover:bg-base-200/50"
+              >
                 <Icon
                   name={p.icono}
                   class={`mt-0.5 h-4 w-4 shrink-0 ${p.tono === 'warning' ? 'text-warning' : 'text-primary'}`}
                 />
                 <span class="min-w-0 flex-1">
                   <span class="block text-sm font-medium">{p.texto}</span>
-                  {p.detalle && (
-                    <span class="block text-xs text-base-content/70">{p.detalle}</span>
-                  )}
+                  {p.detalle && <span class="block text-xs text-base-content/70">{p.detalle}</span>}
                 </span>
-                <Icon name="lucide:chevron-right" class="mt-0.5 h-4 w-4 shrink-0 text-base-content/55" />
+                <Icon
+                  name="lucide:chevron-right"
+                  class="mt-0.5 h-4 w-4 shrink-0 text-base-content/55"
+                />
               </a>
             </li>
           ))}

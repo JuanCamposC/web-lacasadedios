@@ -157,7 +157,11 @@ const claseLateral = (activa: boolean) =>
       <div class="rule mx-6" aria-hidden="true"></div>
 
       <nav class="flex-1 overflow-y-auto px-3 py-5" aria-label="Secciones del panel">
-        <a href={INICIO.href} aria-current={active === 'inicio' ? 'page' : undefined} class={claseLateral(active === 'inicio')}>
+        <a
+          href={INICIO.href}
+          aria-current={active === 'inicio' ? 'page' : undefined}
+          class={claseLateral(active === 'inicio')}
+        >
           {
             active === 'inicio' && (
               <span
@@ -173,9 +177,7 @@ const claseLateral = (activa: boolean) =>
         {
           GRUPOS.map((grupo) => (
             <div class="mt-5">
-              <p
-                class="font-data px-3 pb-1.5 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-white/35"
-              >
+              <p class="font-data px-3 pb-1.5 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-white/35">
                 {grupo.titulo}
               </p>
               <div class="space-y-1">
@@ -403,9 +405,7 @@ const claseLateral = (activa: boolean) =>
 
       // La hoja de «Más» de la barra del teléfono.
       const hoja = document.getElementById('hoja-mas') as HTMLDialogElement | null;
-      document
-        .getElementById('abrir-mas')
-        ?.addEventListener('click', () => hoja?.showModal());
+      document.getElementById('abrir-mas')?.addEventListener('click', () => hoja?.showModal());
     </script>
   </body>
 </html>

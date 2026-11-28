@@ -208,8 +208,7 @@ function menuDe(g: Grupo, indice: number): string {
 function lineaDe(g: Grupo, indice: number): string {
   const sellos = g.sedes
     .map(
-      (t) =>
-        `<span class="distintivo" style="${esc(estiloDistintivo(t))}">${esc(t.short)}</span>`,
+      (t) => `<span class="distintivo" style="${esc(estiloDistintivo(t))}">${esc(t.short)}</span>`,
     )
     .join('');
 
