@@ -21,10 +21,14 @@ export const SITE = {
 /**
  * Contacto general de la iglesia.
  *
- * PENDIENTE: `phone` está vacío a propósito. El número que había era de
- * ejemplo y no debe publicarse. Al completarlo (junto con `phoneHref` en
- * formato +56XXXXXXXXX) aparece automáticamente en el pie, en la página de
- * contacto, en cada templo y en los datos estructurados.
+ * ── EL TELÉFONO SE QUEDA VACÍO, Y ES UNA DECISIÓN ───────────────────────────
+ * Dejó de ser un pendiente el 28 de noviembre de 2026: la iglesia no quiere
+ * publicar un número. El contacto es por correo y por el formulario.
+ *
+ * La maquinaria para publicarlo se queda escrita, porque no cuesta nada y
+ * porque la decisión puede cambiar: basta rellenar `phone` y `phoneHref` —en
+ * formato +56XXXXXXXXX— y el número aparece solo en el pie, en la página de
+ * contacto, en cada templo y en los datos estructurados. Nada más que tocar.
  */
 export const CONTACT = {
   email: 'contacto@lacasadedios.cl',

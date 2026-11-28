@@ -161,7 +161,7 @@ function menuDe(g: Grupo, indice: number): string {
   const cuando = fechaEnPalabras(proxima);
 
   const normal = `
-    <li><button type="button" class="acc" data-accion="suspender">
+    <li><button type="button" class="block w-full rounded px-3 py-2 text-left text-[0.8125rem] transition-colors hover:bg-base-200" data-accion="suspender">
       Suspender solo el ${esc(cuando)}
     </button></li>
     <li class="px-3 py-2">
@@ -174,7 +174,7 @@ function menuDe(g: Grupo, indice: number): string {
     </li>`;
 
   const conCambio = `
-    <li><button type="button" class="acc" data-accion="quitar">
+    <li><button type="button" class="block w-full rounded px-3 py-2 text-left text-[0.8125rem] transition-colors hover:bg-base-200" data-accion="quitar">
       Quitar el cambio · vuelve a la normalidad
     </button></li>
     <li class="px-3 py-2">
@@ -189,14 +189,15 @@ function menuDe(g: Grupo, indice: number): string {
 
   return `
     <details class="dropdown dropdown-end" data-menu>
-      <summary class="btn btn-ghost btn-xs" aria-label="Qué hacer con esta reunión">⋯</summary>
-      <ul class="dropdown-content z-20 mt-1 w-72 rounded border border-base-300 bg-base-100 p-1 shadow-xl"
+      <summary class="btn btn-ghost btn-xs list-none [&::-webkit-details-marker]:hidden"
+        aria-label="Qué hacer con esta reunión">⋯</summary>
+      <ul class="dropdown-content z-30 mt-1 w-72 rounded border border-base-300 bg-base-100 p-1 shadow-xl"
           data-grupo="${indice}">
-        <li><button type="button" class="acc" data-accion="editar">Editar la reunión</button></li>
+        <li><button type="button" class="block w-full rounded px-3 py-2 text-left text-[0.8125rem] transition-colors hover:bg-base-200" data-accion="editar">Editar la reunión</button></li>
         <li><div class="my-1 h-px bg-base-300"></div></li>
         ${g.estado === 'normal' ? normal : conCambio}
         <li><div class="my-1 h-px bg-base-300"></div></li>
-        <li><button type="button" class="acc text-error" data-accion="borrar">
+        <li><button type="button" class="block w-full rounded px-3 py-2 text-left text-[0.8125rem] transition-colors hover:bg-base-200 text-error" data-accion="borrar">
           Borrar la reunión${g.sedes.length > 1 ? ` de los ${g.sedes.length} templos` : ''}
         </button></li>
       </ul>
@@ -289,8 +290,8 @@ function pintarTablero() {
         : suyos.map((g) => lineaDe(g, grupos.indexOf(g))).join('');
     const reuniones = suyos.reduce((n, g) => n + g.sedes.length, 0);
 
-    return `<section class="panel overflow-hidden ${esHoy ? 'border-accent/50' : ''}">
-        <header class="flex items-baseline justify-between gap-3 border-b border-base-300 bg-base-200/60 px-3 py-2">
+    return `<section class="panel ${esHoy ? 'border-accent/50' : ''}">
+        <header class="flex items-baseline justify-between gap-3 rounded-t-[calc(0.5rem-1px)] border-b border-base-300 bg-base-200/60 px-3 py-2">
           <h2 class="font-data text-xs font-bold uppercase tracking-[0.14em]">
             ${esc(nombre)}${esHoy ? ' <span class="text-accent">· hoy</span>' : ''}
           </h2>

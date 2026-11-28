@@ -153,7 +153,11 @@ export const templos: Templo[] = [
     address: 'Santa Ester #623, San Miguel',
     city: 'Comuna de San Miguel',
     region: 'Región Metropolitana',
-    mapEmbed: mapaDe('La Casa de Dios San Miguel, Santa Ester 623, San Miguel'),
+    // Su ficha de Google se llama «La Casa de Dios» a secas, sin el nombre de
+    // la comuna detrás: buscando «La Casa de Dios San Miguel» Google no daba
+    // con ella y el mapa caía en la dirección postal. El enlace de abajo ya lo
+    // tenía bien; el del mapa incrustado, no.
+    mapEmbed: mapaDe('La Casa de Dios, Santa Ester 623, San Miguel'),
     mapLink: enlaceMapaDe('La Casa de Dios, Santa Ester 623, San Miguel'),
     coords: { lat: -33.497703, lng: -70.642289 },
     color: { fondo: '#23448f', claro: '#8aa9e8' },
