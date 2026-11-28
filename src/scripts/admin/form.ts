@@ -18,8 +18,10 @@ export function resetForm(ctx: Contexto) {
   ctx.imagenesListas.clear();
 
   config.fields.forEach((f) => {
+    // Lo nuevo nace publicado; cualquier otra casilla, apagada.
     if (f.type === 'checkbox')
-      (form.querySelector(`[name="${f.name}"]`) as HTMLInputElement).checked = true;
+      (form.querySelector(`[name="${f.name}"]`) as HTMLInputElement).checked =
+        f.name === 'publicado';
     if (f.type === 'image') {
       const prev = ctx.root.querySelector(`[data-preview="${f.name}"]`);
       if (prev) prev.innerHTML = '';

@@ -59,6 +59,21 @@ const REGLAS = [
           <span class="loading loading-spinner loading-sm"></span>
         </div>
       </div>
+
+      <section class="panel mt-6">
+        <header class="rounded-t-[calc(0.5rem-1px)] border-b border-base-300 bg-base-200/60 px-3 py-2">
+          <h2 class="font-data text-xs font-bold uppercase tracking-[0.14em]">
+            Cambios de un día programados
+          </h2>
+          <p class="mt-0.5 text-xs text-base-content/70">
+            Cada uno rige solo en su fecha y desaparece solo después. Se ven en /horarios esa semana
+            y en el calendario desde ya.
+          </p>
+        </header>
+        <div id="programados">
+          <p class="px-3 py-3 text-xs text-base-content/60">Cargando…</p>
+        </div>
+      </section>
     </section>
 
     <!-- ══ El formulario ═════════════════════════════════════════════════ -->
@@ -192,6 +207,82 @@ const REGLAS = [
       </form>
     </section>
   </div>
+
+  <dialog id="dlg-excepcion" class="modal">
+    <form id="form-excepcion" class="modal-box max-w-md space-y-4">
+      <div>
+        <h3 class="text-lg font-bold">Programar un cambio de un día</h3>
+        <p class="mt-1 text-sm text-base-content/70" id="exc-reunion"></p>
+      </div>
+
+      <label class="block">
+        <span class="mb-1.5 block text-sm font-medium">
+          Qué día <span class="text-error">*</span>
+        </span>
+        <input type="date" name="fecha" required class="input input-bordered w-full" />
+        <span id="exc-previa" class="mt-1 block text-xs" role="status"></span>
+      </label>
+
+      <fieldset class="space-y-1.5">
+        <legend class="mb-1.5 text-sm font-medium">Qué pasa ese día</legend>
+        <label class="flex cursor-pointer items-center gap-2 text-sm">
+          <input
+            type="radio"
+            name="estado"
+            value="suspendida"
+            checked
+            class="radio radio-primary radio-sm"
+          />
+          Se suspende
+        </label>
+        <label class="flex cursor-pointer items-center gap-2 text-sm">
+          <input type="radio" name="estado" value="cambiada" class="radio radio-primary radio-sm" />
+          Se hace, pero distinta (otra hora u otro nombre)
+        </label>
+      </fieldset>
+
+      <div id="exc-solo-cambio" class="hidden">
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="mb-1.5 block text-sm font-medium">Hora ese día</span>
+            <input type="time" name="hora" class="input input-bordered w-full" />
+          </label>
+          <label class="block">
+            <span class="mb-1.5 block text-sm font-medium">Nombre ese día</span>
+            <input type="text" name="nombre" class="input input-bordered w-full" />
+          </label>
+          <span class="col-span-2 -mt-1 block text-xs text-base-content/70">
+            Vacío o igual al de siempre = no cambia.
+          </span>
+        </div>
+      </div>
+
+      <label class="block">
+        <span class="mb-1.5 block text-sm font-medium">Qué decirle a la gente</span>
+        <input
+          type="text"
+          name="aviso"
+          placeholder="Reunión en familia, en cada casa"
+          class="input input-bordered w-full"
+        />
+        <span class="mt-1 block text-xs text-base-content/70">
+          Opcional. Aparece junto a la reunión ese día.
+        </span>
+      </label>
+
+      <div class="modal-action">
+        <button type="button" id="exc-cancelar" class="btn btn-ghost">
+          Cancelar
+        </button>
+        <button type="submit" id="exc-guardar" class="btn btn-primary">
+          Programar
+        </button>
+      </div>
+    </form>
+    <form method="dialog" class="modal-backdrop">
+      <button>cerrar</button>
+    </form>
+  </dialog>
 
   <dialog id="dlg-borrar" class="modal">
     <div class="modal-box max-w-sm">

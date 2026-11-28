@@ -46,6 +46,7 @@ const google = enlaceGoogleCalendar({
   titulo: evento.titulo,
   inicio: evento.fecha,
   duracion: evento.duracion_min,
+  todoElDia: evento.todo_el_dia === 1,
   descripcion: evento.descripcion,
   lugar: evento.lugar,
   url: enlace,

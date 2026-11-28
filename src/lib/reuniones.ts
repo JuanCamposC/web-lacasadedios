@@ -244,6 +244,89 @@ export function vigente(fila: FilaReunion, hoy: string): Reunion {
   };
 }
 
+/** Una fila de la tabla `excepciones`: esta reunión, ESTE día. Ver d1/0016. */
+export interface Excepcion {
+  id: string;
+  reunion_id: string;
+  /** Día de Chile, «AAAA-MM-DD». */
+  fecha: string;
+  estado: 'suspendida' | 'cambiada';
+  /** La hora de ese día, o `null` si es la de siempre. */
+  hora: string | null;
+  /** Cómo se llama ese día, o `null` si es el de siempre. */
+  nombre: string | null;
+  aviso: string | null;
+}
+
+/**
+ * El estado de una reunión en una fecha concreta, con sus cambios de un día.
+ *
+ * Si hay una excepción para esa reunión y esa fecha, manda ella; si no, rige
+ * `vigente`. La excepción gana incluso a un aviso con `aviso_hasta` que también
+ * cubra el día, porque es la más concreta de las dos.
+ *
+ * Es la única puerta: /horarios (la semana que viene) y el calendario (cada
+ * día del mes) pasan por acá, así que no pueden contar cosas distintas.
+ */
+export function enFecha(fila: FilaReunion, fecha: string, excepciones: Excepcion[] = []): Reunion {
+  const e = excepciones.find((x) => x.reunion_id === fila.id && x.fecha === fecha);
+  if (!e) return vigente(fila, fecha);
+
+  const suspendida = e.estado === 'suspendida';
+  // Solo una cambiada mueve la hora: una suspendida no se hace a ninguna.
+  const hora = !suspendida ? e.hora?.trim() || null : null;
+  const otraHora = hora !== null && hora !== fila.hora;
+  return {
+    id: fila.id,
+    templo: fila.templo,
+    dia: fila.dia,
+    hora: otraHora ? hora : fila.hora,
+    nombre: e.nombre?.trim() || fila.nombre,
+    estado: e.estado,
+    aviso: e.aviso?.trim() || null,
+    horaHabitual: otraHora ? fila.hora : null,
+    // La marca es de la fecha: el 5 de diciembre la Santa Cena de Limache se
+    // sigue celebrando aunque ese día sea a las 20:00 y no a las 19:00.
+    marca:
+      suspendida || !fila.marca?.trim()
+        ? null
+        : tocaMarca(fila.marca_regla, fecha)
+          ? fila.marca.trim()
+          : null,
+  };
+}
+
+/**
+ * La semana que viene, contando hoy, con sus cambios de un día.
+ *
+ * Cada reunión se resuelve en SU próxima fecha: el lunes, la del jueves se
+ * pregunta por el jueves de esta semana. Es la misma fecha sobre la que ya se
+ * calcula la marca.
+ *
+ * Sin excepción, la reunión pasa por `vigente(fila, hoy)` exactamente como
+ * antes de que existieran: un aviso «hasta el martes» puesto a una reunión del
+ * jueves se sigue viendo hasta el martes, que es lo que se le prometió a quien
+ * lo escribió.
+ */
+export function semanaConExcepciones(
+  filas: FilaReunion[],
+  hoy: string,
+  excepciones: Excepcion[],
+): Reunion[] {
+  return filas.map((f) => {
+    const fecha = proximaFecha(f.dia, hoy);
+    const tiene = excepciones.some((e) => e.reunion_id === f.id && e.fecha === fecha);
+    return tiene ? enFecha(f, fecha, excepciones) : vigente(f, hoy);
+  });
+}
+
+/** El último día de la semana que empieza hoy: hoy + 6. */
+export function finDeSemana(hoy: string): string {
+  const d = new Date(`${hoy}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 6);
+  return d.toISOString().slice(0, 10);
+}
+
 export interface DiaDeReuniones {
   dia: number;
   nombre: string;

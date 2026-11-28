@@ -6,6 +6,7 @@ import {
   casillasDe,
   comoParametro,
   DIAS_LUNES,
+  MESES,
   enPalabras,
   fechaDeEvento,
   mesAnterior,
@@ -13,7 +14,7 @@ import {
   reunionesEnFecha,
   type Mes,
 } from '../lib/calendario';
-import type { FilaReunion } from '../lib/reuniones';
+import { fechaEnPalabras, type Excepcion, type FilaReunion, type Reunion } from '../lib/reuniones';
 import type { Evento } from '../lib/datos';
 
 /**
@@ -31,18 +32,27 @@ import type { Evento } from '../lib/datos';
  *
  * ── EL ESTADO DE CADA REUNIÓN ES EL DE SU DÍA ───────────────────────────────
  * No el de hoy. Una suspendida hasta el día 8 sale tachada el 4 y normal el
- * 11. Lo resuelve `reunionesEnFecha`; el porqué está ahí.
+ * 11, y un cambio de un día (d1/0016) solo se ve en su fecha. Lo resuelve
+ * `reunionesEnFecha`; el porqué está ahí.
+ *
+ * ── LA AGENDA DE ABAJO ──────────────────────────────────────────────────────
+ * En el teléfono la rejilla solo alcanza para decir QUÉ DÍAS hay algo. Lo que
+ * se sale de lo normal —los eventos y las reuniones que ese día se suspenden o
+ * cambian— se repite debajo, día por día y con todas sus letras. En diciembre
+ * eso es casi todo lo que la gente necesita saber del mes.
  */
 interface Props {
   mes: Mes;
   eventos: Evento[];
   reuniones: FilaReunion[];
+  /** Los cambios de un día del mes. */
+  excepciones: Excepcion[];
   /** Hoy en Chile, «AAAA-MM-DD», para marcar la casilla. */
   hoy: string;
   /** Lo que haya en la dirección, para que el filtro por templo sobreviva. */
   templo?: string | null;
 }
-const { mes, eventos, reuniones, hoy, templo } = Astro.props;
+const { mes, eventos, reuniones, excepciones, hoy, templo } = Astro.props;
 
 const casillas = casillasDe(mes);
 
@@ -57,11 +67,40 @@ for (const e of eventos) {
 
 const colorDe = (slug: string) => templos.find((t) => t.slug === slug);
 
-/** La dirección de otro mes, conservando la vista y el filtro. */
+/** Las reuniones de cada día del mes, resueltas UNA vez para rejilla y agenda. */
+const reunionesDe = new Map<string, Reunion[]>();
+for (const c of casillas) {
+  if (c.delMes) reunionesDe.set(c.fecha, reunionesEnFecha(reuniones, c.fecha, excepciones, hoy));
+}
+
+/**
+ * ¿Se sale de lo normal? Suspendida, a otra hora o con otro nombre.
+ *
+ * El nombre cuenta: en Limache, el miércoles 23 la reunión de Jóvenes pasa a
+ * ser la Reunión General. A la misma hora, pero no es la reunión de siempre.
+ */
+const nombreHabitual = (id: string) => reuniones.find((r) => r.id === id)?.nombre;
+const otroNombre = (r: Reunion) => {
+  const habitual = nombreHabitual(r.id);
+  return habitual !== undefined && habitual !== r.nombre;
+};
+const esEspecial = (r: Reunion) => r.estado !== 'normal' || otroNombre(r);
+
+/** La agenda de abajo: solo los días del mes con algo fuera de lo normal. */
+const agenda = casillas
+  .filter((c) => c.delMes)
+  .map((c) => ({
+    fecha: c.fecha,
+    eventos: porDia.get(c.fecha) ?? [],
+    cambios: (reunionesDe.get(c.fecha) ?? []).filter(esEspecial),
+  }))
+  .filter((d) => d.eventos.length > 0 || d.cambios.length > 0);
+
+/** La dirección de otro mes, conservando el filtro. */
 function enlaceMes(m: Mes): string {
-  const p = new URLSearchParams({ vista: 'calendario', mes: comoParametro(m) });
+  const p = new URLSearchParams({ mes: comoParametro(m) });
   if (templo) p.set('templo', templo);
-  return `/eventos?${p}`;
+  return `/calendario?${p}`;
 }
 
 const anterior = mesAnterior(mes);
@@ -112,7 +151,13 @@ const siguiente = mesSiguiente(mes);
   <div class="grid grid-cols-7">
     {casillas.map((c) => {
       const delDia = c.delMes ? (porDia.get(c.fecha) ?? []) : [];
-      const semanales = c.delMes ? reunionesEnFecha(reuniones, c.fecha) : [];
+      // Las que se salen de lo normal, primero: si hay que cortar en tres, que
+      // no se corte justo la suspendida.
+      const semanales = (reunionesDe.get(c.fecha) ?? [])
+        .slice()
+        .sort(
+          (a, b) => Number(esEspecial(b)) - Number(esEspecial(a)) || a.hora.localeCompare(b.hora),
+        );
       const esHoy = c.fecha === hoy;
 
       return (
@@ -149,7 +194,9 @@ const siguiente = mesSiguiente(mes);
                 style={t ? `background:${t.color.fondo}` : 'background:var(--color-primary)'}
                 title={`${e.titulo}${e.lugar ? ' · ' + e.lugar : ''}`}
               >
-                <span class="font-data block font-bold">{horaCorta(e.fecha)}</span>
+                <span class="font-data block font-bold">
+                  {e.todo_el_dia ? 'Día' : horaCorta(e.fecha)}
+                </span>
                 <span class="hidden font-medium sm:line-clamp-2 sm:block">{e.titulo}</span>
               </a>
             );
@@ -163,8 +210,12 @@ const siguiente = mesSiguiente(mes);
                 discreto y se convierten en lo único que se ve. */}
           {semanales.slice(0, 3).map((r) => (
             <div
-              class={`font-data hidden items-center gap-1 text-[0.62rem] leading-snug text-base-content/45 sm:flex ${
-                r.estado === 'suspendida' ? 'line-through opacity-60' : ''
+              class={`font-data hidden items-center gap-1 text-[0.62rem] leading-snug sm:flex ${
+                r.estado === 'suspendida'
+                  ? 'text-error/80 line-through'
+                  : esEspecial(r)
+                    ? 'font-semibold text-warning'
+                    : 'text-base-content/45'
               }`}
               title={`${r.hora} · ${r.nombre}${r.aviso ? ' — ' + r.aviso : ''}`}
             >
@@ -174,9 +225,20 @@ const siguiente = mesSiguiente(mes);
                 aria-hidden="true"
               />
               {r.hora}
+              {r.estado !== 'suspendida' && otroNombre(r) && (
+                <span class="truncate">· {r.nombre}</span>
+              )}
               {r.marca && <span class="truncate text-accent">· {r.marca}</span>}
             </div>
           ))}
+          {/* En el teléfono las reuniones no se ven: un punto avisa de que
+                ese día alguna cambia, y la agenda de abajo dice cuál. */}
+          {semanales.some(esEspecial) && (
+            <div
+              class="mx-auto mt-0.5 h-1.5 w-1.5 rounded-full bg-warning sm:hidden"
+              title="Ese día cambia alguna reunión"
+            />
+          )}
           {semanales.length > 3 && (
             <div class="font-data hidden text-[0.62rem] text-base-content/40 sm:block">
               +{semanales.length - 3} más
@@ -201,10 +263,103 @@ const siguiente = mesSiguiente(mes);
       ))}
     </span>
     <span>
-      <span class="hidden sm:inline">Las horas tenues son las reuniones de cada semana · </span>
+      <span class="hidden sm:inline">
+        Las horas tenues son las reuniones de cada semana; en color, las que ese día cambian ·
+      </span>
       <a href="/horarios" class="link link-primary">
         ver los horarios
       </a>
     </span>
   </footer>
 </div>
+
+{/* ── El mes, día por día ─────────────────────────────────────────────────
+     Lo de la rejilla que se sale de lo normal, con todas sus letras. */}
+<section class="mt-10" aria-labelledby="agenda-mes">
+  <h3 id="agenda-mes" class="font-display text-xl md:text-2xl">
+    Lo especial de {MESES[mes.mes - 1]}
+  </h3>
+  {agenda.length === 0 ? (
+    <p class="mt-2 text-sm text-base-content/70">
+      Este mes no hay eventos ni cambios: todas las reuniones van como siempre.
+    </p>
+  ) : (
+    <ol class="mt-4 space-y-3">
+      {agenda.map((d) => (
+        <li class={`panel flex gap-4 p-4 ${d.fecha === hoy ? 'ring-1 ring-accent/50' : ''}`}>
+          <div class="font-data w-12 shrink-0 text-center">
+            <span class="block text-2xl font-bold leading-none">{Number(d.fecha.slice(8))}</span>
+            <span class="mt-1 block text-[0.65rem] uppercase tracking-wider text-base-content/60">
+              {fechaEnPalabras(d.fecha).slice(0, 3)}
+            </span>
+          </div>
+          <ul class="min-w-0 flex-1 space-y-3">
+            {d.eventos.map((e) => {
+              const t = colorDe(e.templo);
+              return (
+                <li>
+                  <a href={`/eventos?e=${encodeURIComponent(e.slug ?? e.id)}`} class="group block">
+                    <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span class="font-data text-sm font-bold">
+                        {e.todo_el_dia ? 'Todo el día' : horaCorta(e.fecha)}
+                      </span>
+                      <span class="font-semibold group-hover:underline">{e.titulo}</span>
+                      {t ? (
+                        <span class="distintivo" style={estiloDistintivo(t)}>
+                          {t.short}
+                        </span>
+                      ) : (
+                        <span class="badge badge-ghost badge-sm">Toda la iglesia</span>
+                      )}
+                    </span>
+                    {e.lugar && (
+                      <span class="mt-0.5 block text-xs text-base-content/70">{e.lugar}</span>
+                    )}
+                  </a>
+                </li>
+              );
+            })}
+            {d.cambios.map((r) => {
+              const t = colorDe(r.templo);
+              const suspendida = r.estado === 'suspendida';
+              return (
+                <li class="text-sm">
+                  <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span
+                      class={`font-data font-bold ${suspendida ? 'text-base-content/50 line-through' : ''}`}
+                    >
+                      {r.horaHabitual && (
+                        <span class="mr-1 font-normal text-base-content/50 line-through">
+                          {r.horaHabitual}
+                        </span>
+                      )}
+                      {r.hora}
+                    </span>
+                    <span class={suspendida ? 'text-base-content/60' : 'font-medium'}>
+                      {r.nombre}
+                    </span>
+                    {t && (
+                      <span class="distintivo" style={estiloDistintivo(t)}>
+                        {t.short}
+                      </span>
+                    )}
+                    <span
+                      class={`badge badge-sm ${suspendida ? 'badge-error badge-outline' : 'badge-warning'}`}
+                    >
+                      {suspendida ? 'Suspendida' : 'Cambia'}
+                    </span>
+                  </span>
+                  {(r.aviso || otroNombre(r)) && (
+                    <span class="mt-0.5 block text-xs text-base-content/70">
+                      {r.aviso ?? `Ese día, en lugar de «${nombreHabitual(r.id)}».`}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </li>
+      ))}
+    </ol>
+  )}
+</section>

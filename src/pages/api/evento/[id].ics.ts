@@ -38,6 +38,7 @@ export const GET: APIRoute = async ({ params, url }) => {
     titulo: evento.titulo,
     inicio: evento.fecha,
     duracion: evento.duracion_min,
+    todoElDia: evento.todo_el_dia === 1,
     descripcion: evento.descripcion,
     lugar: evento.lugar,
     // La misma dirección que comparte el botón: con el evento en el

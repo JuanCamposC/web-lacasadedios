@@ -111,13 +111,19 @@ export const MAIN_NAV: NavEntry[] = [
    */
   {
     label: 'Comunidad',
-    match: ['/eventos', '/noticias', '/videos', '/en-vivo'],
+    match: ['/eventos', '/calendario', '/noticias', '/videos', '/en-vivo'],
     items: [
       {
         href: '/eventos',
         label: 'Eventos',
         desc: 'Lo que viene, con fecha',
         icon: 'lucide:calendar-days',
+      },
+      {
+        href: '/calendario',
+        label: 'Calendario',
+        desc: 'El mes completo, templo por templo',
+        icon: 'lucide:calendar-range',
       },
       {
         href: '/noticias',

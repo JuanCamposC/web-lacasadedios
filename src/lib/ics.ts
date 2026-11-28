@@ -1,3 +1,5 @@
+import { deIsoAChile } from './hora';
+
 /**
  * Agendar un evento en Google Calendar.
  *
@@ -43,6 +45,18 @@ export interface EventoAgendable {
   lugar?: string | null;
   /** Dirección pública del evento, para que el recordatorio lleve de vuelta. */
   url: string;
+  /**
+   * Día completo y sin hora (d1/0017). Se agenda como evento de todo el día:
+   * con hora, el teléfono avisaría a las 12:00 de algo que no empieza a las 12.
+   */
+  todoElDia?: boolean;
+}
+
+/** El día de Chile de un instante, como lo pide iCalendar: «20270109». */
+function diaIcs(iso: string, diasExtra = 0): string {
+  const d = new Date(`${deIsoAChile(iso).slice(0, 10)}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + diasExtra);
+  return d.toISOString().slice(0, 10).replace(/-/g, '');
 }
 
 /**
@@ -83,7 +97,11 @@ export function enlaceGoogleCalendar(e: EventoAgendable): string {
   const p = new URLSearchParams({
     action: 'TEMPLATE',
     text: e.titulo,
-    dates: `${fechaUtc(e.inicio)}/${fechaUtc(e.inicio, duracionDe(e))}`,
+    // Día completo: las dos fechas sin hora, y la de término es la del día
+    // SIGUIENTE, que es como Google entiende «todo el 9 de enero».
+    dates: e.todoElDia
+      ? `${diaIcs(e.inicio)}/${diaIcs(e.inicio, 1)}`
+      : `${fechaUtc(e.inicio)}/${fechaUtc(e.inicio, duracionDe(e))}`,
     details: [e.descripcion, e.url].filter(Boolean).join('\n\n'),
     location: e.lugar ?? '',
   });
@@ -155,8 +173,9 @@ export function construirIcs(e: EventoAgendable, sello = new Date()): string {
     'BEGIN:VEVENT',
     `UID:${e.id}@lacasadedios.cl`,
     `DTSTAMP:${fechaUtc(sello.toISOString())}`,
-    `DTSTART:${fechaUtc(e.inicio)}`,
-    `DTEND:${fechaUtc(e.inicio, duracionDe(e))}`,
+    ...(e.todoElDia
+      ? [`DTSTART;VALUE=DATE:${diaIcs(e.inicio)}`, `DTEND;VALUE=DATE:${diaIcs(e.inicio, 1)}`]
+      : [`DTSTART:${fechaUtc(e.inicio)}`, `DTEND:${fechaUtc(e.inicio, duracionDe(e))}`]),
     `SUMMARY:${escapar(e.titulo)}`,
     `URL:${escapar(e.url)}`,
   ];

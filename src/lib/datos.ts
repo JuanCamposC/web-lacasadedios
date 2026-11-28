@@ -22,7 +22,14 @@
  * base como argumento estas consultas se pueden probar con una falsa.
  */
 
-import { hoyEnChile, vigente, type FilaReunion, type Reunion } from './reuniones';
+import {
+  finDeSemana,
+  hoyEnChile,
+  semanaConExcepciones,
+  type Excepcion,
+  type FilaReunion,
+  type Reunion,
+} from './reuniones';
 
 /** Lo mínimo de D1 que este archivo usa. Permite probar con una base falsa. */
 export interface Base {
@@ -49,6 +56,8 @@ export interface Evento {
   imagen_social_clave: string | null;
   /** Minutos que dura, o `null` para las dos horas de siempre (migración 0012). */
   duracion_min: number | null;
+  /** 1 = ocupa el día entero y no tiene hora. Ver d1/0017_todo_el_dia.sql. */
+  todo_el_dia: number;
 }
 
 export interface Noticia {
@@ -171,7 +180,7 @@ export function eventosProximos(base: Base, filtro: Filtro = {}): Promise<Evento
   const { donde, valores, limite, desplazamiento } = publicados(filtro);
   return listar<Evento>(
     base,
-    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min
+    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min, todo_el_dia
        from eventos
       where ${donde} and fecha >= ?
       order by fecha asc
@@ -192,7 +201,7 @@ export function eventosPasados(base: Base, filtro: Filtro = {}): Promise<Evento[
   const { donde, valores, limite, desplazamiento } = publicados(filtro);
   return listar<Evento>(
     base,
-    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min
+    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min, todo_el_dia
        from eventos
       where ${donde} and fecha < ?
       order by fecha desc
@@ -211,7 +220,7 @@ export function eventosPasados(base: Base, filtro: Filtro = {}): Promise<Evento[
 export function eventoPorId(base: Base, id: string): Promise<Evento | null> {
   return base
     .prepare(
-      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min
+      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min, todo_el_dia
          from eventos where publicado = 1 and borrado_en is null and id = ?`,
     )
     .bind(id)
@@ -234,7 +243,7 @@ export function eventoPorClave(base: Base, clave: string): Promise<Evento | null
   const esUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clave);
   return base
     .prepare(
-      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min
+      `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min, todo_el_dia
          from eventos where publicado = 1 and borrado_en is null and ${esUuid ? 'id' : 'slug'} = ?`,
     )
     .bind(clave)
@@ -366,7 +375,26 @@ export async function reunionesPublicadas(base: Base, templo?: string): Promise<
     templo ? [templo] : [],
   );
   const hoy = hoyEnChile();
-  return filas.map((f) => vigente(f, hoy));
+  const excepciones = await excepcionesEntre(base, hoy, finDeSemana(hoy));
+  return semanaConExcepciones(filas, hoy, excepciones);
+}
+
+/**
+ * Los cambios de un día entre dos fechas de Chile, ambas incluidas.
+ *
+ * Solo los de reuniones vivas y publicadas: el cambio de una reunión que está
+ * en la papelera no tiene a quién aplicarse. Ver d1/0016_excepciones.sql.
+ */
+export function excepcionesEntre(base: Base, desde: string, hasta: string): Promise<Excepcion[]> {
+  return listar<Excepcion>(
+    base,
+    `select e.id, e.reunion_id, e.fecha, e.estado, e.hora, e.nombre, e.aviso
+       from excepciones e
+       join reuniones r on r.id = e.reunion_id
+      where r.publicado = 1 and r.borrado_en is null and e.fecha between ? and ?
+      order by e.fecha asc`,
+    [desde, hasta],
+  );
 }
 
 // ── Estudios ocultos ────────────────────────────────────────────────────────
@@ -488,7 +516,7 @@ export function eventosEntre(
   const { donde, valores, limite, desplazamiento } = publicados({ ...filtro, limite: 100 });
   return listar<Evento>(
     base,
-    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min
+    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min, todo_el_dia
        from eventos
       where ${donde} and fecha >= ? and fecha < ?
       order by fecha asc

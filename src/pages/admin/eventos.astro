@@ -32,6 +32,12 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
         { name: 'titulo', label: 'Título', type: 'text', required: true },
         { name: 'fecha', label: 'Fecha y hora', type: 'datetime-local', required: true },
         {
+          name: 'todo_el_dia',
+          label: 'Todo el día, sin hora',
+          type: 'checkbox',
+          help: 'Para lo que ocupa el día entero o aún no tiene horario. El sitio dice «Todo el día» y no enseña la hora que escribas arriba.',
+        },
+        {
           name: 'duracion_min',
           label: 'Termina a las',
           type: 'duracion',

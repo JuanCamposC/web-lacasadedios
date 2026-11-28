@@ -22,18 +22,22 @@ import { IMG } from '../../assets/images';
 import { templos } from '../../data/templos';
 import { SITE } from '../../data/site';
 import { baseDeDatos } from '../../lib/base';
-import {
-  eventosProximos,
-  eventosPasados,
-  eventoPorClave,
-  eventosEntre,
-  reunionesCrudas,
-} from '../../lib/datos';
+import { eventosProximos, eventosPasados, eventoPorClave } from '../../lib/datos';
 import { urlMedio } from '../../lib/medios';
-import { enChile, fechaLarga, horaCorta } from '../../lib/hora';
-import { hoyEnChile } from '../../lib/reuniones';
-import { mesDe, primerInstante, instanteDeCierre } from '../../lib/calendario';
-import CalendarioMes from '../../components/CalendarioMes.astro';
+import { deIsoAChile, enChile, fechaLarga, horaCorta } from '../../lib/hora';
+
+/*
+ * La vista de calendario se mudó a /calendario, con página propia. Quien tenga
+ * guardada o compartida la dirección vieja llega al mismo mes y templo.
+ */
+if (Astro.url.searchParams.get('vista') === 'calendario') {
+  const p = new URLSearchParams();
+  for (const k of ['mes', 'templo']) {
+    const v = Astro.url.searchParams.get(k);
+    if (v) p.set(k, v);
+  }
+  return Astro.redirect(p.size ? `/calendario?${p}` : '/calendario', 301);
+}
 
 // Dos consultas acotadas en vez de traer la tabla entera y partirla acá, que es
 // lo que hacía antes: un archivo de diez años de eventos no tiene por qué
@@ -63,40 +67,10 @@ const clave = Astro.url.searchParams.get('e');
 const filaCompartida = clave ? await eventoPorClave(base, clave) : null;
 const compartido = filaCompartida ? conImagen(filaCompartida) : null;
 
-/*
- * ── LISTA O CALENDARIO ──────────────────────────────────────────────────────
- * La misma página, los mismos datos, dos formas de mirarlos. Una lista
- * responde «qué viene ahora»; un calendario responde «cómo queda diciembre»,
- * que es otra pregunta y la que se hace quien está organizando varias cosas a
- * la vez.
- *
- * Va en un parámetro y no en una página aparte para que /eventos siga siendo
- * una sola dirección: el filtro por templo, el enlace que se comparte y lo que
- * Google tiene indexado no se parten en dos. Y por eso mismo la canónica no
- * cambia — ver más abajo.
- */
-const esCalendario = Astro.url.searchParams.get('vista') === 'calendario';
-const hoy = hoyEnChile();
-const mes = mesDe(Astro.url.searchParams.get('mes'), hoy);
-const temploPedido = Astro.url.searchParams.get('templo');
-
-const [upcoming, past, delMes, reunionesMes] = await Promise.all([
+const [upcoming, past] = await Promise.all([
   eventosProximos(base).then((f) => f.map(conImagen)),
   eventosPasados(base, { limite: 6 }).then((f) => f.map(conImagen)),
-  // Solo se piden si hacen falta: en la vista de lista serían dos consultas a
-  // una base que está en Norteamérica para no enseñar nada.
-  esCalendario ? eventosEntre(base, primerInstante(mes), instanteDeCierre(mes)) : [],
-  esCalendario ? reunionesCrudas(base) : [],
 ]);
-
-/** La misma dirección, cambiando solo la vista. Conserva mes y filtro. */
-function enlaceVista(vista: 'lista' | 'calendario'): string {
-  const p = new URLSearchParams();
-  if (vista === 'calendario') p.set('vista', 'calendario');
-  if (temploPedido) p.set('templo', temploPedido);
-  const cola = p.toString();
-  return cola ? `/eventos?${cola}` : '/eventos';
-}
 
 // Todas en hora de Chile. Ver src/lib/hora.ts: esta página se arma en el
 // Worker, que corre en UTC, y sin fijar el huso anunciaba las reuniones tres
@@ -147,8 +121,10 @@ const eventosJsonLd =
         '@graph': upcoming.map((e) => ({
           '@type': 'Event',
           name: e.titulo,
-          startDate: e.fecha,
-          ...(terminaEn(e) ? { endDate: terminaEn(e) } : {}),
+          // Día completo: solo la fecha, sin hora, que es como schema.org
+          // dice «todo el día». Con el instante, Google anunciaría las 12:00.
+          startDate: e.todo_el_dia ? deIsoAChile(e.fecha).slice(0, 10) : e.fecha,
+          ...(!e.todo_el_dia && terminaEn(e) ? { endDate: terminaEn(e) } : {}),
           eventStatus: 'https://schema.org/EventScheduled',
           eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
           location: lugarDe(e.lugar),
@@ -196,48 +172,14 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
 
     <section class="section bg-base-100">
       <div class="wrap">
-        {
-          /* ── Lista o calendario ──────────────────────────────────────────
-            Dos enlaces de verdad y no botones con JavaScript: se pueden abrir
-            en otra pestaña, funcionan sin scripts y el navegador recuerda en
-            cuál estabas al volver atrás. El precio es recargar la página, que
-            con el ClientRouter no se nota.
+        {/* El mes entero, con las reuniones y sus cambios, vive en /calendario. */}
+        <div class="mb-8 flex justify-end">
+          <a href="/calendario" class="btn btn-outline btn-sm gap-1.5">
+            <Icon name="lucide:calendar-range" class="h-4 w-4" /> Ver el calendario del mes
+          </a>
+        </div>
 
-            Solo aparece si hay algo que mirar: un conmutador sobre una agenda
-            vacía ofrece dos formas de ver la nada. */
-          (upcoming.length > 0 || past.length > 0) && (
-            <div class="mb-8 flex justify-end">
-              <div class="join" role="group" aria-label="Cómo ver los eventos">
-                <a
-                  href={enlaceVista('lista')}
-                  aria-current={!esCalendario ? 'true' : undefined}
-                  class={`btn join-item btn-sm gap-1.5 ${esCalendario ? '' : 'btn-active'}`}
-                >
-                  <Icon name="lucide:list" class="h-4 w-4" /> Lista
-                </a>
-                <a
-                  href={enlaceVista('calendario')}
-                  aria-current={esCalendario ? 'true' : undefined}
-                  class={`btn join-item btn-sm gap-1.5 ${esCalendario ? 'btn-active' : ''}`}
-                >
-                  <Icon name="lucide:calendar" class="h-4 w-4" /> Calendario
-                </a>
-              </div>
-            </div>
-          )
-        }
-
-        {esCalendario && (
-          <CalendarioMes
-            mes={mes}
-            eventos={delMes}
-            reuniones={reunionesMes}
-            hoy={hoy}
-            templo={temploPedido}
-          />
-        )}
-
-        {!esCalendario && upcoming.length === 0 && past.length === 0 && (
+        {upcoming.length === 0 && past.length === 0 && (
           <EmptyState
             icon="lucide:calendar-days"
             title="Todavía no hay eventos publicados"
@@ -249,7 +191,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
           </EmptyState>
         )}
 
-        {!esCalendario && upcoming.length > 0 && (
+        {upcoming.length > 0 && (
           <>
             {/* Con el componente, igual que las otras cinco páginas: mismo
                   tamaño de titular, mismo antetítulo y el mismo revelado al
@@ -315,9 +257,11 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
 
                       <span class="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur">
                         <Icon name="lucide:clock" class="h-3.5 w-3.5" />{' '}
-                        {terminaEn(e)
-                          ? `${fmtTime(e.fecha)} a ${fmtTime(terminaEn(e)!)}`
-                          : fmtTime(e.fecha)}
+                        {e.todo_el_dia
+                          ? 'Todo el día'
+                          : terminaEn(e)
+                            ? `${fmtTime(e.fecha)} a ${fmtTime(terminaEn(e)!)}`
+                            : fmtTime(e.fecha)}
                       </span>
                     </div>
 
@@ -340,7 +284,7 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
           </>
         )}
 
-        {!esCalendario && past.length > 0 && (
+        {past.length > 0 && (
           <div class={upcoming.length > 0 ? 'mt-16' : ''}>
             {/* Secundario: es el archivo, no a lo que se viene. */}
             <SectionHeading eyebrow="Archivo" title="Eventos anteriores" align="left" secundario />

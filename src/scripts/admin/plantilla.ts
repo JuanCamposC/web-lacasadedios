@@ -75,9 +75,9 @@ function campoHtml(f: CrudConfig['fields'][number]): string {
 
   if (f.type === 'checkbox')
     return `<label class="flex cursor-pointer items-start gap-3 rounded border border-base-300 bg-base-200/50 p-3">
-          <input type="checkbox" name="${f.name}" checked class="toggle toggle-primary toggle-sm mt-0.5" />
+          <input type="checkbox" name="${f.name}" ${f.name === 'publicado' ? 'checked' : ''} class="toggle toggle-primary toggle-sm mt-0.5" />
           <span><span class="block text-sm font-medium">${esc(f.label)}</span>
-          <span class="block text-xs text-base-content/70">Si lo apagas queda como borrador y no se ve en el sitio.</span></span>
+          <span class="block text-xs text-base-content/70">${esc(f.help ?? (f.name === 'publicado' ? 'Si lo apagas queda como borrador y no se ve en el sitio.' : ''))}</span></span>
         </label>`;
 
   // Zona de imagen: se puede arrastrar el archivo encima, se ve antes de

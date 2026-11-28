@@ -126,11 +126,13 @@ function tarjetaEvento(ctx: Contexto): HTMLElement {
           hourCycle: 'h23',
         })
       : null;
+    const todoElDia =
+      ctx.form.querySelector<HTMLInputElement>('[name="todo_el_dia"]')?.checked ?? false;
     cabecera.append(
       elemento(
         'span',
         'absolute bottom-3 left-3 rounded-full bg-black/60 px-2.5 py-0.5 text-xs font-medium text-white backdrop-blur',
-        hasta ? `${desde} a ${hasta}` : desde,
+        todoElDia ? 'Todo el día' : hasta ? `${desde} a ${hasta}` : desde,
       ),
     );
   }

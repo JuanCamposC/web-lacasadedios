@@ -45,6 +45,8 @@ export interface Agenda {
   slug: string | null;
   fecha: string;
   lugar: string | null;
+  /** Día completo, sin hora (d1/0017). */
+  todoElDia: boolean;
   imagen: string | null;
   /** `false` cuando es un evento de toda la iglesia. */
   deEsteTemplo: boolean;
@@ -213,10 +215,19 @@ const jsonLd = {
                 Las puertas abren unos minutos antes. No hace falta avisar ni inscribirse.
               </p>
             </div>
-            <a href={`/horarios?templo=${templo.slug}`} class="semana-enlace">
-              Ver junto a los otros templos
-              <Icon name="lucide:arrow-right" class="h-4 w-4" />
-            </a>
+            {/* El calendario llega ya filtrado por este templo: quien está
+                mirando Limache quiere el diciembre de Limache, no el de los
+                cuatro. */}
+            <div class="flex flex-col items-start gap-2 sm:items-end">
+              <a href={`/calendario?templo=${templo.slug}`} class="btn btn-primary btn-sm gap-2">
+                <Icon name="lucide:calendar-range" class="h-4 w-4" />
+                Calendario de {templo.short}
+              </a>
+              <a href={`/horarios?templo=${templo.slug}`} class="semana-enlace">
+                Ver junto a los otros templos
+                <Icon name="lucide:arrow-right" class="h-4 w-4" />
+              </a>
+            </div>
           </div>
         </Reveal>
 
@@ -425,8 +436,8 @@ const jsonLd = {
                 <span class="eyebrow text-[var(--d-tinte)]">Lo que viene</span>
                 <h2 class="mt-2 font-display text-3xl">Próximos encuentros</h2>
               </div>
-              <a href="/eventos" class="semana-enlace">
-                Ver todos los eventos
+              <a href={`/calendario?templo=${templo.slug}`} class="semana-enlace">
+                Ver el mes completo
                 <Icon name="lucide:arrow-right" class="h-4 w-4" />
               </a>
             </div>
@@ -446,7 +457,7 @@ const jsonLd = {
                     <p class="evento-titulo">{e.titulo}</p>
                     <p class="evento-dato">
                       <Icon name="lucide:clock" class="h-3.5 w-3.5 shrink-0" />
-                      {horaCorta(e.fecha)}
+                      {e.todoElDia ? 'Todo el día' : horaCorta(e.fecha)}
                       {e.lugar && <span class="truncate">· {e.lugar}</span>}
                     </p>
                     <p class="evento-marca">

@@ -356,7 +356,10 @@
     border-color: var(--color-primary);
     color: var(--color-primary);
   }
-  .filtro-chip[aria-pressed='true'] {
+  /* El mismo aspecto para el chip que es un enlace (/calendario): ahí el
+     estado no es «pulsado» sino «esta página». */
+  .filtro-chip[aria-pressed='true'],
+  .filtro-chip[aria-current='page'] {
     border-color: var(--color-primary);
     background-color: var(--color-primary);
     color: var(--color-primary-content);

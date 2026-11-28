@@ -119,6 +119,7 @@ const COLUMNAS = {
     'slug',
     'fecha',
     'duracion_min',
+    'todo_el_dia',
     'imagen_social_clave',
     'lugar',
     'descripcion',
@@ -159,6 +160,9 @@ const COLUMNAS = {
     'marca_regla',
     'publicado',
   ],
+  // Cambios de un día (d1/0016_excepciones.sql). Sin papelera: borrar una es
+  // devolverle a la reunión su horario de siempre ese día.
+  excepciones: ['reunion_id', 'fecha', 'estado', 'hora', 'nombre', 'aviso'],
   estudios: [
     'titulo',
     'slug',
@@ -195,6 +199,7 @@ const COLUMNAS_ARCHIVO = {
   videos: [],
   enlaces: [],
   reuniones: [],
+  excepciones: [],
   estudios_ocultos: [],
 } as const satisfies Record<Recurso, readonly string[]>;
 
@@ -218,6 +223,7 @@ const ORDEN: Record<Recurso, string> = {
   // Como se lee un tablero: por templo, y dentro de cada templo la semana en
   // orden. Así en el panel se encuentran juntas las de un mismo lugar.
   reuniones: 'templo asc, dia asc, hora asc',
+  excepciones: 'fecha asc',
 };
 
 /** ¿Es un nombre de recurso válido? Se comprueba antes de tocar nada. */
@@ -282,7 +288,7 @@ function limpiar(recurso: Recurso, datos: Record<string, unknown>) {
     const bruto = datos[columna];
     let valor: unknown;
 
-    if (columna === 'publicado') {
+    if (columna === 'publicado' || columna === 'todo_el_dia') {
       valor = bruto === true || bruto === 1 || bruto === '1' || bruto === 'on' ? 1 : 0;
     } else if (
       columna === 'orden' ||

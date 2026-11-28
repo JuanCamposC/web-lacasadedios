@@ -1,0 +1,149 @@
+---
+export const prerender = false;
+
+// Igual que /eventos: cambia pocas veces al mes, así que la CDN la sirve hecha
+// durante un minuto y la rehace por detrás.
+Astro.response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
+
+import Layout from '../layouts/Layout.astro';
+import PageHero from '../components/PageHero.astro';
+import RutaJsonLd from '../components/RutaJsonLd.astro';
+import CalendarioMes from '../components/CalendarioMes.astro';
+import { Icon } from 'astro-icon/components';
+import { IMG } from '../assets/images';
+import { templos, getTemplo } from '../data/templos';
+import { baseDeDatos } from '../lib/base';
+import { eventosEntre, excepcionesEntre, reunionesCrudas } from '../lib/datos';
+import { hoyEnChile } from '../lib/reuniones';
+import {
+  comoParametro,
+  enPalabras,
+  instanteDeCierre,
+  mesDe,
+  primerInstante,
+} from '../lib/calendario';
+
+/**
+ * El calendario del mes, con página propia.
+ *
+ * Vivía como una segunda vista de /eventos (`?vista=calendario`). Se separó
+ * cuando dejó de ser «los eventos en rejilla» y pasó a ser LA respuesta a
+ * «¿qué hay en diciembre?»: eventos, reuniones y los cambios de cada día. Esa
+ * página se enlaza desde cada templo ya filtrada, y /eventos vuelve a ser la
+ * lista de lo que viene. La dirección vieja redirige aquí.
+ *
+ * ── EL FILTRO POR TEMPLO VA EN EL SERVIDOR ──────────────────────────────────
+ * No con el script de chips que usan /eventos y /noticias. Quien llega desde la
+ * página de Limache tiene que ver Limache desde el primer pintado, y el enlace
+ * tiene que poder compartirse tal cual. Un evento «general» —de toda la
+ * iglesia— sale en todos los templos, porque también es suyo.
+ */
+
+const base = await baseDeDatos();
+const hoy = hoyEnChile();
+const mes = mesDe(Astro.url.searchParams.get('mes'), hoy);
+
+// Un templo que no existe se ignora en vez de dar un calendario vacío: es más
+// probable un enlace mal copiado que alguien buscando un templo inventado.
+const pedido = Astro.url.searchParams.get('templo');
+const templo = pedido ? (getTemplo(pedido) ?? null) : null;
+
+const primerDia = `${comoParametro(mes)}-01`;
+const ultimoDia = `${comoParametro(mes)}-31`; // como texto basta: no hay día 32
+
+const [eventosMes, reunionesMes, excepcionesMes] = await Promise.all([
+  eventosEntre(base, primerInstante(mes), instanteDeCierre(mes)),
+  reunionesCrudas(base),
+  excepcionesEntre(base, primerDia, ultimoDia),
+]);
+
+const eventos = templo
+  ? eventosMes.filter((e) => e.templo === templo.slug || e.templo === 'general')
+  : eventosMes;
+const reuniones = templo ? reunionesMes.filter((r) => r.templo === templo.slug) : reunionesMes;
+
+/** La dirección de este mes con otro filtro. */
+function enlaceTemplo(slug: string | null): string {
+  const p = new URLSearchParams({ mes: comoParametro(mes) });
+  if (slug) p.set('templo', slug);
+  return `/calendario?${p}`;
+}
+
+const titulo = templo ? `Calendario de ${templo.short}` : 'Calendario';
+---
+
+<Layout
+  title={`${titulo} · La Casa de Dios`}
+  description={
+    templo
+      ? `Eventos, reuniones y cambios de horario del templo ${templo.short}, mes a mes.`
+      : 'Eventos, reuniones y cambios de horario de los cuatro templos de La Casa de Dios, mes a mes.'
+  }
+  canonical={templo ? `/calendario?templo=${templo.slug}` : '/calendario'}
+>
+  <PageHero
+    image={IMG.eventosPortada}
+    alt="Reunión de adoración"
+    eyebrow="Agenda"
+    title={titulo}
+    subtitle={`Lo que hay en ${enPalabras(mes)}: eventos, reuniones y lo que cambia cada día.`}
+    height="min-h-[40vh]"
+  />
+
+  <RutaJsonLd
+    items={[
+      { label: 'Inicio', href: '/' },
+      { label: 'Calendario', href: templo ? '/calendario' : undefined },
+      ...(templo ? [{ label: templo.short }] : []),
+    ]}
+  />
+
+  <section class="section bg-base-100">
+    <div class="wrap">
+      {/* Enlaces y no botones: el filtro está en la dirección, así que cada
+          chip es una página que se puede abrir aparte o compartir. */}
+      <nav class="mb-6 overflow-x-auto" aria-label="Ver el calendario de un templo">
+        <div class="flex w-max items-center gap-2 md:w-full md:flex-wrap">
+          <a
+            href={enlaceTemplo(null)}
+            class="filtro-chip"
+            aria-current={templo ? undefined : 'page'}
+          >
+            Todos
+          </a>
+          {templos.map((t) => (
+            <a
+              href={enlaceTemplo(t.slug)}
+              class="filtro-chip"
+              aria-current={templo?.slug === t.slug ? 'page' : undefined}
+            >
+              {t.short}
+            </a>
+          ))}
+        </div>
+      </nav>
+
+      <CalendarioMes
+        mes={mes}
+        eventos={eventos}
+        reuniones={reuniones}
+        excepciones={excepcionesMes}
+        hoy={hoy}
+        templo={templo?.slug ?? null}
+      />
+
+      <div class="mt-10 flex flex-wrap gap-3">
+        <a href="/eventos" class="btn btn-outline btn-sm gap-1.5">
+          <Icon name="lucide:list" class="h-4 w-4" /> Todos los eventos, en lista
+        </a>
+        <a
+          href={templo ? `/templos/${templo.slug}` : '/horarios'}
+          class="btn btn-ghost btn-sm gap-1.5"
+        >
+          <Icon name={templo ? 'lucide:church' : 'lucide:clock'} class="h-4 w-4" />
+          {templo ? `Templo ${templo.short}` : 'Horarios de cada semana'}
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>

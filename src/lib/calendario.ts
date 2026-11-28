@@ -20,7 +20,7 @@
  * desfase posible. Es el mismo truco que `fechaEnPalabras`.
  */
 import { deIsoAChile } from './hora';
-import { vigente, type FilaReunion, type Reunion } from './reuniones';
+import { enFecha, type Excepcion, type FilaReunion, type Reunion } from './reuniones';
 
 /** Los meses en castellano, para los títulos. */
 export const MESES = [
@@ -163,8 +163,28 @@ export const fechaDeEvento = (iso: string) => deIsoAChile(iso).slice(0, 10);
  *
  * Las suspendidas se devuelven igual, no se esconden: quien mira el calendario
  * necesita ver que ese día NO hay, y un hueco no dice eso.
+ *
+ * Los cambios de un día (`excepciones`) mandan en su fecha. El aviso de la
+ * propia fila, en cambio, significa «desde AHORA hasta `aviso_hasta`», así que
+ * con `hoy` no se aplica a los días que ya pasaron: una suspensión puesta hoy
+ * hasta el jueves no dice nada del jueves de hace dos semanas, y pintarlo
+ * tachado sería inventar historia.
  */
-export function reunionesEnFecha(filas: FilaReunion[], fecha: string): Reunion[] {
+export function reunionesEnFecha(
+  filas: FilaReunion[],
+  fecha: string,
+  excepciones: Excepcion[] = [],
+  hoy?: string,
+): Reunion[] {
   const dia = new Date(`${fecha}T12:00:00Z`).getUTCDay();
-  return filas.filter((f) => f.dia === dia).map((f) => vigente(f, fecha));
+  const pasado = hoy !== undefined && fecha < hoy;
+  return filas
+    .filter((f) => f.dia === dia)
+    .map((f) =>
+      enFecha(
+        pasado ? { ...f, estado: 'normal', aviso: null, aviso_hasta: null } : f,
+        fecha,
+        excepciones,
+      ),
+    );
 }

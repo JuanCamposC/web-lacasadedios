@@ -1,5 +1,13 @@
 import { api } from './api';
 import { esc, toast, preguntar } from './ui';
+import {
+  abrirProgramar,
+  cargarExcepciones,
+  initExcepciones,
+  pintarProgramados,
+  programadosDe,
+  queCambia,
+} from './excepciones';
 import { templos, estiloDistintivo, type Templo } from '../../data/templos';
 import {
   DIAS,
@@ -196,6 +204,9 @@ function menuDe(g: Grupo, indice: number): string {
         <li><button type="button" class="block w-full rounded px-3 py-2 text-left text-[0.8125rem] transition-colors hover:bg-base-200" data-accion="editar">Editar la reunión</button></li>
         <li><div class="my-1 h-px bg-base-300"></div></li>
         ${g.estado === 'normal' ? normal : conCambio}
+        <li><button type="button" class="block w-full rounded px-3 py-2 text-left text-[0.8125rem] transition-colors hover:bg-base-200" data-accion="programar">
+          Programar un cambio para otra fecha…
+        </button></li>
         <li><div class="my-1 h-px bg-base-300"></div></li>
         <li><button type="button" class="block w-full rounded px-3 py-2 text-left text-[0.8125rem] transition-colors hover:bg-base-200 text-error" data-accion="borrar">
           Borrar la reunión${g.sedes.length > 1 ? ` de los ${g.sedes.length} templos` : ''}
@@ -245,6 +256,7 @@ function lineaDe(g: Grupo, indice: number): string {
         </span>
         <span class="mt-1 flex flex-wrap gap-1">${sellos}</span>
         ${aviso}
+        ${notaProgramados(g)}
         ${
           g.marca && g.marca_regla
             ? `<p class="mt-1 text-xs text-base-content/60">«${esc(g.marca)}» ${esc(reglaEnPalabras(g.marca_regla, g.dia))}</p>`
@@ -253,6 +265,27 @@ function lineaDe(g: Grupo, indice: number): string {
       </span>
       ${menuDe(g, indice)}
     </li>`;
+}
+
+/**
+ * «Programado: 24 dic suspendida · 31 dic a las 19:00», bajo la línea.
+ *
+ * Sin esto, quien mira el tablero en noviembre no sabe que diciembre ya está
+ * cargado, y lo vuelve a cargar o, peor, cambia la reunión de verdad.
+ */
+function notaProgramados(g: Grupo): string {
+  const suyos = programadosDe(g);
+  if (suyos.length === 0) return '';
+  const corto = new Intl.DateTimeFormat('es-CL', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
+  const partes = suyos.map(
+    (e) =>
+      `${corto.format(new Date(`${e.fecha}T12:00:00Z`)).replace('.', '')}: ${queCambia(e, g).replace(/^./, (c) => c.toLowerCase())}`,
+  );
+  return `<p class="mt-1 text-xs text-info">Programado · ${esc(partes.join(' · '))}</p>`;
 }
 
 /** El día siguiente a una fecha de Chile, «AAAA-MM-DD». */
@@ -415,6 +448,7 @@ function engancharLineas() {
         const accion = btn.dataset.accion;
         cerrar();
         if (accion === 'editar') return rellenarForm(g);
+        if (accion === 'programar') return abrirProgramar(g);
         if (accion === 'suspender') return suspender(g);
         if (accion === 'quitar') return quitarCambio(g);
         if (accion === 'borrar') return borrarGrupo(g);
@@ -592,7 +626,8 @@ async function guardar(e: Event) {
 async function cargar() {
   const caja = el('#tablero');
   try {
-    filas = await api.listar<FilaReunion>('reuniones');
+    // Los cambios programados primero: cada línea del tablero anota los suyos.
+    [filas] = await Promise.all([api.listar<FilaReunion>('reuniones'), cargarExcepciones()]);
   } catch (e) {
     if (caja)
       caja.innerHTML = `<div class="alert alert-error text-sm">No se pudo cargar: ${esc((e as Error).message)}</div>`;
@@ -600,6 +635,7 @@ async function cargar() {
   }
   grupos = agrupar(filas);
   pintarTablero();
+  pintarProgramados(filas);
 }
 
 export function initHorarios() {
@@ -615,6 +651,7 @@ export function initHorarios() {
     (form.elements.namedItem('nombre') as HTMLInputElement)?.focus();
   });
 
+  initExcepciones(cargar);
   rellenarForm(null);
   cargar();
 }
