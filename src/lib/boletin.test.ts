@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   altaSuscriptor,
   bajaSuscriptor,
+  barrerSinConfirmar,
+  DIAS_PARA_CONFIRMAR,
+  pendientes,
   confirmados,
   confirmarSuscriptor,
   listarSuscriptores,
@@ -210,3 +213,62 @@ function espiaCon(cuenta: number) {
   } as Parameters<typeof registrarIntento>[0];
   return { base, llamadas };
 }
+
+/**
+ * La caducidad de las altas que nadie confirma.
+ *
+ * El riesgo acá no es borrar de menos sino borrar DE MÁS: si el filtro de
+ * `pendiente = 1` faltara, el barrido se llevaría también a quienes SÍ
+ * confirmaron, y eso es la lista del boletín entera. Por eso, como el resto de
+ * este archivo, se inspecciona el SQL: lo que importa es que la condición esté.
+ */
+describe('barrerSinConfirmar', () => {
+  it('solo toca a los que no confirmaron', async () => {
+    const { base, llamadas } = espia([[]]);
+    await barrerSinConfirmar(base);
+    const sql = plano(llamadas[0].sql);
+    expect(sql).toMatch(/^delete from suscriptores/);
+    expect(sql).toContain('pendiente = 1');
+  });
+
+  it('y solo a los que pasaron el plazo', async () => {
+    const { base, llamadas } = espia([[]]);
+    const antes = Date.now();
+    await barrerSinConfirmar(base);
+    expect(plano(llamadas[0].sql)).toContain('creado_en < ?');
+
+    // El límite es «hace siete días», con un margen de un minuto por lo que
+    // tarde la prueba. Más reciente borraría a quien se apuntó ayer.
+    const limite = new Date(String(llamadas[0].valores[0])).getTime();
+    const esperado = antes - DIAS_PARA_CONFIRMAR * 86_400_000;
+    expect(Math.abs(limite - esperado)).toBeLessThan(60_000);
+  });
+
+  it('el plazo es de una semana', () => {
+    expect(DIAS_PARA_CONFIRMAR).toBe(7);
+  });
+
+  it('dice cuántos borró', async () => {
+    const { base } = espia([[{ id: 'a' }, { id: 'b' }, { id: 'c' }]]);
+    expect(await barrerSinConfirmar(base)).toBe(3);
+  });
+
+  it('cero si no había nada que borrar', async () => {
+    const { base } = espia([[]]);
+    expect(await barrerSinConfirmar(base)).toBe(0);
+  });
+});
+
+describe('pendientes', () => {
+  it('cuenta los que no confirmaron, y de ellos los caducados', async () => {
+    const { base, llamadas } = espia([{ total: 5, caducados: 2 }]);
+    expect(await pendientes(base)).toEqual({ total: 5, caducados: 2 });
+    expect(plano(llamadas[0].sql)).toContain('where pendiente = 1');
+  });
+
+  /** `sum` de una tabla sin filas devuelve NULL en SQLite, no cero. */
+  it('no devuelve null cuando no hay ninguno', async () => {
+    const { base } = espia([{ total: 0, caducados: null }]);
+    expect(await pendientes(base)).toEqual({ total: 0, caducados: 0 });
+  });
+});

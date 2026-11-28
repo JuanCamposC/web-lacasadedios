@@ -42,16 +42,40 @@ import { fileURLToPath } from 'node:url';
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const normalizada = raiz.replace(/^([a-z]):/, (_, unidad) => `${unidad.toUpperCase()}:`);
 
-// Lo que venga después de `npm test` se pasa tal cual: `npm test -- --watch`,
-// un archivo suelto, `-t` para filtrar por nombre.
-const argumentos = ['vitest', 'run', ...process.argv.slice(2)];
+/*
+ * vitest se lanza con el propio Node y su archivo de entrada, no con `npx`.
+ *
+ * La primera versión de esto usaba `spawn('npx', …, { shell: true })`, porque
+ * en Windows `npx` es un `.cmd` y sin shell no se encuentra. Funcionaba, pero
+ * Node avisaba en cada ejecución (DEP0190): con `shell: true` los argumentos
+ * se PEGAN en una cadena de texto sin escapar. Un archivo de prueba con un
+ * espacio en el nombre se partía en dos, y cualquier carácter que la shell
+ * interprete —`&`, `|`, `>`— se ejecutaba en vez de pasarse.
+ *
+ * Así no hay shell en medio: `process.execPath` es el mismo Node que corre este
+ * archivo, y los argumentos viajan como lista, tal cual, sin interpretar nada.
+ * Funciona igual en los tres sistemas y no depende de que `npx` esté en el PATH.
+ */
+const vitest = resolve(normalizada, 'node_modules', 'vitest', 'vitest.mjs');
 
-const hijo = spawn('npx', argumentos, {
+/*
+ * Lo que venga después de `npm test` se pasa tal cual: un archivo suelto, `-t`
+ * para filtrar por nombre.
+ *
+ * Con una excepción: `--watch`. La versión anterior mandaba siempre `vitest run`
+ * y le añadía detrás lo que viniera, así que `npm run test:watch` terminaba en
+ * `vitest run --watch`, que se contradice: `run` es «una vez y salir». Si se
+ * pide mirar, se llama a `vitest` sin subcomando, que es su modo de vigilancia.
+ */
+const pedidos = process.argv.slice(2);
+const mirar = pedidos.includes('--watch') || pedidos.includes('-w');
+const argumentos = mirar
+  ? pedidos.filter((a) => a !== '--watch' && a !== '-w')
+  : ['run', ...pedidos];
+
+const hijo = spawn(process.execPath, [vitest, ...argumentos], {
   cwd: normalizada,
   stdio: 'inherit',
-  // `shell: true` hace falta en Windows: `npx` es un .cmd y sin esto
-  // `spawn` no lo encuentra.
-  shell: true,
 });
 
 hijo.on('exit', (codigo, senal) => {
