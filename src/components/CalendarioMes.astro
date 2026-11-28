@@ -1,0 +1,216 @@
+---
+import { Icon } from 'astro-icon/components';
+import { templos, estiloDistintivo } from '../data/templos';
+import { horaCorta } from '../lib/hora';
+import {
+  casillasDe,
+  comoParametro,
+  DIAS_LUNES,
+  enPalabras,
+  fechaDeEvento,
+  mesAnterior,
+  mesSiguiente,
+  reunionesEnFecha,
+  type Mes,
+} from '../lib/calendario';
+import type { FilaReunion } from '../lib/reuniones';
+import type { Evento } from '../lib/datos';
+
+/**
+ * El mes, en rejilla.
+ *
+ * ── QUÉ PESA Y QUÉ ACOMPAÑA ─────────────────────────────────────────────────
+ * Los eventos son lo que se viene a ver: van en bloque, con el color de su
+ * templo y su título legible. Las reuniones de cada semana van debajo, tenues
+ * y solo con la hora: están para que un día con reunión no parezca vacío, no
+ * para leerse una por una. Si las dos cosas pesaran igual, en un mes normal
+ * cada casilla llevaría cinco reuniones y el congreso se perdería entre ellas
+ * — que es exactamente lo que un calendario tiene que evitar.
+ *
+ * Para el detalle de las reuniones está /horarios, y el pie lo dice.
+ *
+ * ── EL ESTADO DE CADA REUNIÓN ES EL DE SU DÍA ───────────────────────────────
+ * No el de hoy. Una suspendida hasta el día 8 sale tachada el 4 y normal el
+ * 11. Lo resuelve `reunionesEnFecha`; el porqué está ahí.
+ */
+interface Props {
+  mes: Mes;
+  eventos: Evento[];
+  reuniones: FilaReunion[];
+  /** Hoy en Chile, «AAAA-MM-DD», para marcar la casilla. */
+  hoy: string;
+  /** Lo que haya en la dirección, para que el filtro por templo sobreviva. */
+  templo?: string | null;
+}
+const { mes, eventos, reuniones, hoy, templo } = Astro.props;
+
+const casillas = casillasDe(mes);
+
+/** Los eventos de cada día, ya agrupados: la rejilla no busca dentro del bucle. */
+const porDia = new Map<string, Evento[]>();
+for (const e of eventos) {
+  const f = fechaDeEvento(e.fecha);
+  const lista = porDia.get(f);
+  if (lista) lista.push(e);
+  else porDia.set(f, [e]);
+}
+
+const colorDe = (slug: string) => templos.find((t) => t.slug === slug);
+
+/** La dirección de otro mes, conservando la vista y el filtro. */
+function enlaceMes(m: Mes): string {
+  const p = new URLSearchParams({ vista: 'calendario', mes: comoParametro(m) });
+  if (templo) p.set('templo', templo);
+  return `/eventos?${p}`;
+}
+
+const anterior = mesAnterior(mes);
+const siguiente = mesSiguiente(mes);
+---
+
+<div class="panel overflow-hidden">
+  <!-- Cabecera: el mes y cómo moverse -->
+  <header class="flex items-center justify-between gap-3 border-b border-base-300 bg-base-200/60 px-3 py-2.5">
+    <a
+      href={enlaceMes(anterior)}
+      rel="prev"
+      class="btn btn-ghost btn-sm gap-1.5"
+      aria-label={`Ver ${enPalabras(anterior)}`}
+    >
+      <Icon name="lucide:chevron-left" class="h-4 w-4" />
+      <span class="hidden sm:inline">{enPalabras(anterior).split(' de ')[0]}</span>
+    </a>
+
+    {
+      /* `first-letter:uppercase` y NO `capitalize`: aquella pone mayúscula en
+         CADA palabra y el título salía «Diciembre De 2026». En castellano el
+         mes va en minúscula y solo se levanta la primera letra por ir al
+         principio de una frase. */
+    }
+    <h3 class="font-display text-lg first-letter:uppercase md:text-xl">{enPalabras(mes)}</h3>
+
+    <a
+      href={enlaceMes(siguiente)}
+      rel="next"
+      class="btn btn-ghost btn-sm gap-1.5"
+      aria-label={`Ver ${enPalabras(siguiente)}`}
+    >
+      <span class="hidden sm:inline">{enPalabras(siguiente).split(' de ')[0]}</span>
+      <Icon name="lucide:chevron-right" class="h-4 w-4" />
+    </a>
+  </header>
+
+  <!-- Los nombres de los días. En el teléfono solo la inicial: «Mié» en una
+       columna de 45 px se corta, y una letra se entiende igual. -->
+  <div class="grid grid-cols-7 border-b border-base-300 bg-base-200/30">
+    {
+      DIAS_LUNES.map((d) => (
+        <div class="font-data px-1 py-1.5 text-center text-[0.65rem] font-bold uppercase tracking-wider text-base-content/60">
+          <span class="sm:hidden">{d.charAt(0)}</span>
+          <span class="hidden sm:inline">{d}</span>
+        </div>
+      ))
+    }
+  </div>
+
+  <div class="grid grid-cols-7">
+    {
+      casillas.map((c) => {
+        const delDia = c.delMes ? (porDia.get(c.fecha) ?? []) : [];
+        const semanales = c.delMes ? reunionesEnFecha(reuniones, c.fecha) : [];
+        const esHoy = c.fecha === hoy;
+
+        return (
+          <div
+            class={`min-h-[5.5rem] border-b border-r border-base-300/70 p-1 last:border-r-0 sm:min-h-[7rem] sm:p-1.5 ${
+              c.delMes ? '' : 'bg-base-200/40'
+            } ${esHoy ? 'bg-accent/5 ring-1 ring-inset ring-accent/40' : ''}`}
+          >
+            <div
+              class={`font-data mb-1 text-right text-xs ${
+                esHoy
+                  ? 'font-bold text-accent'
+                  : c.delMes
+                    ? 'text-base-content/60'
+                    : 'text-base-content/30'
+              }`}
+            >
+              {c.numero}
+            </div>
+
+            {/* ── Los eventos: lo que se viene a ver ──────────────────────
+                Siete columnas en un teléfono son unos 50 px cada una, y ahí un
+                título se corta en «Bautis». Así que a ese ancho la casilla
+                responde a «¿qué días hay algo?» —la hora, en el color de su
+                templo— y el «¿qué es?» lo responde la vista de lista, que está
+                a un toque. Desde `sm` cabe el título y se pone entero. */}
+            {delDia.map((e) => {
+              const t = colorDe(e.templo);
+              return (
+                <a
+                  href={`/eventos?e=${encodeURIComponent(e.slug ?? e.id)}`}
+                  data-etiqueta={e.templo}
+                  class="mb-1 block rounded px-1 py-0.5 text-center text-[0.6rem] leading-tight text-white transition hover:brightness-110 sm:px-1.5 sm:py-1 sm:text-left sm:text-xs"
+                  style={t ? `background:${t.color.fondo}` : 'background:var(--color-primary)'}
+                  title={`${e.titulo}${e.lugar ? ' · ' + e.lugar : ''}`}
+                >
+                  <span class="font-data block font-bold">{horaCorta(e.fecha)}</span>
+                  <span class="hidden font-medium sm:line-clamp-2 sm:block">{e.titulo}</span>
+                </a>
+              );
+            })}
+
+            {/* Las de cada semana: contexto, no titular. Como mucho tres, y el
+                resto contado — una casilla con los cuatro templos llevaría
+                cinco líneas y taparía el evento de ese día.
+
+                Ocultas en el teléfono: a 50 px de ancho dejan de ser un fondo
+                discreto y se convierten en lo único que se ve. */}
+            {semanales.slice(0, 3).map((r) => (
+              <div
+                class={`font-data hidden items-center gap-1 text-[0.62rem] leading-snug text-base-content/45 sm:flex ${
+                  r.estado === 'suspendida' ? 'line-through opacity-60' : ''
+                }`}
+                title={`${r.hora} · ${r.nombre}${r.aviso ? ' — ' + r.aviso : ''}`}
+              >
+                <span
+                  class="inline-block h-1 w-1 shrink-0 rounded-full"
+                  style={colorDe(r.templo) ? `background:${colorDe(r.templo)!.color.fondo}` : ''}
+                  aria-hidden="true"
+                />
+                {r.hora}
+                {r.marca && <span class="truncate text-accent">· {r.marca}</span>}
+              </div>
+            ))}
+            {semanales.length > 3 && (
+              <div class="font-data hidden text-[0.62rem] text-base-content/40 sm:block">
+                +{semanales.length - 3} más
+              </div>
+            )}
+          </div>
+        );
+      })
+    }
+  </div>
+
+  <footer class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-base-300 bg-base-200/40 px-3 py-2 text-xs text-base-content/70">
+    <span class="flex flex-wrap items-center gap-x-3 gap-y-1">
+      {
+        templos.map((t) => (
+          <span class="flex items-center gap-1.5">
+            <span
+              class="inline-block h-2.5 w-2.5 rounded-sm"
+              style={estiloDistintivo(t) + `;background:${t.color.fondo}`}
+              aria-hidden="true"
+            />
+            {t.short}
+          </span>
+        ))
+      }
+    </span>
+    <span>
+      <span class="hidden sm:inline">Las horas tenues son las reuniones de cada semana · </span>
+      <a href="/horarios" class="link link-primary">ver los horarios</a>
+    </span>
+  </footer>
+</div>

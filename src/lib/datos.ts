@@ -466,3 +466,57 @@ export function avisoVigente(a: Ajustes | null, ahoraIso: string = ahora()): boo
 export function ahora(): string {
   return new Date().toISOString().slice(0, 19) + 'Z';
 }
+
+/**
+ * Los eventos publicados de un tramo de fechas, para el calendario del mes.
+ *
+ * Va aparte de `eventosProximos` porque la pregunta es otra: aquella trae «lo
+ * que viene» desde ahora, y esta «lo que cae en diciembre», que incluye lo que
+ * ya pasó si el mes que se está mirando es pasado. Un calendario que escondiera
+ * los días de atrás del mes en curso tendría medio mes en blanco.
+ *
+ * Los dos extremos son instantes ISO y el de cierre es EXCLUSIVO: así quien
+ * llama pasa el primer instante del mes siguiente y no tiene que pensar si
+ * febrero tiene 28 o 29.
+ */
+export function eventosEntre(
+  base: Base,
+  desde: string,
+  hasta: string,
+  filtro: Filtro = {},
+): Promise<Evento[]> {
+  const { donde, valores, limite, desplazamiento } = publicados({ ...filtro, limite: 100 });
+  return listar<Evento>(
+    base,
+    `select id, titulo, slug, fecha, lugar, descripcion, imagen_clave, imagen_social_clave, imagen_alt, templo, duracion_min
+       from eventos
+      where ${donde} and fecha >= ? and fecha < ?
+      order by fecha asc
+      limit ? offset ?`,
+    [...valores, desde, hasta, limite, desplazamiento],
+  );
+}
+
+/**
+ * Las reuniones publicadas SIN resolver su estado.
+ *
+ * `reunionesPublicadas` devuelve cada una con el estado que rige HOY, que es lo
+ * que necesitan /horarios y las fichas de templo. El calendario necesita lo
+ * contrario: la fila cruda, para preguntarle su estado en cada uno de los
+ * treinta días del mes. Una reunión suspendida hasta el día 8 está suspendida
+ * el 4 y normal el 11, y pintarla igual los dos días sería mentir en uno.
+ *
+ * Quien use esto tiene que pasar cada fila por `vigente(fila, fecha)`. No se
+ * devuelven ya resueltas porque la resolución depende de la fecha, y acá
+ * todavía no se sabe cuál.
+ */
+export function reunionesCrudas(base: Base): Promise<FilaReunion[]> {
+  return listar<FilaReunion>(
+    base,
+    `select id, templo, dia, hora, nombre, estado, aviso, aviso_hasta, hora_aviso, marca, marca_regla
+       from reuniones
+      where publicado = 1 and borrado_en is null
+      order by dia asc, hora asc`,
+    [],
+  );
+}
