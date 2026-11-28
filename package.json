@@ -12,10 +12,10 @@
     "check": "astro check",
     "format": "prettier --write \"src/**/*.{ts,astro,css}\" \"scripts/**/*.mjs\" \"*.{json,mjs}\"",
     "format:check": "prettier --check \"src/**/*.{ts,astro,css}\" \"scripts/**/*.mjs\" \"*.{json,mjs}\"",
-    "test": "vitest run",
+    "test": "node scripts/probar.mjs",
     "publicar": "npm run build && wrangler deploy",
     "respaldo": "node scripts/respaldo.mjs",
-    "test:watch": "vitest",
+    "test:watch": "node scripts/probar.mjs --watch",
     "textos": "npm run build && node scripts/textos.mjs"
   },
   "dependencies": {
