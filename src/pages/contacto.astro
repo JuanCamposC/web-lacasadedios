@@ -48,9 +48,8 @@ if (Astro.request.method === 'POST') {
     eyebrow="Hablemos"
     title="Contacto"
     subtitle="Estamos para escucharte. Escríbenos y te respondemos lo antes posible."
-    height="min-h-[46vh]"
-    {/* Sube el encuadre para que la Biblia abierta sobre el púlpito quede
-        entera y por encima del título, en vez de partida contra el menú. */}
+    height="min-h-[46vh]" /* Sube el encuadre para que la Biblia abierta sobre el púlpito quede
+        entera y por encima del título, en vez de partida contra el menú. */
     posicion="50% 35%"
   />
 
@@ -83,21 +82,19 @@ if (Astro.request.method === 'POST') {
                 </div>
               </li>
 
-              {
-                hasPhone && (
-                  <li class="flex items-start gap-3">
-                    <span class="tile">
-                      <Icon name="lucide:phone" class="h-5 w-5" />
-                    </span>
-                    <div>
-                      <p class="text-xs uppercase tracking-wider text-base-content/70">Teléfono</p>
-                      <a href={`tel:${CONTACT.phoneHref}`} class="font-medium hover:text-primary">
-                        {CONTACT.phone}
-                      </a>
-                    </div>
-                  </li>
-                )
-              }
+              {hasPhone && (
+                <li class="flex items-start gap-3">
+                  <span class="tile">
+                    <Icon name="lucide:phone" class="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p class="text-xs uppercase tracking-wider text-base-content/70">Teléfono</p>
+                    <a href={`tel:${CONTACT.phoneHref}`} class="font-medium hover:text-primary">
+                      {CONTACT.phone}
+                    </a>
+                  </div>
+                </li>
+              )}
 
               <li class="flex items-start gap-3">
                 <span class="tile tile-accent">
@@ -107,9 +104,9 @@ if (Astro.request.method === 'POST') {
                   <p class="text-xs uppercase tracking-wider text-base-content/70">
                     Horarios de reuniones
                   </p>
-                  <a href="/horarios" class="font-medium hover:text-primary"
-                    >Ver la semana completa</a
-                  >
+                  <a href="/horarios" class="font-medium hover:text-primary">
+                    Ver la semana completa
+                  </a>
                 </div>
               </li>
             </ul>
@@ -117,20 +114,18 @@ if (Astro.request.method === 'POST') {
             <div class="mt-7 border-t border-base-300 pt-6">
               <p class="mb-3 text-xs uppercase tracking-wider text-base-content/70">Síguenos</p>
               <div class="flex flex-col gap-2">
-                {
-                  SOCIAL.map((s) => (
-                    <a
-                      href={s.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="flex items-center gap-3 rounded-xl border border-base-300 px-4 py-2.5 text-sm transition hover:border-primary hover:text-primary"
-                    >
-                      <Icon name={s.icon} class="h-5 w-5 shrink-0 text-accent" />
-                      <span class="min-w-0 flex-1 truncate">{s.handle}</span>
-                      <Icon name="lucide:external-link" class="h-4 w-4 shrink-0 opacity-50" />
-                    </a>
-                  ))
-                }
+                {SOCIAL.map((s) => (
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center gap-3 rounded-xl border border-base-300 px-4 py-2.5 text-sm transition hover:border-primary hover:text-primary"
+                  >
+                    <Icon name={s.icon} class="h-5 w-5 shrink-0 text-accent" />
+                    <span class="min-w-0 flex-1 truncate">{s.handle}</span>
+                    <Icon name="lucide:external-link" class="h-4 w-4 shrink-0 opacity-50" />
+                  </a>
+                ))}
               </div>
             </div>
           </div>
@@ -149,52 +144,50 @@ if (Astro.request.method === 'POST') {
       />
 
       <div class="mt-12 grid gap-4 sm:grid-cols-2">
-        {
-          templos.map((t, i) => (
-            <Reveal delay={(i % 2) * 80} class="h-full">
-              <div class="panel panel-lift flex h-full flex-col p-6">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 class="font-display text-xl">{t.short}</h3>
-                    <p class="mt-1 text-sm text-base-content/70">{t.address}</p>
-                    <p class="text-sm text-base-content/70">{t.region}</p>
-                    {/* Aparece solo cuando el buzón existe: ver `emailListo`
+        {templos.map((t, i) => (
+          <Reveal delay={(i % 2) * 80} class="h-full">
+            <div class="panel panel-lift flex h-full flex-col p-6">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h3 class="font-display text-xl">{t.short}</h3>
+                  <p class="mt-1 text-sm text-base-content/70">{t.address}</p>
+                  <p class="text-sm text-base-content/70">{t.region}</p>
+                  {/* Aparece solo cuando el buzón existe: ver `emailListo`
                         en src/data/templos.ts. */}
-                    {correoDe(t.leader) && (
-                      <a
-                        href={`mailto:${correoDe(t.leader)}`}
-                        class="mt-2 inline-flex items-center gap-1.5 text-sm break-all text-base-content/75 hover:text-primary"
-                      >
-                        <Icon name="lucide:mail" class="h-3.5 w-3.5 shrink-0 text-accent" />
-                        {correoDe(t.leader)}
-                      </a>
-                    )}
-                    {correoDe(t.leader) && t.leader.correoNota && (
-                      <p class="mt-1 text-xs text-base-content/70">{t.leader.correoNota}</p>
-                    )}
-                  </div>
-                  {t.matriz && <span class="sello shrink-0">Matriz</span>}
+                  {correoDe(t.leader) && (
+                    <a
+                      href={`mailto:${correoDe(t.leader)}`}
+                      class="mt-2 inline-flex items-center gap-1.5 text-sm break-all text-base-content/75 hover:text-primary"
+                    >
+                      <Icon name="lucide:mail" class="h-3.5 w-3.5 shrink-0 text-accent" />
+                      {correoDe(t.leader)}
+                    </a>
+                  )}
+                  {correoDe(t.leader) && t.leader.correoNota && (
+                    <p class="mt-1 text-xs text-base-content/70">{t.leader.correoNota}</p>
+                  )}
                 </div>
-                <div class="mt-5 flex flex-wrap gap-2 pt-1">
-                  <a href={`/templos/${t.slug}`} class="btn btn-sm btn-primary gap-1.5">
-                    Ver templo
-                  </a>
-                  <a href={`/horarios?templo=${t.slug}`} class="btn btn-sm btn-ghost gap-1.5">
-                    <Icon name="lucide:clock" class="h-4 w-4" /> Horarios
-                  </a>
-                  <a
-                    href={t.mapLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="btn btn-sm btn-ghost gap-1.5"
-                  >
-                    <Icon name="lucide:navigation" class="h-4 w-4" /> Cómo llegar
-                  </a>
-                </div>
+                {t.matriz && <span class="sello shrink-0">Matriz</span>}
               </div>
-            </Reveal>
-          ))
-        }
+              <div class="mt-5 flex flex-wrap gap-2 pt-1">
+                <a href={`/templos/${t.slug}`} class="btn btn-sm btn-primary gap-1.5">
+                  Ver templo
+                </a>
+                <a href={`/horarios?templo=${t.slug}`} class="btn btn-sm btn-ghost gap-1.5">
+                  <Icon name="lucide:clock" class="h-4 w-4" /> Horarios
+                </a>
+                <a
+                  href={t.mapLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="btn btn-sm btn-ghost gap-1.5"
+                >
+                  <Icon name="lucide:navigation" class="h-4 w-4" /> Cómo llegar
+                </a>
+              </div>
+            </div>
+          </Reveal>
+        ))}
       </div>
     </div>
   </section>

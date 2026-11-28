@@ -34,9 +34,9 @@ const s = {
       >
         <span class="flex items-center gap-3">
           <span
-            class={s.live_enabled
-              ? 'tile tile-lg bg-error/15 text-error'
-              : 'tile tile-lg tile-muted'}
+            class={
+              s.live_enabled ? 'tile tile-lg bg-error/15 text-error' : 'tile tile-lg tile-muted'
+            }
           >
             <Icon name="lucide:radio" class="h-6 w-6" />
           </span>
@@ -65,18 +65,17 @@ const s = {
           class="input input-bordered w-full"
         />
         <span class="mt-1 block text-xs text-base-content/70">
-          Sirve <code>youtube.com/live/…</code> —lo que entrega «Compartir» en una transmisión—, <code
-            >watch?v=…</code
-          > y <code>youtu.be/…</code>. NO sirve
+          Sirve <code>youtube.com/live/…</code> —lo que entrega «Compartir» en una transmisión—,{' '}
+          <code>watch?v=…</code> y <code>youtu.be/…</code>. NO sirve
           <code>/@canal/live</code>: esa dirección no lleva el identificador dentro y el reproductor
           no se puede incrustar.
         </span>
       </label>
 
       <label class="block">
-        <span class="mb-1.5 block text-sm font-medium"
-          >Título <span class="text-base-content/70">(opcional)</span></span
-        >
+        <span class="mb-1.5 block text-sm font-medium">
+          Título <span class="text-base-content/70">(opcional)</span>
+        </span>
         <input
           type="text"
           name="live_title"
@@ -123,12 +122,16 @@ const s = {
           </li>
           <li class="flex items-start gap-2">
             <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
-            La página <a href="/en-vivo" class="link link-primary">/en-vivo</a> reproduce la transmisión.
+            La página{' '}
+            <a href="/en-vivo" class="link link-primary">
+              /en-vivo
+            </a>{' '}
+            reproduce la transmisión.
           </li>
           <li class="flex items-start gap-2">
             <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
-            Quien entre al sitio ve un aviso emergente con el enlace. Si además hay un aviso programado,
-            el del vivo va primero y el otro sale detrás.
+            Quien entre al sitio ve un aviso emergente con el enlace. Si además hay un aviso
+            programado, el del vivo va primero y el otro sale detrás.
           </li>
           <li class="flex items-start gap-2">
             <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
@@ -136,7 +139,8 @@ const s = {
           </li>
           <li class="flex items-start gap-2">
             <Icon name="lucide:alert-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-            Acuérdate de apagarlo al terminar: si no, el sitio sigue anunciando un vivo que ya acabó.
+            Acuérdate de apagarlo al terminar: si no, el sitio sigue anunciando un vivo que ya
+            acabó.
           </li>
         </ul>
       </div>

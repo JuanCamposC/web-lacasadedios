@@ -86,35 +86,30 @@ const t = TEXTOS[estado];
 <Layout
   title="Baja del boletín · La Casa de Dios"
   description="Cancela tu suscripción al boletín de La Casa de Dios."
-  noindex
-  {/* Sin la banda del boletín: quien acaba de darse de baja no necesita un
-      formulario pidiéndole el correo dos bloques más abajo. */}
+  noindex /* Sin la banda del boletín: quien acaba de darse de baja no necesita un
+      formulario pidiéndole el correo dos bloques más abajo. */
   sinBoletin
 >
   <section class="section flex min-h-[70vh] items-center bg-base-100">
     <div class="wrap-narrow">
       <EmptyState icon={t.icono} title={t.titulo} text={t.texto}>
-        {
-          estado === 'confirmar' && (
-            <form method="post" class="contents">
-              <input type="hidden" name="t" value={token} />
-              <button type="submit" class="btn btn-primary gap-2">
-                <Icon name="lucide:mail-x" class="h-5 w-5" /> Darme de baja
-              </button>
-            </form>
-          )
-        }
+        {estado === 'confirmar' && (
+          <form method="post" class="contents">
+            <input type="hidden" name="t" value={token} />
+            <button type="submit" class="btn btn-primary gap-2">
+              <Icon name="lucide:mail-x" class="h-5 w-5" /> Darme de baja
+            </button>
+          </form>
+        )}
         <a href="/" class={`btn gap-2 ${estado === 'confirmar' ? 'btn-ghost' : 'btn-primary'}`}>
           <Icon name="lucide:home" class="h-5 w-5" />
           {estado === 'confirmar' ? 'Seguir recibiéndolo' : 'Ir al inicio'}
         </a>
-        {
-          estado === 'listo' && (
-            <a href="/contacto" class="btn btn-ghost gap-2">
-              <Icon name="lucide:message-square" class="h-5 w-5" /> Contarnos por qué
-            </a>
-          )
-        }
+        {estado === 'listo' && (
+          <a href="/contacto" class="btn btn-ghost gap-2">
+            <Icon name="lucide:message-square" class="h-5 w-5" /> Contarnos por qué
+          </a>
+        )}
       </EmptyState>
     </div>
   </section>

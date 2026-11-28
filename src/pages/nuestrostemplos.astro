@@ -75,8 +75,7 @@ const lineaSuspendidas = (lista: Reunion[]) =>
     <div
       class="mx-auto mt-3 h-[3px] w-12 rounded-full bg-gradient-to-r from-[#2f4156] to-[#d4a72c]"
       aria-hidden="true"
-    >
-    </div>
+    ></div>
   </header>
 
   <section class="mt-7" aria-labelledby="titulo-templos">
@@ -88,70 +87,70 @@ const lineaSuspendidas = (lista: Reunion[]) =>
     </h2>
 
     <ul class="flex flex-col gap-3">
-      {
-        fichas.map(({ templo: t, propias, proxima }) => (
-          <li>
-            <a
-              href={`/templos/${t.slug}`}
-              class="enlace-boton overflow-hidden py-3.5 pl-5"
-              style={`--t-color:${COLOR_TEMPLO[t.slug] ?? '#53697e'}`}
-              data-reuniones={JSON.stringify(propias)}
-            >
-              {/* El color del templo: con una franja por templo, al bajar la
+      {fichas.map(({ templo: t, propias, proxima }) => (
+        <li>
+          <a
+            href={`/templos/${t.slug}`}
+            class="enlace-boton overflow-hidden py-3.5 pl-5"
+            style={`--t-color:${COLOR_TEMPLO[t.slug] ?? '#53697e'}`}
+            data-reuniones={JSON.stringify(propias)}
+          >
+            {/* El color del templo: con una franja por templo, al bajar la
                   lista se distingue uno de otro sin leer. */}
-              <span class="absolute inset-y-0 left-0 w-2 bg-[var(--t-color)]" aria-hidden="true" />
-              <span class="min-w-0 flex-1">
-                <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span class="font-display text-[1.2rem] leading-tight">{t.short}</span>
-                  {t.matriz && (
-                    <span class="font-data rounded-full bg-[#d4a72c] px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-wider text-[#2f4156]">
-                      Matriz
-                    </span>
-                  )}
-                </span>
-                <span class="e-suave mt-0.5 block text-sm">{t.address}</span>
+            <span class="absolute inset-y-0 left-0 w-2 bg-[var(--t-color)]" aria-hidden="true" />
+            <span class="min-w-0 flex-1">
+              <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span class="font-display text-[1.2rem] leading-tight">{t.short}</span>
+                {t.matriz && (
+                  <span class="font-data rounded-full bg-[#d4a72c] px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-wider text-[#2f4156]">
+                    Matriz
+                  </span>
+                )}
+              </span>
+              <span class="e-suave mt-0.5 block text-sm">{t.address}</span>
 
-                <span class="mt-2.5 block">
-                  <span
-                    class="font-data block text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#53697e]"
-                    data-etiqueta
-                  >
-                    {proxima.enCurso ? 'Ahora mismo' : 'Próxima reunión'}
-                  </span>
-                  <span class="mt-0.5 block font-semibold" data-linea>
-                    {proxima.enCurso
-                      ? `En curso · ${proxima.enCurso.nombre}`
-                      : proxima.reunion
-                        ? `${proxima.cuando} ${proxima.reunion.hora} · ${proxima.reunion.nombre}`
-                        : 'Consulta los horarios'}
-                  </span>
-                  <span
-                    class="mt-1 block text-sm font-medium text-[#8a5a00]"
-                    data-cambio
-                    hidden={!proxima.reunion?.aviso}
-                  >
-                    {proxima.reunion?.aviso}
-                  </span>
-                  <span
-                    class="mt-1 block text-sm font-medium text-[#b42318]"
-                    data-suspendidas
-                    hidden={proxima.suspendidas.length === 0}
-                  >
-                    {lineaSuspendidas(proxima.suspendidas)}
-                  </span>
+              <span class="mt-2.5 block">
+                <span
+                  class="font-data block text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#53697e]"
+                  data-etiqueta
+                >
+                  {proxima.enCurso ? 'Ahora mismo' : 'Próxima reunión'}
+                </span>
+                <span class="mt-0.5 block font-semibold" data-linea>
+                  {proxima.enCurso
+                    ? `En curso · ${proxima.enCurso.nombre}`
+                    : proxima.reunion
+                      ? `${proxima.cuando} ${proxima.reunion.hora} · ${proxima.reunion.nombre}`
+                      : 'Consulta los horarios'}
+                </span>
+                <span
+                  class="mt-1 block text-sm font-medium text-[#8a5a00]"
+                  data-cambio
+                  hidden={!proxima.reunion?.aviso}
+                >
+                  {proxima.reunion?.aviso}
+                </span>
+                <span
+                  class="mt-1 block text-sm font-medium text-[#b42318]"
+                  data-suspendidas
+                  hidden={proxima.suspendidas.length === 0}
+                >
+                  {lineaSuspendidas(proxima.suspendidas)}
                 </span>
               </span>
-              <Icon name="lucide:chevron-right" class="enlace-flecha" aria-hidden="true" />
-            </a>
-          </li>
-        ))
-      }
+            </span>
+            <Icon name="lucide:chevron-right" class="enlace-flecha" aria-hidden="true" />
+          </a>
+        </li>
+      ))}
     </ul>
   </section>
 
   <section class="mt-7 flex flex-col gap-3" aria-label="Más enlaces">
     <a href="/estudio-biblico" class="enlace-boton" style="--acento:#d4a72c">
-      <span class="enlace-icono"><Icon name="lucide:book-open" class="h-5 w-5" /></span>
+      <span class="enlace-icono">
+        <Icon name="lucide:book-open" class="h-5 w-5" />
+      </span>
       <span class="min-w-0 flex-1">
         <span class="enlace-nombre">Instituto Bíblico Bet-El</span>
         <span class="e-suave block text-sm">Todos los lunes · escucha los estudios</span>
@@ -166,7 +165,9 @@ const lineaSuspendidas = (lista: Reunion[]) =>
       class="enlace-boton"
       style="--acento:#a44d4d"
     >
-      <span class="enlace-icono"><Icon name="lucide:youtube" class="h-5 w-5" /></span>
+      <span class="enlace-icono">
+        <Icon name="lucide:youtube" class="h-5 w-5" />
+      </span>
       <span class="min-w-0 flex-1">
         <span class="enlace-nombre">YouTube</span>
         <span class="e-suave block text-sm">@lacasadedioscl</span>
@@ -175,7 +176,9 @@ const lineaSuspendidas = (lista: Reunion[]) =>
     </a>
 
     <a href="/" class="enlace-boton" style="--acento:#4c6fa6">
-      <span class="enlace-icono"><Icon name="lucide:globe" class="h-5 w-5" /></span>
+      <span class="enlace-icono">
+        <Icon name="lucide:globe" class="h-5 w-5" />
+      </span>
       <span class="min-w-0 flex-1">
         <span class="enlace-nombre">Nuestra web</span>
         <span class="e-suave block text-sm">lacasadedios.cl</span>

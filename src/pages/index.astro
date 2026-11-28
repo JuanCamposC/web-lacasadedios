@@ -60,11 +60,8 @@ import { IMG } from '../assets/images';
          marca/logo-blanco.png (proporción 4,437 contra 4,420) pero vectorial,
          que a este tamaño se nota.
   ══════════════════════════════════════════════════════════════════════ -->
-  <section
-    class="on-dark relative -mt-16 flex min-h-[85vh] items-center overflow-hidden lg:min-h-[clamp(32rem,42vw,52rem)]"
-  >
-    {
-      /* La portada se sirve hasta su tamaño original, sin recortar calidad.
+  <section class="on-dark relative -mt-16 flex min-h-[85vh] items-center overflow-hidden lg:min-h-[clamp(32rem,42vw,52rem)]">
+    {/* La portada se sirve hasta su tamaño original, sin recortar calidad.
 
         Antes el mayor era 1600 px. En una pantalla de retina —casi cualquier
         portátil moderno y todos los teléfonos— el navegador necesita el doble de
@@ -77,8 +74,7 @@ import { IMG } from '../assets/images';
         de más. El navegador elige solo: un teléfono sigue bajando 768 o 1280.
 
         `quality` sube a 90 (por omisión es 80) solo en esta imagen. Es la única
-        del sitio que se ve a pantalla completa y sin nada que la tape. */
-    }
+        del sitio que se ve a pantalla completa y sin nada que la tape. */}
     <Image
       src={IMG.inicioPortada}
       alt=""
@@ -115,11 +111,11 @@ import { IMG } from '../assets/images';
 
     <div class="rule absolute inset-x-0 bottom-0" aria-hidden="true"></div>
 
-    <div
-      class="wrap relative z-10 grid items-center gap-10 px-4 pb-20 pt-28 lg:grid-cols-12 lg:gap-8"
-    >
+    <div class="wrap relative z-10 grid items-center gap-10 px-4 pb-20 pt-28 lg:grid-cols-12 lg:gap-8">
       <div class="lg:col-span-8">
-        <p class="entra eyebrow text-accent" style="--i:0">Iglesia</p>
+        <p class="entra eyebrow text-accent" style="--i:0">
+          Iglesia
+        </p>
 
         <h1 class="entra mt-5" style="--i:1">
           <img
@@ -161,9 +157,7 @@ import { IMG } from '../assets/images';
   <section id="nosotros" class="section bg-base-100">
     <div class="wrap">
       <div class="grid gap-5 md:grid-cols-3 md:grid-rows-2">
-        <Reveal
-          class="on-dark group relative col-span-1 min-h-[22rem] overflow-hidden rounded-xl md:col-span-2 md:row-span-2"
-        >
+        <Reveal class="on-dark group relative col-span-1 min-h-[22rem] overflow-hidden rounded-xl md:col-span-2 md:row-span-2">
           <Image
             src={IMG.inicioMosaico}
             alt="El púlpito del templo con una Biblia abierta, y las sillas detrás"
@@ -171,12 +165,10 @@ import { IMG } from '../assets/images';
             sizes="(max-width:768px) 100vw, 66vw"
             class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
-          {
-            /* El texto se apoya ABAJO, así que el velo va al revés: oscuro en el
+          {/* El texto se apoya ABAJO, así que el velo va al revés: oscuro en el
               pie y transparente arriba. Los valores y la medición que los
               sostiene están en `.velo-pie`, en global.css, con los otros tres
-              velos del sitio. */
-          }
+              velos del sitio. */}
           <div class="velo-pie absolute inset-0"></div>
           <div class="relative flex h-full flex-col justify-end p-8 text-white">
             <span class="eyebrow mb-3 text-accent">Sobre nosotros</span>
@@ -218,8 +210,10 @@ import { IMG } from '../assets/images';
           <div class="flex items-baseline gap-2">
             <span
               data-count={templos.length}
-              class="font-data text-5xl font-bold leading-none text-primary">0</span
+              class="font-data text-5xl font-bold leading-none text-primary"
             >
+              0
+            </span>
             <Icon name="lucide:map-pin" class="h-6 w-6 text-accent" />
           </div>
           <h2 class="mt-3 text-2xl">Templos</h2>
@@ -290,36 +284,30 @@ import { IMG } from '../assets/images';
                repetir «Lunes · 20:00 h» en cada fila no informaba de nada: solo
                tapaba lo único que de verdad cambia de un templo a otro, que es
                si se va o si se conecta. -->
-          <p
-            class="mb-4 flex items-center gap-2 font-data text-lg font-bold tracking-wide text-accent"
-          >
+          <p class="mb-4 flex items-center gap-2 font-data text-lg font-bold tracking-wide text-accent">
             <Icon name="lucide:calendar-clock" class="h-5 w-5" />
             {ESTUDIO.cuando}, 20:00 h
           </p>
 
-          <ul
-            class="divide-y divide-white/15 rounded-xl border border-white/15 bg-white/5 backdrop-blur-sm"
-          >
-            {
-              templos
-                .map((t) => ({ templo: t, modalidad: t.estudio }))
-                .map((e) => (
-                  <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-4">
-                    <div class="min-w-0">
-                      <p class="font-bold">{e.templo.short}</p>
-                    </div>
-                    <span
-                      class={`badge badge-sm gap-1.5 ${e.modalidad === 'presencial' ? 'badge-accent' : 'border-white/25 bg-white/10 text-white'}`}
-                    >
-                      <Icon
-                        name={e.modalidad === 'presencial' ? 'lucide:map-pin' : 'lucide:video'}
-                        class="h-3.5 w-3.5"
-                      />
-                      {e.modalidad === 'presencial' ? 'Presencial' : 'Por Zoom'}
-                    </span>
-                  </li>
-                ))
-            }
+          <ul class="divide-y divide-white/15 rounded-xl border border-white/15 bg-white/5 backdrop-blur-sm">
+            {templos
+              .map((t) => ({ templo: t, modalidad: t.estudio }))
+              .map((e) => (
+                <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-4">
+                  <div class="min-w-0">
+                    <p class="font-bold">{e.templo.short}</p>
+                  </div>
+                  <span
+                    class={`badge badge-sm gap-1.5 ${e.modalidad === 'presencial' ? 'badge-accent' : 'border-white/25 bg-white/10 text-white'}`}
+                  >
+                    <Icon
+                      name={e.modalidad === 'presencial' ? 'lucide:map-pin' : 'lucide:video'}
+                      class="h-3.5 w-3.5"
+                    />
+                    {e.modalidad === 'presencial' ? 'Presencial' : 'Por Zoom'}
+                  </span>
+                </li>
+              ))}
           </ul>
           <p class="mt-3 text-sm text-white/60">
             El enlace de Zoom se pide al pastor del templo más cercano.
@@ -339,13 +327,11 @@ import { IMG } from '../assets/images';
       />
 
       <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {
-          templos.map((t, i) => (
-            <Reveal delay={(i % 4) * 90} class="h-full">
-              <TemploCard templo={t} />
-            </Reveal>
-          ))
-        }
+        {templos.map((t, i) => (
+          <Reveal delay={(i % 4) * 90} class="h-full">
+            <TemploCard templo={t} />
+          </Reveal>
+        ))}
       </div>
 
       <Reveal class="mt-10 text-center">
@@ -389,9 +375,7 @@ import { IMG } from '../assets/images';
            fijo (ver la nota de arriba del archivo) y solo lo paga ese caso. -->
       <div id="ig-grid" class="mt-12 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Reveal class="col-span-2 lg:col-span-4">
-          <div
-            class="flex flex-col items-center gap-3 rounded-xl border border-dashed border-base-300 bg-base-200/40 px-6 py-14 text-center"
-          >
+          <div class="flex flex-col items-center gap-3 rounded-xl border border-dashed border-base-300 bg-base-200/40 px-6 py-14 text-center">
             <Icon name="lucide:instagram" class="h-8 w-8 text-base-content/55" aria-hidden="true" />
             <p class="font-display text-xl">Prontamente</p>
             <p class="max-w-md text-sm text-base-content/70">

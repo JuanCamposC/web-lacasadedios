@@ -114,22 +114,17 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
     ]}
   />
 
-  {
-    /* El filtro y el tablero, en un mismo bloque: así la barra deja de estar
+  {/* El filtro y el tablero, en un mismo bloque: así la barra deja de estar
       pegada arriba cuando termina el horario, en vez de seguir flotando sobre
-      el cierre de la página. */
-  }
+      el cierre de la página. */}
   <div class="ambito-filtro">
-    {
-      /* La misma barra que noticias, eventos y videos. Lo que cambia es qué
+    {/* La misma barra que noticias, eventos y videos. Lo que cambia es qué
         esconde: acá son líneas del cartel y el conteo de cada día, no
-        tarjetas, y de eso se encarga el script del final. Ver BarraFiltro. */
-    }
+        tarjetas, y de eso se encarga el script del final. Ver BarraFiltro. */}
     <BarraFiltro />
 
     <!-- El cartel: la semana completa -->
-    {
-      /* Lo primero: qué hay HOY y cuál es la próxima reunión.
+    {/* Lo primero: qué hay HOY y cuál es la próxima reunión.
   
          Se rellena en el navegador y no en el servidor porque estas páginas van
          con caché de CDN: un «hoy» renderizado arriba llegaría caducado al
@@ -137,8 +132,7 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
          del visitante—, que es la que rige las reuniones.
   
          Sin JavaScript no aparece nada de esto y la semana completa se ve igual
-         que siempre: es un añadido, no un requisito. */
-    }
+         que siempre: es un añadido, no un requisito. */}
     <section class="section-sm section bg-base-100">
       <div class="wrap">
         <div class="hidden" data-ahora>
@@ -151,11 +145,11 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
               </p>
             </div>
             <div class="panel p-6 sm:p-7">
-              {
-                /* El rótulo cambia a «Ahora mismo» cuando hay una reunión pasando;
-                  lo pone el script, que es quien sabe la hora de Chile. */
-              }
-              <span class="eyebrow text-primary" data-ahora-rotulo>Próxima reunión</span>
+              {/* El rótulo cambia a «Ahora mismo» cuando hay una reunión pasando;
+                  lo pone el script, que es quien sabe la hora de Chile. */}
+              <span class="eyebrow text-primary" data-ahora-rotulo>
+                Próxima reunión
+              </span>
               <p class="mt-4 font-display text-2xl leading-tight" data-ahora-prox></p>
               <p class="mt-1 text-base-content/70" data-ahora-cuando></p>
               <a class="btn btn-primary btn-sm mt-5 gap-2" data-ahora-enlace>
@@ -176,72 +170,66 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
               <span class="cartel-hoy" data-hoy aria-live="polite"></span>
             </header>
 
-            {
-              semana.map((dia) => (
-                <details data-dia data-dia-indice={dia.dia} open>
-                  <summary class="cartel-seccion">
-                    <h2>{dia.nombre}</h2>
-                    <span class="cartel-conteo" data-conteo>
-                      {dia.reuniones.length} {dia.reuniones.length === 1 ? 'reunión' : 'reuniones'}
-                    </span>
-                  </summary>
-                  <ul class="cartel-lista">
-                    {dia.grupos.map((g) => (
-                      <li
-                        class="cartel-linea"
-                        data-servicio
-                        data-templos={g.sedes.map((t) => t.slug).join(' ')}
-                        data-hora={g.hora}
-                        data-nombre={g.nombre}
-                        data-sedes={JSON.stringify(
-                          g.sedes.map((t) => ({
-                            slug: t.slug,
-                            short: t.short,
-                            estilo: estiloDistintivo(t),
-                          })),
-                        )}
-                        data-estado={g.estado}
-                        data-marca={g.marca ?? ''}
-                      >
-                        <span class="cartel-hora">{g.hora}</span>
-                        <span class="cartel-nombre">
-                          {g.nombre}
-                          {g.estado === 'suspendida' && <span class="sr-only"> (suspendida)</span>}
-                          {g.marca && <span class="cartel-sello">{g.marca}</span>}
-                        </span>
-                        <span class="cartel-lugares">
-                          {g.sedes.map((t) => (
-                            <Distintivo
-                              templo={t}
-                              href={`/templos/${t.slug}`}
-                              class="cartel-lugar"
-                            />
-                          ))}
-                        </span>
-                        {g.estado !== 'normal' && (
-                          <span class="cartel-aviso">
-                            <Icon
-                              name={g.estado === 'suspendida' ? 'lucide:ban' : 'lucide:clock-alert'}
-                              class="h-4 w-4 shrink-0"
-                            />
-                            {/* Sin frase escrita, la línea dice lo que sabe. Si la
+            {semana.map((dia) => (
+              <details data-dia data-dia-indice={dia.dia} open>
+                <summary class="cartel-seccion">
+                  <h2>{dia.nombre}</h2>
+                  <span class="cartel-conteo" data-conteo>
+                    {dia.reuniones.length} {dia.reuniones.length === 1 ? 'reunión' : 'reuniones'}
+                  </span>
+                </summary>
+                <ul class="cartel-lista">
+                  {dia.grupos.map((g) => (
+                    <li
+                      class="cartel-linea"
+                      data-servicio
+                      data-templos={g.sedes.map((t) => t.slug).join(' ')}
+                      data-hora={g.hora}
+                      data-nombre={g.nombre}
+                      data-sedes={JSON.stringify(
+                        g.sedes.map((t) => ({
+                          slug: t.slug,
+                          short: t.short,
+                          estilo: estiloDistintivo(t),
+                        })),
+                      )}
+                      data-estado={g.estado}
+                      data-marca={g.marca ?? ''}
+                    >
+                      <span class="cartel-hora">{g.hora}</span>
+                      <span class="cartel-nombre">
+                        {g.nombre}
+                        {g.estado === 'suspendida' && <span class="sr-only"> (suspendida)</span>}
+                        {g.marca && <span class="cartel-sello">{g.marca}</span>}
+                      </span>
+                      <span class="cartel-lugares">
+                        {g.sedes.map((t) => (
+                          <Distintivo templo={t} href={`/templos/${t.slug}`} class="cartel-lugar" />
+                        ))}
+                      </span>
+                      {g.estado !== 'normal' && (
+                        <span class="cartel-aviso">
+                          <Icon
+                            name={g.estado === 'suspendida' ? 'lucide:ban' : 'lucide:clock-alert'}
+                            class="h-4 w-4 shrink-0"
+                          />
+                          {/* Sin frase escrita, la línea dice lo que sabe. Si la
                                 hora de esta vez es otra, eso es lo que hay que
                                 decir: el número grande ya cambió, y sin esto
                                 parecería el horario de siempre. */}
-                            {g.aviso ??
-                              (g.estado === 'suspendida'
-                                ? 'Suspendida'
-                                : g.horaHabitual
-                                  ? `Solo esta vez · su hora de siempre es ${g.horaHabitual}`
-                                  : 'Cambio de horario')}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              ))
-            }
+                          {g.aviso ??
+                            (g.estado === 'suspendida'
+                              ? 'Suspendida'
+                              : g.horaHabitual
+                                ? `Solo esta vez · su hora de siempre es ${g.horaHabitual}`
+                                : 'Cambio de horario')}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ))}
 
             <footer class="cartel-pie">
               Los horarios pueden cambiar en fechas especiales. Ante la duda, escríbenos.
@@ -258,7 +246,10 @@ const semana = porDia(reuniones).map((d) => ({ ...d, grupos: agrupar(d.reuniones
 
         <p class="mt-8 text-center text-sm text-base-content/70">
           ¿Cambió un horario o falta una reunión?
-          <a href="/contacto" class="link link-primary">Avísanos</a>.
+          <a href="/contacto" class="link link-primary">
+            Avísanos
+          </a>
+          .
         </p>
       </div>
     </section>

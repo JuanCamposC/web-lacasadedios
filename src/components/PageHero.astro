@@ -44,8 +44,7 @@ const {
       class="h-full w-full object-cover"
       style={posicion ? `object-position: ${posicion}` : undefined}
     />
-    {
-      /* El velo es más oscuro EN EL MEDIO, que es donde se apoya el texto.
+    {/* El velo es más oscuro EN EL MEDIO, que es donde se apoya el texto.
 
         Antes era al revés —78 % arriba, 62 % en el medio, 88 % abajo— y el punto
         más claro coincidía justo con el rótulo dorado. Medido sobre el sitio en
@@ -58,8 +57,7 @@ const {
         Con 72/84/90 las seis pasan y la peor queda en 4,63:1. Va justo a
         propósito: oscurecer más apaga unas fotos que costó conseguir. Si alguna
         cabecera futura vuelve a caer, lo que toca es mirar ESA foto, no subir el
-        velo de todas. */
-    }
+        velo de todas. */}
     <div class="velo-texto absolute inset-0"></div>
     <!-- Misma costura de bronce que cierra el hero de la portada: los dos
          encabezados comparten gramática aunque tengan composición distinta.
@@ -68,23 +66,19 @@ const {
   </div>
 
   <div class="relative z-10 mx-auto w-full max-w-4xl px-4 pt-16 text-center">
-    {
-      eyebrow && (
-        <span data-reveal class="eyebrow mb-4 text-accent">
-          {eyebrow}
-        </span>
-      )
-    }
+    {eyebrow && (
+      <span data-reveal class="eyebrow mb-4 text-accent">
+        {eyebrow}
+      </span>
+    )}
     <h1 data-reveal data-reveal-delay="60" class="text-[clamp(2.4rem,6vw,4rem)] text-white">
       {title}
     </h1>
-    {
-      subtitle && (
-        <p data-reveal data-reveal-delay="120" class="mx-auto mt-5 max-w-2xl text-lg text-white/80">
-          {subtitle}
-        </p>
-      )
-    }
+    {subtitle && (
+      <p data-reveal data-reveal-delay="120" class="mx-auto mt-5 max-w-2xl text-lg text-white/80">
+        {subtitle}
+      </p>
+    )}
     <slot />
   </div>
 </section>

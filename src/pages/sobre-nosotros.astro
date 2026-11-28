@@ -138,11 +138,9 @@ const initials = (name: string) =>
   title="Nosotros · La Casa de Dios"
   description="Conoce la historia, misión, visión, valores, liderazgo y declaración de fe de La Casa de Dios."
 >
-  {
-    /* La franja recorta la foto a una banda ancha y baja. Centrada se queda en
+  {/* La franja recorta la foto a una banda ancha y baja. Centrada se queda en
       las espaldas de la primera fila; subida al 10 % entran el salón, el muro
-      de ladrillo y el púlpito al fondo, que es lo que dice dónde estamos. */
-  }
+      de ladrillo y el púlpito al fondo, que es lo que dice dónde estamos. */}
   <PageHero
     image={IMG.nosotrosPortada}
     alt="La congregación de pie, de espaldas, frente al púlpito"
@@ -155,40 +153,32 @@ const initials = (name: string) =>
   <RutaJsonLd items={[{ label: 'Inicio', href: '/' }, { label: 'Nosotros' }]} />
 
   <!-- Índice de la página -->
-  {
-    /* El índice y las secciones, en un mismo bloque: sin esto el índice sigue
+  {/* El índice y las secciones, en un mismo bloque: sin esto el índice sigue
       pegado arriba cuando ya no hay secciones que indicar, y en el teléfono se
-      ve encima del cierre de la página. */
-  }
+      ve encima del cierre de la página. */}
   <div class="ambito-filtro">
     <nav
       aria-label="Secciones de la página"
       class="sticky top-16 z-30 border-b border-base-300 bg-base-100"
     >
-      {
-        /* El desplazamiento vive aquí y no en el `.wrap`: así los chips llegan
+      {/* El desplazamiento vive aquí y no en el `.wrap`: así los chips llegan
          hasta el borde de la pantalla en vez de cortarse contra un ancho
          centrado, que era lo que hacía parecer roto el último. Desde `md`
-         dejan de desplazarse y se reparten en varias líneas. */
-      }
+         dejan de desplazarse y se reparten en varias líneas. */}
       <div class="indice wrap overflow-x-auto px-4 py-3">
-        <ul
-          class="flex w-max items-center gap-2 pe-8 md:w-full md:flex-wrap md:justify-center md:pe-0"
-        >
-          {
-            secciones.map((s) => (
-              <li class="shrink-0">
-                <a
-                  href={s.href}
-                  data-indice
-                  data-seccion={s.href.slice(1)}
-                  class="indice-chip rounded-full border border-base-300 px-4 py-1.5 text-sm font-medium transition"
-                >
-                  {s.label}
-                </a>
-              </li>
-            ))
-          }
+        <ul class="flex w-max items-center gap-2 pe-8 md:w-full md:flex-wrap md:justify-center md:pe-0">
+          {secciones.map((s) => (
+            <li class="shrink-0">
+              <a
+                href={s.href}
+                data-indice
+                data-seccion={s.href.slice(1)}
+                class="indice-chip rounded-full border border-base-300 px-4 py-1.5 text-sm font-medium transition"
+              >
+                {s.label}
+              </a>
+            </li>
+          ))}
         </ul>
       </div>
     </nav>
@@ -198,24 +188,22 @@ const initials = (name: string) =>
       <div class="wrap">
         <SectionHeading eyebrow="Nuestras creencias" title="Declaración de fe" />
         <div class="mt-12 grid gap-6 md:grid-cols-3">
-          {
-            credo.map((c, i) => (
-              <Reveal delay={(i % 3) * 90} class="h-full">
-                <div class="panel h-full p-7">
-                  <div class="mb-3 tile">
-                    <Icon name={c.icon} class="h-6 w-6" />
-                  </div>
-                  <h3 class="card-title text-xl">{c.title}</h3>
-                  {c.ref && (
-                    <span class="mt-1 inline-block rounded-full border border-base-300 px-2 py-0.5 text-xs text-base-content/70">
-                      {c.ref}
-                    </span>
-                  )}
-                  <p class="mt-2 text-base-content/70">{c.text}</p>
+          {credo.map((c, i) => (
+            <Reveal delay={(i % 3) * 90} class="h-full">
+              <div class="panel h-full p-7">
+                <div class="mb-3 tile">
+                  <Icon name={c.icon} class="h-6 w-6" />
                 </div>
-              </Reveal>
-            ))
-          }
+                <h3 class="card-title text-xl">{c.title}</h3>
+                {c.ref && (
+                  <span class="mt-1 inline-block rounded-full border border-base-300 px-2 py-0.5 text-xs text-base-content/70">
+                    {c.ref}
+                  </span>
+                )}
+                <p class="mt-2 text-base-content/70">{c.text}</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
@@ -225,19 +213,17 @@ const initials = (name: string) =>
       <div class="wrap">
         <SectionHeading eyebrow="Cómo servimos" title="Estructura de liderazgo" />
         <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {
-            liderazgo.map((l, i) => (
-              <Reveal delay={(i % 4) * 80} class="h-full">
-                <div class="panel h-full p-7 text-center">
-                  <div class="mx-auto mb-3 tile tile-lg">
-                    <Icon name={l.icon} class="h-7 w-7" />
-                  </div>
-                  <h3 class="card-title justify-center text-xl">{l.title}</h3>
-                  <p class="mt-1 text-sm text-base-content/70">{l.text}</p>
+          {liderazgo.map((l, i) => (
+            <Reveal delay={(i % 4) * 80} class="h-full">
+              <div class="panel h-full p-7 text-center">
+                <div class="mx-auto mb-3 tile tile-lg">
+                  <Icon name={l.icon} class="h-7 w-7" />
                 </div>
-              </Reveal>
-            ))
-          }
+                <h3 class="card-title justify-center text-xl">{l.title}</h3>
+                <p class="mt-1 text-sm text-base-content/70">{l.text}</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
@@ -247,21 +233,19 @@ const initials = (name: string) =>
       <div class="wrap">
         <SectionHeading eyebrow="Las dos ordenanzas" title="Sacramentos" />
         <div class="mx-auto mt-12 grid max-w-4xl gap-5 md:grid-cols-2">
-          {
-            sacramentos.map((s, i) => (
-              <Reveal delay={(i % 2) * 90} class="h-full">
-                <div class="panel flex h-full items-start gap-5 p-7">
-                  <div class="tile">
-                    <Icon name={s.icon} class="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 class="card-title text-xl">{s.title}</h3>
-                    <p class="mt-1 text-base-content/70">{s.text}</p>
-                  </div>
+          {sacramentos.map((s, i) => (
+            <Reveal delay={(i % 2) * 90} class="h-full">
+              <div class="panel flex h-full items-start gap-5 p-7">
+                <div class="tile">
+                  <Icon name={s.icon} class="h-6 w-6" />
                 </div>
-              </Reveal>
-            ))
-          }
+                <div>
+                  <h3 class="card-title text-xl">{s.title}</h3>
+                  <p class="mt-1 text-base-content/70">{s.text}</p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
@@ -270,11 +254,9 @@ const initials = (name: string) =>
     <section id="mision" class="section bg-base-200">
       <div class="wrap">
         <div class="grid gap-6 md:grid-cols-2">
-          {
-            /* El mismo `panel` que las tarjetas de credo, estructura y valores. Antes
+          {/* El mismo `panel` que las tarjetas de credo, estructura y valores. Antes
             estas dos llevaban un degradado propio que no usaba ninguna otra tarjeta
-            del sitio: parecían pegadas de otra página. */
-          }
+            del sitio: parecían pegadas de otra página. */}
           <Reveal>
             <div class="panel h-full p-8">
               <div class="tile mb-4">
@@ -328,33 +310,33 @@ const initials = (name: string) =>
               tone="primary"
             />
             <div data-reveal data-reveal-delay="90" class="prose-lcd mt-6">
-              {HISTORIA.parrafos.map((p) => <p>{p}</p>)}
+              {HISTORIA.parrafos.map((p) => (
+                <p>{p}</p>
+              ))}
             </div>
           </div>
         </div>
 
-        {
-          HISTORIA.hitos.length > 0 && (
-            <ol class="relative mt-16 space-y-8 border-l border-base-300 pl-6 sm:pl-8">
-              {HISTORIA.hitos.map((h, i) => (
-                <li data-reveal data-reveal-delay={Math.min(i, 5) * 70} class="relative">
-                  <span class="absolute -left-[1.85rem] top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary ring-4 ring-base-200 sm:-left-[2.35rem]" />
-                  <span class="eyebrow text-primary">{h.year}</span>
-                  <h3 class="mt-1 font-display text-xl">{h.title}</h3>
-                  <p class="mt-1 text-base-content/75">{h.text}</p>
-                  {h.templo && (
-                    <a
-                      href={`/templos/${h.templo}`}
-                      class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-secondary"
-                    >
-                      <Icon name="lucide:map-pin" class="h-4 w-4" /> Ver el templo
-                    </a>
-                  )}
-                </li>
-              ))}
-            </ol>
-          )
-        }
+        {HISTORIA.hitos.length > 0 && (
+          <ol class="relative mt-16 space-y-8 border-l border-base-300 pl-6 sm:pl-8">
+            {HISTORIA.hitos.map((h, i) => (
+              <li data-reveal data-reveal-delay={Math.min(i, 5) * 70} class="relative">
+                <span class="absolute -left-[1.85rem] top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary ring-4 ring-base-200 sm:-left-[2.35rem]" />
+                <span class="eyebrow text-primary">{h.year}</span>
+                <h3 class="mt-1 font-display text-xl">{h.title}</h3>
+                <p class="mt-1 text-base-content/75">{h.text}</p>
+                {h.templo && (
+                  <a
+                    href={`/templos/${h.templo}`}
+                    class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-secondary"
+                  >
+                    <Icon name="lucide:map-pin" class="h-4 w-4" /> Ver el templo
+                  </a>
+                )}
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
     </section>
 
@@ -363,19 +345,17 @@ const initials = (name: string) =>
       <div class="wrap">
         <SectionHeading eyebrow="Nuestros principios" title="Valores" />
         <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-          {
-            valores.map((v, i) => (
-              <Reveal delay={(i % 5) * 70} class="h-full">
-                <div class="panel panel-lift group h-full p-6 text-center">
-                  <div class="mx-auto mb-4 tile tile-lg transition-colors group-hover:bg-primary group-hover:text-primary-content">
-                    <Icon name={v.icon} class="h-7 w-7" />
-                  </div>
-                  <h3 class="card-title justify-center text-xl">{v.title}</h3>
-                  <p class="mt-1 text-sm text-base-content/70">{v.text}</p>
+          {valores.map((v, i) => (
+            <Reveal delay={(i % 5) * 70} class="h-full">
+              <div class="panel panel-lift group h-full p-6 text-center">
+                <div class="mx-auto mb-4 tile tile-lg transition-colors group-hover:bg-primary group-hover:text-primary-content">
+                  <Icon name={v.icon} class="h-7 w-7" />
                 </div>
-              </Reveal>
-            ))
-          }
+                <h3 class="card-title justify-center text-xl">{v.title}</h3>
+                <p class="mt-1 text-sm text-base-content/70">{v.text}</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
@@ -388,45 +368,41 @@ const initials = (name: string) =>
           title="Pastores"
           subtitle="Quienes pastorean cada templo de la congregación."
         />
-        {
-          /* Tarjetas verticales y con el retrato arriba. El hueco cuadrado estaba
+        {/* Tarjetas verticales y con el retrato arriba. El hueco cuadrado estaba
           esperando desde el principio: lo ocupaban las iniciales, con el tamaño y
           la forma definitivos, y el 14 de octubre de 2026 llegaron las fotos y
           entraron sin mover nada más.
 
           Siguen las iniciales de respaldo, y no es decorado: quien no tenga foto
-          —hoy nadie de los tres, mañana quien entre— sale igual de bien. */
-        }
+          —hoy nadie de los tres, mañana quien entre— sale igual de bien. */}
         <div class="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {
-            pastores.map((p, i) => (
-              <Reveal delay={(i % 3) * 80} class="h-full">
-                <a href={`/templos/${p.slug}`} class="pastor panel panel-lift">
-                  <span class="pastor-retrato">
-                    {retratoDe(p.slug) ? (
-                      <Image
-                        src={IMG[retratoDe(p.slug)!]}
-                        alt={`Retrato de ${p.name}`}
-                        widths={[320, 640]}
-                        sizes="(max-width: 640px) 90vw, 20rem"
-                        class="pastor-foto"
-                      />
-                    ) : (
-                      <span class="pastor-iniciales">{initials(p.name)}</span>
-                    )}
+          {pastores.map((p, i) => (
+            <Reveal delay={(i % 3) * 80} class="h-full">
+              <a href={`/templos/${p.slug}`} class="pastor panel panel-lift">
+                <span class="pastor-retrato">
+                  {retratoDe(p.slug) ? (
+                    <Image
+                      src={IMG[retratoDe(p.slug)!]}
+                      alt={`Retrato de ${p.name}`}
+                      widths={[320, 640]}
+                      sizes="(max-width: 640px) 90vw, 20rem"
+                      class="pastor-foto"
+                    />
+                  ) : (
+                    <span class="pastor-iniciales">{initials(p.name)}</span>
+                  )}
+                </span>
+                <span class="pastor-datos">
+                  <span class="pastor-nombre">{p.name}</span>
+                  <span class="pastor-lugar">{p.place}</span>
+                  <span class="pastor-ver">
+                    Ver su templo
+                    <Icon name="lucide:arrow-right" class="h-4 w-4" />
                   </span>
-                  <span class="pastor-datos">
-                    <span class="pastor-nombre">{p.name}</span>
-                    <span class="pastor-lugar">{p.place}</span>
-                    <span class="pastor-ver">
-                      Ver su templo
-                      <Icon name="lucide:arrow-right" class="h-4 w-4" />
-                    </span>
-                  </span>
-                </a>
-              </Reveal>
-            ))
-          }
+                </span>
+              </a>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
@@ -439,9 +415,9 @@ const initials = (name: string) =>
     image={IMG.nosotrosCierre}
     compact
   >
-    <a href="/templos" class="btn btn-primary gap-2"
-      ><Icon name="lucide:church" class="h-5 w-5" /> Visita un templo</a
-    >
+    <a href="/templos" class="btn btn-primary gap-2">
+      <Icon name="lucide:church" class="h-5 w-5" /> Visita un templo
+    </a>
     <a href="/contacto" class="btn gap-2 btn-invert">
       <Icon name="lucide:mail" class="h-5 w-5" /> Escríbenos
     </a>
@@ -450,7 +426,7 @@ const initials = (name: string) =>
 
 <style>
   /* Esta página suma navbar fijo (4rem) + índice pegajoso (~3,3rem):
-	   los anclajes necesitan más margen que el global. */
+  	   los anclajes necesitan más margen que el global. */
   section[id] {
     scroll-margin-top: 9rem;
   }

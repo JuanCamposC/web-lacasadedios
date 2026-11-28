@@ -54,14 +54,12 @@ const fmt = fechaYHora;
         </button>
       )
     }
-    {
-      subs.length > 0 && (
-        <button id="copy-emails" data-emails={emails} class="btn btn-outline btn-sm gap-2">
-          <Icon name="lucide:copy" class="h-4 w-4" />
-          <span class="hidden sm:inline">Copiar correos</span>
-        </button>
-      )
-    }
+    {subs.length > 0 && (
+      <button id="copy-emails" data-emails={emails} class="btn btn-outline btn-sm gap-2">
+        <Icon name="lucide:copy" class="h-4 w-4" />
+        <span class="hidden sm:inline">Copiar correos</span>
+      </button>
+    )}
   </div>
 
   <div class="max-w-3xl">
@@ -70,86 +68,80 @@ const fmt = fechaYHora;
         <Icon name="lucide:mail" class="h-6 w-6" />
       </span>
       <div>
-        {
-          /* El número grande es el de CONFIRMADOS, que son a quienes de verdad
+        {/* El número grande es el de CONFIRMADOS, que son a quienes de verdad
             les llega el boletín. Contar también los pendientes daría una cifra
             más bonita y equivocada: al pulsar «avisar» saldrían menos correos
-            de los que dice este número, y eso parece un fallo del envío. */
-        }
+            de los que dice este número, y eso parece un fallo del envío. */}
         <p class="font-data text-3xl font-bold leading-none text-primary">{confirmados}</p>
         <p class="mt-1 text-sm text-base-content/70">
-          {confirmados === 1 ? 'persona recibe el boletín' : 'personas reciben el boletín'} · se dan de
-          alta desde el pie del sitio
-          {
-            pendientes > 0 && (
-              <span class="mt-1 block text-warning">
-                {pendientes === 1
-                  ? 'Otra persona se apuntó y no ha confirmado todavía.'
-                  : `Otras ${pendientes} se apuntaron y no han confirmado todavía.`}{' '}
-                Las que no confirmen en {DIAS_PARA_CONFIRMAR} días se borran solas.
-              </span>
-            )
-          }
+          {confirmados === 1 ? 'persona recibe el boletín' : 'personas reciben el boletín'} · se dan
+          de alta desde el pie del sitio
+          {pendientes > 0 && (
+            <span class="mt-1 block text-warning">
+              {pendientes === 1
+                ? 'Otra persona se apuntó y no ha confirmado todavía.'
+                : `Otras ${pendientes} se apuntaron y no han confirmado todavía.`}{' '}
+              Las que no confirmen en {DIAS_PARA_CONFIRMAR} días se borran solas.
+            </span>
+          )}
         </p>
       </div>
     </div>
 
-    {
-      subs.length === 0 ? (
-        <div class="panel p-10 text-center">
-          <span class="tile tile-lg tile-muted mx-auto mb-4">
-            <Icon name="lucide:mail" class="h-6 w-6" />
-          </span>
-          <p class="text-sm text-base-content/70">
-            Todavía no hay suscriptores. El formulario está en el pie del sitio público.
-          </p>
-        </div>
-      ) : (
-        <div class="panel overflow-hidden">
-          <table class="table">
-            <thead>
+    {subs.length === 0 ? (
+      <div class="panel p-10 text-center">
+        <span class="tile tile-lg tile-muted mx-auto mb-4">
+          <Icon name="lucide:mail" class="h-6 w-6" />
+        </span>
+        <p class="text-sm text-base-content/70">
+          Todavía no hay suscriptores. El formulario está en el pie del sitio público.
+        </p>
+      </div>
+    ) : (
+      <div class="panel overflow-hidden">
+        <table class="table">
+          <thead>
+            <tr>
+              <>
+                <th>Correo</th>
+                <th>Estado</th>
+                <th class="text-right">Se suscribió</th>
+              </>
+            </tr>
+          </thead>
+          <tbody>
+            {subs.map((s) => (
               <tr>
-                <>
-                  <th>Correo</th>
-                  <th>Estado</th>
-                  <th class="text-right">Se suscribió</th>
-                </>
-              </tr>
-            </thead>
-            <tbody>
-              {subs.map((s) => (
-                <tr>
-                  <td class="font-medium">{s.correo}</td>
-                  {/* Los pendientes se enseñan a propósito: es la explicación de
+                <td class="font-medium">{s.correo}</td>
+                {/* Los pendientes se enseñan a propósito: es la explicación de
                       la mitad de los «me suscribí y no me llega nada». A esos
                       NO se les escribe hasta que confirmen desde su bandeja. */}
-                  <td>
-                    {s.pendiente === 1 ? (
-                      <>
-                        <span class="badge badge-warning badge-sm">Sin confirmar</span>
-                        {/* Cuánto le queda antes de borrarse sola. Sin esto, un
+                <td>
+                  {s.pendiente === 1 ? (
+                    <>
+                      <span class="badge badge-warning badge-sm">Sin confirmar</span>
+                      {/* Cuánto le queda antes de borrarse sola. Sin esto, un
                             «sin confirmar» de hace dos meses y otro de ayer se
                             ven igual, y solo uno de los dos va a desaparecer. */}
-                        <span class="mt-0.5 block text-xs text-base-content/70">
-                          {diasQueQuedan(s.creado_en) > 0
-                            ? `Se borra en ${diasQueQuedan(s.creado_en)} ${diasQueQuedan(s.creado_en) === 1 ? 'día' : 'días'}`
-                            : 'Ya pasó el plazo'}
-                        </span>
-                      </>
-                    ) : (
-                      <span class="badge badge-success badge-sm">Confirmado</span>
-                    )}
-                  </td>
-                  <td class="font-data text-right text-sm text-base-content/70">
-                    {fmt(s.creado_en)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )
-    }
+                      <span class="mt-0.5 block text-xs text-base-content/70">
+                        {diasQueQuedan(s.creado_en) > 0
+                          ? `Se borra en ${diasQueQuedan(s.creado_en)} ${diasQueQuedan(s.creado_en) === 1 ? 'día' : 'días'}`
+                          : 'Ya pasó el plazo'}
+                      </span>
+                    </>
+                  ) : (
+                    <span class="badge badge-success badge-sm">Confirmado</span>
+                  )}
+                </td>
+                <td class="font-data text-right text-sm text-base-content/70">
+                  {fmt(s.creado_en)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
   </div>
 
   <script>

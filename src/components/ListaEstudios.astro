@@ -24,48 +24,41 @@ const { estudios, class: className = '' } = Astro.props;
 ---
 
 <ul class:list={['space-y-5', className]}>
-  {
-    estudios.map((ep, i) => (
-      <li id={`ep-${i + 1}`}>
-        <Reveal delay={Math.min(i, 4) * 70}>
-          <article class="panel p-6 sm:p-7">
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-base-content/70">
-              {ep.numero !== null && (
-                <span class="badge badge-ghost badge-sm font-data">Nº {ep.numero}</span>
-              )}
-              {ep.fecha && <time datetime={ep.fecha}>{fechaLarga(ep.fecha)}</time>}
-              {ep.duracionSeg && (
-                <span class="flex items-center gap-1">
-                  <Icon name="lucide:clock" class="h-3.5 w-3.5" />
-                  {duracionLegible(ep.duracionSeg)}
-                </span>
-              )}
-            </div>
-
-            <h3 class="mt-2 font-display text-xl">{ep.titulo}</h3>
-
-            {ep.resumen && (
-              <p class="mt-2 max-w-prose text-sm leading-relaxed whitespace-pre-line text-base-content/75">
-                {ep.resumen}
-              </p>
+  {estudios.map((ep, i) => (
+    <li id={`ep-${i + 1}`}>
+      <Reveal delay={Math.min(i, 4) * 70}>
+        <article class="panel p-6 sm:p-7">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-base-content/70">
+            {ep.numero !== null && (
+              <span class="badge badge-ghost badge-sm font-data">Nº {ep.numero}</span>
             )}
+            {ep.fecha && <time datetime={ep.fecha}>{fechaLarga(ep.fecha)}</time>}
+            {ep.duracionSeg && (
+              <span class="flex items-center gap-1">
+                <Icon name="lucide:clock" class="h-3.5 w-3.5" />
+                {duracionLegible(ep.duracionSeg)}
+              </span>
+            )}
+          </div>
 
-            {/* `preload="none"` a propósito: con doce estudios en la página,
+          <h3 class="mt-2 font-display text-xl">{ep.titulo}</h3>
+
+          {ep.resumen && (
+            <p class="mt-2 max-w-prose text-sm leading-relaxed whitespace-pre-line text-base-content/75">
+              {ep.resumen}
+            </p>
+          )}
+
+          {/* `preload="none"` a propósito: con doce estudios en la página,
                 precargar cada uno serían decenas de megas gastados por quien
                 quizá no reproduzca ninguno. */}
-            <audio
-              controls
-              preload="none"
-              class="mt-5 w-full"
-              aria-label={`Escuchar: ${ep.titulo}`}
-            >
-              <source src={ep.audio} type={ep.tipoMime} />
-              Tu navegador no puede reproducir este audio.
-              <a href={ep.audio}>Descargar el archivo</a>.
-            </audio>
-          </article>
-        </Reveal>
-      </li>
-    ))
-  }
+          <audio controls preload="none" class="mt-5 w-full" aria-label={`Escuchar: ${ep.titulo}`}>
+            <source src={ep.audio} type={ep.tipoMime} />
+            Tu navegador no puede reproducir este audio.
+            <a href={ep.audio}>Descargar el archivo</a>.
+          </audio>
+        </article>
+      </Reveal>
+    </li>
+  ))}
 </ul>

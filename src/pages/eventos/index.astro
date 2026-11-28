@@ -163,11 +163,13 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
 
 <Layout
   title={compartido ? `${compartido.titulo} · La Casa de Dios` : 'Eventos · La Casa de Dios'}
-  description={compartido
-    ? (compartido.descripcion ?? `${fmtDate(compartido.fecha)} · ${compartido.lugar ?? SITE.name}`)
-    : 'Próximos eventos y actividades de La Casa de Dios: reuniones especiales, encuentros y celebraciones.'}
-  {/* La tarjeta de 1200×630 si existe; si no, la imagen normal, que al menos
-      da una vista previa aunque sea pequeña. Ver la migración 0013. */}
+  description={
+    compartido
+      ? (compartido.descripcion ??
+        `${fmtDate(compartido.fecha)} · ${compartido.lugar ?? SITE.name}`)
+      : 'Próximos eventos y actividades de La Casa de Dios: reuniones especiales, encuentros y celebraciones.'
+  } /* La tarjeta de 1200×630 si existe; si no, la imagen normal, que al menos
+      da una vista previa aunque sea pequeña. Ver la migración 0013. */
   image={urlMedio(compartido?.imagen_social_clave ?? null) ?? compartido?.imagen ?? undefined}
   ogUrl={compartido ? `${sitio}/eventos?e=${encodeURIComponent(clave!)}` : undefined}
 >
@@ -180,19 +182,15 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
     height="min-h-[50vh]"
   />
 
-  {
-    eventosJsonLd && (
-      <script type="application/ld+json" set:html={comoJsonLd(eventosJsonLd)} is:inline />
-    )
-  }
+  {eventosJsonLd && (
+    <script type="application/ld+json" set:html={comoJsonLd(eventosJsonLd)} is:inline />
+  )}
 
   <RutaJsonLd items={[{ label: 'Inicio', href: '/' }, { label: 'Eventos' }]} />
 
-  {
-    /* La barra de filtro y lo que filtra viven en el mismo bloque a propósito:
+  {/* La barra de filtro y lo que filtra viven en el mismo bloque a propósito:
       así la barra deja de estar pegada arriba cuando termina el listado, en vez
-      de seguir flotando sobre el pie de página. */
-  }
+      de seguir flotando sobre el pie de página. */}
   <div class="ambito-filtro">
     <FiltroTemplos plural="eventos" />
 
@@ -229,56 +227,51 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
           )
         }
 
-        {
-          esCalendario && (
-            <CalendarioMes
-              mes={mes}
-              eventos={delMes}
-              reuniones={reunionesMes}
-              hoy={hoy}
-              templo={temploPedido}
-            />
-          )
-        }
+        {esCalendario && (
+          <CalendarioMes
+            mes={mes}
+            eventos={delMes}
+            reuniones={reunionesMes}
+            hoy={hoy}
+            templo={temploPedido}
+          />
+        )}
 
-        {
-          !esCalendario && upcoming.length === 0 && past.length === 0 && (
-            <EmptyState
-              icon="lucide:calendar-days"
-              title="Todavía no hay eventos publicados"
-              text="Nuestras reuniones habituales sí siguen su curso: revisa los horarios de cada templo."
-            >
-              <a href="/horarios" class="btn btn-primary gap-2">
-                <Icon name="lucide:clock" class="h-5 w-5" /> Ver los horarios
-              </a>
-            </EmptyState>
-          )
-        }
+        {!esCalendario && upcoming.length === 0 && past.length === 0 && (
+          <EmptyState
+            icon="lucide:calendar-days"
+            title="Todavía no hay eventos publicados"
+            text="Nuestras reuniones habituales sí siguen su curso: revisa los horarios de cada templo."
+          >
+            <a href="/horarios" class="btn btn-primary gap-2">
+              <Icon name="lucide:clock" class="h-5 w-5" /> Ver los horarios
+            </a>
+          </EmptyState>
+        )}
 
-        {
-          !esCalendario && upcoming.length > 0 && (
-            <>
-              {/* Con el componente, igual que las otras cinco páginas: mismo
+        {!esCalendario && upcoming.length > 0 && (
+          <>
+            {/* Con el componente, igual que las otras cinco páginas: mismo
                   tamaño de titular, mismo antetítulo y el mismo revelado al
                   entrar. Escrito a mano, esta página —y la de noticias— eran
                   las dos únicas que no seguían el ritmo del resto, y son
                   justo las dos que más cambian. */}
-              <SectionHeading
-                eyebrow="Lo que viene"
-                title="Próximos eventos"
-                subtitle={`${upcoming.length} ${upcoming.length === 1 ? 'evento programado' : 'eventos programados'}`}
-                align="left"
-              />
+            <SectionHeading
+              eyebrow="Lo que viene"
+              title="Próximos eventos"
+              subtitle={`${upcoming.length} ${upcoming.length === 1 ? 'evento programado' : 'eventos programados'}`}
+              align="left"
+            />
 
-              <div class="mt-8 grid gap-6 md:grid-cols-2">
-                {upcoming.map((e, i) => (
-                  <Reveal delay={(i % 2) * 80} class="h-full" data-etiqueta={e.templo}>
-                    <article
-                      id={`e-${e.id}`}
-                      class="panel panel-lift group flex h-full scroll-mt-24 flex-col overflow-hidden"
-                    >
-                      <div class="relative h-48 overflow-hidden">
-                        {/* El afiche entero, sobre una copia suya desenfocada.
+            <div class="mt-8 grid gap-6 md:grid-cols-2">
+              {upcoming.map((e, i) => (
+                <Reveal delay={(i % 2) * 80} class="h-full" data-etiqueta={e.templo}>
+                  <article
+                    id={`e-${e.id}`}
+                    class="panel panel-lift group flex h-full scroll-mt-24 flex-col overflow-hidden"
+                  >
+                    <div class="relative h-48 overflow-hidden">
+                      {/* El afiche entero, sobre una copia suya desenfocada.
                             Casi todo lo que se sube acá son afiches, y un afiche
                             es vertical: recortándolo a la forma del recuadro se
                             le va el título por arriba y la dirección por abajo,
@@ -287,95 +280,87 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
                             las dos franjas vacías a los lados. La foto se
                             descarga una sola vez: las dos etiquetas apuntan al
                             mismo archivo. */}
-                        {e.imagen ? (
-                          <>
-                            <img
-                              src={e.imagen}
-                              alt=""
-                              aria-hidden="true"
-                              class="absolute inset-0 h-full w-full scale-125 object-cover blur-xl"
-                              loading="lazy"
-                            />
-                            <img
-                              src={e.imagen}
-                              alt={e.imagen_alt ?? e.titulo}
-                              class="relative h-full w-full object-contain transition-transform duration-700 group-hover:scale-105"
-                              loading="lazy"
-                            />
-                          </>
-                        ) : (
-                          <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 text-primary/40">
-                            <Icon name="lucide:calendar-days" class="h-14 w-14" />
-                          </div>
-                        )}
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
-
-                        {/* Taco de calendario */}
-                        <div class="absolute left-4 top-4 flex w-14 flex-col items-center overflow-hidden rounded-xl bg-base-100 shadow-lg">
-                          <span class="w-full bg-primary py-0.5 text-center text-[0.65rem] font-bold uppercase text-primary-content">
-                            {fmtMonth(e.fecha)}
-                          </span>
-                          <span class="py-1 font-data text-xl font-bold leading-none">
-                            {fmtDay(e.fecha)}
-                          </span>
+                      {e.imagen ? (
+                        <>
+                          <img
+                            src={e.imagen}
+                            alt=""
+                            aria-hidden="true"
+                            class="absolute inset-0 h-full w-full scale-125 object-cover blur-xl"
+                            loading="lazy"
+                          />
+                          <img
+                            src={e.imagen}
+                            alt={e.imagen_alt ?? e.titulo}
+                            class="relative h-full w-full object-contain transition-transform duration-700 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                        </>
+                      ) : (
+                        <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 text-primary/40">
+                          <Icon name="lucide:calendar-days" class="h-14 w-14" />
                         </div>
+                      )}
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
 
-                        <span class="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur">
-                          <Icon name="lucide:clock" class="h-3.5 w-3.5" />{' '}
-                          {terminaEn(e)
-                            ? `${fmtTime(e.fecha)} a ${fmtTime(terminaEn(e)!)}`
-                            : fmtTime(e.fecha)}
+                      {/* Taco de calendario */}
+                      <div class="absolute left-4 top-4 flex w-14 flex-col items-center overflow-hidden rounded-xl bg-base-100 shadow-lg">
+                        <span class="w-full bg-primary py-0.5 text-center text-[0.65rem] font-bold uppercase text-primary-content">
+                          {fmtMonth(e.fecha)}
+                        </span>
+                        <span class="py-1 font-data text-xl font-bold leading-none">
+                          {fmtDay(e.fecha)}
                         </span>
                       </div>
 
-                      <div class="flex flex-1 flex-col p-6">
-                        <span class="text-xs text-base-content/70">{fmtDate(e.fecha)}</span>
-                        <h3 class="card-title mt-1 text-2xl leading-snug">{e.titulo}</h3>
-                        {e.lugar && (
-                          <p class="mt-1 flex items-center gap-1.5 text-sm font-medium text-accent">
-                            <Icon name="lucide:map-pin" class="h-4 w-4 shrink-0" /> {e.lugar}
-                          </p>
-                        )}
-                        {e.descripcion && <p class="mt-3 text-base-content/75">{e.descripcion}</p>}
+                      <span class="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+                        <Icon name="lucide:clock" class="h-3.5 w-3.5" />{' '}
+                        {terminaEn(e)
+                          ? `${fmtTime(e.fecha)} a ${fmtTime(terminaEn(e)!)}`
+                          : fmtTime(e.fecha)}
+                      </span>
+                    </div>
 
-                        <AccionesEvento evento={e} sitio={sitio} />
-                      </div>
-                    </article>
-                  </Reveal>
-                ))}
-              </div>
-            </>
-          )
-        }
-
-        {
-          !esCalendario && past.length > 0 && (
-            <div class={upcoming.length > 0 ? 'mt-16' : ''}>
-              {/* Secundario: es el archivo, no a lo que se viene. */}
-              <SectionHeading
-                eyebrow="Archivo"
-                title="Eventos anteriores"
-                align="left"
-                secundario
-              />
-              <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {past.map((e) => (
-                  <Reveal class="h-full" data-etiqueta={e.templo}>
-                    <div class="h-full rounded-xl border border-base-300 bg-base-200/50 p-5">
-                      <div class="text-xs text-base-content/70">{fmtDate(e.fecha)}</div>
-                      <h3 class="mt-1 font-bold leading-snug">{e.titulo}</h3>
+                    <div class="flex flex-1 flex-col p-6">
+                      <span class="text-xs text-base-content/70">{fmtDate(e.fecha)}</span>
+                      <h3 class="card-title mt-1 text-2xl leading-snug">{e.titulo}</h3>
                       {e.lugar && (
-                        <p class="mt-1 flex items-center gap-1.5 text-sm text-base-content/70">
+                        <p class="mt-1 flex items-center gap-1.5 text-sm font-medium text-accent">
                           <Icon name="lucide:map-pin" class="h-4 w-4 shrink-0" /> {e.lugar}
                         </p>
                       )}
+                      {e.descripcion && <p class="mt-3 text-base-content/75">{e.descripcion}</p>}
+
+                      <AccionesEvento evento={e} sitio={sitio} />
                     </div>
-                  </Reveal>
-                ))}
-              </div>
+                  </article>
+                </Reveal>
+              ))}
             </div>
-          )
-        }
+          </>
+        )}
+
+        {!esCalendario && past.length > 0 && (
+          <div class={upcoming.length > 0 ? 'mt-16' : ''}>
+            {/* Secundario: es el archivo, no a lo que se viene. */}
+            <SectionHeading eyebrow="Archivo" title="Eventos anteriores" align="left" secundario />
+            <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {past.map((e) => (
+                <Reveal class="h-full" data-etiqueta={e.templo}>
+                  <div class="h-full rounded-xl border border-base-300 bg-base-200/50 p-5">
+                    <div class="text-xs text-base-content/70">{fmtDate(e.fecha)}</div>
+                    <h3 class="mt-1 font-bold leading-snug">{e.titulo}</h3>
+                    {e.lugar && (
+                      <p class="mt-1 flex items-center gap-1.5 text-sm text-base-content/70">
+                        <Icon name="lucide:map-pin" class="h-4 w-4 shrink-0" /> {e.lugar}
+                      </p>
+                    )}
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   </div>

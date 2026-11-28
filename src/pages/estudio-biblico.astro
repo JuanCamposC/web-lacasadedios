@@ -152,15 +152,11 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
     <div class="wrap grid gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start">
       <Reveal>
         <div class="max-w-prose space-y-5">
-          {
-            ESTUDIO.introduccion.map((parrafo, i) => (
-              <p
-                class={i === 0 ? 'text-lg leading-relaxed' : 'leading-relaxed text-base-content/80'}
-              >
-                {parrafo}
-              </p>
-            ))
-          }
+          {ESTUDIO.introduccion.map((parrafo, i) => (
+            <p class={i === 0 ? 'text-lg leading-relaxed' : 'leading-relaxed text-base-content/80'}>
+              {parrafo}
+            </p>
+          ))}
         </div>
       </Reveal>
 
@@ -168,19 +164,17 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
         <div class="panel p-7">
           <h2 class="font-display text-xl">Si vienes por primera vez</h2>
           <ul class="mt-5 space-y-5">
-            {
-              ESTUDIO.queEsperar.map((item) => (
-                <li class="flex gap-4">
-                  <span class="tile tile-accent shrink-0">
-                    <Icon name={item.icon} class="h-5 w-5" />
-                  </span>
-                  <div class="min-w-0">
-                    <h3 class="font-bold">{item.titulo}</h3>
-                    <p class="mt-0.5 text-sm text-base-content/70">{item.texto}</p>
-                  </div>
-                </li>
-              ))
-            }
+            {ESTUDIO.queEsperar.map((item) => (
+              <li class="flex gap-4">
+                <span class="tile tile-accent shrink-0">
+                  <Icon name={item.icon} class="h-5 w-5" />
+                </span>
+                <div class="min-w-0">
+                  <h3 class="font-bold">{item.titulo}</h3>
+                  <p class="mt-0.5 text-sm text-base-content/70">{item.texto}</p>
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
       </Reveal>
@@ -191,15 +185,13 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
   <section class="section bg-base-200">
     <div class="wrap">
       <SectionHeading eyebrow="En curso" title={ESTUDIO.programa} align="left" />
-      {
-        descripcion && (
-          <Reveal>
-            <p class="mt-6 max-w-prose leading-relaxed whitespace-pre-line text-base-content/85">
-              {descripcion}
-            </p>
-          </Reveal>
-        )
-      }
+      {descripcion && (
+        <Reveal>
+          <p class="mt-6 max-w-prose leading-relaxed whitespace-pre-line text-base-content/85">
+            {descripcion}
+          </p>
+        </Reveal>
+      )}
     </div>
   </section>
 
@@ -252,21 +244,19 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
         )
       }
 
-      {
-        anteriores.length > 0 && (
-          <details class="group/ant mt-10">
-            <summary class="btn btn-outline mx-auto flex w-fit cursor-pointer list-none gap-2 [&::-webkit-details-marker]:hidden">
-              <span class="group-open/ant:hidden">Ver {anteriores.length} estudios anteriores</span>
-              <span class="hidden group-open/ant:inline">Ocultar los anteriores</span>
-              <Icon
-                name="lucide:chevron-down"
-                class="h-4 w-4 transition-transform group-open/ant:rotate-180"
-              />
-            </summary>
-            <ListaEstudios estudios={anteriores} class="mt-8" />
-          </details>
-        )
-      }
+      {anteriores.length > 0 && (
+        <details class="group/ant mt-10">
+          <summary class="btn btn-outline mx-auto flex w-fit cursor-pointer list-none gap-2 [&::-webkit-details-marker]:hidden">
+            <span class="group-open/ant:hidden">Ver {anteriores.length} estudios anteriores</span>
+            <span class="hidden group-open/ant:inline">Ocultar los anteriores</span>
+            <Icon
+              name="lucide:chevron-down"
+              class="h-4 w-4 transition-transform group-open/ant:rotate-180"
+            />
+          </summary>
+          <ListaEstudios estudios={anteriores} class="mt-8" />
+        </details>
+      )}
     </div>
   </section>
 
@@ -277,11 +267,9 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
   ══════════════════════════════════════════════════════════════════════ -->
   <section id="participar" class="section bg-base-200">
     <div class="wrap">
-      {
-        /* El encabezado ya no dice el día ni la hora: eso lo dice cada
+      {/* El encabezado ya no dice el día ni la hora: eso lo dice cada
           tarjeta con el dato de su templo, sacado de la base. Repetirlo
-          arriba obligaba a mantener la misma frase en dos sitios. */
-      }
+          arriba obligaba a mantener la misma frase en dos sitios. */}
       <SectionHeading
         eyebrow="Cómo participar"
         title="Dos maneras, según tu templo"
@@ -297,46 +285,38 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
             <h3 class="mt-3 font-display text-xl">{sanMiguel.short}</h3>
             <p class="mt-1 text-sm text-base-content/70">{sanMiguel.address}</p>
 
-            {
-              /* El dato que trae a alguien hasta acá: cuándo. Va primero y
-                grande; lo demás de la tarjeta explica, esto se consulta. */
-            }
-            {
-              cuandoEn(sanMiguel.slug) && (
-                <p class="mt-5 flex items-center gap-2 font-data text-lg font-semibold text-primary">
-                  <Icon name="lucide:calendar-clock" class="h-5 w-5 shrink-0" />
-                  {cuandoEn(sanMiguel.slug)}
-                </p>
-              )
-            }
-            {
-              avisoDe(sanMiguel.slug) && (
-                <p class="mt-2 text-sm font-medium text-warning">{avisoDe(sanMiguel.slug)}</p>
-              )
-            }
+            {/* El dato que trae a alguien hasta acá: cuándo. Va primero y
+                grande; lo demás de la tarjeta explica, esto se consulta. */}
+            {cuandoEn(sanMiguel.slug) && (
+              <p class="mt-5 flex items-center gap-2 font-data text-lg font-semibold text-primary">
+                <Icon name="lucide:calendar-clock" class="h-5 w-5 shrink-0" />
+                {cuandoEn(sanMiguel.slug)}
+              </p>
+            )}
+            {avisoDe(sanMiguel.slug) && (
+              <p class="mt-2 text-sm font-medium text-warning">{avisoDe(sanMiguel.slug)}</p>
+            )}
 
             <p class="mt-4 text-base-content/85">{ESTUDIO.participar.presencial}</p>
 
-            {
-              otrasEnSanMiguel.length > 0 && (
-                <div class="mt-6 border-t border-base-300 pt-5">
-                  <p class="text-xs font-semibold tracking-wider text-base-content/70 uppercase">
-                    El resto de la semana en este templo
-                  </p>
-                  <ul class="mt-3 space-y-1.5">
-                    {otrasEnSanMiguel.map((r) => (
-                      <li class="flex flex-wrap items-baseline gap-x-2 text-sm">
-                        <span class="font-data w-20 shrink-0 text-base-content/70">
-                          {DIAS[r.dia]}
-                        </span>
-                        <span class="font-data font-semibold tabular-nums">{r.hora}</span>
-                        <span class="text-base-content/80">{r.nombre}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )
-            }
+            {otrasEnSanMiguel.length > 0 && (
+              <div class="mt-6 border-t border-base-300 pt-5">
+                <p class="text-xs font-semibold tracking-wider text-base-content/70 uppercase">
+                  El resto de la semana en este templo
+                </p>
+                <ul class="mt-3 space-y-1.5">
+                  {otrasEnSanMiguel.map((r) => (
+                    <li class="flex flex-wrap items-baseline gap-x-2 text-sm">
+                      <span class="font-data w-20 shrink-0 text-base-content/70">
+                        {DIAS[r.dia]}
+                      </span>
+                      <span class="font-data font-semibold tabular-nums">{r.hora}</span>
+                      <span class="text-base-content/80">{r.nombre}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div class="mt-auto flex flex-wrap gap-2 pt-6">
               <a href={`/templos/${sanMiguel.slug}`} class="btn btn-sm btn-primary gap-1.5">
@@ -360,50 +340,42 @@ const youtube = SOCIAL.find((s) => s.key === 'youtube')!;
               <Icon name="lucide:video" class="h-3.5 w-3.5" /> Por Zoom
             </span>
             <h3 class="mt-3 font-display text-xl">
-              {
-                porZoom
-                  .map((t) => t.short)
-                  .join(', ')
-                  .replace(/, ([^,]*)$/, ' y $1')
-              }
+              {porZoom
+                .map((t) => t.short)
+                .join(', ')
+                .replace(/, ([^,]*)$/, ' y $1')}
             </h3>
-            {
-              /* Si los tres coinciden, la hora va una vez. Si algún templo
+            {/* Si los tres coinciden, la hora va una vez. Si algún templo
                 cambia la suya, se enseña templo por templo en vez de
-                enseñar una hora que sería falsa para uno de los tres. */
-            }
-            {
-              zoomCoincide ? (
-                <p class="mt-5 flex items-center gap-2 font-data text-lg font-semibold text-secondary">
-                  <Icon name="lucide:calendar-clock" class="h-5 w-5 shrink-0" />
-                  {horasZoom[0]}
-                </p>
-              ) : (
-                <ul class="mt-5 space-y-1">
-                  {zoomConHorario.map(({ templo, cuando }) => (
-                    <li class="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
-                      <span class="text-base-content/80">{templo.short}</span>
-                      <span class="font-data font-semibold text-secondary">{cuando ?? '—'}</span>
-                    </li>
-                  ))}
-                </ul>
-              )
-            }
+                enseñar una hora que sería falsa para uno de los tres. */}
+            {zoomCoincide ? (
+              <p class="mt-5 flex items-center gap-2 font-data text-lg font-semibold text-secondary">
+                <Icon name="lucide:calendar-clock" class="h-5 w-5 shrink-0" />
+                {horasZoom[0]}
+              </p>
+            ) : (
+              <ul class="mt-5 space-y-1">
+                {zoomConHorario.map(({ templo, cuando }) => (
+                  <li class="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+                    <span class="text-base-content/80">{templo.short}</span>
+                    <span class="font-data font-semibold text-secondary">{cuando ?? '—'}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             <p class="mt-4 text-base-content/85">{ESTUDIO.participar.zoom}</p>
             <p class="mt-3 text-sm text-base-content/70">{ESTUDIO.participar.porQue}</p>
 
             <div class="mt-auto flex flex-wrap gap-2 pt-6">
-              {
-                porZoom.map((t) => (
-                  <a
-                    href={`/contacto?asunto=${asuntoZoom}&templo=${encodeURIComponent(t.short)}`}
-                    class="btn btn-sm btn-primary gap-1.5"
-                  >
-                    <Icon name="lucide:mail" class="h-4 w-4" /> {t.short}
-                  </a>
-                ))
-              }
+              {porZoom.map((t) => (
+                <a
+                  href={`/contacto?asunto=${asuntoZoom}&templo=${encodeURIComponent(t.short)}`}
+                  class="btn btn-sm btn-primary gap-1.5"
+                >
+                  <Icon name="lucide:mail" class="h-4 w-4" /> {t.short}
+                </a>
+              ))}
             </div>
 
             {

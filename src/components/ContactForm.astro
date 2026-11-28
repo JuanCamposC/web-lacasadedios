@@ -81,12 +81,10 @@ const textoError =
   'No pudimos enviar el mensaje. Escríbenos directamente a ' + CONTACT.email + '.';
 ---
 
-{
-  /* Sin `novalidate`: esa marca apagaba la validación del navegador, y quien no
+{/* Sin `novalidate`: esa marca apagaba la validación del navegador, y quien no
     tiene JavaScript se quedaba sin ninguna. Con JavaScript la apaga el script,
     que valida y avisa por su cuenta. El destino es la propia página, que
-    conserva lo escrito si el envío falla. */
-}
+    conserva lo escrito si el envío falla. */}
 <form id="contact-form" method="post" action="/contacto#contacto" class="panel p-6 sm:p-8">
   <h2 class="font-display text-2xl">Escríbenos</h2>
   <p class="mt-1 text-sm text-base-content/70">
@@ -105,7 +103,9 @@ const textoError =
   <div class="mt-6 grid gap-4 sm:grid-cols-2">
     <div class="form-control">
       <label class="label pb-1" for="cf-nombre">
-        <span class="label-text font-medium">Nombre <span class="text-error">*</span></span>
+        <span class="label-text font-medium">
+          Nombre <span class="text-error">*</span>
+        </span>
       </label>
       <input
         id="cf-nombre"
@@ -122,7 +122,9 @@ const textoError =
 
     <div class="form-control">
       <label class="label pb-1" for="cf-email">
-        <span class="label-text font-medium">Correo <span class="text-error">*</span></span>
+        <span class="label-text font-medium">
+          Correo <span class="text-error">*</span>
+        </span>
       </label>
       <input
         id="cf-email"
@@ -139,9 +141,9 @@ const textoError =
 
     <div class="form-control">
       <label class="label pb-1" for="cf-telefono">
-        <span class="label-text font-medium"
-          >Teléfono <span class="text-base-content/70">(opcional)</span></span
-        >
+        <span class="label-text font-medium">
+          Teléfono <span class="text-base-content/70">(opcional)</span>
+        </span>
       </label>
       <input
         id="cf-telefono"
@@ -160,36 +162,40 @@ const textoError =
         <span class="label-text font-medium">Templo</span>
       </label>
       <select id="cf-templo" name="templo" class="select select-bordered w-full">
-        <option value="" selected={!temploElegido}>Consulta general</option>
-        {
-          templos.map((t) => (
-            <option value={t.short} selected={temploElegido?.slug === t.slug}>
-              {t.short}
-            </option>
-          ))
-        }
+        <option value="" selected={!temploElegido}>
+          Consulta general
+        </option>
+        {templos.map((t) => (
+          <option value={t.short} selected={temploElegido?.slug === t.slug}>
+            {t.short}
+          </option>
+        ))}
       </select>
     </div>
 
     <div class="form-control sm:col-span-2">
       <label class="label pb-1" for="cf-asunto">
-        <span class="label-text font-medium">Asunto <span class="text-error">*</span></span>
+        <span class="label-text font-medium">
+          Asunto <span class="text-error">*</span>
+        </span>
       </label>
       <select id="cf-asunto" name="asunto" required class="select select-bordered w-full">
-        <option value="" selected={!asuntoElegido}>Elige un motivo…</option>
-        {
-          asuntos.map((a) => (
-            <option value={a} selected={a === asuntoElegido}>
-              {a}
-            </option>
-          ))
-        }
+        <option value="" selected={!asuntoElegido}>
+          Elige un motivo…
+        </option>
+        {asuntos.map((a) => (
+          <option value={a} selected={a === asuntoElegido}>
+            {a}
+          </option>
+        ))}
       </select>
     </div>
 
     <div class="form-control sm:col-span-2">
       <label class="label pb-1" for="cf-mensaje">
-        <span class="label-text font-medium">Mensaje <span class="text-error">*</span></span>
+        <span class="label-text font-medium">
+          Mensaje <span class="text-error">*</span>
+        </span>
       </label>
       <textarea
         id="cf-mensaje"
@@ -199,8 +205,8 @@ const textoError =
         minlength="10"
         maxlength="4000"
         placeholder="Escribe tu mensaje…"
-        class="textarea textarea-bordered w-full">{valores.mensaje ?? ''}</textarea
-      >
+        class="textarea textarea-bordered w-full"
+      >{valores.mensaje ?? ''}</textarea>
     </div>
   </div>
 

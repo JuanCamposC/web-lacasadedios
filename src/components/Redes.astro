@@ -39,51 +39,47 @@ const descripciones: Record<string, string> = {
   <div class="wrap">
     <div class="text-center">
       <span class={`eyebrow ${claro ? 'text-primary' : 'text-accent'}`}>Síguenos</span>
-      <h2 id="redes-titulo" class="mt-3 text-3xl md:text-4xl">Dónde encontrarnos</h2>
+      <h2 id="redes-titulo" class="mt-3 text-3xl md:text-4xl">
+        Dónde encontrarnos
+      </h2>
       <p class={`mx-auto mt-4 max-w-xl ${claro ? 'text-base-content/70' : 'text-white/70'}`}>
         También estamos fuera del templo, y ahí se entera antes de todo quien no puede venir.
       </p>
     </div>
 
-    {
-      /* `auto-fit` y no tres columnas fijas: la tarjeta de «En vivo» solo aparece
-        cuando hay transmisión, y con columnas fijas su hueco quedaba vacío. */
-    }
+    {/* `auto-fit` y no tres columnas fijas: la tarjeta de «En vivo» solo aparece
+        cuando hay transmisión, y con columnas fijas su hueco quedaba vacío. */}
     <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]">
-      {
-        SOCIAL.map((red, i) => (
-          <Reveal delay={(i % 3) * 90} class="h-full">
-            <a
-              href={red.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              class={`flex h-full flex-col rounded-xl border p-6 transition hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${
-                claro
-                  ? 'border-base-300 bg-base-200/50 hover:border-primary/40'
-                  : 'border-white/15 bg-white/5 hover:border-accent/50 hover:bg-white/10'
-              }`}
-            >
-              <span class={`tile ${claro ? '' : 'bg-white/10 text-accent'}`}>
-                <Icon name={red.icon} class="h-6 w-6" />
-              </span>
-              <h3 class="mt-4 font-display text-xl">{red.label}</h3>
-              <p class={`mt-1 font-data text-sm ${claro ? 'text-primary' : 'text-accent'}`}>
-                {red.handle}
+      {SOCIAL.map((red, i) => (
+        <Reveal delay={(i % 3) * 90} class="h-full">
+          <a
+            href={red.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            class={`flex h-full flex-col rounded-xl border p-6 transition hover:-translate-y-0.5 motion-reduce:hover:translate-y-0 ${
+              claro
+                ? 'border-base-300 bg-base-200/50 hover:border-primary/40'
+                : 'border-white/15 bg-white/5 hover:border-accent/50 hover:bg-white/10'
+            }`}
+          >
+            <span class={`tile ${claro ? '' : 'bg-white/10 text-accent'}`}>
+              <Icon name={red.icon} class="h-6 w-6" />
+            </span>
+            <h3 class="mt-4 font-display text-xl">{red.label}</h3>
+            <p class={`mt-1 font-data text-sm ${claro ? 'text-primary' : 'text-accent'}`}>
+              {red.handle}
+            </p>
+            {descripciones[red.key] && (
+              <p class={`mt-3 text-sm ${claro ? 'text-base-content/70' : 'text-white/65'}`}>
+                {descripciones[red.key]}
               </p>
-              {descripciones[red.key] && (
-                <p class={`mt-3 text-sm ${claro ? 'text-base-content/70' : 'text-white/65'}`}>
-                  {descripciones[red.key]}
-                </p>
-              )}
-            </a>
-          </Reveal>
-        ))
-      }
+            )}
+          </a>
+        </Reveal>
+      ))}
 
-      {
-        /* La transmisión en vivo vive en el sitio, no en una red, pero quien
-          busca «dónde los veo» la busca justo aquí. */
-      }
+      {/* La transmisión en vivo vive en el sitio, no en una red, pero quien
+          busca «dónde los veo» la busca justo aquí. */}
       <Reveal delay={(SOCIAL.length % 3) * 90} class="h-full" data-solo-en-vivo="" hidden>
         <a
           href="/en-vivo"
@@ -109,7 +105,9 @@ const descripciones: Record<string, string> = {
 
     <p class={`mt-10 text-center text-sm ${claro ? 'text-base-content/70' : 'text-white/65'}`}>
       ¿Prefieres escribirnos?{' '}
-      <a href={`mailto:${CONTACT.email}`} class="link-hover link font-medium">{CONTACT.email}</a>
+      <a href={`mailto:${CONTACT.email}`} class="link-hover link font-medium">
+        {CONTACT.email}
+      </a>
     </p>
   </div>
 </section>

@@ -97,34 +97,29 @@ const t = TEXTOS[estado];
 <Layout
   title="Confirmar suscripción · La Casa de Dios"
   description="Confirma tu suscripción al boletín de La Casa de Dios."
-  noindex
-  {/* Ya está suscrito: ofrecerle suscribirse otra vez sobra. */}
+  noindex /* Ya está suscrito: ofrecerle suscribirse otra vez sobra. */
   sinBoletin
 >
   <section class="section flex min-h-[70vh] items-center bg-base-100">
     <div class="wrap-narrow">
       <EmptyState icon={t.icono} title={t.titulo} text={t.texto}>
-        {
-          estado === 'confirmar' && (
-            <form method="post" class="contents">
-              <input type="hidden" name="t" value={token} />
-              <button type="submit" class="btn btn-primary gap-2">
-                <Icon name="lucide:mail-check" class="h-5 w-5" /> Confirmar mi suscripción
-              </button>
-            </form>
-          )
-        }
+        {estado === 'confirmar' && (
+          <form method="post" class="contents">
+            <input type="hidden" name="t" value={token} />
+            <button type="submit" class="btn btn-primary gap-2">
+              <Icon name="lucide:mail-check" class="h-5 w-5" /> Confirmar mi suscripción
+            </button>
+          </form>
+        )}
         <a href="/" class={`btn gap-2 ${estado === 'confirmar' ? 'btn-ghost' : 'btn-primary'}`}>
           <Icon name="lucide:home" class="h-5 w-5" />
           Ir al inicio
         </a>
-        {
-          estado === 'listo' && (
-            <a href="/eventos" class="btn btn-ghost gap-2">
-              <Icon name="lucide:calendar-days" class="h-5 w-5" /> Ver los próximos eventos
-            </a>
-          )
-        }
+        {estado === 'listo' && (
+          <a href="/eventos" class="btn btn-ghost gap-2">
+            <Icon name="lucide:calendar-days" class="h-5 w-5" /> Ver los próximos eventos
+          </a>
+        )}
       </EmptyState>
 
       {

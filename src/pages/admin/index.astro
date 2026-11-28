@@ -328,24 +328,20 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
     </span>
     <span class="min-w-0 flex-1">
       <span class="flex items-center gap-2">
-        {
-          enVivo && (
-            <span
-              class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-error"
-              aria-hidden="true"
-            />
-          )
-        }
+        {enVivo && (
+          <span
+            class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-error"
+            aria-hidden="true"
+          />
+        )}
         <strong class={enVivo ? 'text-error' : ''}>
           {enVivo ? 'El sitio está mostrando una transmisión en vivo' : 'No hay transmisión activa'}
         </strong>
       </span>
       <span class="mt-0.5 block truncate text-sm text-base-content/70">
-        {
-          enVivo
-            ? (aj?.vivo_titulo || 'Sin título') + ' — toca para cambiarla o apagarla'
-            : 'Toca para activar la transmisión cuando empiece la reunión'
-        }
+        {enVivo
+          ? (aj?.vivo_titulo || 'Sin título') + ' — toca para cambiarla o apagarla'
+          : 'Toca para activar la transmisión cuando empiece la reunión'}
       </span>
     </span>
     <Icon name="lucide:chevron-right" class="h-5 w-5 shrink-0 text-base-content/55" />
@@ -356,78 +352,71 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
        todos los días enseñaría a no mirarlo, y el día que tuviera algo ya
        nadie lo leería.
   ══════════════════════════════════════════════════════════════════════════ -->
-  {
-    pendientes.length > 0 && (
-      <section
-        data-reveal
-        class={`panel mb-6 p-5 ${urgentes > 0 ? 'border-warning/50 bg-warning/5' : ''}`}
-      >
-        <h2 class="flex items-center gap-2 text-base font-bold">
-          <Icon
-            name={urgentes > 0 ? 'lucide:alert-triangle' : 'lucide:info'}
-            class={`h-4 w-4 ${urgentes > 0 ? 'text-warning' : 'text-primary'}`}
-          />
-          {urgentes > 0 ? 'Conviene mirar esto' : 'Cosas en marcha'}
-        </h2>
+  {pendientes.length > 0 && (
+    <section
+      data-reveal
+      class={`panel mb-6 p-5 ${urgentes > 0 ? 'border-warning/50 bg-warning/5' : ''}`}
+    >
+      <h2 class="flex items-center gap-2 text-base font-bold">
+        <Icon
+          name={urgentes > 0 ? 'lucide:alert-triangle' : 'lucide:info'}
+          class={`h-4 w-4 ${urgentes > 0 ? 'text-warning' : 'text-primary'}`}
+        />
+        {urgentes > 0 ? 'Conviene mirar esto' : 'Cosas en marcha'}
+      </h2>
 
-        <ul class="mt-4 divide-y divide-base-300/70">
-          {pendientes.map((p) => (
-            <li>
-              <a
-                href={p.href}
-                class="flex items-start gap-3 py-3 transition-colors hover:bg-base-200/50"
-              >
-                <Icon
-                  name={p.icono}
-                  class={`mt-0.5 h-4 w-4 shrink-0 ${p.tono === 'warning' ? 'text-warning' : 'text-primary'}`}
-                />
-                <span class="min-w-0 flex-1">
-                  <span class="block text-sm font-medium">{p.texto}</span>
-                  {p.detalle && <span class="block text-xs text-base-content/70">{p.detalle}</span>}
-                </span>
-                <Icon
-                  name="lucide:chevron-right"
-                  class="mt-0.5 h-4 w-4 shrink-0 text-base-content/55"
-                />
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
-    )
-  }
+      <ul class="mt-4 divide-y divide-base-300/70">
+        {pendientes.map((p) => (
+          <li>
+            <a
+              href={p.href}
+              class="flex items-start gap-3 py-3 transition-colors hover:bg-base-200/50"
+            >
+              <Icon
+                name={p.icono}
+                class={`mt-0.5 h-4 w-4 shrink-0 ${p.tono === 'warning' ? 'text-warning' : 'text-primary'}`}
+              />
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm font-medium">{p.texto}</span>
+                {p.detalle && <span class="block text-xs text-base-content/70">{p.detalle}</span>}
+              </span>
+              <Icon
+                name="lucide:chevron-right"
+                class="mt-0.5 h-4 w-4 shrink-0 text-base-content/55"
+              />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
 
   <!-- Cifras -->
   <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    {
-      tarjetas.map((c, i) => (
-        <a href={c.href} data-reveal data-reveal-delay={i * 70} class="panel panel-lift group p-5">
-          <div class="flex items-start justify-between">
-            <span class={c.tile}>
-              <Icon name={c.icon} class="h-5 w-5" />
-            </span>
-            <Icon
-              name="lucide:arrow-up-right"
-              class="h-4 w-4 text-base-content/55 transition group-hover:text-primary"
-            />
-          </div>
-          <p class="mt-4 flex items-baseline gap-2">
-            <span
-              data-count={c.total}
-              class="font-data text-4xl font-bold leading-none text-primary"
-            >
-              0
-            </span>
-            <span class="text-sm font-semibold">{c.label}</span>
-          </p>
-          <p class="mt-1.5 text-xs text-base-content/70">
-            {c.publicados === null
-              ? 'Personas suscritas al boletín'
-              : `${c.publicados} publicado${c.publicados === 1 ? '' : 's'} · ${c.total - c.publicados} borrador${c.total - c.publicados === 1 ? '' : 'es'}`}
-          </p>
-        </a>
-      ))
-    }
+    {tarjetas.map((c, i) => (
+      <a href={c.href} data-reveal data-reveal-delay={i * 70} class="panel panel-lift group p-5">
+        <div class="flex items-start justify-between">
+          <span class={c.tile}>
+            <Icon name={c.icon} class="h-5 w-5" />
+          </span>
+          <Icon
+            name="lucide:arrow-up-right"
+            class="h-4 w-4 text-base-content/55 transition group-hover:text-primary"
+          />
+        </div>
+        <p class="mt-4 flex items-baseline gap-2">
+          <span data-count={c.total} class="font-data text-4xl font-bold leading-none text-primary">
+            0
+          </span>
+          <span class="text-sm font-semibold">{c.label}</span>
+        </p>
+        <p class="mt-1.5 text-xs text-base-content/70">
+          {c.publicados === null
+            ? 'Personas suscritas al boletín'
+            : `${c.publicados} publicado${c.publicados === 1 ? '' : 's'} · ${c.total - c.publicados} borrador${c.total - c.publicados === 1 ? '' : 'es'}`}
+        </p>
+      </a>
+    ))}
   </div>
 
   <div class="mt-6 grid gap-6 lg:grid-cols-3">
@@ -437,39 +426,37 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
         <Icon name="lucide:history" class="h-4 w-4 text-accent" /> Lo último que se cargó
       </h2>
 
-      {
-        actividad.length === 0 ? (
-          <p class="mt-5 rounded border border-dashed border-base-300 px-4 py-8 text-center text-sm text-base-content/70">
-            Todavía no hay contenido. Empieza creando un evento o una noticia.
-          </p>
-        ) : (
-          <ul class="mt-4 divide-y divide-base-300/70">
-            {actividad.map((r) => (
-              <li>
-                <a
-                  href={TIPO[r.tipo].href}
-                  class="flex items-center gap-3 py-3 transition-colors hover:bg-base-200/50"
+      {actividad.length === 0 ? (
+        <p class="mt-5 rounded border border-dashed border-base-300 px-4 py-8 text-center text-sm text-base-content/70">
+          Todavía no hay contenido. Empieza creando un evento o una noticia.
+        </p>
+      ) : (
+        <ul class="mt-4 divide-y divide-base-300/70">
+          {actividad.map((r) => (
+            <li>
+              <a
+                href={TIPO[r.tipo].href}
+                class="flex items-center gap-3 py-3 transition-colors hover:bg-base-200/50"
+              >
+                <span class="tile h-9 w-9 shrink-0">
+                  <Icon name={TIPO[r.tipo].icon} class="h-4 w-4" />
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-medium">{r.titulo}</span>
+                  <span class="font-data text-xs uppercase tracking-wide text-base-content/70">
+                    {TIPO[r.tipo].label} · {fecha(r.creado_en)}
+                  </span>
+                </span>
+                <span
+                  class={`badge badge-sm shrink-0 ${r.publicado === 1 ? 'badge-success' : 'badge-ghost'}`}
                 >
-                  <span class="tile h-9 w-9 shrink-0">
-                    <Icon name={TIPO[r.tipo].icon} class="h-4 w-4" />
-                  </span>
-                  <span class="min-w-0 flex-1">
-                    <span class="block truncate text-sm font-medium">{r.titulo}</span>
-                    <span class="font-data text-xs uppercase tracking-wide text-base-content/70">
-                      {TIPO[r.tipo].label} · {fecha(r.creado_en)}
-                    </span>
-                  </span>
-                  <span
-                    class={`badge badge-sm shrink-0 ${r.publicado === 1 ? 'badge-success' : 'badge-ghost'}`}
-                  >
-                    {r.publicado === 1 ? 'Publicado' : 'Borrador'}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        )
-      }
+                  {r.publicado === 1 ? 'Publicado' : 'Borrador'}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
 
     <!-- Acciones y ayuda -->
@@ -479,13 +466,11 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
           <Icon name="lucide:zap" class="h-4 w-4 text-accent" /> Crear algo
         </h2>
         <div class="mt-4 space-y-2">
-          {
-            acciones.map((a) => (
-              <a href={a.href} class="btn btn-outline btn-sm w-full justify-start gap-2">
-                <Icon name={a.icon} class="h-4 w-4" /> {a.label}
-              </a>
-            ))
-          }
+          {acciones.map((a) => (
+            <a href={a.href} class="btn btn-outline btn-sm w-full justify-start gap-2">
+              <Icon name={a.icon} class="h-4 w-4" /> {a.label}
+            </a>
+          ))}
         </div>
       </section>
 
@@ -496,14 +481,16 @@ const fecha = (d: string) => enChile(d, { day: '2-digit', month: 'short' });
         <ul class="mt-4 space-y-3 text-sm text-base-content/75">
           <li class="flex items-start gap-2">
             <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
-            Lo que está en <strong>borrador</strong> no se ve en el sitio. Publícalo cuando esté listo.
+            Lo que está en <strong>borrador</strong> no se ve en el sitio. Publícalo cuando esté
+            listo.
           </li>
           <li class="flex items-start gap-2">
             <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />
-            Al borrar, nada se pierde: queda 30 días en la <a
-              href="/admin/papelera"
-              class="link link-primary">papelera</a
-            >.
+            Al borrar, nada se pierde: queda 30 días en la{' '}
+            <a href="/admin/papelera" class="link link-primary">
+              papelera
+            </a>
+            .
           </li>
           <li class="flex items-start gap-2">
             <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-success" />

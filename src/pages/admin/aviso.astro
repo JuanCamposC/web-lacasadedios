@@ -112,9 +112,11 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
       >
         <span class="flex items-center gap-3">
           <span
-            class={s.popup_enabled
-              ? 'tile tile-lg bg-primary/15 text-primary'
-              : 'tile tile-lg tile-muted'}
+            class={
+              s.popup_enabled
+                ? 'tile tile-lg bg-primary/15 text-primary'
+                : 'tile tile-lg tile-muted'
+            }
           >
             <Icon name="lucide:megaphone" class="h-6 w-6" />
           </span>
@@ -173,68 +175,58 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
       {/* ── Imagen ───────────────────────────────────────────────────── */}
       <div>
         <span class="mb-1.5 block text-sm font-medium">Imagen</span>
-        {
-          /* Lo que se guarda es la CLAVE del archivo, no su dirección: si mañana
+        {/* Lo que se guarda es la CLAVE del archivo, no su dirección: si mañana
             cambia el dominio del bucket se cambia una variable y no cada fila.
-            La dirección viaja aparte, solo para la vista previa. */
-        }
+            La dirección viaja aparte, solo para la vista previa. */}
         <input type="hidden" name="popup_image_key" value={s.popup_image_key} />
         <input type="hidden" name="popup_image_url" value={s.popup_image_url} />
 
         <div class="flex flex-wrap items-center gap-2">
           <label class="btn btn-outline btn-sm gap-2">
             <Icon name="lucide:upload" class="h-4 w-4" /> Subir una imagen
-            {
-              /* sr-only y no hidden: ver plantilla.ts. Con display:none no hay
-                forma de llegar al campo con el teclado. */
-            }
+            {/* sr-only y no hidden: ver plantilla.ts. Con display:none no hay
+                forma de llegar al campo con el teclado. */}
             <input type="file" id="aviso-archivo" accept="image/*" class="sr-only" />
           </label>
           <button type="button" id="aviso-quitar-img" class="btn btn-ghost btn-sm gap-2">
             <Icon name="lucide:x" class="h-4 w-4" /> Quitar
           </button>
-          <span id="aviso-subiendo" class="hidden text-xs text-base-content/70"
-            >Preparando y subiendo…</span
-          >
+          <span id="aviso-subiendo" class="hidden text-xs text-base-content/70">
+            Preparando y subiendo…
+          </span>
         </div>
 
-        {
-          disponibles.length > 0 && (
-            <>
-              <span class="mt-4 block text-xs text-base-content/70">
-                O elige una de las que ya subiste:
-              </span>
-              <div class="mt-2 grid max-h-64 grid-cols-3 gap-2 overflow-y-auto rounded border border-base-300 p-2 sm:grid-cols-4">
-                {disponibles.map((img) => (
-                  <button
-                    type="button"
-                    class="group relative aspect-video overflow-hidden rounded border-2 border-transparent transition hover:border-primary"
-                    data-elegir={img.clave}
-                    data-url={img.url}
-                    title={img.nombre}
-                  >
-                    <img src={img.url} alt="" loading="lazy" class="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            </>
-          )
-        }
-        {
-          disponibles.length === 0 && (
-            <span class="mt-2 block text-xs text-base-content/70">
-              Todavía no hay imágenes subidas. Sube una con el botón de arriba.
+        {disponibles.length > 0 && (
+          <>
+            <span class="mt-4 block text-xs text-base-content/70">
+              O elige una de las que ya subiste:
             </span>
-          )
-        }
+            <div class="mt-2 grid max-h-64 grid-cols-3 gap-2 overflow-y-auto rounded border border-base-300 p-2 sm:grid-cols-4">
+              {disponibles.map((img) => (
+                <button
+                  type="button"
+                  class="group relative aspect-video overflow-hidden rounded border-2 border-transparent transition hover:border-primary"
+                  data-elegir={img.clave}
+                  data-url={img.url}
+                  title={img.nombre}
+                >
+                  <img src={img.url} alt="" loading="lazy" class="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+        {disponibles.length === 0 && (
+          <span class="mt-2 block text-xs text-base-content/70">
+            Todavía no hay imágenes subidas. Sube una con el botón de arriba.
+          </span>
+        )}
 
-        {
-          /* ── Qué se ve en la imagen ────────────────────────────────────
+        {/* ── Qué se ve en la imagen ────────────────────────────────────
             Hace falta de verdad en el modo «solo la imagen»: ahí el título
             queda escondido y la imagen es todo el aviso, así que quien use
             un lector de pantalla no recibe nada. Y un cartel suele traer la
-            fecha dibujada dentro, que no está escrita en ningún otro campo. */
-        }
+            fecha dibujada dentro, que no está escrita en ningún otro campo. */}
         <label class="mt-4 block">
           <span class="mb-1.5 block text-sm font-medium">Qué se ve en la imagen</span>
           <input
@@ -254,9 +246,9 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
       {/* ── Texto ────────────────────────────────────────────────────── */}
       <div data-solo-normal class="space-y-5">
         <label class="block">
-          <span class="mb-1.5 block text-sm font-medium"
-            >Título <span class="text-error">*</span></span
-          >
+          <span class="mb-1.5 block text-sm font-medium">
+            Título <span class="text-error">*</span>
+          </span>
           <input
             type="text"
             name="popup_title"
@@ -272,8 +264,8 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
             name="popup_body"
             rows="3"
             placeholder="Te esperamos el viernes 26 de septiembre a las 19:00 en San Miguel."
-            class="textarea textarea-bordered w-full">{s.popup_body ?? ''}</textarea
-          >
+            class="textarea textarea-bordered w-full"
+          >{s.popup_body ?? ''}</textarea>
         </label>
       </div>
 
@@ -299,13 +291,11 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
           <span class="mb-1.5 block text-sm font-medium">A dónde lleva</span>
           <select id="aviso-destino" class="select select-bordered w-full">
             <option value="">Elige una página del sitio</option>
-            {
-              destinos.map((d) => (
-                <option value={d.href} selected={s.popup_cta_url === d.href}>
-                  {d.label}
-                </option>
-              ))
-            }
+            {destinos.map((d) => (
+              <option value={d.href} selected={s.popup_cta_url === d.href}>
+                {d.label}
+              </option>
+            ))}
             <option value="__otro" selected={!!s.popup_cta_url && !esInterno}>
               Otro enlace…
             </option>
@@ -331,17 +321,15 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
             role="radiogroup"
             aria-label="Posición del botón"
           >
-            {
-              POSICIONES.map((pos) => (
-                <button
-                  type="button"
-                  data-pos={pos}
-                  aria-label={pos.replace('-', ' ')}
-                  aria-pressed={s.popup_cta_pos === pos}
-                  class="aspect-square rounded border border-base-300 transition hover:border-primary"
-                />
-              ))
-            }
+            {POSICIONES.map((pos) => (
+              <button
+                type="button"
+                data-pos={pos}
+                aria-label={pos.replace('-', ' ')}
+                aria-pressed={s.popup_cta_pos === pos}
+                class="aspect-square rounded border border-base-300 transition hover:border-primary"
+              />
+            ))}
           </div>
           <input type="hidden" name="popup_cta_pos" value={s.popup_cta_pos ?? 'abajo-centro'} />
         </div>
@@ -372,9 +360,7 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
         Opcionales. Con las dos fechas lo dejas preparado hoy y se enciende y apaga solo.
       </p>
 
-      <label
-        class="flex cursor-pointer items-start gap-3 rounded border border-base-300 bg-base-200/50 p-3"
-      >
+      <label class="flex cursor-pointer items-start gap-3 rounded border border-base-300 bg-base-200/50 p-3">
         <input type="checkbox" name="repetir" class="toggle toggle-primary toggle-sm mt-0.5" />
         <span>
           <span class="block text-sm font-medium">Volver a mostrarlo a quien ya lo cerró</span>
@@ -393,13 +379,11 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
     </form>
 
     {/* ── Vista previa ───────────────────────────────────────────────── */}
-    {
-      /* Lo que se queda fijo al bajar es la COLUMNA entera, no la tarjeta de la
+    {/* Lo que se queda fijo al bajar es la COLUMNA entera, no la tarjeta de la
         vista previa. Con la tarjeta sola `sticky`, al bajar se deslizaba por
         encima de «Cómo se comporta» —su hermana dentro de la misma columna— y,
         con `top-4`, se metía debajo de la cabecera del panel, que también es
-        fija y mide unos 5 rem. `top-24` la deja justo por debajo. */
-    }
+        fija y mide unos 5 rem. `top-24` la deja justo por debajo. */}
     <aside class="space-y-4 xl:sticky xl:top-24 xl:col-span-2 xl:self-start">
       <div class="panel p-5">
         <h2 class="flex items-center gap-2 text-base font-bold">
@@ -420,7 +404,8 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
                 <span
                   id="vp-cta-img"
                   class="btn btn-primary btn-sm pointer-events-none whitespace-nowrap"
-                  data-ancla="abajo-centro"></span>
+                  data-ancla="abajo-centro"
+                ></span>
               </div>
             </div>
             <div id="vp-cuerpo" class="p-4">
@@ -448,13 +433,13 @@ const paraInput = (iso: string | null) => (iso ? deIsoAChile(iso) : '');
           </li>
           <li class="flex items-start gap-2">
             <Icon name="lucide:alert-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-            «Una vez» es por navegador: quien entre desde el teléfono y desde el computador lo verá dos
-            veces.
+            «Una vez» es por navegador: quien entre desde el teléfono y desde el computador lo verá
+            dos veces.
           </li>
           <li class="flex items-start gap-2">
             <Icon name="lucide:alert-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-            No lo dejes encendido semanas. Google penaliza los avisos que tapan el contenido nada más
-            entrar.
+            No lo dejes encendido semanas. Google penaliza los avisos que tapan el contenido nada
+            más entrar.
           </li>
         </ul>
       </div>

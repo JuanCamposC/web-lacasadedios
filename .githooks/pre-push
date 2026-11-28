@@ -1,0 +1,14 @@
+#!/bin/sh
+# La suite completa antes de cada push: formato, tipos, pruebas y compilación.
+# Es lo mismo que corre GitHub, así que lo que pasa aquí pasa allá y lo que
+# falla aquí no llega a main. Se activa solo con `npm install` (script
+# `prepare`, que apunta core.hooksPath a esta carpeta).
+#
+# Saltárselo con `git push --no-verify` se puede, pero GitHub corre lo mismo
+# y no despliega nada que no salga verde.
+echo "pre-push: npm run verificar"
+npm run verificar || {
+  echo ""
+  echo "pre-push: la suite falló. No se empuja."
+  exit 1
+}

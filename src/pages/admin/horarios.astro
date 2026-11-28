@@ -48,9 +48,9 @@ const REGLAS = [
         <Icon name="lucide:info" class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
         <p class="text-xs text-base-content/75">
           Una línea puede ser la misma reunión en varios templos: se editan las dos a la vez. Para
-          suspenderla o moverla <strong>solo una vez</strong>, usa el menú <span class="font-bold"
-            >⋯</span
-          > de su línea — la fecha de término la pone el panel y la reunión vuelve sola.
+          suspenderla o moverla <strong>solo una vez</strong>, usa el menú{' '}
+          <span class="font-bold">⋯</span> de su línea — la fecha de término la pone el panel y la
+          reunión vuelve sola.
         </p>
       </div>
 
@@ -65,38 +65,34 @@ const REGLAS = [
     <section class="lg:col-span-5 xl:col-span-4">
       <form id="form-reunion" class="panel space-y-4 p-5 lg:sticky lg:top-24">
         <div class="flex items-center justify-between gap-2">
-          <h2 class="text-base font-bold" id="form-titulo">Nueva reunión</h2>
+          <h2 class="text-base font-bold" id="form-titulo">
+            Nueva reunión
+          </h2>
           <button type="button" class="btn btn-ghost btn-xs hidden" id="form-cancelar">
             Cancelar
           </button>
         </div>
 
         <fieldset class="space-y-2 rounded border border-base-300 p-3">
-          <legend
-            class="px-1.5 text-xs font-semibold uppercase tracking-wider text-base-content/70"
-          >
+          <legend class="px-1.5 text-xs font-semibold uppercase tracking-wider text-base-content/70">
             En qué templos
           </legend>
-          {
-            /* Casillas y no un desplegable, y eso es la mitad del arreglo: el
+          {/* Casillas y no un desplegable, y eso es la mitad del arreglo: el
               estudio bíblico de los lunes se hace en los cuatro templos, y con
               un desplegable había que rellenar este formulario cuatro veces y
-              después acordarse de editar las cuatro filas. */
-          }
+              después acordarse de editar las cuatro filas. */}
           <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-            {
-              templos.map((t) => (
-                <label class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-base-200">
-                  <input
-                    type="checkbox"
-                    name="templos"
-                    value={t.slug}
-                    class="checkbox checkbox-primary checkbox-sm"
-                  />
-                  {t.short}
-                </label>
-              ))
-            }
+            {templos.map((t) => (
+              <label class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-base-200">
+                <input
+                  type="checkbox"
+                  name="templos"
+                  value={t.slug}
+                  class="checkbox checkbox-primary checkbox-sm"
+                />
+                {t.short}
+              </label>
+            ))}
           </div>
           <p class="px-1.5 text-xs text-base-content/70">
             Se guarda una vez en cada templo marcado. Si desmarcas uno, su reunión se va a la
@@ -109,7 +105,9 @@ const REGLAS = [
             Día <span class="text-error">*</span>
           </span>
           <select name="dia" required class="select select-bordered w-full">
-            {DIAS.map((d, i) => <option value={i}>{d}</option>)}
+            {DIAS.map((d, i) => (
+              <option value={i}>{d}</option>
+            ))}
           </select>
         </label>
 
@@ -140,9 +138,7 @@ const REGLAS = [
         </label>
 
         <fieldset class="space-y-3 rounded border border-base-300 p-3">
-          <legend
-            class="px-1.5 text-xs font-semibold uppercase tracking-wider text-base-content/70"
-          >
+          <legend class="px-1.5 text-xs font-semibold uppercase tracking-wider text-base-content/70">
             Algo que se repite
           </legend>
           <p class="-mt-1 px-1.5 text-xs text-base-content/70">
@@ -167,15 +163,15 @@ const REGLAS = [
             <span class="mb-1.5 block text-sm font-medium">Cada cuánto</span>
             <select name="marca_regla" class="select select-bordered w-full">
               <option value="">Nunca — esta reunión no lleva marca</option>
-              {REGLAS.map((r) => <option value={r.value}>{r.label}</option>)}
+              {REGLAS.map((r) => (
+                <option value={r.value}>{r.label}</option>
+              ))}
             </select>
             <p id="previa-marca" class="mt-1 text-xs" role="status"></p>
           </label>
         </fieldset>
 
-        <label
-          class="flex cursor-pointer items-start gap-3 rounded border border-base-300 bg-base-200/50 p-3"
-        >
+        <label class="flex cursor-pointer items-start gap-3 rounded border border-base-300 bg-base-200/50 p-3">
           <input
             type="checkbox"
             name="publicado"
@@ -190,7 +186,9 @@ const REGLAS = [
           </span>
         </label>
 
-        <button type="submit" class="btn btn-primary w-full" id="form-guardar">Guardar</button>
+        <button type="submit" class="btn btn-primary w-full" id="form-guardar">
+          Guardar
+        </button>
       </form>
     </section>
   </div>
@@ -199,8 +197,8 @@ const REGLAS = [
     <div class="modal-box max-w-sm">
       <h3 class="text-lg font-bold">¿Borrar esta reunión?</h3>
       <p class="mt-2 text-sm text-base-content/70">
-        <strong data-nombre class="break-words"></strong> deja de verse en los horarios del sitio. Queda
-        30 días en la papelera del panel, así que se puede recuperar.
+        <strong data-nombre class="break-words"></strong> deja de verse en los horarios del sitio.
+        Queda 30 días en la papelera del panel, así que se puede recuperar.
       </p>
       <p class="mt-2 text-sm text-base-content/70">
         Si solo se suspende por esta vez, cancela y usa «Suspender» en el menú de la línea: así
@@ -208,12 +206,18 @@ const REGLAS = [
       </p>
       <div class="modal-action">
         <form method="dialog" class="flex w-full gap-2">
-          <button value="no" class="btn btn-ghost flex-1">Cancelar</button>
-          <button value="si" class="btn btn-error flex-1">Sí, borrar</button>
+          <button value="no" class="btn btn-ghost flex-1">
+            Cancelar
+          </button>
+          <button value="si" class="btn btn-error flex-1">
+            Sí, borrar
+          </button>
         </form>
       </div>
     </div>
-    <form method="dialog" class="modal-backdrop"><button>cerrar</button></form>
+    <form method="dialog" class="modal-backdrop">
+      <button>cerrar</button>
+    </form>
   </dialog>
 
   <script>

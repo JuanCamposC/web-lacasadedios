@@ -30,11 +30,9 @@ const { plural } = Astro.props;
 ---
 
 <section class="sticky top-16 z-30 border-b border-base-300 bg-base-100">
-  {
-    /* El desplazamiento vive acá y no en el `.wrap`: así los chips llegan hasta
+  {/* El desplazamiento vive acá y no en el `.wrap`: así los chips llegan hasta
       el borde de la pantalla en vez de cortarse contra un ancho centrado, que
-      era lo que hacía parecer roto el último. */
-  }
+      era lo que hacía parecer roto el último. */}
   <div class="indice wrap overflow-x-auto px-4 py-3">
     <div
       class="flex w-max items-center gap-2 pe-8 md:w-full md:flex-wrap md:pe-0"
@@ -43,24 +41,20 @@ const { plural } = Astro.props;
       data-filtro-templos
       data-plural={plural}
     >
-      <span
-        class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/70 sm:inline"
-      >
+      <span class="font-data hidden shrink-0 pr-1 text-xs uppercase tracking-[0.18em] text-base-content/70 sm:inline">
         Filtrar
       </span>
-      {
-        /* `aria-pressed` no es solo accesibilidad: es TAMBIÉN de dónde sale el
+      {/* `aria-pressed` no es solo accesibilidad: es TAMBIÉN de dónde sale el
           aspecto del chip. Ver `.filtro-chip` en global.css. Un solo atributo
-          dice el estado a quien mira, a quien escucha y al CSS. */
-      }
-      <button type="button" data-filter="all" aria-pressed="true" class="filtro-chip">Todos</button>
-      {
-        templos.map((t) => (
-          <button type="button" data-filter={t.slug} aria-pressed="false" class="filtro-chip">
-            {t.short}
-          </button>
-        ))
-      }
+          dice el estado a quien mira, a quien escucha y al CSS. */}
+      <button type="button" data-filter="all" aria-pressed="true" class="filtro-chip">
+        Todos
+      </button>
+      {templos.map((t) => (
+        <button type="button" data-filter={t.slug} aria-pressed="false" class="filtro-chip">
+          {t.short}
+        </button>
+      ))}
     </div>
   </div>
 </section>

@@ -70,9 +70,7 @@ const siguiente = mesSiguiente(mes);
 
 <div class="panel overflow-hidden">
   <!-- Cabecera: el mes y cómo moverse -->
-  <header
-    class="flex items-center justify-between gap-3 border-b border-base-300 bg-base-200/60 px-3 py-2.5"
-  >
+  <header class="flex items-center justify-between gap-3 border-b border-base-300 bg-base-200/60 px-3 py-2.5">
     <a
       href={enlaceMes(anterior)}
       rel="prev"
@@ -83,12 +81,10 @@ const siguiente = mesSiguiente(mes);
       <span class="hidden sm:inline">{enPalabras(anterior).split(' de ')[0]}</span>
     </a>
 
-    {
-      /* `first-letter:uppercase` y NO `capitalize`: aquella pone mayúscula en
+    {/* `first-letter:uppercase` y NO `capitalize`: aquella pone mayúscula en
          CADA palabra y el título salía «Diciembre De 2026». En castellano el
          mes va en minúscula y solo se levanta la primera letra por ir al
-         principio de una frase. */
-    }
+         principio de una frase. */}
     <h3 class="font-display text-lg first-letter:uppercase md:text-xl">{enPalabras(mes)}</h3>
 
     <a
@@ -105,116 +101,110 @@ const siguiente = mesSiguiente(mes);
   <!-- Los nombres de los días. En el teléfono solo la inicial: «Mié» en una
        columna de 45 px se corta, y una letra se entiende igual. -->
   <div class="grid grid-cols-7 border-b border-base-300 bg-base-200/30">
-    {
-      DIAS_LUNES.map((d) => (
-        <div class="font-data px-1 py-1.5 text-center text-[0.65rem] font-bold uppercase tracking-wider text-base-content/60">
-          <span class="sm:hidden">{d.charAt(0)}</span>
-          <span class="hidden sm:inline">{d}</span>
-        </div>
-      ))
-    }
+    {DIAS_LUNES.map((d) => (
+      <div class="font-data px-1 py-1.5 text-center text-[0.65rem] font-bold uppercase tracking-wider text-base-content/60">
+        <span class="sm:hidden">{d.charAt(0)}</span>
+        <span class="hidden sm:inline">{d}</span>
+      </div>
+    ))}
   </div>
 
   <div class="grid grid-cols-7">
-    {
-      casillas.map((c) => {
-        const delDia = c.delMes ? (porDia.get(c.fecha) ?? []) : [];
-        const semanales = c.delMes ? reunionesEnFecha(reuniones, c.fecha) : [];
-        const esHoy = c.fecha === hoy;
+    {casillas.map((c) => {
+      const delDia = c.delMes ? (porDia.get(c.fecha) ?? []) : [];
+      const semanales = c.delMes ? reunionesEnFecha(reuniones, c.fecha) : [];
+      const esHoy = c.fecha === hoy;
 
-        return (
+      return (
+        <div
+          class={`min-h-[5.5rem] border-b border-r border-base-300/70 p-1 last:border-r-0 sm:min-h-[7rem] sm:p-1.5 ${
+            c.delMes ? '' : 'bg-base-200/40'
+          } ${esHoy ? 'bg-accent/5 ring-1 ring-inset ring-accent/40' : ''}`}
+        >
           <div
-            class={`min-h-[5.5rem] border-b border-r border-base-300/70 p-1 last:border-r-0 sm:min-h-[7rem] sm:p-1.5 ${
-              c.delMes ? '' : 'bg-base-200/40'
-            } ${esHoy ? 'bg-accent/5 ring-1 ring-inset ring-accent/40' : ''}`}
+            class={`font-data mb-1 text-right text-xs ${
+              esHoy
+                ? 'font-bold text-accent'
+                : c.delMes
+                  ? 'text-base-content/60'
+                  : 'text-base-content/30'
+            }`}
           >
-            <div
-              class={`font-data mb-1 text-right text-xs ${
-                esHoy
-                  ? 'font-bold text-accent'
-                  : c.delMes
-                    ? 'text-base-content/60'
-                    : 'text-base-content/30'
-              }`}
-            >
-              {c.numero}
-            </div>
+            {c.numero}
+          </div>
 
-            {/* ── Los eventos: lo que se viene a ver ──────────────────────
+          {/* ── Los eventos: lo que se viene a ver ──────────────────────
                 Siete columnas en un teléfono son unos 50 px cada una, y ahí un
                 título se corta en «Bautis». Así que a ese ancho la casilla
                 responde a «¿qué días hay algo?» —la hora, en el color de su
                 templo— y el «¿qué es?» lo responde la vista de lista, que está
                 a un toque. Desde `sm` cabe el título y se pone entero. */}
-            {delDia.map((e) => {
-              const t = colorDe(e.templo);
-              return (
-                <a
-                  href={`/eventos?e=${encodeURIComponent(e.slug ?? e.id)}`}
-                  data-etiqueta={e.templo}
-                  class="mb-1 block rounded px-1 py-0.5 text-center text-[0.6rem] leading-tight text-white transition hover:brightness-110 sm:px-1.5 sm:py-1 sm:text-left sm:text-xs"
-                  style={t ? `background:${t.color.fondo}` : 'background:var(--color-primary)'}
-                  title={`${e.titulo}${e.lugar ? ' · ' + e.lugar : ''}`}
-                >
-                  <span class="font-data block font-bold">{horaCorta(e.fecha)}</span>
-                  <span class="hidden font-medium sm:line-clamp-2 sm:block">{e.titulo}</span>
-                </a>
-              );
-            })}
+          {delDia.map((e) => {
+            const t = colorDe(e.templo);
+            return (
+              <a
+                href={`/eventos?e=${encodeURIComponent(e.slug ?? e.id)}`}
+                data-etiqueta={e.templo}
+                class="mb-1 block rounded px-1 py-0.5 text-center text-[0.6rem] leading-tight text-white transition hover:brightness-110 sm:px-1.5 sm:py-1 sm:text-left sm:text-xs"
+                style={t ? `background:${t.color.fondo}` : 'background:var(--color-primary)'}
+                title={`${e.titulo}${e.lugar ? ' · ' + e.lugar : ''}`}
+              >
+                <span class="font-data block font-bold">{horaCorta(e.fecha)}</span>
+                <span class="hidden font-medium sm:line-clamp-2 sm:block">{e.titulo}</span>
+              </a>
+            );
+          })}
 
-            {/* Las de cada semana: contexto, no titular. Como mucho tres, y el
+          {/* Las de cada semana: contexto, no titular. Como mucho tres, y el
                 resto contado — una casilla con los cuatro templos llevaría
                 cinco líneas y taparía el evento de ese día.
 
                 Ocultas en el teléfono: a 50 px de ancho dejan de ser un fondo
                 discreto y se convierten en lo único que se ve. */}
-            {semanales.slice(0, 3).map((r) => (
-              <div
-                class={`font-data hidden items-center gap-1 text-[0.62rem] leading-snug text-base-content/45 sm:flex ${
-                  r.estado === 'suspendida' ? 'line-through opacity-60' : ''
-                }`}
-                title={`${r.hora} · ${r.nombre}${r.aviso ? ' — ' + r.aviso : ''}`}
-              >
-                <span
-                  class="inline-block h-1 w-1 shrink-0 rounded-full"
-                  style={colorDe(r.templo) ? `background:${colorDe(r.templo)!.color.fondo}` : ''}
-                  aria-hidden="true"
-                />
-                {r.hora}
-                {r.marca && <span class="truncate text-accent">· {r.marca}</span>}
-              </div>
-            ))}
-            {semanales.length > 3 && (
-              <div class="font-data hidden text-[0.62rem] text-base-content/40 sm:block">
-                +{semanales.length - 3} más
-              </div>
-            )}
-          </div>
-        );
-      })
-    }
+          {semanales.slice(0, 3).map((r) => (
+            <div
+              class={`font-data hidden items-center gap-1 text-[0.62rem] leading-snug text-base-content/45 sm:flex ${
+                r.estado === 'suspendida' ? 'line-through opacity-60' : ''
+              }`}
+              title={`${r.hora} · ${r.nombre}${r.aviso ? ' — ' + r.aviso : ''}`}
+            >
+              <span
+                class="inline-block h-1 w-1 shrink-0 rounded-full"
+                style={colorDe(r.templo) ? `background:${colorDe(r.templo)!.color.fondo}` : ''}
+                aria-hidden="true"
+              />
+              {r.hora}
+              {r.marca && <span class="truncate text-accent">· {r.marca}</span>}
+            </div>
+          ))}
+          {semanales.length > 3 && (
+            <div class="font-data hidden text-[0.62rem] text-base-content/40 sm:block">
+              +{semanales.length - 3} más
+            </div>
+          )}
+        </div>
+      );
+    })}
   </div>
 
-  <footer
-    class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-base-300 bg-base-200/40 px-3 py-2 text-xs text-base-content/70"
-  >
+  <footer class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-base-300 bg-base-200/40 px-3 py-2 text-xs text-base-content/70">
     <span class="flex flex-wrap items-center gap-x-3 gap-y-1">
-      {
-        templos.map((t) => (
-          <span class="flex items-center gap-1.5">
-            <span
-              class="inline-block h-2.5 w-2.5 rounded-sm"
-              style={estiloDistintivo(t) + `;background:${t.color.fondo}`}
-              aria-hidden="true"
-            />
-            {t.short}
-          </span>
-        ))
-      }
+      {templos.map((t) => (
+        <span class="flex items-center gap-1.5">
+          <span
+            class="inline-block h-2.5 w-2.5 rounded-sm"
+            style={estiloDistintivo(t) + `;background:${t.color.fondo}`}
+            aria-hidden="true"
+          />
+          {t.short}
+        </span>
+      ))}
     </span>
     <span>
       <span class="hidden sm:inline">Las horas tenues son las reuniones de cada semana · </span>
-      <a href="/horarios" class="link link-primary">ver los horarios</a>
+      <a href="/horarios" class="link link-primary">
+        ver los horarios
+      </a>
     </span>
   </footer>
 </div>

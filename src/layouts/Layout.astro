@@ -146,12 +146,10 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
     <script is:inline set:html={SCRIPT_TEMA_INLINE} />
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    {
-      /* Iconos de pestaña: el isotipo de la marca en azul, generado desde
+    {/* Iconos de pestaña: el isotipo de la marca en azul, generado desde
 		    public/marca/isotipo-azul.png con `node scripts/favicons.mjs`.
 		    apple-touch-icon va sobre blanco porque iOS aplana la transparencia
-		    contra negro y el azul quedaría ilegible. */
-    }
+		    contra negro y el azul quedaría ilegible. */}
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
@@ -178,12 +176,9 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
     <meta name="twitter:image" content={ogImage} />
 
     <script type="application/ld+json" set:html={JSON_LD} is:inline />
-
-    {
-      /* Transiciones de vista nativas de Astro: navegación sin recarga y con
+    {/* Transiciones de vista nativas de Astro: navegación sin recarga y con
 		    continuidad visual, sin una sola dependencia extra. Es el mayor
-		    salto de dinamismo por peso cero — importa para Core Web Vitals. */
-    }
+		    salto de dinamismo por peso cero — importa para Core Web Vitals. */}
     <ClientRouter />
 
     <title>{title}</title>
@@ -196,11 +191,9 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
     {!sinBoletin && <Boletin />}
     <Footer />
 
-    {
-      /* Aviso emergente. Va aquí y no solo en la portada porque la gente
+    {/* Aviso emergente. Va aquí y no solo en la portada porque la gente
          llega por enlaces directos a una noticia o a un evento tan a menudo
-         como por la puerta principal. */
-    }
+         como por la puerta principal. */}
     <Popup />
 
     <a
@@ -208,7 +201,9 @@ Astro.csp?.insertScriptHash({ hash: hashCsp(JSON_LD), kind: 'element' });
       href="/en-vivo"
       class="fixed bottom-5 right-5 z-40 hidden items-center gap-2 rounded-full bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-500"
     >
-      <span class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-white" aria-hidden="true"
+      <span
+        class="pulse-dot inline-block h-2.5 w-2.5 rounded-full bg-white"
+        aria-hidden="true"
       ></span>
       Estamos en vivo
     </a>

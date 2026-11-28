@@ -64,97 +64,101 @@ const plazo = (dias: number) =>
   active="papelera"
 >
   <div class="max-w-3xl">
-    {
-      filas.length === 0 ? (
-        <div class="panel p-10 text-center">
-          <span class="tile tile-lg tile-muted mx-auto mb-4">
+    {filas.length === 0 ? (
+      <div class="panel p-10 text-center">
+        <span class="tile tile-lg tile-muted mx-auto mb-4">
+          <Icon name="lucide:trash-2" class="h-6 w-6" />
+        </span>
+        <p class="text-sm text-base-content/70">
+          La papelera está vacía. Lo que borres desde el panel aparecerá acá durante{' '}
+          {DIAS_EN_PAPELERA} días.
+        </p>
+      </div>
+    ) : (
+      <>
+        <div class="panel mb-4 flex items-start gap-4 p-5">
+          <span class="tile tile-lg tile-muted">
             <Icon name="lucide:trash-2" class="h-6 w-6" />
           </span>
-          <p class="text-sm text-base-content/70">
-            La papelera está vacía. Lo que borres desde el panel aparecerá acá durante{' '}
-            {DIAS_EN_PAPELERA} días.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div class="panel mb-4 flex items-start gap-4 p-5">
-            <span class="tile tile-lg tile-muted">
-              <Icon name="lucide:trash-2" class="h-6 w-6" />
-            </span>
-            <div class="min-w-0">
-              <p class="font-data text-3xl font-bold leading-none text-primary">{filas.length}</p>
-              <p class="mt-1 text-sm text-base-content/70">
-                {filas.length === 1 ? 'elemento borrado' : 'elementos borrados'} · nada de esto se
-                ve en el sitio
-                {caducadas > 0 && (
-                  <span class="mt-1 block text-warning">
-                    {caducadas === 1
-                      ? 'Uno ya pasó los 30 días y conviene vaciarlo.'
-                      : `${caducadas} ya pasaron los 30 días y conviene vaciarlos.`}
-                  </span>
-                )}
-              </p>
-            </div>
+          <div class="min-w-0">
+            <p class="font-data text-3xl font-bold leading-none text-primary">{filas.length}</p>
+            <p class="mt-1 text-sm text-base-content/70">
+              {filas.length === 1 ? 'elemento borrado' : 'elementos borrados'} · nada de esto se ve
+              en el sitio
+              {caducadas > 0 && (
+                <span class="mt-1 block text-warning">
+                  {caducadas === 1
+                    ? 'Uno ya pasó los 30 días y conviene vaciarlo.'
+                    : `${caducadas} ya pasaron los 30 días y conviene vaciarlos.`}
+                </span>
+              )}
+            </p>
           </div>
+        </div>
 
-          <ul class="space-y-2.5">
-            {filas.map((f) => (
-              <li
-                class="panel flex flex-wrap items-center gap-3 p-3"
-                data-fila
-                data-recurso={f.recurso}
-                data-id={f.id}
+        <ul class="space-y-2.5">
+          {filas.map((f) => (
+            <li
+              class="panel flex flex-wrap items-center gap-3 p-3"
+              data-fila
+              data-recurso={f.recurso}
+              data-id={f.id}
+            >
+              <span class="tile h-9 w-9 shrink-0">
+                <Icon name={TIPO[f.recurso]?.icon ?? 'lucide:file'} class="h-4 w-4" />
+              </span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold">{f.titulo}</p>
+                <p class="font-data text-xs uppercase tracking-wide text-base-content/70">
+                  {TIPO[f.recurso]?.label ?? f.recurso} · borrado el {fechaYHora(f.borrado_en)}
+                </p>
+              </div>
+              <span
+                class={`badge badge-sm shrink-0 ${f.dias <= 0 ? 'badge-warning' : 'badge-ghost'}`}
               >
-                <span class="tile h-9 w-9 shrink-0">
-                  <Icon name={TIPO[f.recurso]?.icon ?? 'lucide:file'} class="h-4 w-4" />
-                </span>
-                <div class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-semibold">{f.titulo}</p>
-                  <p class="font-data text-xs uppercase tracking-wide text-base-content/70">
-                    {TIPO[f.recurso]?.label ?? f.recurso} · borrado el {fechaYHora(f.borrado_en)}
-                  </p>
-                </div>
-                <span
-                  class={`badge badge-sm shrink-0 ${f.dias <= 0 ? 'badge-warning' : 'badge-ghost'}`}
-                >
-                  {plazo(f.dias)}
-                </span>
-                <div class="flex shrink-0 gap-1">
-                  <button type="button" data-restaurar class="btn btn-outline btn-xs gap-1.5">
-                    <Icon name="lucide:undo-2" class="h-3.5 w-3.5" /> Restaurar
-                  </button>
-                  <button type="button" data-purgar class="btn btn-ghost btn-xs text-error">
-                    Borrar del todo
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                {plazo(f.dias)}
+              </span>
+              <div class="flex shrink-0 gap-1">
+                <button type="button" data-restaurar class="btn btn-outline btn-xs gap-1.5">
+                  <Icon name="lucide:undo-2" class="h-3.5 w-3.5" /> Restaurar
+                </button>
+                <button type="button" data-purgar class="btn btn-ghost btn-xs text-error">
+                  Borrar del todo
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
 
-          <p class="mt-6 text-xs text-base-content/70">
-            Restaurar devuelve el elemento como estaba, publicado o en borrador. «Borrar del todo»
-            sí es definitivo: se va la fila y también su imagen, si no la está usando otra cosa.
-          </p>
-        </>
-      )
-    }
+        <p class="mt-6 text-xs text-base-content/70">
+          Restaurar devuelve el elemento como estaba, publicado o en borrador. «Borrar del todo» sí
+          es definitivo: se va la fila y también su imagen, si no la está usando otra cosa.
+        </p>
+      </>
+    )}
   </div>
 
   <dialog id="dlg-purgar" class="modal">
     <div class="modal-box max-w-sm">
       <h3 class="text-lg font-bold">¿Borrar del todo?</h3>
       <p class="mt-2 text-sm text-base-content/70">
-        <strong data-nombre class="break-words"></strong> desaparece para siempre, junto con su imagen.
-        Esto sí no se puede deshacer.
+        <strong data-nombre class="break-words"></strong> desaparece para siempre, junto con su
+        imagen. Esto sí no se puede deshacer.
       </p>
       <div class="modal-action">
         <form method="dialog" class="flex w-full gap-2">
-          <button value="no" class="btn btn-ghost flex-1">Cancelar</button>
-          <button value="si" class="btn btn-error flex-1">Sí, borrar</button>
+          <button value="no" class="btn btn-ghost flex-1">
+            Cancelar
+          </button>
+          <button value="si" class="btn btn-error flex-1">
+            Sí, borrar
+          </button>
         </form>
       </div>
     </div>
-    <form method="dialog" class="modal-backdrop"><button>cerrar</button></form>
+    <form method="dialog" class="modal-backdrop">
+      <button>cerrar</button>
+    </form>
   </dialog>
 
   <script>

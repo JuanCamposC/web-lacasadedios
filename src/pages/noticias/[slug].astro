@@ -87,27 +87,25 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
 
 <Layout
   title={`${item.titulo} · La Casa de Dios`}
-  description={item.bajada ?? markdownAResumen(item.cuerpo)}
-  {/* La tarjeta de 1200×630 si existe; si no, la imagen normal. Migración 0013. */}
+  description={
+    item.bajada ?? markdownAResumen(item.cuerpo)
+  } /* La tarjeta de 1200×630 si existe; si no, la imagen normal. Migración 0013. */
   image={urlMedio(item.imagen_social_clave) ?? item.imagen ?? undefined}
 >
   <script type="application/ld+json" set:html={comoJsonLd(jsonLd)} is:inline />
-
   <!-- Cabecera del artículo -->
   <header class="relative overflow-hidden bg-base-200 pt-16">
-    {
-      item.imagen && (
-        <>
-          <img
-            src={item.imagen}
-            alt=""
-            aria-hidden="true"
-            class="absolute inset-0 h-full w-full object-cover opacity-20"
-          />
-          <div class="absolute inset-0 bg-gradient-to-b from-base-200/80 to-base-200" />
-        </>
-      )
-    }
+    {item.imagen && (
+      <>
+        <img
+          src={item.imagen}
+          alt=""
+          aria-hidden="true"
+          class="absolute inset-0 h-full w-full object-cover opacity-20"
+        />
+        <div class="absolute inset-0 bg-gradient-to-b from-base-200/80 to-base-200" />
+      </>
+    )}
     <div class="wrap-narrow relative px-4 py-14 md:py-20">
       <a
         href="/noticias"
@@ -115,10 +113,8 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
       >
         <Icon name="lucide:arrow-left" class="h-4 w-4" /> Volver a noticias
       </a>
-      {
-        /* `block` a propósito: .eyebrow es inline-block y se pegaba al enlace
-          de volver, encimándose con él. */
-      }
+      {/* `block` a propósito: .eyebrow es inline-block y se pegaba al enlace
+          de volver, encimándose con él. */}
       <p class="eyebrow mt-6 block text-accent">Noticias</p>
       <h1 class="mt-2 font-display leading-[1.1] text-[clamp(2rem,5.5vw,3.25rem)]">
         {item.titulo}
@@ -141,52 +137,44 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
   <!-- Cuerpo -->
   <article class="section bg-base-100">
     <div class="wrap-narrow">
-      {
-        item.imagen && (
-          /* El hueco se reserva ANTES de que llegue la foto.
+      {item.imagen && (
+        /* El hueco se reserva ANTES de que llegue la foto.
 
              De la base sale una clave de R2, no el tamaño de la imagen, así que
              el navegador no sabía cuánto alto reservar: la foto entraba de
              golpe y empujaba el texto hacia abajo justo cuando se empezaba a
              leer. Con una proporción fija, el sitio ya está hecho. */
-          <Reveal class="mb-10 block aspect-[16/9] overflow-hidden rounded-xl bg-base-200">
-            <img
-              src={item.imagen}
-              alt={item.imagen_alt ?? item.titulo}
-              class="h-full w-full object-cover"
-              loading="eager"
-            />
-          </Reveal>
-        )
-      }
+        <Reveal class="mb-10 block aspect-[16/9] overflow-hidden rounded-xl bg-base-200">
+          <img
+            src={item.imagen}
+            alt={item.imagen_alt ?? item.titulo}
+            class="h-full w-full object-cover"
+            loading="eager"
+          />
+        </Reveal>
+      )}
 
-      {
-        item.bajada && (
-          <p
-            data-reveal
-            class="mb-8 border-l-4 border-accent pl-5 text-xl font-light leading-relaxed text-base-content/85"
-          >
-            {item.bajada}
-          </p>
-        )
-      }
+      {item.bajada && (
+        <p
+          data-reveal
+          class="mb-8 border-l-4 border-accent pl-5 text-xl font-light leading-relaxed text-base-content/85"
+        >
+          {item.bajada}
+        </p>
+      )}
 
-      {
-        cuerpoHtml ? (
-          <div data-reveal data-reveal-delay="60" class="prose-lcd" set:html={cuerpoHtml} />
-        ) : (
-          !item.bajada && (
-            <p class="prose-lcd italic opacity-60">Esta noticia todavía no tiene contenido.</p>
-          )
+      {cuerpoHtml ? (
+        <div data-reveal data-reveal-delay="60" class="prose-lcd" set:html={cuerpoHtml} />
+      ) : (
+        !item.bajada && (
+          <p class="prose-lcd italic opacity-60">Esta noticia todavía no tiene contenido.</p>
         )
-      }
+      )}
 
-      {
-        /* Un solo botón, el mismo que en los eventos: abre la hoja del sistema
+      {/* Un solo botón, el mismo que en los eventos: abre la hoja del sistema
           en el teléfono y copia el enlace en el escritorio. Antes eran tres
           iconos escritos a mano —WhatsApp, Facebook y copiar— que no ofrecían
-          nada de lo que la persona tuviera instalado. Ver Compartir.astro. */
-      }
+          nada de lo que la persona tuviera instalado. Ver Compartir.astro. */}
       <div class="mt-12 flex flex-wrap items-center gap-3 border-t border-base-300 pt-8">
         <span class="text-sm font-medium text-base-content/70">Compartir:</span>
         <Compartir url={canonical} titulo={item.titulo} texto={textoWhatsapp} />
@@ -195,44 +183,42 @@ import { jsonLd as comoJsonLd } from '../../lib/jsonld';
   </article>
 
   <!-- Otras noticias -->
-  {
-    otras.length > 0 && (
-      <section class="section bg-base-200">
-        <div class="wrap">
-          <h2 class="font-display text-2xl">Sigue leyendo</h2>
-          <div class="mt-8 grid gap-5 md:grid-cols-3">
-            {otras.map((n, i) => (
-              <Reveal delay={(i % 3) * 80} class="h-full">
-                <a
-                  href={`/noticias/${n.slug ?? n.id}`}
-                  class="panel panel-lift group flex h-full flex-col overflow-hidden"
-                >
-                  <div class="h-36 overflow-hidden bg-base-300">
-                    {n.imagen ? (
-                      <img
-                        src={n.imagen}
-                        alt=""
-                        class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 text-accent/40">
-                        <Icon name="lucide:newspaper" class="h-10 w-10" />
-                      </div>
-                    )}
-                  </div>
-                  <div class="flex flex-1 flex-col p-5">
-                    <span class="text-xs text-base-content/70">{fmtDate(n.publicado_en)}</span>
-                    <h3 class="mt-1 font-bold leading-snug clamp-3">{n.titulo}</h3>
-                  </div>
-                </a>
-              </Reveal>
-            ))}
-          </div>
+  {otras.length > 0 && (
+    <section class="section bg-base-200">
+      <div class="wrap">
+        <h2 class="font-display text-2xl">Sigue leyendo</h2>
+        <div class="mt-8 grid gap-5 md:grid-cols-3">
+          {otras.map((n, i) => (
+            <Reveal delay={(i % 3) * 80} class="h-full">
+              <a
+                href={`/noticias/${n.slug ?? n.id}`}
+                class="panel panel-lift group flex h-full flex-col overflow-hidden"
+              >
+                <div class="h-36 overflow-hidden bg-base-300">
+                  {n.imagen ? (
+                    <img
+                      src={n.imagen}
+                      alt=""
+                      class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/20 to-primary/20 text-accent/40">
+                      <Icon name="lucide:newspaper" class="h-10 w-10" />
+                    </div>
+                  )}
+                </div>
+                <div class="flex flex-1 flex-col p-5">
+                  <span class="text-xs text-base-content/70">{fmtDate(n.publicado_en)}</span>
+                  <h3 class="mt-1 font-bold leading-snug clamp-3">{n.titulo}</h3>
+                </div>
+              </a>
+            </Reveal>
+          ))}
         </div>
-      </section>
-    )
-  }
+      </div>
+    </section>
+  )}
 
   <CtaBand
     title="No te pierdas nada"

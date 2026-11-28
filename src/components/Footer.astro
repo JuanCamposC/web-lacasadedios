@@ -66,43 +66,41 @@ const CIRCULOS = [
 
     <nav class="mt-8 sm:mt-10" aria-label="Enlaces del sitio">
       <ul class="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 sm:gap-x-14">
-        {
-          FOOTER_NAV.map((l) => (
-            <li>
-              <a
-                href={l.href}
-                class="font-data text-sm font-bold uppercase tracking-[0.14em] transition hover:text-accent sm:text-base"
-              >
-                {l.label}
-              </a>
-            </li>
-          ))
-        }
+        {FOOTER_NAV.map((l) => (
+          <li>
+            <a
+              href={l.href}
+              class="font-data text-sm font-bold uppercase tracking-[0.14em] transition hover:text-accent sm:text-base"
+            >
+              {l.label}
+            </a>
+          </li>
+        ))}
       </ul>
     </nav>
 
     <ul class="mt-8 flex items-center justify-center gap-6 sm:mt-10 sm:gap-8">
-      {
-        CIRCULOS.map((c) => (
-          <li>
-            <a
-              href={c.href}
-              aria-label={c.label}
-              target={c.externo ? '_blank' : undefined}
-              rel={c.externo ? 'noopener noreferrer' : undefined}
-              class="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-accent sm:h-12 sm:w-12"
-            >
-              <Icon name={c.icon} class="h-5 w-5 sm:h-6 sm:w-6" />
-            </a>
-          </li>
-        ))
-      }
+      {CIRCULOS.map((c) => (
+        <li>
+          <a
+            href={c.href}
+            aria-label={c.label}
+            target={c.externo ? '_blank' : undefined}
+            rel={c.externo ? 'noopener noreferrer' : undefined}
+            class="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 hover:text-accent sm:h-12 sm:w-12"
+          >
+            <Icon name={c.icon} class="h-5 w-5 sm:h-6 sm:w-6" />
+          </a>
+        </li>
+      ))}
     </ul>
 
     <p class="mx-auto mt-8 max-w-3xl text-xs italic opacity-60 sm:mt-10 sm:text-sm">
       «{SITE.verse.text}» — {SITE.verse.ref}
     </p>
 
-    <p class="mt-6 text-sm opacity-70 sm:mt-8">© {year} {SITE.name}</p>
+    <p class="mt-6 text-sm opacity-70 sm:mt-8">
+      © {year} {SITE.name}
+    </p>
   </div>
 </footer>

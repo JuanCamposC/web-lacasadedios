@@ -1,25 +1,33 @@
-name: CI
+name: CI/CD
 
+# Cada push a main pasa por la suite completa y, SOLO si sale verde, se
+# despliega a Cloudflare. No hay otra vía a producción: ni PRs (el repositorio
+# lo tocan dos personas y se trabaja directo en main) ni despliegues a mano.
+#
+# La misma suite corre antes en local: el hook .githooks/pre-push ejecuta
+# `npm run verificar` y no deja empujar si falla. Esto de aquí es el segundo
+# cerrojo, el que no depende de cómo esté configurada cada máquina.
 on:
   push:
     branches: [main]
-  pull_request:
-
-# Un solo trabajo en vuelo por rama: empujar dos veces seguidas cancela el
-# anterior en vez de dejar dos compilaciones compitiendo.
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Para volver a lanzar un despliegue sin tener que empujar nada: por ejemplo,
+  # después de configurar los secretos por primera vez.
+  workflow_dispatch:
 
 jobs:
   verificar:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+
+    # Dos pushes seguidos: la verificación del primero ya no sirve de nada y se
+    # cancela. El despliegue NO entra en este grupo (ver abajo).
+    concurrency:
+      group: verificar-${{ github.ref }}
+      cancel-in-progress: true
 
     env:
       # Un valor de mentira: la compilación necesita que EXISTA, no que sirva.
-      # Las páginas se compilan sin tocar la red;
-      # las consultas reales ocurren en cada petición, ya en producción.
+      # Así se comprueba además que nada depende de la dirección real.
       SITE_URL: https://ejemplo.test
 
     steps:
@@ -33,6 +41,8 @@ jobs:
       - name: Instalar
         run: npm ci
 
+      # Los cuatro pasos de `npm run verificar`, separados para que el registro
+      # diga cuál falló. Si se agrega uno allá, se agrega aquí.
       - name: Formato
         run: npm run format:check
 
@@ -44,3 +54,50 @@ jobs:
 
       - name: Compilar
         run: npm run build
+
+  desplegar:
+    needs: verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Un despliegue a medias no se cancela nunca: si llegan dos, el segundo
+    # espera a que termine el primero.
+    concurrency:
+      group: despliegue-produccion
+      cancel-in-progress: false
+
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      # Sin esto, wrangler falla con un mensaje sobre iniciar sesión en el
+      # navegador que no dice qué falta.
+      - name: Comprobar secretos
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Faltan los secretos CLOUDFLARE_API_TOKEN y/o CLOUDFLARE_ACCOUNT_ID en Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar
+        run: npm ci
+
+      # Se vuelve a compilar, esta vez SIN `SITE_URL`: astro.config.mjs cae en
+      # https://lacasadedios.cl, que es lo que tiene que quedar en las
+      # canónicas y el sitemap. Reaprovechar la compilación de arriba subiría
+      # «ejemplo.test» a producción.
+      - name: Compilar para producción
+        run: npm run build
+
+      # OJO con las migraciones: los archivos de d1/ se aplican A MANO, antes
+      # del push que trae el código que las usa. Este paso solo sube el Worker.
+      - name: Desplegar
+        run: npx wrangler deploy

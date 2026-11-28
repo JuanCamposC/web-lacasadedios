@@ -50,10 +50,8 @@ const toneCls = invert ? 'text-accent' : (TONE[tone] ?? TONE.accent);
   >
     {title}
   </h2>
-  {
-    subtitle && (
-      <p class={`mt-4 text-lg ${invert ? 'text-white/70' : 'text-base-content/70'}`}>{subtitle}</p>
-    )
-  }
+  {subtitle && (
+    <p class={`mt-4 text-lg ${invert ? 'text-white/70' : 'text-base-content/70'}`}>{subtitle}</p>
+  )}
   <slot />
 </div>

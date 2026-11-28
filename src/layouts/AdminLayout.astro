@@ -147,9 +147,7 @@ const claseLateral = (activa: boolean) =>
     <aside class="on-dark fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-[#0a1730] lg:flex">
       <div class="flex items-center gap-2.5 px-6 py-5">
         <img src="/marca/logo-blanco.png" alt="" class="h-6 w-auto" width="1220" height="276" />
-        <span
-          class="font-data rounded px-1.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-accent ring-1 ring-inset ring-accent/40"
-        >
+        <span class="font-data rounded px-1.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-accent ring-1 ring-inset ring-accent/40">
           Panel
         </span>
       </div>
@@ -162,61 +160,55 @@ const claseLateral = (activa: boolean) =>
           aria-current={active === 'inicio' ? 'page' : undefined}
           class={claseLateral(active === 'inicio')}
         >
-          {
-            active === 'inicio' && (
-              <span
-                class="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-accent"
-                aria-hidden="true"
-              />
-            )
-          }
+          {active === 'inicio' && (
+            <span
+              class="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-accent"
+              aria-hidden="true"
+            />
+          )}
           <Icon name={INICIO.icon} class="h-[18px] w-[18px] shrink-0" />
           {INICIO.label}
         </a>
 
-        {
-          GRUPOS.map((grupo) => (
-            <div class="mt-5">
-              <p class="font-data px-3 pb-1.5 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-white/35">
-                {grupo.titulo}
-              </p>
-              <div class="space-y-1">
-                {grupo.items.map((l) => (
-                  <a
-                    href={l.href}
-                    aria-current={active === l.key ? 'page' : undefined}
-                    class={claseLateral(active === l.key)}
-                  >
-                    {active === l.key && (
-                      <span
-                        class="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-accent"
-                        aria-hidden="true"
-                      />
-                    )}
-                    <Icon name={l.icon} class="h-[18px] w-[18px] shrink-0" />
-                    {l.label}
-                  </a>
-                ))}
-              </div>
+        {GRUPOS.map((grupo) => (
+          <div class="mt-5">
+            <p class="font-data px-3 pb-1.5 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-white/35">
+              {grupo.titulo}
+            </p>
+            <div class="space-y-1">
+              {grupo.items.map((l) => (
+                <a
+                  href={l.href}
+                  aria-current={active === l.key ? 'page' : undefined}
+                  class={claseLateral(active === l.key)}
+                >
+                  {active === l.key && (
+                    <span
+                      class="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-accent"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <Icon name={l.icon} class="h-[18px] w-[18px] shrink-0" />
+                  {l.label}
+                </a>
+              ))}
             </div>
-          ))
-        }
+          </div>
+        ))}
       </nav>
 
       <div class="rule mx-6" aria-hidden="true"></div>
 
       <div class="space-y-1 px-3 py-4">
-        {
-          identidad ? (
-            <p class="truncate px-3 pb-2 text-xs text-white/60" title={identidad.correo}>
-              {identidad.correo}
-            </p>
-          ) : (
-            <p class="px-3 pb-2 text-xs text-warning">
-              {motivo === 'local' ? 'Desarrollo local · sin sesión' : 'Panel abierto sin sesión'}
-            </p>
-          )
-        }
+        {identidad ? (
+          <p class="truncate px-3 pb-2 text-xs text-white/60" title={identidad.correo}>
+            {identidad.correo}
+          </p>
+        ) : (
+          <p class="px-3 pb-2 text-xs text-warning">
+            {motivo === 'local' ? 'Desarrollo local · sin sesión' : 'Panel abierto sin sesión'}
+          </p>
+        )}
         <a
           href={PAPELERA.href}
           aria-current={active === 'papelera' ? 'page' : undefined}
@@ -254,11 +246,9 @@ const claseLateral = (activa: boolean) =>
           />
           <div class="min-w-0 flex-1">
             <h1 class="truncate text-lg font-bold leading-tight md:text-xl">{title}</h1>
-            {
-              description && (
-                <p class="hidden truncate text-sm text-base-content/70 sm:block">{description}</p>
-              )
-            }
+            {description && (
+              <p class="hidden truncate text-sm text-base-content/70 sm:block">{description}</p>
+            )}
           </div>
           <div class="flex shrink-0 items-center gap-2">
             <slot name="acciones" />
@@ -291,22 +281,20 @@ const claseLateral = (activa: boolean) =>
       aria-label="Secciones del panel"
     >
       <ul class="flex">
-        {
-          EN_EL_TELEFONO.map((l) => (
-            <li class="flex-1">
-              <a
-                href={l.href}
-                aria-current={active === l.key ? 'page' : undefined}
-                class={`flex flex-col items-center gap-0.5 py-2 text-[0.62rem] font-medium transition-colors ${
-                  active === l.key ? 'text-primary' : 'text-base-content/70'
-                }`}
-              >
-                <Icon name={l.icon} class="h-5 w-5" />
-                {l.label}
-              </a>
-            </li>
-          ))
-        }
+        {EN_EL_TELEFONO.map((l) => (
+          <li class="flex-1">
+            <a
+              href={l.href}
+              aria-current={active === l.key ? 'page' : undefined}
+              class={`flex flex-col items-center gap-0.5 py-2 text-[0.62rem] font-medium transition-colors ${
+                active === l.key ? 'text-primary' : 'text-base-content/70'
+              }`}
+            >
+              <Icon name={l.icon} class="h-5 w-5" />
+              {l.label}
+            </a>
+          </li>
+        ))}
         <li class="flex-1">
           <button
             type="button"
@@ -328,33 +316,31 @@ const claseLateral = (activa: boolean) =>
     <dialog id="hoja-mas" class="modal modal-bottom lg:hidden">
       <div class="modal-box max-h-[80dvh]">
         <h2 class="text-base font-bold">Todas las secciones</h2>
-        {
-          GRUPOS.map((grupo) => (
-            <div class="mt-4">
-              <p class="font-data text-[0.65rem] font-bold uppercase tracking-[0.15em] text-base-content/55">
-                {grupo.titulo}
-              </p>
-              <ul class="mt-1.5 space-y-0.5">
-                {grupo.items.map((l) => (
-                  <li>
-                    <a
-                      href={l.href}
-                      aria-current={active === l.key ? 'page' : undefined}
-                      class={`flex items-center gap-3 rounded px-3 py-2.5 text-sm ${
-                        active === l.key
-                          ? 'bg-primary/10 font-semibold text-primary'
-                          : 'hover:bg-base-200'
-                      }`}
-                    >
-                      <Icon name={l.icon} class="h-[18px] w-[18px] shrink-0 text-accent" />
-                      {l.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))
-        }
+        {GRUPOS.map((grupo) => (
+          <div class="mt-4">
+            <p class="font-data text-[0.65rem] font-bold uppercase tracking-[0.15em] text-base-content/55">
+              {grupo.titulo}
+            </p>
+            <ul class="mt-1.5 space-y-0.5">
+              {grupo.items.map((l) => (
+                <li>
+                  <a
+                    href={l.href}
+                    aria-current={active === l.key ? 'page' : undefined}
+                    class={`flex items-center gap-3 rounded px-3 py-2.5 text-sm ${
+                      active === l.key
+                        ? 'bg-primary/10 font-semibold text-primary'
+                        : 'hover:bg-base-200'
+                    }`}
+                  >
+                    <Icon name={l.icon} class="h-[18px] w-[18px] shrink-0 text-accent" />
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
         <div class="mt-4 border-t border-base-300 pt-3">
           <a
             href={PAPELERA.href}
@@ -374,16 +360,20 @@ const claseLateral = (activa: boolean) =>
           </form>
         </div>
       </div>
-      <form method="dialog" class="modal-backdrop"><button>cerrar</button></form>
+      <form method="dialog" class="modal-backdrop">
+        <button>cerrar</button>
+      </form>
     </dialog>
 
-    {
-      /* role="status" + aria-live: por acá pasan «Borrado», «No se pudo
+    {/* role="status" + aria-live: por acá pasan «Borrado», «No se pudo
         guardar» y «Avisamos a 40 suscriptores». Sin esto, quien usa lector
-        de pantalla no se entera de si el guardado funcionó. */
-    }
-    <div id="toast" role="status" aria-live="polite" class="toast toast-end z-50 pb-20 lg:pb-4">
-    </div>
+        de pantalla no se entera de si el guardado funcionó. */}
+    <div
+      id="toast"
+      role="status"
+      aria-live="polite"
+      class="toast toast-end z-50 pb-20 lg:pb-4"
+    ></div>
 
     <script>
       import '../scripts/reveal';
