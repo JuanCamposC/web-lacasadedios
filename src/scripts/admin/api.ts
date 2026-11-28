@@ -87,6 +87,17 @@ export const api = {
       { method: 'DELETE' },
     ),
 
+  /**
+   * Borra las altas del boletín que nunca se confirmaron y ya caducaron.
+   *
+   * El barrido también ocurre solo en cada alta nueva (ver /api/suscribir);
+   * esto es para no esperar a que alguien se suscriba.
+   */
+  limpiarPendientes: () =>
+    pedir<{ ok: true; borrados: number; dias: number }>('/api/admin/suscriptores', {
+      method: 'POST',
+    }),
+
   ajustes: <T>() => pedir<{ ajustes: T }>('/api/admin/ajustes').then((r) => r.ajustes),
 
   guardarAjustes: (datos: Record<string, unknown>) =>

@@ -224,3 +224,78 @@ export async function listarSuscriptores(base: Base): Promise<Suscriptor[]> {
 export async function marcarVivoAvisado(base: Base, url: string): Promise<void> {
   await base.prepare('update ajustes set vivo_url_avisada = ? where id = 1').bind(url).first();
 }
+
+/* ── La caducidad de los pendientes ──────────────────────────────────────── */
+
+/**
+ * Cuánto tiempo se le guarda el sitio a quien se apuntó y no ha confirmado.
+ *
+ * Una semana. Quien de verdad quiere el boletín abre el correo el mismo día o
+ * al siguiente; pasada una semana, o la dirección no era suya, o el mensaje se
+ * perdió en el correo no deseado y lo que corresponde es volver a apuntarse.
+ */
+export const DIAS_PARA_CONFIRMAR = 7;
+
+/**
+ * Borra las altas que nunca se confirmaron y ya cumplieron el plazo.
+ *
+ * ── POR QUÉ HAY QUE BORRARLAS ───────────────────────────────────────────────
+ * Un formulario público abierto recoge, además de personas, robots que
+ * rellenan cualquier campo que encuentren. A esas direcciones NUNCA se les
+ * escribe —`confirmados()` filtra por `pendiente = 0`—, así que no hacen daño
+ * de salida; el daño es de otro tipo:
+ *
+ *   · La lista del panel deja de servir para saber cuánta gente hay, porque la
+ *     mitad son direcciones que nadie verificó.
+ *   · Cada una ocupa su `correo` en el índice único, así que si una persona de
+ *     verdad comparte dirección con un alta basura antigua, su alta nueva cae
+ *     en `on conflict do nothing` y no recibe el correo de confirmación. Es el
+ *     caso que de verdad muerde, y es silencioso.
+ *
+ * Borrarlas libera las dos cosas a la vez.
+ *
+ * ── CUÁNDO CORRE ────────────────────────────────────────────────────────────
+ * En cada alta, igual que `registrarIntento` barre la tabla de intentos. El
+ * sitio es un Worker: no hay nada que se despierte de madrugada, así que la
+ * limpieza viaja pegada al trabajo que ya se estaba haciendo. Y hay un botón
+ * en el panel para no tener que esperar a que alguien se suscriba.
+ *
+ * Devuelve cuántas borró, para poder decirlo.
+ */
+export async function barrerSinConfirmar(
+  base: Base,
+  dias = DIAS_PARA_CONFIRMAR,
+): Promise<number> {
+  const limite = new Date(Date.now() - dias * 86_400_000).toISOString().slice(0, 19) + 'Z';
+  const { results } = await base
+    .prepare(
+      `delete from suscriptores
+        where pendiente = 1 and creado_en < ?
+        returning id`,
+    )
+    .bind(limite)
+    .all<{ id: string }>();
+  return results?.length ?? 0;
+}
+
+/**
+ * Cuántos pendientes hay y cuántos de ellos ya caducaron.
+ *
+ * Lo usa el panel para decidir si enseñar el botón de limpiar y con qué
+ * número. Va en una sola consulta porque son dos cuentas sobre la misma fila.
+ */
+export async function pendientes(
+  base: Base,
+  dias = DIAS_PARA_CONFIRMAR,
+): Promise<{ total: number; caducados: number }> {
+  const limite = new Date(Date.now() - dias * 86_400_000).toISOString().slice(0, 19) + 'Z';
+  const fila = await base
+    .prepare(
+      `select count(*) as total,
+              sum(case when creado_en < ? then 1 else 0 end) as caducados
+         from suscriptores where pendiente = 1`,
+    )
+    .bind(limite)
+    .first<{ total: number; caducados: number | null }>();
+  return { total: fila?.total ?? 0, caducados: fila?.caducados ?? 0 };
+}

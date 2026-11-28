@@ -5,10 +5,24 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import { Icon } from 'astro-icon/components';
 
 import { baseDeDatos } from '../../lib/base';
-import { listarSuscriptores } from '../../lib/boletin';
+// `pendientes` llega renombrada: esta página ya tiene una variable con ese
+// nombre —cuántos hay sin confirmar— y son dos cosas distintas.
+import {
+  listarSuscriptores,
+  pendientes as contarPendientes,
+  DIAS_PARA_CONFIRMAR,
+} from '../../lib/boletin';
 import { fechaYHora } from '../../lib/hora';
 
-const subs = await listarSuscriptores(await baseDeDatos());
+const base = await baseDeDatos();
+const subs = await listarSuscriptores(base);
+// Cuántos no han confirmado y cuántos de ellos ya pasaron el plazo. Abrir esta
+// pantalla NO borra nada: para eso está el botón. Ver /api/admin/suscriptores.
+const sinConfirmar = await contarPendientes(base);
+
+/** Días que le quedan a un alta pendiente antes de caducar. */
+const diasQueQuedan = (creadoEn: string) =>
+  DIAS_PARA_CONFIRMAR - Math.floor((Date.now() - new Date(creadoEn).getTime()) / 86_400_000);
 
 // Solo se copian los confirmados. Quien está pendiente no dio permiso para que
 // le escriban, y una lista que se copia al portapapeles termina pegada en el
@@ -28,19 +42,27 @@ const fmt = fechaYHora;
   description="Quiénes reciben el boletín cuando publicas algo."
   active="suscriptores"
 >
-  {
-    subs.length > 0 && (
-      <button
-        slot="acciones"
-        id="copy-emails"
-        data-emails={emails}
-        class="btn btn-outline btn-sm gap-2"
-      >
-        <Icon name="lucide:copy" class="h-4 w-4" />
-        <span class="hidden sm:inline">Copiar correos</span>
-      </button>
-    )
-  }
+  <div slot="acciones" class="flex items-center gap-2">
+    {
+      /* Solo cuando hay algo que limpiar. Un botón que no haría nada enseña a
+        no mirar los botones. */
+      sinConfirmar.caducados > 0 && (
+        <button id="limpiar-pendientes" class="btn btn-outline btn-sm gap-2 text-warning">
+          <Icon name="lucide:eraser" class="h-4 w-4" />
+          <span class="hidden sm:inline">Limpiar {sinConfirmar.caducados} sin confirmar</span>
+          <span class="sm:hidden">Limpiar {sinConfirmar.caducados}</span>
+        </button>
+      )
+    }
+    {
+      subs.length > 0 && (
+        <button id="copy-emails" data-emails={emails} class="btn btn-outline btn-sm gap-2">
+          <Icon name="lucide:copy" class="h-4 w-4" />
+          <span class="hidden sm:inline">Copiar correos</span>
+        </button>
+      )
+    }
+  </div>
 
   <div class="max-w-3xl">
     <div class="panel mb-4 flex items-center gap-4 p-5">
@@ -64,6 +86,7 @@ const fmt = fechaYHora;
                 {pendientes === 1
                   ? 'Otra persona se apuntó y no ha confirmado todavía.'
                   : `Otras ${pendientes} se apuntaron y no han confirmado todavía.`}
+                {' '}Las que no confirmen en {DIAS_PARA_CONFIRMAR} días se borran solas.
               </span>
             )
           }
@@ -102,7 +125,17 @@ const fmt = fechaYHora;
                       NO se les escribe hasta que confirmen desde su bandeja. */}
                   <td>
                     {s.pendiente === 1 ? (
-                      <span class="badge badge-warning badge-sm">Sin confirmar</span>
+                      <>
+                        <span class="badge badge-warning badge-sm">Sin confirmar</span>
+                        {/* Cuánto le queda antes de borrarse sola. Sin esto, un
+                            «sin confirmar» de hace dos meses y otro de ayer se
+                            ven igual, y solo uno de los dos va a desaparecer. */}
+                        <span class="mt-0.5 block text-xs text-base-content/70">
+                          {diasQueQuedan(s.creado_en) > 0
+                            ? `Se borra en ${diasQueQuedan(s.creado_en)} ${diasQueQuedan(s.creado_en) === 1 ? 'día' : 'días'}`
+                            : 'Ya pasó el plazo'}
+                        </span>
+                      </>
                     ) : (
                       <span class="badge badge-success badge-sm">Confirmado</span>
                     )}
@@ -120,6 +153,26 @@ const fmt = fechaYHora;
   </div>
 
   <script>
+    import { api } from '../../scripts/admin/api';
+    import { toast } from '../../scripts/admin/ui';
+
+    document.getElementById('limpiar-pendientes')?.addEventListener('click', async (e) => {
+      const boton = e.currentTarget as HTMLButtonElement;
+      boton.disabled = true;
+      try {
+        const r = await api.limpiarPendientes();
+        toast(
+          r.borrados === 1
+            ? 'Se borró 1 alta que nunca se confirmó'
+            : `Se borraron ${r.borrados} altas que nunca se confirmaron`,
+        );
+        setTimeout(() => location.reload(), 1200);
+      } catch (err) {
+        boton.disabled = false;
+        toast('No se pudo limpiar: ' + (err as Error).message, 'error');
+      }
+    });
+
     const btn = document.getElementById('copy-emails');
     btn?.addEventListener('click', async () => {
       const emails = (btn as HTMLElement).dataset.emails || '';

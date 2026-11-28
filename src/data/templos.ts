@@ -118,6 +118,28 @@ const mapaDe = (busqueda: string) =>
 const enlaceMapaDe = (busqueda: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(busqueda)}`;
 
+/**
+ * Enlace a la FICHA de Google de un templo, por su identificador estable.
+ *
+ * ── POR QUÉ ESTO Y NO UNA BÚSQUEDA ──────────────────────────────────────────
+ * Una búsqueda por dirección abre un punto en la calle: sin nombre, sin
+ * horarios, sin fotos y sin el botón de «cómo llegar» de la ficha. El `cid` es
+ * el número que Google le da a cada negocio y no cambia aunque se le edite el
+ * nombre o la dirección.
+ *
+ * ── DE DÓNDE SALIÓ CADA UNO ─────────────────────────────────────────────────
+ * Del enlace de «Compartir» de cada ficha, resuelto hasta su dirección final en
+ * Maps: ahí aparece un par `0x…:0x…` y el segundo, pasado de hexadecimal a
+ * decimal, ES el cid. Se comprobó contra Coya, cuyo cid ya estaba escrito a
+ * mano desde antes: coincide exactamente.
+ *
+ * Santiago Centro llevaba un mapa incrustado con un par parecido pero que no
+ * era el mismo: apuntaba a la DIRECCIÓN POSTAL (…:0x8664e86607630908), no al
+ * negocio (…:0x18d8febb5dd08ea1). Se parecen porque comparten la primera
+ * mitad, que es la zona; conviene no confundirlos.
+ */
+const fichaDe = (cid: string) => `https://maps.google.com/?cid=${cid}`;
+
 export const templos: Templo[] = [
   {
     slug: 'santiago-centro',
@@ -129,9 +151,10 @@ export const templos: Templo[] = [
     address: 'Aldunate #1002, Santiago',
     city: 'Comuna de Santiago',
     region: 'Región Metropolitana',
-    mapEmbed:
-      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3328.6373709541012!2d-70.6543518!3d-33.45875300000001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9662c511b52ee251%3A0x8664e86607630908!2sAldunate%201002%2C%208330983%20Santiago%2C%20Regi%C3%B3n%20Metropolitana!5e0!3m2!1ses!2scl!4v1771262117981!5m2!1ses!2scl',
-    mapLink: 'https://maps.app.goo.gl/tfczT4jykWNNUKwC6',
+    // Su ficha se llama «La Casa De Dios Stgo centro», con esas mayúsculas.
+    // El mapa que había antes apuntaba a la dirección postal, no a la ficha.
+    mapEmbed: mapaDe('La Casa De Dios Stgo centro'),
+    mapLink: fichaDe('1790460932566060705'),
     coords: { lat: -33.458753, lng: -70.6543518 },
     color: { fondo: '#7d5518', claro: '#d9ae63' },
     estudio: 'zoom',
@@ -158,6 +181,9 @@ export const templos: Templo[] = [
     // con ella y el mapa caía en la dirección postal. El enlace de abajo ya lo
     // tenía bien; el del mapa incrustado, no.
     mapEmbed: mapaDe('La Casa de Dios, Santa Ester 623, San Miguel'),
+    // El único sin cid: su ficha se llama «La Casa de Dios» a secas y Google no
+    // entrega el identificador al resolverla. La búsqueda con la dirección sí
+    // cae en la ficha correcta —comprobado—, que es lo que importa.
     mapLink: enlaceMapaDe('La Casa de Dios, Santa Ester 623, San Miguel'),
     coords: { lat: -33.497703, lng: -70.642289 },
     color: { fondo: '#23448f', claro: '#8aa9e8' },
@@ -180,8 +206,8 @@ export const templos: Templo[] = [
     address: 'El Espino #352, Limache',
     city: 'Comuna de Limache',
     region: 'Región de Valparaíso',
-    mapEmbed: mapaDe('La Casa de Dios Limache, El Espino 352, Limache'),
-    mapLink: enlaceMapaDe('La Casa de Dios Limache, El Espino 352, Limache'),
+    mapEmbed: mapaDe('La Casa de Dios Limache'),
+    mapLink: fichaDe('2519945431684088758'),
     coords: { lat: -33.009439, lng: -71.262398 },
     color: { fondo: '#2f6b4f', claro: '#86c7a3' },
     estudio: 'zoom',
@@ -218,7 +244,7 @@ export const templos: Templo[] = [
      * apuntan a direcciones; cuando tengan ficha, conviene cambiarlos a esta
      * forma.
      */
-    mapLink: 'https://maps.google.com/?cid=9555953859432727686',
+    mapLink: fichaDe('9555953859432727686'),
     coords: { lat: -34.2037633, lng: -70.5289121 },
     color: { fondo: '#8a3b3b', claro: '#e3a0a0' },
     estudio: 'zoom',

@@ -77,8 +77,12 @@ const TEXTOS: Record<Estado, { icono: string; titulo: string; texto: string }> =
   'no-encontrado': {
     icono: 'lucide:search-x',
     titulo: 'No encontramos esa suscripción',
+    // Desde que los pendientes caducan a la semana (ver `barrerSinConfirmar` en
+    // src/lib/boletin.ts), este es también el estado al que llega quien
+    // encuentra el correo un mes después. Nombrar el plazo le ahorra pensar que
+    // algo se rompió.
     texto:
-      'Puede que el enlace esté incompleto o que ya te hubieras dado de baja. Vuelve a suscribirte desde el pie del sitio y te mandamos un correo nuevo.',
+      'El enlace puede estar incompleto, o haber pasado más de una semana desde que te apuntaste. Vuelve a suscribirte desde el pie del sitio y te mandamos un correo nuevo.',
   },
   error: {
     icono: 'lucide:alert-triangle',

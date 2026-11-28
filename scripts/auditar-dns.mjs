@@ -16,7 +16,14 @@ import { Resolver } from 'node:dns/promises';
  *   · ANTES de cambiar los nameservers en NIC Chile — que es para lo que se
  *     escribió, y da luz verde o la niega.
  *   · DESPUÉS del cambio, para confirmar que nada se movió.
- *   · Antes de cancelar Netexplora, para ver qué sigue dependiendo de esa IP.
+ *   · Al DAR DE BAJA Netexplora, para ver qué sigue colgando de esa IP.
+ *
+ * ── EN QUÉ FASE ESTÁ ESTE ARCHIVO ───────────────────────────────────────────
+ * En la tercera, desde el 28 de noviembre de 2026, cuando la iglesia decidió
+ * dejar vencer el servidor antiguo sin sacar copia. Tres comprobaciones están
+ * DADAS VUELTA respecto de la versión original: los cinco nombres de cPanel, el
+ * `ip4:` del SPF y el DKIM de cPanel ya NO deben estar, cuando antes lo
+ * correcto era que siguieran. Cada una explica el porqué en su sitio.
  *
  * Devuelve 0 si todo cuadra y 1 si hay alguna falla, así que se puede encadenar.
  */
@@ -154,23 +161,51 @@ for (const n of [D, `www.${D}`]) {
   }
 }
 
-console.log('\n── cPanel (hasta cancelar Netexplora) ────────────────────────────');
+/*
+ * ── EL CPANEL YA NO DEBE ESTAR ───────────────────────────────────────────────
+ * Esta comprobación está DADA VUELTA desde el 28 de noviembre de 2026.
+ *
+ * Mientras duró la migración lo correcto era que estos cinco nombres siguieran
+ * apuntando a Netexplora: el correo viejo y el acceso al panel de hosting
+ * dependían de ellos, y que faltaran era la falla. La iglesia decidió dejar
+ * vencer el servidor antiguo y no sacar copia, así que ahora es al revés: cada
+ * uno que siga en pie es un nombre del dominio apuntando a una máquina que ya
+ * no se controla.
+ *
+ * No es teórico. Cuando el proveedor reasigne esa IP a otro cliente,
+ * `webmail.lacasadedios.cl` seguirá resolviendo —a la máquina de un
+ * desconocido— y seguirá pareciendo de la iglesia.
+ */
+console.log('\n── cPanel (tiene que estar BORRADO) ──────────────────────────────');
 for (const n of ['webmail', 'cpanel', 'whm', 'webdisk', 'ftp']) {
   const b = await pedir(nuevo, `${n}.${D}`, 'A');
-  if (!IP_NETEXPLORA) {
-    linea('AVISO', `${n}`, 'sin IP_ANTIGUA no se puede comprobar');
-    avisos++;
-  } else if (b === IP_NETEXPLORA) linea('OK', `${n} → servidor antiguo`);
-  else {
+  if (!b) linea('OK', `${n} borrado`);
+  else if (IP_NETEXPLORA && b === IP_NETEXPLORA) {
     errores++;
-    linea('FALLA', `${n}`, `Cloudflare responde: ${b}`);
+    linea('FALLA', `${n} sigue apuntando al servidor antiguo`, b);
+  } else {
+    avisos++;
+    linea('AVISO', `${n} resuelve a algo inesperado`, b);
   }
 }
 
 console.log('\n── Correo ────────────────────────────────────────────────────────');
 await igual(D, 'MX');
 await igual(`google._domainkey.${D}`, 'TXT', 'DKIM de Google');
-await igual(`default._domainkey.${D}`, 'TXT', 'DKIM de cPanel');
+/*
+ * El DKIM de cPanel firma correo que ya no sale de ahí: el MX es de Google y
+ * quien firma de verdad es `google._domainkey`. Dejarlo no rompe nada hoy, pero
+ * es una llave publicada de una cerradura que se regala. Se avisa y no se
+ * falla: borrarlo es ordenado, no urgente.
+ */
+{
+  const dk = await pedir(nuevo, `default._domainkey.${D}`, 'TXT');
+  if (!dk) linea('OK', 'DKIM de cPanel borrado');
+  else {
+    avisos++;
+    linea('AVISO', 'queda el DKIM de cPanel', 'ya no firma nada: el correo sale por Google');
+  }
+}
 
 // SPF: uno solo, y el corregido.
 {
@@ -182,8 +217,19 @@ await igual(`default._domainkey.${D}`, 'TXT', 'DKIM de cPanel');
   } else if (!spf[0].includes('include:_spf.google.com')) {
     errores++;
     linea('FALLA', 'SPF no autoriza a Google', spf[0]);
+  } else if (IP_NETEXPLORA && spf[0].includes(`ip4:${IP_NETEXPLORA}`)) {
+    /*
+     * El servidor viejo sigue autorizado a enviar correo como la iglesia.
+     *
+     * Mientras el hosting fuera nuestro daba igual. Al darlo de baja, esa
+     * dirección vuelve al proveedor y se la asignan a otro cliente — que podrá
+     * mandar correo que PASE el SPF de lacasadedios.cl. Hay que quitarlo antes
+     * de soltar el hosting, no después.
+     */
+    errores++;
+    linea('FALLA', 'el SPF todavía autoriza al servidor antiguo', spf[0]);
   } else {
-    linea('OK', 'SPF único y corregido', spf[0]);
+    linea('OK', 'SPF único y sin el servidor antiguo', spf[0]);
   }
 
   const verif = txts.split(' ;; ').filter((t) => t.startsWith('google-site-verification='));

@@ -18,7 +18,7 @@ import { SITE } from '../../data/site';
 import { resolverRemitente } from '../../lib/correo';
 import { construirCorreo } from '../../lib/correo-plantilla';
 import { baseDeDatos } from '../../lib/base';
-import { altaSuscriptor, registrarIntento } from '../../lib/boletin';
+import { altaSuscriptor, barrerSinConfirmar, registrarIntento } from '../../lib/boletin';
 import { ipDe } from '../../lib/ip';
 
 export const prerender = false;
@@ -129,6 +129,21 @@ export const POST: APIRoute = async ({ request, url: reqUrl }) => {
     // reinicia solo y bastaría con reintentar para saltárselo.
     const previos = await registrarIntento(base, ipDe(request), VENTANA_MIN, 'alta', LIMITE);
     if (previos >= LIMITE) return responder(false, 'demasiados_intentos', 429);
+
+    /*
+     * Antes de dar de alta, barrer lo que nunca se confirmó y ya caducó.
+     *
+     * Va ACÁ y no después, y no es un detalle: cada alta pendiente ocupa su
+     * dirección en el índice único. Si una persona de verdad comparte dirección
+     * con un alta basura de hace meses, su alta nueva cae en el
+     * `on conflict do nothing` y se queda sin correo de confirmación, sin que
+     * nadie se entere. Barriendo primero, esa dirección vuelve a estar libre.
+     *
+     * Es el mismo patrón que `registrarIntento`, que limpia su propia tabla en
+     * cada intento: no hay nada en este sitio que se despierte de madrugada, así
+     * que la limpieza viaja pegada al trabajo que ya se estaba haciendo.
+     */
+    await barrerSinConfirmar(base);
 
     alta = await altaSuscriptor(base, email);
   } catch (e) {
