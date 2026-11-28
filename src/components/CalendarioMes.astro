@@ -1,7 +1,9 @@
 ---
 import { Icon } from 'astro-icon/components';
-import { templos, estiloDistintivo } from '../data/templos';
+import { templos, estiloDistintivo, type Templo } from '../data/templos';
 import { horaCorta } from '../lib/hora';
+import { enlaceGoogleCalendar } from '../lib/ics';
+import { urlMedio } from '../lib/medios';
 import {
   casillasDe,
   comoParametro,
@@ -18,28 +20,23 @@ import { fechaEnPalabras, type Excepcion, type FilaReunion, type Reunion } from 
 import type { Evento } from '../lib/datos';
 
 /**
- * El mes, en rejilla.
+ * El mes, en rejilla. SOLO lo extraprogramático.
  *
- * ── QUÉ PESA Y QUÉ ACOMPAÑA ─────────────────────────────────────────────────
- * Los eventos son lo que se viene a ver: van en bloque, con el color de su
- * templo y su título legible. Las reuniones de cada semana van debajo, tenues
- * y solo con la hora: están para que un día con reunión no parezca vacío, no
- * para leerse una por una. Si las dos cosas pesaran igual, en un mes normal
- * cada casilla llevaría cinco reuniones y el congreso se perdería entre ellas
- * — que es exactamente lo que un calendario tiene que evitar.
+ * ── QUÉ ENTRA Y QUÉ NO ──────────────────────────────────────────────────────
+ * Entran los eventos y los cambios de un día: la reunión que ese día se
+ * suspende, cambia de hora o pasa a ser otra. Las reuniones de cada semana NO:
+ * estaban como horas tenues en cada casilla y, en un mes normal, eran cinco
+ * líneas por día que tapaban justo lo que se venía a ver. Lo recurrente vive en
+ * /horarios, y el pie lo dice. (Decisión de la iglesia, 28-11-2026.)
  *
- * Para el detalle de las reuniones está /horarios, y el pie lo dice.
+ * ── GRANDE, Y EL DETALLE EN UN MODAL ────────────────────────────────────────
+ * Cada cosa es un bloque de color que se lee de lejos. Al tocarlo se abre un
+ * modal con todo: fecha, hora, templo, lugar, afiche, descripción y cómo
+ * agendarlo. El detalle ya viene en la página, escondido: abrirlo no pide nada
+ * a la red y funciona igual sin conexión una vez cargado.
  *
  * ── EL ESTADO DE CADA REUNIÓN ES EL DE SU DÍA ───────────────────────────────
- * No el de hoy. Una suspendida hasta el día 8 sale tachada el 4 y normal el
- * 11, y un cambio de un día (d1/0016) solo se ve en su fecha. Lo resuelve
- * `reunionesEnFecha`; el porqué está ahí.
- *
- * ── LA AGENDA DE ABAJO ──────────────────────────────────────────────────────
- * En el teléfono la rejilla solo alcanza para decir QUÉ DÍAS hay algo. Lo que
- * se sale de lo normal —los eventos y las reuniones que ese día se suspenden o
- * cambian— se repite debajo, día por día y con todas sus letras. En diciembre
- * eso es casi todo lo que la gente necesita saber del mes.
+ * Lo resuelve `reunionesEnFecha`, con los cambios de un día (d1/0016).
  */
 interface Props {
   mes: Mes;
@@ -54,47 +51,139 @@ interface Props {
 }
 const { mes, eventos, reuniones, excepciones, hoy, templo } = Astro.props;
 
+const sitio = Astro.site?.toString().replace(/\/$/, '') ?? '';
 const casillas = casillasDe(mes);
-
-/** Los eventos de cada día, ya agrupados: la rejilla no busca dentro del bucle. */
-const porDia = new Map<string, Evento[]>();
-for (const e of eventos) {
-  const f = fechaDeEvento(e.fecha);
-  const lista = porDia.get(f);
-  if (lista) lista.push(e);
-  else porDia.set(f, [e]);
-}
-
 const colorDe = (slug: string) => templos.find((t) => t.slug === slug);
 
-/** Las reuniones de cada día del mes, resueltas UNA vez para rejilla y agenda. */
-const reunionesDe = new Map<string, Reunion[]>();
-for (const c of casillas) {
-  if (c.delMes) reunionesDe.set(c.fecha, reunionesEnFecha(reuniones, c.fecha, excepciones, hoy));
+/* ── Lo que va en la rejilla ─────────────────────────────────────────────── */
+
+interface ItemEvento {
+  tipo: 'evento';
+  clave: string;
+  orden: string;
+  evento: Evento;
+  templo: Templo | undefined;
+  hora: string;
+  termina: string | null;
 }
 
-/**
- * ¿Se sale de lo normal? Suspendida, a otra hora o con otro nombre.
- *
- * El nombre cuenta: en Limache, el miércoles 23 la reunión de Jóvenes pasa a
- * ser la Reunión General. A la misma hora, pero no es la reunión de siempre.
- */
-const nombreHabitual = (id: string) => reuniones.find((r) => r.id === id)?.nombre;
-const otroNombre = (r: Reunion) => {
-  const habitual = nombreHabitual(r.id);
-  return habitual !== undefined && habitual !== r.nombre;
-};
-const esEspecial = (r: Reunion) => r.estado !== 'normal' || otroNombre(r);
+interface ItemCambio {
+  tipo: 'cambio';
+  clave: string;
+  orden: string;
+  reunion: Reunion;
+  /** Cómo se llama de costumbre, si ese día se llama distinto. */
+  nombreHabitual: string | null;
+  /** La misma reunión cambiada igual en varios templos va en un solo bloque. */
+  templos: Templo[];
+}
 
-/** La agenda de abajo: solo los días del mes con algo fuera de lo normal. */
-const agenda = casillas
-  .filter((c) => c.delMes)
-  .map((c) => ({
-    fecha: c.fecha,
-    eventos: porDia.get(c.fecha) ?? [],
-    cambios: (reunionesDe.get(c.fecha) ?? []).filter(esEspecial),
-  }))
-  .filter((d) => d.eventos.length > 0 || d.cambios.length > 0);
+type Item = ItemEvento | ItemCambio;
+
+const nombreDe = (id: string) => reuniones.find((r) => r.id === id)?.nombre;
+
+/**
+ * ¿Se sale de lo normal? Suspendida, a otra hora o con otro nombre. El nombre
+ * cuenta: en Limache, el miércoles 23 la de Jóvenes pasa a ser la General.
+ */
+const esEspecial = (r: Reunion) => {
+  const habitual = nombreDe(r.id);
+  return r.estado !== 'normal' || (habitual !== undefined && habitual !== r.nombre);
+};
+
+const itemsDe = new Map<string, Item[]>();
+const todos: Item[] = [];
+
+for (const c of casillas) {
+  if (!c.delMes) continue;
+  const items: Item[] = [];
+
+  for (const e of eventos) {
+    if (fechaDeEvento(e.fecha) !== c.fecha) continue;
+    const termina =
+      !e.todo_el_dia && e.duracion_min && e.duracion_min > 0
+        ? horaCorta(new Date(new Date(e.fecha).getTime() + e.duracion_min * 60_000).toISOString())
+        : null;
+    items.push({
+      tipo: 'evento',
+      clave: `e-${e.id}`,
+      // «Todo el día» va primero en el día.
+      orden: e.todo_el_dia ? '00:00' : horaCorta(e.fecha),
+      evento: e,
+      templo: colorDe(e.templo),
+      hora: e.todo_el_dia ? 'Todo el día' : horaCorta(e.fecha),
+      termina,
+    });
+  }
+
+  // Los cambios iguales en varios templos se juntan: «suspendida por las
+  // fiestas» en tres templos es UN bloque con tres distintivos, no tres.
+  const grupos = new Map<string, ItemCambio>();
+  for (const r of reunionesEnFecha(reuniones, c.fecha, excepciones, hoy).filter(esEspecial)) {
+    const habitual = nombreDe(r.id) ?? r.nombre;
+    const k = [r.hora, r.horaHabitual ?? '', r.nombre, habitual, r.estado, r.aviso ?? ''].join('|');
+    const t = colorDe(r.templo);
+    const g = grupos.get(k);
+    if (g) {
+      if (t) g.templos.push(t);
+    } else {
+      grupos.set(k, {
+        tipo: 'cambio',
+        clave: `c-${c.fecha}-${r.id}`,
+        orden: r.hora,
+        reunion: r,
+        nombreHabitual: habitual !== r.nombre ? habitual : null,
+        templos: t ? [t] : [],
+      });
+    }
+  }
+  items.push(...grupos.values());
+
+  items.sort((a, b) => a.orden.localeCompare(b.orden));
+  if (items.length) {
+    itemsDe.set(c.fecha, items);
+    todos.push(...items);
+  }
+}
+
+/** La agenda de abajo: los días del mes con algo. */
+const agenda = [...itemsDe.entries()].map(([fecha, items]) => ({ fecha, items }));
+
+/** Una frase con lo que cambia, para el bloque y para el modal. */
+function queCambia(i: ItemCambio): string {
+  const r = i.reunion;
+  if (r.estado === 'suspendida') return 'Suspendida';
+  const partes: string[] = [];
+  if (r.horaHabitual) partes.push(`a las ${r.hora}, no a las ${r.horaHabitual}`);
+  if (i.nombreHabitual) partes.push(`en lugar de «${i.nombreHabitual}»`);
+  return partes.length ? `Cambia: ${partes.join(', ')}` : 'Cambia';
+}
+
+/** Las clases del bloque, según qué es. */
+/**
+ * Las clases del bloque, según qué es.
+ *
+ * Los eventos mandan: color lleno del templo, sombra y título grande. Un
+ * cambio de reunión es un aviso, no un titular: fondo claro, letra más chica y
+ * una franja a la izquierda con el color del templo. Con los dos al mismo peso,
+ * el jueves 24 eran tres bloques rojos tapando la Cena de Navidad.
+ */
+function claseBloque(i: Item): string {
+  const base =
+    'block w-full cursor-pointer text-left leading-tight transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
+  if (i.tipo === 'evento')
+    return `${base} rounded-md text-white shadow-sm hover:-translate-y-px hover:shadow-md`;
+  return `${base} rounded-r border-l-4 hover:bg-base-300/70 ${
+    i.reunion.estado === 'suspendida' ? 'bg-error/5' : 'bg-warning/15'
+  }`;
+}
+
+/** La franja del cambio: el color del primer templo afectado. */
+const franja = (i: ItemCambio) =>
+  `border-left-color:${i.templos[0]?.color.fondo ?? 'var(--color-base-300)'}`;
+
+const fondoEvento = (i: ItemEvento) =>
+  `background:${i.templo ? i.templo.color.fondo : 'var(--color-primary)'}`;
 
 /** La dirección de otro mes, conservando el filtro. */
 function enlaceMes(m: Mes): string {
@@ -109,22 +198,20 @@ const siguiente = mesSiguiente(mes);
 
 <div class="panel overflow-hidden">
   <!-- Cabecera: el mes y cómo moverse -->
-  <header class="flex items-center justify-between gap-3 border-b border-base-300 bg-base-200/60 px-3 py-2.5">
+  <header class="flex items-center justify-between gap-3 border-b border-base-300 bg-base-200/60 px-3 py-3">
     <a
       href={enlaceMes(anterior)}
       rel="prev"
       class="btn btn-ghost btn-sm gap-1.5"
       aria-label={`Ver ${enPalabras(anterior)}`}
     >
-      <Icon name="lucide:chevron-left" class="h-4 w-4" />
+      <Icon name="lucide:chevron-left" class="h-5 w-5" />
       <span class="hidden sm:inline">{enPalabras(anterior).split(' de ')[0]}</span>
     </a>
 
     {/* `first-letter:uppercase` y NO `capitalize`: aquella pone mayúscula en
-         CADA palabra y el título salía «Diciembre De 2026». En castellano el
-         mes va en minúscula y solo se levanta la primera letra por ir al
-         principio de una frase. */}
-    <h3 class="font-display text-lg first-letter:uppercase md:text-xl">{enPalabras(mes)}</h3>
+         CADA palabra y el título salía «Diciembre De 2026». */}
+    <h2 class="font-display text-xl first-letter:uppercase md:text-2xl">{enPalabras(mes)}</h2>
 
     <a
       href={enlaceMes(siguiente)}
@@ -133,15 +220,13 @@ const siguiente = mesSiguiente(mes);
       aria-label={`Ver ${enPalabras(siguiente)}`}
     >
       <span class="hidden sm:inline">{enPalabras(siguiente).split(' de ')[0]}</span>
-      <Icon name="lucide:chevron-right" class="h-4 w-4" />
+      <Icon name="lucide:chevron-right" class="h-5 w-5" />
     </a>
   </header>
 
-  <!-- Los nombres de los días. En el teléfono solo la inicial: «Mié» en una
-       columna de 45 px se corta, y una letra se entiende igual. -->
   <div class="grid grid-cols-7 border-b border-base-300 bg-base-200/30">
     {DIAS_LUNES.map((d) => (
-      <div class="font-data px-1 py-1.5 text-center text-[0.65rem] font-bold uppercase tracking-wider text-base-content/60">
+      <div class="font-data px-1 py-2 text-center text-xs font-bold uppercase tracking-wider text-base-content/60">
         <span class="sm:hidden">{d.charAt(0)}</span>
         <span class="hidden sm:inline">{d}</span>
       </div>
@@ -150,216 +235,380 @@ const siguiente = mesSiguiente(mes);
 
   <div class="grid grid-cols-7">
     {casillas.map((c) => {
-      const delDia = c.delMes ? (porDia.get(c.fecha) ?? []) : [];
-      // Las que se salen de lo normal, primero: si hay que cortar en tres, que
-      // no se corte justo la suspendida.
-      const semanales = (reunionesDe.get(c.fecha) ?? [])
-        .slice()
-        .sort(
-          (a, b) => Number(esEspecial(b)) - Number(esEspecial(a)) || a.hora.localeCompare(b.hora),
-        );
+      const items = c.delMes ? (itemsDe.get(c.fecha) ?? []) : [];
       const esHoy = c.fecha === hoy;
-
       return (
         <div
-          class={`min-h-[5.5rem] border-b border-r border-base-300/70 p-1 last:border-r-0 sm:min-h-[7rem] sm:p-1.5 ${
+          class={`min-h-[5rem] border-b border-r border-base-300/70 p-1 last:border-r-0 sm:min-h-[8.5rem] sm:p-1.5 ${
             c.delMes ? '' : 'bg-base-200/40'
-          } ${esHoy ? 'bg-accent/5 ring-1 ring-inset ring-accent/40' : ''}`}
+          } ${esHoy ? 'bg-accent/5 ring-2 ring-inset ring-accent/50' : ''}`}
         >
           <div
-            class={`font-data mb-1 text-right text-xs ${
+            class={`font-data mb-1 text-right text-sm ${
               esHoy
                 ? 'font-bold text-accent'
                 : c.delMes
-                  ? 'text-base-content/60'
+                  ? 'text-base-content/70'
                   : 'text-base-content/30'
             }`}
           >
             {c.numero}
           </div>
 
-          {/* ── Los eventos: lo que se viene a ver ──────────────────────
-                Siete columnas en un teléfono son unos 50 px cada una, y ahí un
-                título se corta en «Bautis». Así que a ese ancho la casilla
-                responde a «¿qué días hay algo?» —la hora, en el color de su
-                templo— y el «¿qué es?» lo responde la vista de lista, que está
-                a un toque. Desde `sm` cabe el título y se pone entero. */}
-          {delDia.map((e) => {
-            const t = colorDe(e.templo);
-            return (
-              <a
-                href={`/eventos?e=${encodeURIComponent(e.slug ?? e.id)}`}
-                data-etiqueta={e.templo}
-                class="mb-1 block rounded px-1 py-0.5 text-center text-[0.6rem] leading-tight text-white transition hover:brightness-110 sm:px-1.5 sm:py-1 sm:text-left sm:text-xs"
-                style={t ? `background:${t.color.fondo}` : 'background:var(--color-primary)'}
-                title={`${e.titulo}${e.lugar ? ' · ' + e.lugar : ''}`}
-              >
-                <span class="font-data block font-bold">
-                  {e.todo_el_dia ? 'Día' : horaCorta(e.fecha)}
-                </span>
-                <span class="hidden font-medium sm:line-clamp-2 sm:block">{e.titulo}</span>
-              </a>
-            );
-          })}
-
-          {/* Las de cada semana: contexto, no titular. Como mucho tres, y el
-                resto contado — una casilla con los cuatro templos llevaría
-                cinco líneas y taparía el evento de ese día.
-
-                Ocultas en el teléfono: a 50 px de ancho dejan de ser un fondo
-                discreto y se convierten en lo único que se ve. */}
-          {semanales.slice(0, 3).map((r) => (
-            <div
-              class={`font-data hidden items-center gap-1 text-[0.62rem] leading-snug sm:flex ${
-                r.estado === 'suspendida'
-                  ? 'text-error/80 line-through'
-                  : esEspecial(r)
-                    ? 'font-semibold text-warning'
-                    : 'text-base-content/45'
-              }`}
-              title={`${r.hora} · ${r.nombre}${r.aviso ? ' — ' + r.aviso : ''}`}
-            >
-              <span
-                class="inline-block h-1 w-1 shrink-0 rounded-full"
-                style={colorDe(r.templo) ? `background:${colorDe(r.templo)!.color.fondo}` : ''}
-                aria-hidden="true"
-              />
-              {r.hora}
-              {r.estado !== 'suspendida' && otroNombre(r) && (
-                <span class="truncate">· {r.nombre}</span>
-              )}
-              {r.marca && <span class="truncate text-accent">· {r.marca}</span>}
-            </div>
-          ))}
-          {/* En el teléfono las reuniones no se ven: un punto avisa de que
-                ese día alguna cambia, y la agenda de abajo dice cuál. */}
-          {semanales.some(esEspecial) && (
-            <div
-              class="mx-auto mt-0.5 h-1.5 w-1.5 rounded-full bg-warning sm:hidden"
-              title="Ese día cambia alguna reunión"
-            />
-          )}
-          {semanales.length > 3 && (
-            <div class="font-data hidden text-[0.62rem] text-base-content/40 sm:block">
-              +{semanales.length - 3} más
-            </div>
-          )}
+          {/* En el teléfono una columna mide unos 50 px: el bloque lleva la
+              hora en grande y el color; el título está a un toque, en el
+              modal. Desde `sm` cabe el título entero. */}
+          <div class="space-y-1">
+            {items.map((i) =>
+              i.tipo === 'evento' ? (
+                <button
+                  type="button"
+                  data-abrir={i.clave}
+                  class={`${claseBloque(i)} px-1 py-1.5 sm:px-2 sm:py-1.5`}
+                  style={fondoEvento(i)}
+                  aria-label={`${i.evento.titulo}, ${i.hora}`}
+                >
+                  <span class="font-data block text-center text-[0.7rem] font-bold sm:text-left sm:text-xs">
+                    <span class="sm:hidden">{i.evento.todo_el_dia ? 'Día' : i.hora}</span>
+                    <span class="hidden sm:inline">{i.hora}</span>
+                  </span>
+                  <span class="hidden text-sm font-semibold sm:line-clamp-3 sm:block">
+                    {i.evento.titulo}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  data-abrir={i.clave}
+                  class={`${claseBloque(i)} px-1 py-1 sm:px-1.5`}
+                  style={franja(i)}
+                  aria-label={`${i.reunion.nombre}, ${queCambia(i)}`}
+                >
+                  <span class="flex items-center justify-center gap-1 sm:justify-start">
+                    <span
+                      class={`font-data text-[0.65rem] font-bold ${
+                        i.reunion.estado === 'suspendida'
+                          ? 'text-error line-through'
+                          : 'text-base-content/80'
+                      }`}
+                    >
+                      {i.reunion.hora}
+                    </span>
+                    <span
+                      class={`hidden text-[0.6rem] font-semibold uppercase tracking-wide sm:inline ${
+                        i.reunion.estado === 'suspendida' ? 'text-error' : 'text-base-content/70'
+                      }`}
+                    >
+                      {i.reunion.estado === 'suspendida' ? 'Suspendida' : 'Cambio'}
+                    </span>
+                  </span>
+                  <span class="hidden truncate text-xs text-base-content/75 sm:block">
+                    {i.reunion.nombre}
+                  </span>
+                </button>
+              ),
+            )}
+          </div>
         </div>
       );
     })}
   </div>
 
-  <footer class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-base-300 bg-base-200/40 px-3 py-2 text-xs text-base-content/70">
+  <footer class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-base-300 bg-base-200/40 px-3 py-2.5 text-xs text-base-content/70">
     <span class="flex flex-wrap items-center gap-x-3 gap-y-1">
       {templos.map((t) => (
         <span class="flex items-center gap-1.5">
           <span
-            class="inline-block h-2.5 w-2.5 rounded-sm"
+            class="inline-block h-3 w-3 rounded-sm"
             style={estiloDistintivo(t) + `;background:${t.color.fondo}`}
             aria-hidden="true"
           />
           {t.short}
         </span>
       ))}
+      <span class="flex items-center gap-1.5">
+        <span
+          class="inline-block h-3 w-3 rounded-r-sm border-l-4 border-base-content/40 bg-error/10"
+          aria-hidden="true"
+        ></span>
+        Reunión suspendida
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span
+          class="inline-block h-3 w-3 rounded-r-sm border-l-4 border-base-content/40 bg-warning/25"
+          aria-hidden="true"
+        ></span>
+        Cambio de horario
+      </span>
     </span>
     <span>
-      <span class="hidden sm:inline">
-        Las horas tenues son las reuniones de cada semana; en color, las que ese día cambian ·
-      </span>
+      Las reuniones de cada semana están en{' '}
       <a href="/horarios" class="link link-primary">
-        ver los horarios
+        Horarios
       </a>
     </span>
   </footer>
 </div>
 
-{/* ── El mes, día por día ─────────────────────────────────────────────────
-     Lo de la rejilla que se sale de lo normal, con todas sus letras. */}
+{/* ── El mes, en lista ───────────────────────────────────────────────────
+     Lo mismo que la rejilla, con todas sus letras. En el teléfono es lo que
+     se lee; cada línea abre el mismo modal. */}
 <section class="mt-10" aria-labelledby="agenda-mes">
   <h3 id="agenda-mes" class="font-display text-xl md:text-2xl">
-    Lo especial de {MESES[mes.mes - 1]}
+    {MESES[mes.mes - 1].charAt(0).toUpperCase() + MESES[mes.mes - 1].slice(1)}, día por día
   </h3>
   {agenda.length === 0 ? (
     <p class="mt-2 text-sm text-base-content/70">
-      Este mes no hay eventos ni cambios: todas las reuniones van como siempre.
+      Este mes no hay actividades especiales: todas las reuniones van como siempre.
     </p>
   ) : (
     <ol class="mt-4 space-y-3">
       {agenda.map((d) => (
-        <li class={`panel flex gap-4 p-4 ${d.fecha === hoy ? 'ring-1 ring-accent/50' : ''}`}>
+        <li class={`panel flex gap-4 p-4 ${d.fecha === hoy ? 'ring-2 ring-accent/50' : ''}`}>
           <div class="font-data w-12 shrink-0 text-center">
             <span class="block text-2xl font-bold leading-none">{Number(d.fecha.slice(8))}</span>
             <span class="mt-1 block text-[0.65rem] uppercase tracking-wider text-base-content/60">
               {fechaEnPalabras(d.fecha).slice(0, 3)}
             </span>
           </div>
-          <ul class="min-w-0 flex-1 space-y-3">
-            {d.eventos.map((e) => {
-              const t = colorDe(e.templo);
-              return (
-                <li>
-                  <a href={`/eventos?e=${encodeURIComponent(e.slug ?? e.id)}`} class="group block">
-                    <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span class="font-data text-sm font-bold">
-                        {e.todo_el_dia ? 'Todo el día' : horaCorta(e.fecha)}
-                      </span>
-                      <span class="font-semibold group-hover:underline">{e.titulo}</span>
-                      {t ? (
-                        <span class="distintivo" style={estiloDistintivo(t)}>
-                          {t.short}
+          <ul class="min-w-0 flex-1 space-y-2">
+            {d.items.map((i) => (
+              <li>
+                <button
+                  type="button"
+                  data-abrir={i.clave}
+                  class="group flex w-full items-start gap-3 rounded-md p-1 text-left transition hover:bg-base-200"
+                >
+                  <span
+                    class={`mt-1 h-3 w-3 shrink-0 rounded-sm ${
+                      i.tipo === 'cambio'
+                        ? i.reunion.estado === 'suspendida'
+                          ? 'border border-error/50 bg-error/10'
+                          : 'border border-warning/60 bg-warning/20'
+                        : ''
+                    }`}
+                    style={i.tipo === 'evento' ? fondoEvento(i) : undefined}
+                    aria-hidden="true"
+                  />
+                  <span class="min-w-0 flex-1">
+                    {i.tipo === 'evento' ? (
+                      <>
+                        <span class="font-data mr-2 text-sm font-bold">{i.hora}</span>
+                        <span class="font-semibold group-hover:underline">{i.evento.titulo}</span>
+                        <span class="block text-xs text-base-content/70">
+                          {i.templo ? i.templo.short : 'Toda la iglesia'}
+                          {i.evento.lugar && ` · ${i.evento.lugar}`}
                         </span>
-                      ) : (
-                        <span class="badge badge-ghost badge-sm">Toda la iglesia</span>
-                      )}
-                    </span>
-                    {e.lugar && (
-                      <span class="mt-0.5 block text-xs text-base-content/70">{e.lugar}</span>
-                    )}
-                  </a>
-                </li>
-              );
-            })}
-            {d.cambios.map((r) => {
-              const t = colorDe(r.templo);
-              const suspendida = r.estado === 'suspendida';
-              return (
-                <li class="text-sm">
-                  <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span
-                      class={`font-data font-bold ${suspendida ? 'text-base-content/50 line-through' : ''}`}
-                    >
-                      {r.horaHabitual && (
-                        <span class="mr-1 font-normal text-base-content/50 line-through">
-                          {r.horaHabitual}
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          class={`font-data mr-2 text-sm font-bold ${i.reunion.estado === 'suspendida' ? 'text-base-content/50 line-through' : ''}`}
+                        >
+                          {i.reunion.hora}
                         </span>
-                      )}
-                      {r.hora}
-                    </span>
-                    <span class={suspendida ? 'text-base-content/60' : 'font-medium'}>
-                      {r.nombre}
-                    </span>
-                    {t && (
-                      <span class="distintivo" style={estiloDistintivo(t)}>
-                        {t.short}
-                      </span>
+                        <span class="font-semibold group-hover:underline">{i.reunion.nombre}</span>
+                        <span
+                          class={`block text-xs font-medium ${i.reunion.estado === 'suspendida' ? 'text-error' : 'text-warning-content'}`}
+                        >
+                          {queCambia(i)} · {i.templos.map((t) => t.short).join(', ')}
+                        </span>
+                      </>
                     )}
-                    <span
-                      class={`badge badge-sm ${suspendida ? 'badge-error badge-outline' : 'badge-warning'}`}
-                    >
-                      {suspendida ? 'Suspendida' : 'Cambia'}
-                    </span>
                   </span>
-                  {(r.aviso || otroNombre(r)) && (
-                    <span class="mt-0.5 block text-xs text-base-content/70">
-                      {r.aviso ?? `Ese día, en lugar de «${nombreHabitual(r.id)}».`}
-                    </span>
-                  )}
-                </li>
-              );
-            })}
+                  <Icon
+                    name="lucide:chevron-right"
+                    class="mt-1 h-4 w-4 shrink-0 text-base-content/40"
+                  />
+                </button>
+              </li>
+            ))}
           </ul>
         </li>
       ))}
     </ol>
   )}
 </section>
+
+{/* ── El modal ────────────────────────────────────────────────────────────
+     Un solo <dialog> con todos los detalles del mes dentro, escondidos. Al
+     tocar un bloque se enseña el suyo. Sin plantillas ni clonado: el afiche
+     con `loading="lazy"` dentro de algo escondido no se descarga hasta que
+     se abre. */}
+<dialog id="cal-detalle" class="modal modal-bottom sm:modal-middle">
+  <div class="modal-box max-w-lg p-0">
+    <form method="dialog" class="absolute right-2 top-2 z-10">
+      <button class="btn btn-circle btn-ghost btn-sm bg-base-100/80" aria-label="Cerrar">
+        <Icon name="lucide:x" class="h-5 w-5" />
+      </button>
+    </form>
+
+    {todos.map((i) =>
+      i.tipo === 'evento' ? (
+        <article data-detalle={i.clave} hidden>
+          {urlMedio(i.evento.imagen_clave) && (
+            <div class="relative h-56 overflow-hidden rounded-t-box bg-base-200 sm:h-64">
+              <img
+                src={urlMedio(i.evento.imagen_clave)!}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                class="absolute inset-0 h-full w-full scale-125 object-cover blur-xl"
+              />
+              <img
+                src={urlMedio(i.evento.imagen_clave)!}
+                alt={i.evento.imagen_alt ?? i.evento.titulo}
+                loading="lazy"
+                class="relative h-full w-full object-contain"
+              />
+            </div>
+          )}
+          <div class="p-6">
+            <p class="text-sm font-medium text-base-content/70 first-letter:uppercase">
+              {fechaEnPalabras(fechaDeEvento(i.evento.fecha))}
+            </p>
+            <h3 class="mt-1 font-display text-2xl leading-tight md:text-3xl">{i.evento.titulo}</h3>
+
+            <div class="mt-4 space-y-2 text-sm">
+              <p class="flex items-center gap-2">
+                <Icon name="lucide:clock" class="h-4 w-4 shrink-0 text-accent" />
+                <span class="font-data font-bold">
+                  {i.termina ? `${i.hora} a ${i.termina}` : i.hora}
+                </span>
+              </p>
+              {i.evento.lugar && (
+                <p class="flex items-center gap-2">
+                  <Icon name="lucide:map-pin" class="h-4 w-4 shrink-0 text-accent" />
+                  {i.evento.lugar}
+                </p>
+              )}
+              <p class="flex items-center gap-2">
+                <Icon name="lucide:church" class="h-4 w-4 shrink-0 text-accent" />
+                {i.templo ? (
+                  <span class="distintivo" style={estiloDistintivo(i.templo)}>
+                    {i.templo.short}
+                  </span>
+                ) : (
+                  'Toda la iglesia'
+                )}
+              </p>
+            </div>
+
+            {i.evento.descripcion && (
+              <p class="mt-4 whitespace-pre-line text-base-content/80">{i.evento.descripcion}</p>
+            )}
+
+            <div class="mt-6 flex flex-wrap gap-2">
+              <a
+                href={`/api/evento/${i.evento.id}.ics`}
+                class="btn btn-primary btn-sm gap-1.5"
+                download
+              >
+                <Icon name="lucide:calendar-plus" class="h-4 w-4" /> Agendar
+              </a>
+              <a
+                href={enlaceGoogleCalendar({
+                  id: i.evento.id,
+                  titulo: i.evento.titulo,
+                  inicio: i.evento.fecha,
+                  duracion: i.evento.duracion_min,
+                  descripcion: i.evento.descripcion,
+                  lugar: i.evento.lugar,
+                  url: `${sitio}/eventos?e=${encodeURIComponent(i.evento.slug ?? i.evento.id)}`,
+                  todoElDia: i.evento.todo_el_dia === 1,
+                })}
+                target="_blank"
+                rel="noopener"
+                class="btn btn-outline btn-sm gap-1.5"
+              >
+                Google Calendar
+              </a>
+              <a
+                href={`/eventos?e=${encodeURIComponent(i.evento.slug ?? i.evento.id)}`}
+                class="btn btn-ghost btn-sm gap-1.5"
+              >
+                <Icon name="lucide:share-2" class="h-4 w-4" /> Ver y compartir
+              </a>
+            </div>
+          </div>
+        </article>
+      ) : (
+        <article data-detalle={i.clave} hidden class="p-6">
+          <p class="text-sm font-medium text-base-content/70 first-letter:uppercase">
+            {fechaEnPalabras(i.clave.slice(2, 12))}
+          </p>
+          <h3 class="mt-1 font-display text-2xl leading-tight md:text-3xl">{i.reunion.nombre}</h3>
+
+          <p
+            class={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${
+              i.reunion.estado === 'suspendida' ? 'bg-error/10 text-error' : 'bg-warning/20'
+            }`}
+          >
+            <Icon
+              name={
+                i.reunion.estado === 'suspendida' ? 'lucide:calendar-x' : 'lucide:calendar-clock'
+              }
+              class="h-4 w-4"
+            />
+            {queCambia(i)}
+          </p>
+
+          <div class="mt-4 space-y-2 text-sm">
+            <p class="flex items-center gap-2">
+              <Icon name="lucide:clock" class="h-4 w-4 shrink-0 text-accent" />
+              <span class="font-data font-bold">
+                {i.reunion.estado === 'suspendida' ? (
+                  <span class="text-base-content/50 line-through">{i.reunion.hora}</span>
+                ) : (
+                  i.reunion.hora
+                )}
+              </span>
+            </p>
+            <p class="flex flex-wrap items-center gap-2">
+              <Icon name="lucide:church" class="h-4 w-4 shrink-0 text-accent" />
+              {i.templos.map((t) => (
+                <span class="distintivo" style={estiloDistintivo(t)}>
+                  {t.short}
+                </span>
+              ))}
+            </p>
+          </div>
+
+          {i.reunion.aviso && <p class="mt-4 text-base-content/80">{i.reunion.aviso}</p>}
+
+          <div class="mt-6">
+            <a href="/horarios" class="btn btn-ghost btn-sm gap-1.5">
+              <Icon name="lucide:clock" class="h-4 w-4" /> Horarios de cada semana
+            </a>
+          </div>
+        </article>
+      ),
+    )}
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>cerrar</button>
+  </form>
+</dialog>
+
+<script>
+  /*
+   * Abre el modal con el detalle del bloque tocado. Un solo escuchador en el
+   * documento: los bloques de la rejilla y las líneas de la lista comparten el
+   * mismo `data-abrir`.
+   *
+   * Con el ClientRouter la página no se recarga al cambiar de mes, así que el
+   * escuchador se engancha una vez y busca el diálogo en cada clic, que es el
+   * de la página que esté puesta.
+   */
+  document.addEventListener('click', (ev) => {
+    const boton = (ev.target as HTMLElement | null)?.closest<HTMLElement>('[data-abrir]');
+    if (!boton) return;
+    const dlg = document.getElementById('cal-detalle') as HTMLDialogElement | null;
+    if (!dlg) return;
+    dlg.querySelectorAll<HTMLElement>('[data-detalle]').forEach((a) => {
+      a.hidden = a.dataset.detalle !== boton.dataset.abrir;
+    });
+    dlg.querySelector('.modal-box')?.scrollTo(0, 0);
+    dlg.showModal();
+  });
+</script>

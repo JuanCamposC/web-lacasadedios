@@ -28,7 +28,7 @@ import {
  *
  * Vivía como una segunda vista de /eventos (`?vista=calendario`). Se separó
  * cuando dejó de ser «los eventos en rejilla» y pasó a ser LA respuesta a
- * «¿qué hay en diciembre?»: eventos, reuniones y los cambios de cada día. Esa
+ * «¿qué hay en diciembre?»: las actividades especiales y los cambios de cada día. Esa
  * página se enlaza desde cada templo ya filtrada, y /eventos vuelve a ser la
  * lista de lo que viene. La dirección vieja redirige aquí.
  *
@@ -76,8 +76,8 @@ const titulo = templo ? `Calendario de ${templo.short}` : 'Calendario';
   title={`${titulo} · La Casa de Dios`}
   description={
     templo
-      ? `Eventos, reuniones y cambios de horario del templo ${templo.short}, mes a mes.`
-      : 'Eventos, reuniones y cambios de horario de los cuatro templos de La Casa de Dios, mes a mes.'
+      ? `Actividades especiales y cambios de horario del templo ${templo.short}, mes a mes.`
+      : 'Actividades especiales y cambios de horario de los cuatro templos de La Casa de Dios, mes a mes.'
   }
   canonical={templo ? `/calendario?templo=${templo.slug}` : '/calendario'}
 >
@@ -86,7 +86,7 @@ const titulo = templo ? `Calendario de ${templo.short}` : 'Calendario';
     alt="Reunión de adoración"
     eyebrow="Agenda"
     title={titulo}
-    subtitle={`Lo que hay en ${enPalabras(mes)}: eventos, reuniones y lo que cambia cada día.`}
+    subtitle={`Lo que hay en ${enPalabras(mes)}: actividades especiales y cambios de horario.`}
     height="min-h-[40vh]"
   />
 
